@@ -40,3 +40,41 @@ class Node1D(Point1D):
 
     def __str__(self):
         return super().__str__() + f", temp={self.temp}"
+        
+
+class IntegrationPoint1D(Point1D):
+
+    def __init__(self, coord=0., porosity=0., vol_ice_cont=0.):
+        super().__init__(coord)
+        self._porosity = np.zeros((1,))
+        self._vol_ice_cont = np.zeros((1,))
+        self.porosity = porosity
+        self.vol_ice_cont = vol_ice_cont
+
+    @property
+    def porosity(self):
+        return self._porosity[0]
+
+    @porosity.setter
+    def porosity(self, value):
+        value = float(value)
+        if value < 0. or value > 1.:
+            raise ValueError(f"porosity value {value} not between 0.0 and 1.0")
+        self._porosity[0] = value
+        
+    @property
+    def vol_ice_cont(self):
+        return self._vol_ice_cont[0]
+
+    @vol_ice_cont.setter
+    def vol_ice_cont(self, value):
+        value = float(value)
+        if value < 0. or value > self.porosity:
+            raise ValueError(f"vol_ice_cont value {value} "
+                             + f"not between 0.0 and porosity={self.porosity}")
+        self._vol_ice_cont[0] = value
+
+    def __str__(self):
+        return (super().__str__()
+                + f", porosity={self.porosity}"
+                + f", vol_ice_cont={self.vol_ice_cont}")

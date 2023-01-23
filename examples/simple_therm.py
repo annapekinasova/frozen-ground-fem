@@ -1,12 +1,14 @@
 from frozen_ground_fem.geometry import (
     Point1D,
     Node1D,
+    IntegrationPoint1D,
     )
 
 
 def main():
     print("successfully imported frozen_ground_fem")
 
+    # testing Point1D
     p = Point1D(3)
     print(f"created a Point1D with ID {id(p)}")
     print(f"coords: {p.coords}")
@@ -28,6 +30,7 @@ def main():
     except ValueError:
         print("raised ValueError as expected")
 
+    # testing Node1D
     nd = Node1D(0.5, -5)
     print(f"created a Node1D with ID {id(nd)}")
     print(f"z: {nd.z}, temp: {nd.temp}")
@@ -46,6 +49,58 @@ def main():
         
     print(f"str(nd): {str(nd)}")
     print(nd)
+
+    # testing IntegrationPoint1D
+    ip = IntegrationPoint1D(0.5, 0.3, 0.05)
+    print(f"created a IntegrationPoint1D with ID {id(ip)}")
+    print(ip)
+    ip.porosity = 0.5
+    ip.vol_ice_cont = 0.08
+    print(ip)
+    print(f"type(ip) is Node1D: {type(ip) is Node1D}")
+    print(f"type(ip) is Point1D: {type(ip) is Point1D}")
+    print(f"type(ip) is IntegrationPoint1D: {type(ip) is IntegrationPoint1D}")
+    print(f"isinstance(ip, Node1D): {isinstance(ip, Node1D)}")
+    print(f"isinstance(ip, Point1D): {isinstance(ip, Point1D)}")
+    print(f"isinstance(ip, IntegrationPoint1D): {isinstance(ip, IntegrationPoint1D)}")
+
+    print("trying ip.porosity = 'three'")
+    try:
+        ip.porosity = 'three'
+    except ValueError:
+        print("raised ValueError as expected")
+
+    print("trying ip.porosity = 1.2")
+    try:
+        ip.porosity = 1.2
+    except ValueError:
+        print("raised ValueError as expected")
+
+    print("trying ip.porosity = -0.2")
+    try:
+        ip.porosity = -0.2
+    except ValueError:
+        print("raised ValueError as expected")
+        
+    print(ip)
+
+    print("trying ip.vol_ice_cont = 'three'")
+    try:
+        ip.vol_ice_cont = 'three'
+    except ValueError:
+        print("raised ValueError as expected")
+
+    print("trying ip.vol_ice_cont = -0.2")
+    try:
+        ip.vol_ice_cont = -0.2
+    except ValueError:
+        print("raised ValueError as expected")
+
+    print("trying ip.vol_ice_cont = 0.6")
+    try:
+        ip.vol_ice_cont = 0.6
+    except ValueError:
+        print("raised ValueError as expected")
     
 
 if __name__ == "__main__":
