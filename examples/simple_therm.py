@@ -46,7 +46,7 @@ def main():
         nd.temp = 'three'
     except ValueError:
         print("raised ValueError as expected")
-        
+
     print(f"str(nd): {str(nd)}")
     print(nd)
 
@@ -62,7 +62,8 @@ def main():
     print(f"type(ip) is IntegrationPoint1D: {type(ip) is IntegrationPoint1D}")
     print(f"isinstance(ip, Node1D): {isinstance(ip, Node1D)}")
     print(f"isinstance(ip, Point1D): {isinstance(ip, Point1D)}")
-    print(f"isinstance(ip, IntegrationPoint1D): {isinstance(ip, IntegrationPoint1D)}")
+    print("isinstance(ip, IntegrationPoint1D): "
+          + f"{isinstance(ip, IntegrationPoint1D)}")
 
     print("trying ip.porosity = 'three'")
     try:
@@ -81,7 +82,7 @@ def main():
         ip.porosity = -0.2
     except ValueError:
         print("raised ValueError as expected")
-        
+
     print(ip)
 
     print("trying ip.vol_ice_cont = 'three'")
@@ -101,7 +102,7 @@ def main():
         ip.vol_ice_cont = 0.6
     except ValueError:
         print("raised ValueError as expected")
-    
+
 
 if __name__ == "__main__":
     main()

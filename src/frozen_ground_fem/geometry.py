@@ -21,8 +21,8 @@ class Point1D:
 
     def __str__(self):
         return self.coords.__str__()
-        
-        
+
+
 class Node1D(Point1D):
 
     def __init__(self, coord=0., temp=0.):
@@ -40,7 +40,7 @@ class Node1D(Point1D):
 
     def __str__(self):
         return super().__str__() + f", temp={self.temp}"
-        
+
 
 class IntegrationPoint1D(Point1D):
 
@@ -61,7 +61,7 @@ class IntegrationPoint1D(Point1D):
         if value < 0. or value > 1.:
             raise ValueError(f"porosity value {value} not between 0.0 and 1.0")
         self._porosity[0] = value
-        
+
     @property
     def vol_ice_cont(self):
         return self._vol_ice_cont[0]
