@@ -3,6 +3,10 @@ from frozen_ground_fem.geometry import (
     Node1D,
     IntegrationPoint1D,
     )
+from frozen_ground_fem.materials import (
+    vol_heat_cap_water,
+    vol_heat_cap_ice,
+    )
 
 
 def main():
@@ -101,6 +105,10 @@ def main():
         ip.vol_ice_cont = 0.6
     except ValueError:
         print("raised ValueError as expected")
+        
+    # testing materials module
+    print(f"vol_heat_cap_ice: {vol_heat_cap_ice}")
+    print(f"vol_heat_cap_water: {vol_heat_cap_water}")
     
 
 if __name__ == "__main__":
