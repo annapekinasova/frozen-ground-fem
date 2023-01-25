@@ -161,6 +161,14 @@ def main():
         m.spec_heat_cap_solids = -0.6
     except ValueError:
         print("raised ValueError as expected")
+        
+    ip = IntegrationPoint1D(0.5, 0.3, 0.05)
+    print('created IntegrationPoint1D with NULL_MATERIAL')
+    print(f'ip.material.dens_solids: {ip.material.dens_solids}')
+        
+    ip = IntegrationPoint1D(0.5, 0.3, 0.05, m)
+    print('created IntegrationPoint1D with a Material')
+    print(f'ip.material.dens_solids: {ip.material.dens_solids}')
 
 if __name__ == "__main__":
     main()

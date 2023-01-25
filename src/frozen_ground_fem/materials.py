@@ -59,3 +59,6 @@ class Material:
     def _update_vol_heat_cap_solids(self):
         self._vol_heat_cap_solids = (self.dens_solids
                                      * self.spec_heat_cap_solids)
+                                     
+                                     
+NULL_MATERIAL = Material()
