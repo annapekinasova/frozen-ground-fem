@@ -1,5 +1,14 @@
 import numpy as np
 
+from frozen_ground_fem.materials import (
+    Material,
+    NULL_MATERIAL,
+    thrm_cond_ice as lam_i,
+    thrm_cond_water as lam_w,
+    vol_heat_cap_ice as C_i,
+    vol_heat_cap_water as C_w,
+    )
+
 
 class Point1D:
 
@@ -44,12 +53,14 @@ class Node1D(Point1D):
 
 class IntegrationPoint1D(Point1D):
 
-    def __init__(self, coord=0., porosity=0., vol_ice_cont=0.):
+    def __init__(self, coord=0., porosity=0., vol_ice_cont=0.,
+                 material=NULL_MATERIAL):
         super().__init__(coord)
         self._porosity = np.zeros((1,))
         self._vol_ice_cont = np.zeros((1,))
         self.porosity = porosity
         self.vol_ice_cont = vol_ice_cont
+        self.material = material
 
     @property
     def porosity(self):
@@ -73,6 +84,32 @@ class IntegrationPoint1D(Point1D):
             raise ValueError(f"vol_ice_cont value {value} "
                              + f"not between 0.0 and porosity={self.porosity}")
         self._vol_ice_cont[0] = value
+
+    @property
+    def material(self):
+        return self._material
+
+    @material.setter
+    def material(self, value):
+        if not isinstance(value, Material):
+            raise TypeError(f'{value} is not a Material object')
+        self._material = value
+
+    @property
+    def thrm_cond(self):
+        lam_s = self.material.thrm_cond_solids
+        por = self.porosity
+        th_i = self.vol_ice_cont
+        th_w = por - th_i
+        return (lam_s ** (1 - por)) * (lam_i ** th_i) * (lam_w ** th_w)
+
+    @property
+    def vol_heat_cap(self):
+        C_s = self.material.vol_heat_cap_solids
+        por = self.porosity
+        th_i = self.vol_ice_cont
+        th_w = por - th_i
+        return ((1 - por) * C_s) + (th_i * C_i) + (th_w * C_w)
 
     def __str__(self):
         return (super().__str__()
