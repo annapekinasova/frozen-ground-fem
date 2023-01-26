@@ -169,6 +169,7 @@ def main():
     ip = IntegrationPoint1D(0.5, 0.3, 0.05, m)
     print('created IntegrationPoint1D with a Material')
     print(f'ip.material.dens_solids: {ip.material.dens_solids}')
+    print(f'ip.thrm_cond: {ip.thrm_cond}')
 
 if __name__ == "__main__":
     main()

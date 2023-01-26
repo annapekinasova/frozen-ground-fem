@@ -3,6 +3,8 @@ import numpy as np
 from frozen_ground_fem.materials import (
     Material,
     NULL_MATERIAL,
+    thrm_cond_ice as lam_i,
+    thrm_cond_water as lam_w,
     )
 
 
@@ -90,6 +92,14 @@ class IntegrationPoint1D(Point1D):
         if not isinstance(value, Material):
             raise TypeError(f'{value} is not a Material object')
         self._material = value
+    
+    @property
+    def thrm_cond(self):
+        lam_s = self.material.thrm_cond_solids
+        por = self.porosity
+        th_i = self.vol_ice_cont
+        th_w = por - th_i
+        return (lam_s ** (1 - por)) * (lam_i ** th_i) * (lam_w ** th_w)
 
     def __str__(self):
         return (super().__str__()
