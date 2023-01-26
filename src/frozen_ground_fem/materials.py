@@ -5,8 +5,8 @@ thrm_cond_ice = 2.22  # W.m^{-1}.K^{-1}
 
 
 class Material:
-    
-    def __init__(self, 
+
+    def __init__(self,
                  thrm_cond_solids=0.,
                  dens_solids=0.,
                  spec_heat_cap_solids=0.):
@@ -27,7 +27,7 @@ class Material:
         if value < 0.:
             raise ValueError(f'thrm_cond_solids {value} is not positive')
         self._thrm_cond_solids = value
-        
+
     @property
     def dens_solids(self):
         return self._dens_solids
@@ -39,7 +39,7 @@ class Material:
             raise ValueError(f'dens_solids {value} is not positive')
         self._dens_solids = value
         self._update_vol_heat_cap_solids()
-        
+
     @property
     def spec_heat_cap_solids(self):
         return self._spec_heat_cap_solids
@@ -51,14 +51,14 @@ class Material:
             raise ValueError(f'spec_heat_cap_solids {value} is not positive')
         self._spec_heat_cap_solids = value
         self._update_vol_heat_cap_solids()
-        
+
     @property
     def vol_heat_cap_solids(self):
         return self._vol_heat_cap_solids
-                                     
+
     def _update_vol_heat_cap_solids(self):
         self._vol_heat_cap_solids = (self.dens_solids
                                      * self.spec_heat_cap_solids)
-                                     
-                                     
+
+
 NULL_MATERIAL = Material()

@@ -109,15 +109,15 @@ def main():
         ip.vol_ice_cont = 0.6
     except ValueError:
         print("raised ValueError as expected")
-        
+
     # testing materials module
     print(f"vol_heat_cap_ice: {vol_heat_cap_ice}")
     print(f"vol_heat_cap_water: {vol_heat_cap_water}")
     print(f"thrm_cond_water: {thrm_cond_water}")
     print(f"thrm_cond_ice: {thrm_cond_ice}")
-    
+
     # testing Material class
-    m = Material(thrm_cond_solids=7.8, 
+    m = Material(thrm_cond_solids=7.8,
                  dens_solids=2.5e3,
                  spec_heat_cap_solids=7.41e5)
     print(m)
@@ -161,16 +161,17 @@ def main():
         m.spec_heat_cap_solids = -0.6
     except ValueError:
         print("raised ValueError as expected")
-        
+
     ip = IntegrationPoint1D(0.5, 0.3, 0.05)
     print('created IntegrationPoint1D with NULL_MATERIAL')
     print(f'ip.material.dens_solids: {ip.material.dens_solids}')
-        
+
     ip = IntegrationPoint1D(0.5, 0.3, 0.05, m)
     print('created IntegrationPoint1D with a Material')
     print(f'ip.material.dens_solids: {ip.material.dens_solids}')
     print(f'ip.thrm_cond: {ip.thrm_cond}')
     print(f'ip.vol_heat_cap: {ip.vol_heat_cap}')
+
 
 if __name__ == "__main__":
     main()
