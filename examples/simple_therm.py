@@ -170,6 +170,7 @@ def main():
     print('created IntegrationPoint1D with a Material')
     print(f'ip.material.dens_solids: {ip.material.dens_solids}')
     print(f'ip.thrm_cond: {ip.thrm_cond}')
+    print(f'ip.vol_heat_cap: {ip.vol_heat_cap}')
 
 if __name__ == "__main__":
     main()

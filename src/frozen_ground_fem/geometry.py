@@ -5,6 +5,8 @@ from frozen_ground_fem.materials import (
     NULL_MATERIAL,
     thrm_cond_ice as lam_i,
     thrm_cond_water as lam_w,
+    vol_heat_cap_ice as C_i,
+    vol_heat_cap_water as C_w,
     )
 
 
@@ -100,7 +102,15 @@ class IntegrationPoint1D(Point1D):
         th_i = self.vol_ice_cont
         th_w = por - th_i
         return (lam_s ** (1 - por)) * (lam_i ** th_i) * (lam_w ** th_w)
-
+    
+    @property
+    def vol_heat_cap(self):
+        C_s = self.material.vol_heat_cap_solids
+        por = self.porosity
+        th_i = self.vol_ice_cont
+        th_w = por - th_i
+        return ((1 - por) * C_s) + (th_i * C_i) + (th_w * C_w) 
+        
     def __str__(self):
         return (super().__str__()
                 + f", porosity={self.porosity}"
