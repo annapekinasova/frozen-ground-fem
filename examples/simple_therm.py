@@ -2,7 +2,9 @@ from frozen_ground_fem.geometry import (
     Point1D,
     Node1D,
     IntegrationPoint1D,
+    Element1D,
     )
+
 from frozen_ground_fem.materials import (
     vol_heat_cap_water,
     vol_heat_cap_ice,
@@ -178,6 +180,38 @@ def main():
     print(f'ip.thrm_cond: {ip.thrm_cond}')
     print(f'ip.vol_heat_cap: {ip.vol_heat_cap}')
 
+    # testing Element1D
+    nodes = [Node1D(k, 2 * k) for k in range(10)]
+    e0 = Element1D(nodes[2:4])
+    print(f'e0.nodes[0].index: {e0.nodes[0].index}')
+    print(f'e0.nodes[0].z: {e0.nodes[0].z}')
+    print(f'e0.nodes[1].index: {e0.nodes[1].index}')
+    print(f'e0.nodes[1].z: {e0.nodes[1].z}')
+
+    print("trying e = Element1D(2)")
+    try:
+        e = Element1D(2)
+    except TypeError:
+        print("raised TypeError as expected")
+
+    print("trying e = Element1D(Node1D(2))")
+    try:
+        e = Element1D(Node1D(2))
+    except TypeError:
+        print("raised TypeError as expected")
+
+    print("trying e = Element1D(nodes[3:6])")
+    try:
+        e = Element1D(nodes[3:6])
+    except ValueError:
+        print("raised ValueError as expected")
+
+    print("trying e = Element1D([2, 3])")
+    try:
+        e = Element1D([2, 3])
+    except TypeError:
+        print("raised TypeError as expected")
+    
 
 if __name__ == "__main__":
     main()

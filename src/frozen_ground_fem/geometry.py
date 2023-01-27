@@ -125,3 +125,19 @@ class IntegrationPoint1D(Point1D):
         return (super().__str__()
                 + f", porosity={self.porosity}"
                 + f", vol_ice_cont={self.vol_ice_cont}")
+    
+
+class Element1D:
+
+    def __init__(self, nodes):
+        # check for valid node list and assign to self
+        if (nnod := len(nodes)) != 2:
+            raise ValueError(f'len(nodes) is {nnod} not equal to 2')
+        for nd in nodes:
+            if not isinstance(nd, Node1D):
+                raise TypeError('nodes contains invalid objects, not Node1D')
+        self._nodes = tuple(nodes)
+
+    @property
+    def nodes(self):
+        return self._nodes
