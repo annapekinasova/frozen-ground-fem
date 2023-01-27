@@ -34,22 +34,32 @@ class Point1D:
 
 class Node1D(Point1D):
 
-    def __init__(self, coord=0., temp=0.):
+    def __init__(self, index, coord=0., temp=0.):
         super().__init__(coord)
         self._temp = np.zeros((1,))
         self.temp = temp
+        self._index = None
+        self.index = index
 
     @property
     def temp(self):
         return self._temp[0]
-
+    
     @temp.setter
     def temp(self, value):
         self._temp[0] = value
 
+    @property
+    def index(self):
+        return self._index
+    
+    @index.setter
+    def index(self, value):
+        self._index = int(value)
+
     def __str__(self):
         return super().__str__() + f", temp={self.temp}"
-
+    
 
 class IntegrationPoint1D(Point1D):
 

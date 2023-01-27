@@ -38,15 +38,21 @@ def main():
         print("raised ValueError as expected")
 
     # testing Node1D
-    nd = Node1D(0.5, -5)
+    nd = Node1D(1, 0.5, -5)
     print(f"created a Node1D with ID {id(nd)}")
-    print(f"z: {nd.z}, temp: {nd.temp}")
+    print(f"index: {nd.index}, z: {nd.z}, temp: {nd.temp}")
     nd.temp = -2
-    print(f"z: {nd.z}, temp: {nd.temp}")
+    print(f"index: {nd.index}, z: {nd.z}, temp: {nd.temp}")
     print(f"type(nd) is Node1D: {type(nd) is Node1D}")
     print(f"type(nd) is Point1D: {type(nd) is Point1D}")
     print(f"isinstance(nd, Node1D): {isinstance(nd, Node1D)}")
     print(f"isinstance(nd, Point1D): {isinstance(nd, Point1D)}")
+
+    print("trying nd.index = 'three'")
+    try:
+        nd.index = 'three'
+    except ValueError:
+        print("raised ValueError as expected")
 
     print("trying nd.temp = 'three'")
     try:
