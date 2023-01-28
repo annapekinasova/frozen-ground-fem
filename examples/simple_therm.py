@@ -1,4 +1,6 @@
 from frozen_ground_fem.geometry import (
+    shape_matrix,
+    gradient_matrix,
     Point1D,
     Node1D,
     IntegrationPoint1D,
@@ -211,6 +213,34 @@ def main():
         e = Element1D([2, 3])
     except TypeError:
         print("raised TypeError as expected")
+        
+    # testing shape_matrix() and gradient_matrix()
+    print(f'shape_matrix(0.1): {shape_matrix(0.1)}')
+    print(f'gradient_matrix(0.1, 0.5): {gradient_matrix(0.1, 0.5)}')
+
+    print("trying shape_matrix([2, 3])")
+    try:
+        shape_matrix([2, 3])
+    except TypeError:
+        print("raised TypeError as expected")
+
+    print("trying shape_matrix('zero point one')")
+    try:
+        shape_matrix('zero point one')
+    except ValueError:
+        print("raised ValueError as expected")
+
+    print("trying gradient_matrix(0.1, [2, 3])")
+    try:
+        gradient_matrix(0.1, [2, 3])
+    except TypeError:
+        print("raised TypeError as expected")
+
+    print("trying gradient_matrix(0.1, 'zero point one')")
+    try:
+        gradient_matrix(0.1, 'zero point one')
+    except ValueError:
+        print("raised ValueError as expected")
     
 
 if __name__ == "__main__":

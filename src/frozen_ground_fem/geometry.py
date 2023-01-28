@@ -10,6 +10,17 @@ from frozen_ground_fem.materials import (
     )
 
 
+def shape_matrix(s):
+    s = float(s)
+    return np.array([[(1. - s), s]])
+
+
+def gradient_matrix(s, dz):
+    s = float(s)
+    dz = float(dz)
+    return np.array([[-1., 1.]]) / dz
+
+
 class Point1D:
 
     def __init__(self, value=0.):
