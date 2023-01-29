@@ -11,28 +11,6 @@ from frozen_ground_fem.materials import (
 def main():
     print("successfully imported frozen_ground_fem")
 
-    # testing Point1D
-    p = Point1D(3)
-    print(f"created a Point1D with ID {id(p)}")
-    print(f"coords: {p.coords}")
-    print(f"z: {p.z}")
-    p.z = 2
-    print(f"z: {p.z}")
-    print(f"type(p) is Node1D: {type(p) is Node1D}")
-    print(f"type(p) is Point1D: {type(p) is Point1D}")
-    print(f"isinstance(p, Node1D): {isinstance(p, Node1D)}")
-    print(f"isinstance(p, Point1D): {isinstance(p, Point1D)}")
-
-    point_list = [Point1D(k) for k in range(10)]
-    for pp in point_list:
-        print(pp.z)
-
-    print("trying p = Point1D('three')")
-    try:
-        p = Point1D("three")
-    except ValueError:
-        print("raised ValueError as expected")
-
     # testing Node1D
     nd = Node1D(0.5, -5)
     print(f"created a Node1D with ID {id(nd)}")
