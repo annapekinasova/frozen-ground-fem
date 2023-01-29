@@ -8,10 +8,6 @@ from frozen_ground_fem.geometry import (
     )
 
 from frozen_ground_fem.materials import (
-    vol_heat_cap_water,
-    vol_heat_cap_ice,
-    thrm_cond_water,
-    thrm_cond_ice,
     Material,
     )
 
@@ -120,57 +116,10 @@ def main():
     except ValueError:
         print("raised ValueError as expected")
 
-    # testing materials module
-    print(f"vol_heat_cap_ice: {vol_heat_cap_ice}")
-    print(f"vol_heat_cap_water: {vol_heat_cap_water}")
-    print(f"thrm_cond_water: {thrm_cond_water}")
-    print(f"thrm_cond_ice: {thrm_cond_ice}")
-
     # testing Material class
     m = Material(thrm_cond_solids=7.8,
                  dens_solids=2.5e3,
                  spec_heat_cap_solids=7.41e5)
-    print(m)
-    print(f'thrm_cond_solids: {m.thrm_cond_solids}')
-    print(f'dens_solids: {m.dens_solids}')
-    print(f'spec_heat_cap_solids: {m.spec_heat_cap_solids}')
-    print(f'vol_heat_cap_solids: {m.vol_heat_cap_solids}')
-
-    print("trying m.thrm_cond_solids = 'three'")
-    try:
-        m.thrm_cond_solids = 'three'
-    except ValueError:
-        print("raised ValueError as expected")
-
-    print("trying m.thrm_cond_solids = -0.6")
-    try:
-        m.thrm_cond_solids = -0.6
-    except ValueError:
-        print("raised ValueError as expected")
-
-    print("trying m.dens_solids = 'three'")
-    try:
-        m.dens_solids = 'three'
-    except ValueError:
-        print("raised ValueError as expected")
-
-    print("trying m.dens_solids = -0.6")
-    try:
-        m.dens_solids = -0.6
-    except ValueError:
-        print("raised ValueError as expected")
-
-    print("trying m.spec_heat_cap_solids = 'three'")
-    try:
-        m.spec_heat_cap_solids = 'three'
-    except ValueError:
-        print("raised ValueError as expected")
-
-    print("trying m.spec_heat_cap_solids = -0.6")
-    try:
-        m.spec_heat_cap_solids = -0.6
-    except ValueError:
-        print("raised ValueError as expected")
 
     ip = IntegrationPoint1D(0.5, 0.3, 0.05)
     print('created IntegrationPoint1D with NULL_MATERIAL')
