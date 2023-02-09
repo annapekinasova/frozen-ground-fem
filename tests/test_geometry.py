@@ -55,27 +55,27 @@ class TestPoint1DSetters(unittest.TestCase):
 
     def setUp(self):
         self.p = Point1D()
-        
+
     def test_set_z_valid_float(self):
         self.p.z = 1.
         self.assertEqual(self.p.z, 1.)
-        
+
     def test_set_z_valid_int(self):
         self.p.z = 1
         self.assertEqual(self.p.z, 1.)
-        
+
     def test_set_z_valid_int_type(self):
         self.p.z = 1
         self.assertIsInstance(self.p.z, float)
-        
+
     def test_set_z_valid_str(self):
         self.p.z = "1.e5"
         self.assertEqual(self.p.z, 1.e5)
-        
+
     def test_set_z_invalid_str(self):
         with self.assertRaises(ValueError):
             self.p.z = "five"
-            
+
     def test_set_coords_invalid(self):
         with self.assertRaises(AttributeError):
             self.p.coords = 1.
