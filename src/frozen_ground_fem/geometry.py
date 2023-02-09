@@ -1,3 +1,8 @@
+"""frozen_ground_fem.geometry.py - A module for classes
+for finite element model geometry.
+
+"""
+
 import numpy as np
 
 from frozen_ground_fem.materials import (
@@ -22,6 +27,13 @@ def gradient_matrix(s, dz):
 
 
 class Point1D:
+    """Class for storing the coordinates of a point.
+
+    Attributes
+    ----------
+    coords
+    z
+    """
 
     def __init__(self, value=0.):
         self._coords = np.zeros((1,))
@@ -29,10 +41,32 @@ class Point1D:
 
     @property
     def coords(self):
+        """Coordinates of the point as an array.
+
+        Returns
+        -------
+        (1, ) numpy.ndarray
+        """
         return self._coords
 
     @property
     def z(self):
+        """Coordinate of the point.
+
+        Parameters
+        ----------
+        float or int or str
+            The value to assign to the coordinate.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to assign cannot be converted to float.
+        """
         return self.coords[0]
 
     @z.setter
@@ -44,6 +78,15 @@ class Point1D:
 
 
 class Node1D(Point1D):
+    """Class for storing the properties of a node.
+    Inherits from :c:`Point1D`.
+
+    Attributes
+    ----------
+    coords
+    z
+    temp
+    """
 
     def __init__(self, index, coord=0., temp=0.):
         super().__init__(coord)
@@ -54,6 +97,22 @@ class Node1D(Point1D):
 
     @property
     def temp(self):
+        """Temperature of the node.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the temperature of the :c:`Node1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+        """
         return self._temp[0]
     
     @temp.setter
@@ -73,6 +132,19 @@ class Node1D(Point1D):
     
 
 class IntegrationPoint1D(Point1D):
+    """Class for storing the properties of an integration point.
+    Inherits from :c:`Point1D`.
+
+    Attributes
+    ----------
+    coords
+    z
+    porosity
+    vol_ice_cont
+    material
+    thrm_cond
+    vol_heat_cap
+    """
 
     def __init__(self, coord=0., porosity=0., vol_ice_cont=0.,
                  material=NULL_MATERIAL):
@@ -85,6 +157,23 @@ class IntegrationPoint1D(Point1D):
 
     @property
     def porosity(self):
+        """Porosity of the integration point.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the porosity of the :c:`IntegrationPoint1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0. or value > 1.
+        """
         return self._porosity[0]
 
     @porosity.setter
@@ -96,6 +185,24 @@ class IntegrationPoint1D(Point1D):
 
     @property
     def vol_ice_cont(self):
+        """Volumetric ice content of the integration point.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the volumetric ice content of the
+            :c:`IntegrationPoint1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0. or value > 1.
+        """
         return self._vol_ice_cont[0]
 
     @vol_ice_cont.setter
@@ -108,6 +215,22 @@ class IntegrationPoint1D(Point1D):
 
     @property
     def material(self):
+        """Contains the properties of the solids.
+
+        Parameters
+        ----------
+        frozen_ground_fem.materials.Material
+
+        Returns
+        -------
+        frozen_ground_fem.materials.Material
+
+        Raises
+        ------
+        TypeError
+            If value to assign is not an instance of
+            :c:`frozen_ground_fem.materials.Material`.
+        """
         return self._material
 
     @material.setter
@@ -118,6 +241,24 @@ class IntegrationPoint1D(Point1D):
 
     @property
     def thrm_cond(self):
+        """Contains the bulk thermal conductivity of the integration point.
+
+        Returns
+        ------
+        float
+
+        Notes
+        -----
+        Calculated according to the geometric mean formula [1]_::
+
+            lam = (lam_s ** (1 - por)) * (lam_i ** th_i) * (lam_w ** th_w)
+
+        References
+        ----------
+        .. [1] Côté, J. and Konrad, J.-M. 2005. A generalized thermal
+           conductivity model for soils and construction materials. Canadian
+           Geotechnical Journal 42(2): 443-458, doi: 10.1139/t04-106.
+        """
         lam_s = self.material.thrm_cond_solids
         por = self.porosity
         th_i = self.vol_ice_cont
@@ -126,6 +267,23 @@ class IntegrationPoint1D(Point1D):
 
     @property
     def vol_heat_cap(self):
+        """Contains the volumetric heat capacity of the integration point.
+
+        Returns
+        ------
+        float
+
+        Notes
+        -----
+        Calculated according to the volume averaging formula [1]_::
+
+            C = (1 - por) * C_s + th_i * C_i + th_w * C_w
+
+        References
+        ----------
+        .. [1] Andersland, O. and Ladanyi, B. 2004. Frozen Ground Engineering,
+           2nd ed. Wiley: Hoboken, N.J.
+        """
         C_s = self.material.vol_heat_cap_solids
         por = self.porosity
         th_i = self.vol_ice_cont
