@@ -117,30 +117,30 @@ def main():
     print(f'e0.nodes[1].index: {e0.nodes[1].index}')
     print(f'e0.nodes[1].z: {e0.nodes[1].z}')
 
-    print("trying e = Element1D(2)")
+    print("trying Element1D(2)")
     try:
-        e = Element1D(2)
+        Element1D(2)
     except TypeError:
         print("raised TypeError as expected")
 
-    print("trying e = Element1D(Node1D(2))")
+    print("trying Element1D(Node1D(2))")
     try:
-        e = Element1D(Node1D(2))
+        Element1D(Node1D(2))
     except TypeError:
         print("raised TypeError as expected")
 
-    print("trying e = Element1D(nodes[3:6])")
+    print("trying Element1D(nodes[3:6])")
     try:
-        e = Element1D(nodes[3:6])
+        Element1D(nodes[3:6])
     except ValueError:
         print("raised ValueError as expected")
 
-    print("trying e = Element1D([2, 3])")
+    print("trying Element1D([2, 3])")
     try:
-        e = Element1D([2, 3])
+        Element1D([2, 3])
     except TypeError:
         print("raised TypeError as expected")
-        
+
     # testing shape_matrix() and gradient_matrix()
     print(f'shape_matrix(0.1): {shape_matrix(0.1)}')
     print(f'gradient_matrix(0.1, 0.5): {gradient_matrix(0.1, 0.5)}')
@@ -168,7 +168,7 @@ def main():
         gradient_matrix(0.1, 'zero point one')
     except ValueError:
         print("raised ValueError as expected")
-    
+
 
 if __name__ == "__main__":
     main()

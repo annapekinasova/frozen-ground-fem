@@ -114,7 +114,7 @@ class Node1D(Point1D):
             If value to assign is not convertible to float.
         """
         return self._temp[0]
-    
+
     @temp.setter
     def temp(self, value):
         self._temp[0] = value
@@ -122,14 +122,14 @@ class Node1D(Point1D):
     @property
     def index(self):
         return self._index
-    
+
     @index.setter
     def index(self, value):
         self._index = int(value)
 
     def __str__(self):
         return super().__str__() + f", temp={self.temp}"
-    
+
 
 class IntegrationPoint1D(Point1D):
     """Class for storing the properties of an integration point.
@@ -294,7 +294,7 @@ class IntegrationPoint1D(Point1D):
         return (super().__str__()
                 + f", porosity={self.porosity}"
                 + f", vol_ice_cont={self.vol_ice_cont}")
-    
+
 
 class Element1D:
 
