@@ -541,19 +541,21 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         self.assertAlmostEqual(self.p.vol_heat_cap, expected, delta=1e-8)
 
 
-class TestElement1DInitializers(unittest.TestCase):
+class TestElement1D(unittest.TestCase):
+
+    def setUp(self):
+        self.nodes = tuple(Node1D(k, 2. * k + 1.) for k in range(2))
+        self.e = Element1D(self.nodes)
 
     def test_initialize_without_nodes(self):
         with self.assertRaises(TypeError):
             Element1D()
 
     def test_initialize_valid_nodes_value(self):
-        nodes = tuple(Node1D(k, 2. * k + 1.) for k in range(2))
-        e = Element1D(nodes)
-        self.assertEqual(e.nodes[1].z, 3.)
+        self.assertEqual(self.e.nodes[1].z, 3.)
 
     def test_initialize_valid_nodes_type(self):
-        nodes = [Node1D(k, 2. * k + 1.) for k in range(2)]
+        nodes = list(self.nodes)
         e = Element1D(nodes)
         self.assertIsInstance(e.nodes, tuple)
 
@@ -571,6 +573,13 @@ class TestElement1DInitializers(unittest.TestCase):
         with self.assertRaises(TypeError):
             nodes = tuple(k for k in range(2))
             Element1D(nodes)
+
+    def test_jacobian_value(self):
+        self.assertEqual(self.e.jacobian, 2.)
+
+    def test_set_jacobian(self):
+        with self.assertRaises(AttributeError):
+            self.e.jacobian = 5.
 
 
 if __name__ == "__main__":

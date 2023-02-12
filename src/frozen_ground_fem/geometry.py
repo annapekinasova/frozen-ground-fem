@@ -385,6 +385,7 @@ class Element1D:
     Attributes
     ----------
     nodes
+    jacobian
 
     Raises
     ------
@@ -412,3 +413,13 @@ class Element1D:
         tuple of :c:`Node1D`
         """
         return self._nodes
+
+    @property
+    def jacobian(self):
+        """The length scale of the element (in Lagrangian coordinates).
+
+        Returns
+        -------
+        float
+        """
+        return self.nodes[1].z - self.nodes[0].z
