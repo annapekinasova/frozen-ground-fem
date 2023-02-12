@@ -164,6 +164,8 @@ class IntegrationPoint1D(Point1D):
     ----------
     coords
     z
+    local_coord
+    weight
     porosity
     vol_ice_cont
     material
@@ -171,14 +173,70 @@ class IntegrationPoint1D(Point1D):
     vol_heat_cap
     """
 
-    def __init__(self, coord=0., porosity=0., vol_ice_cont=0.,
+    def __init__(self, coord=0., local_coord=0., weight=0.,
+                 porosity=0., vol_ice_cont=0.,
                  material=NULL_MATERIAL):
         super().__init__(coord)
+        self._local_coord = np.zeros((1,))
+        self._weight = np.zeros((1,))
         self._porosity = np.zeros((1,))
         self._vol_ice_cont = np.zeros((1,))
+        self.local_coord = local_coord
+        self.weight = weight
         self.porosity = porosity
         self.vol_ice_cont = vol_ice_cont
         self.material = material
+
+    @property
+    def local_coord(self):
+        """Local coordinate of the integration point.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the local coordinate of the
+            :c:`IntegrationPoint1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+        """
+        return self._local_coord[0]
+
+    @local_coord.setter
+    def local_coord(self, value):
+        value = float(value)
+        self._local_coord[0] = value
+
+    @property
+    def weight(self):
+        """Quadrature weight of the integration point.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the weight of the :c:`IntegrationPoint1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+        """
+        return self._weight[0]
+
+    @weight.setter
+    def weight(self, value):
+        value = float(value)
+        self._weight[0] = value
 
     @property
     def porosity(self):

@@ -250,6 +250,18 @@ class TestIntegrationPoint1DDefaults(unittest.TestCase):
     def test_coords_shape(self):
         self.assertEqual(self.p.coords.shape, (1, ))
 
+    def test_local_coord_value(self):
+        self.assertEqual(self.p.local_coord, 0.)
+
+    def test_local_coord_type(self):
+        self.assertIsInstance(self.p.local_coord, float)
+
+    def test_weight_value(self):
+        self.assertEqual(self.p.weight, 0.)
+
+    def test_weight_type(self):
+        self.assertIsInstance(self.p.weight, float)
+
     def test_porosity_value(self):
         self.assertEqual(self.p.porosity, 0.)
 
@@ -275,7 +287,7 @@ class TestIntegrationPoint1DInitializers(unittest.TestCase):
         self.m = Material(thrm_cond_solids=7.8,
                           dens_solids=2.5e3,
                           spec_heat_cap_solids=7.41e5)
-        self.p = IntegrationPoint1D(1., 0.5, 0.2, self.m)
+        self.p = IntegrationPoint1D(1., -0.33, 1.0, 0.5, 0.2, self.m)
 
     def test_z_value(self):
         self.assertEqual(self.p.z, 1.)
@@ -292,6 +304,18 @@ class TestIntegrationPoint1DInitializers(unittest.TestCase):
 
     def test_coords_shape(self):
         self.assertEqual(self.p.coords.shape, (1, ))
+
+    def test_local_coord_value(self):
+        self.assertEqual(self.p.local_coord, -0.33)
+
+    def test_local_coord_type(self):
+        self.assertIsInstance(self.p.local_coord, float)
+
+    def test_weight_value(self):
+        self.assertEqual(self.p.weight, 1.)
+
+    def test_weight_type(self):
+        self.assertIsInstance(self.p.weight, float)
 
     def test_porosity_value(self):
         self.assertEqual(self.p.porosity, 0.5)
@@ -326,7 +350,7 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         self.m = Material(thrm_cond_solids=7.8,
                           dens_solids=2.5e3,
                           spec_heat_cap_solids=7.41e5)
-        self.p = IntegrationPoint1D(1., 0.3, 0.2, self.m)
+        self.p = IntegrationPoint1D(1., -0.33, 1.0, 0.3, 0.2, self.m)
 
     def test_set_z_valid_float(self):
         self.p.z = 1.
@@ -351,6 +375,46 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
     def test_set_coords_invalid(self):
         with self.assertRaises(AttributeError):
             self.p.coords = 1.
+
+    def test_set_local_coord_valid_float(self):
+        self.p.local_coord = 1.
+        self.assertEqual(self.p.local_coord, 1.)
+
+    def test_set_local_coord_valid_int(self):
+        self.p.local_coord = 1
+        self.assertEqual(self.p.local_coord, 1.)
+
+    def test_set_local_coord_valid_int_type(self):
+        self.p.local_coord = 1
+        self.assertIsInstance(self.p.local_coord, float)
+
+    def test_set_local_coord_valid_str(self):
+        self.p.local_coord = "1.e0"
+        self.assertEqual(self.p.local_coord, 1.)
+
+    def test_set_local_coord_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.p.local_coord = "five"
+
+    def test_set_weight_valid_float(self):
+        self.p.weight = 2.
+        self.assertEqual(self.p.weight, 2.)
+
+    def test_set_weight_valid_int(self):
+        self.p.weight = 2
+        self.assertEqual(self.p.weight, 2.)
+
+    def test_set_weight_valid_int_type(self):
+        self.p.weight = 2
+        self.assertIsInstance(self.p.weight, float)
+
+    def test_set_weight_valid_str(self):
+        self.p.weight = "1.e0"
+        self.assertEqual(self.p.weight, 1.)
+
+    def test_set_weight_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.p.weight = "five"
 
     def test_set_porosity_valid_float(self):
         self.p.porosity = 0.5
