@@ -6,6 +6,7 @@ from frozen_ground_fem.geometry import (
         Point1D,
         Node1D,
         IntegrationPoint1D,
+        Element1D,
         )
 from frozen_ground_fem.materials import (
         Material,
@@ -538,6 +539,38 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
                                    spec_heat_cap_solids=6.43e5)
         expected = 1.261076600e9
         self.assertAlmostEqual(self.p.vol_heat_cap, expected, delta=1e-8)
+
+
+class TestElement1DInitializers(unittest.TestCase):
+
+    def test_initialize_without_nodes(self):
+        with self.assertRaises(TypeError):
+            Element1D()
+
+    def test_initialize_valid_nodes_value(self):
+        nodes = tuple(Node1D(k, 2. * k + 1.) for k in range(2))
+        e = Element1D(nodes)
+        self.assertEqual(e.nodes[1].z, 3.)
+
+    def test_initialize_valid_nodes_type(self):
+        nodes = [Node1D(k, 2. * k + 1.) for k in range(2)]
+        e = Element1D(nodes)
+        self.assertIsInstance(e.nodes, tuple)
+
+    def test_initialize_too_few_nodes(self):
+        with self.assertRaises(ValueError):
+            nodes = (Node1D(0), )
+            Element1D(nodes)
+
+    def test_initialize_too_many_nodes(self):
+        with self.assertRaises(ValueError):
+            nodes = tuple(Node1D(k, 2. * k + 1.) for k in range(3))
+            Element1D(nodes)
+
+    def test_initialize_invalid_nodes(self):
+        with self.assertRaises(TypeError):
+            nodes = tuple(k for k in range(2))
+            Element1D(nodes)
 
 
 if __name__ == "__main__":

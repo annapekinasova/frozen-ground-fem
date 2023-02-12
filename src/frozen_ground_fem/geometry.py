@@ -380,6 +380,19 @@ class IntegrationPoint1D(Point1D):
 
 
 class Element1D:
+    """Class for organizing element level information.
+
+    Attributes
+    ----------
+    nodes
+
+    Raises
+    ------
+    TypeError
+        If nodes initializer contains non-:c:`Node1D` objects.
+    ValueError
+        If len(nodes) != 2.
+    """
 
     def __init__(self, nodes):
         # check for valid node list and assign to self
@@ -392,4 +405,10 @@ class Element1D:
 
     @property
     def nodes(self):
+        """The tuple of :c:`Node1D` contained in the element.
+
+        Returns
+        ------
+        tuple of :c:`Node1D`
+        """
         return self._nodes
