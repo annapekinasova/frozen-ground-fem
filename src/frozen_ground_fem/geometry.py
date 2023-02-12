@@ -83,6 +83,7 @@ class Node1D(Point1D):
 
     Attributes
     ----------
+    index
     coords
     z
     temp
@@ -121,11 +122,35 @@ class Node1D(Point1D):
 
     @property
     def index(self):
+        """Index of the node.
+
+        Parameters
+        ----------
+        int
+            Value to assign to the index of the :c:`Node1D`.
+
+        Returns
+        -------
+        int
+
+        Raises
+        ------
+        TypeError
+            If value to assign is a float.
+        ValueError
+            If value to assign is a str not convertible to int.
+            If value to assign is negative.
+        """
         return self._index
 
     @index.setter
     def index(self, value):
-        self._index = int(value)
+        if isinstance(value, float):
+            raise TypeError(f'{value} is a float, must be int')
+        _value = int(value)
+        if _value < 0:
+            raise ValueError(f'{_value} is negative')
+        self._index = _value
 
     def __str__(self):
         return super().__str__() + f", temp={self.temp}"

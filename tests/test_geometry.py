@@ -90,7 +90,13 @@ class TestPoint1DSetters(unittest.TestCase):
 class TestNode1DDefaults(unittest.TestCase):
 
     def setUp(self):
-        self.p = Node1D()
+        self.p = Node1D(0)
+
+    def test_index_value(self):
+        self.assertEqual(self.p.index, 0)
+
+    def test_index_type(self):
+        self.assertIsInstance(self.p.index, int)
 
     def test_z_value(self):
         self.assertEqual(self.p.z, 0.)
@@ -118,7 +124,13 @@ class TestNode1DDefaults(unittest.TestCase):
 class TestNode1DInitializers(unittest.TestCase):
 
     def setUp(self):
-        self.p = Node1D(1., -5.)
+        self.p = Node1D(0, 1., -5.)
+
+    def test_index_value(self):
+        self.assertEqual(self.p.index, 0)
+
+    def test_index_type(self):
+        self.assertIsInstance(self.p.index, int)
 
     def test_z_value(self):
         self.assertEqual(self.p.z, 1.)
@@ -146,7 +158,31 @@ class TestNode1DInitializers(unittest.TestCase):
 class TestNode1DSetters(unittest.TestCase):
 
     def setUp(self):
-        self.p = Node1D()
+        self.p = Node1D(0)
+
+    def test_set_index_valid_int(self):
+        self.p.index = 2
+        self.assertEqual(self.p.index, 2)
+
+    def test_set_index_invalid_int(self):
+        with self.assertRaises(ValueError):
+            self.p.index = -2
+
+    def test_set_index_invalid_float(self):
+        with self.assertRaises(TypeError):
+            self.p.index = 2.1
+
+    def test_set_index_valid_str(self):
+        self.p.index = '2'
+        self.assertEqual(self.p.index, 2)
+
+    def test_set_index_invalid_str_float(self):
+        with self.assertRaises(ValueError):
+            self.p.index = '2.1'
+
+    def test_set_index_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.p.index = 'two'
 
     def test_set_z_valid_float(self):
         self.p.z = 1.
