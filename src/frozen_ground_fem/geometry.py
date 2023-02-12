@@ -403,6 +403,16 @@ class Element1D:
             if not isinstance(nd, Node1D):
                 raise TypeError('nodes contains invalid objects, not Node1D')
         self._nodes = tuple(nodes)
+        # initialize integration points
+        int_pt_coords = [0.211324865405187, 0.788675134594813]
+        int_pt_weights = [0.5, 0.5]
+        self._int_pts = tuple(IntegrationPoint1D(local_coord=xi, weight=wt)
+                              for (xi, wt) in
+                              zip(int_pt_coords, int_pt_weights))
+        z_e = np.array([[nd.z for nd in self.nodes]]).T
+        for ip in self.int_pts:
+            N = shape_matrix(ip.local_coord)
+            ip.z = float(N @ z_e)
 
     @property
     def nodes(self):
@@ -423,3 +433,13 @@ class Element1D:
         float
         """
         return self.nodes[1].z - self.nodes[0].z
+
+    @property
+    def int_pts(self):
+        """The tuple of :c:`IntegrationPoint1D` contained in the element.
+
+        Returns
+        ------
+        tuple of :c:`IntegrationPoint1D`
+        """
+        return self._int_pts

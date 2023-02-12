@@ -581,6 +581,28 @@ class TestElement1D(unittest.TestCase):
         with self.assertRaises(AttributeError):
             self.e.jacobian = 5.
 
+    def test_int_pt_local_coords(self):
+        expected = np.array([0.211324865405187, 0.788675134594813])
+        actual = np.array([ip.local_coord for ip in self.e.int_pts])
+        self.assertTrue(np.allclose(actual, expected))
+
+    def test_int_pt_weights(self):
+        expected = np.array([0.5, 0.5])
+        actual = np.array([ip.weight for ip in self.e.int_pts])
+        self.assertTrue(np.allclose(actual, expected))
+
+    def test_int_pt_global_coords(self):
+        expected = np.array([1.42264973081037, 2.57735026918963])
+        actual = np.array([ip.z for ip in self.e.int_pts])
+        self.assertTrue(np.allclose(actual, expected))
+
+    def test_int_pt_type(self):
+        self.assertIsInstance(self.e.int_pts, tuple)
+
+    def test_set_int_pt(self):
+        with self.assertRaises(AttributeError):
+            self.e.int_pts = 3
+
 
 if __name__ == "__main__":
     unittest.main()
