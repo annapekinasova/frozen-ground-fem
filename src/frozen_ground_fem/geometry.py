@@ -27,7 +27,7 @@ def shape_matrix(s):
     -------
     numpy.ndarray
         The shape function matrix.
-    
+
     Raises
     ------
     ValueError
@@ -35,7 +35,7 @@ def shape_matrix(s):
 
     Notes
     -----
-    Assumes linear interpolation of a single variable between two nodes. 
+    Assumes linear interpolation of a single variable between two nodes.
     The resulting shape matrix N is:
 
         N = [[(1 - s), s]]
@@ -58,7 +58,7 @@ def gradient_matrix(s, dz):
     -------
     numpy.ndarray
         The gradient of the shape function matrix.
-    
+
     Raises
     ------
     ValueError
@@ -67,7 +67,7 @@ def gradient_matrix(s, dz):
 
     Notes
     -----
-    Assumes linear interpolation of a single variable between two nodes. 
+    Assumes linear interpolation of a single variable between two nodes.
     The resulting gradient matrix B is:
 
         B = [[-1 , 1]] / dz

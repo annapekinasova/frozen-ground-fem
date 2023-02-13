@@ -677,13 +677,13 @@ class TestGradientMatrix(unittest.TestCase):
 
     def test_gradient_matrix_valid_str(self):
         expected = np.array([[-0.5, 0.5]])
-        self.assertTrue(np.allclose(gradient_matrix("8.e-1", "2.e0"), 
+        self.assertTrue(np.allclose(gradient_matrix("8.e-1", "2.e0"),
                                     expected))
 
     def test_gradient_matrix_invalid_str_arg0(self):
         with self.assertRaises(ValueError):
             gradient_matrix("three", 2.0)
-            
+
     def test_gradient_matrix_invalid_str_arg1(self):
         with self.assertRaises(ValueError):
             gradient_matrix(1.0, "three")
