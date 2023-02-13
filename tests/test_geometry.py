@@ -7,6 +7,8 @@ from frozen_ground_fem.geometry import (
         Node1D,
         IntegrationPoint1D,
         Element1D,
+        shape_matrix,
+        gradient_matrix,
         )
 from frozen_ground_fem.materials import (
         Material,
@@ -602,6 +604,89 @@ class TestElement1D(unittest.TestCase):
     def test_set_int_pt(self):
         with self.assertRaises(AttributeError):
             self.e.int_pts = 3
+
+
+class TestShapeMatrix(unittest.TestCase):
+
+    def setUp(self):
+        self.N = shape_matrix(0.8)
+        self.T_1D = np.array([5., 10.])
+        self.T_column = np.array([[5.], [10.]])
+
+    def test_shape_matrix_valid_float(self):
+        expected = np.array([[0.2, 0.8]])
+        self.assertTrue(np.allclose(self.N, expected))
+
+    def test_shape_matrix_shape(self):
+        expected = (1, 2)
+        self.assertEqual(self.N.shape, expected)
+
+    def test_shape_matrix_multiply_1D(self):
+        expected = 9.
+        actual = self.N @ self.T_1D
+        self.assertAlmostEqual(expected, actual, delta=1.e-8)
+
+    def test_shape_matrix_multiply_column(self):
+        expected = 9.
+        actual = self.N @ self.T_column
+        self.assertAlmostEqual(expected, actual, delta=1.e-8)
+
+    def test_shape_matrix_multiply_transpose(self):
+        expected = np.array([[0.04, 0.16], [0.16, 0.64]])
+        actual = self.N.T @ self.N
+        self.assertTrue(np.allclose(expected, actual))
+
+    def test_shape_matrix_valid_str(self):
+        expected = np.array([[0.2, 0.8]])
+        self.assertTrue(np.allclose(shape_matrix("8.e-1"), expected))
+
+    def test_shape_matrix_invalid_str(self):
+        with self.assertRaises(ValueError):
+            shape_matrix("three")
+
+
+class TestGradientMatrix(unittest.TestCase):
+
+    def setUp(self):
+        self.B = gradient_matrix(0.8, 2.0)
+        self.T_1D = np.array([5., 10.])
+        self.T_column = np.array([[5.], [10.]])
+
+    def test_gradient_matrix_valid_float(self):
+        expected = np.array([[-0.5, 0.5]])
+        self.assertTrue(np.allclose(self.B, expected))
+
+    def test_gradient_matrix_shape(self):
+        expected = (1, 2)
+        self.assertEqual(self.B.shape, expected)
+
+    def test_gradient_matrix_multiply_1D(self):
+        expected = 2.5
+        actual = self.B @ self.T_1D
+        self.assertAlmostEqual(expected, actual, delta=1.e-8)
+
+    def test_gradient_matrix_multiply_column(self):
+        expected = 2.5
+        actual = self.B @ self.T_column
+        self.assertAlmostEqual(expected, actual, delta=1.e-8)
+
+    def test_gradient_matrix_multiply_transpose(self):
+        expected = np.array([[0.25, -0.25], [-0.25, 0.25]])
+        actual = self.B.T @ self.B
+        self.assertTrue(np.allclose(expected, actual))
+
+    def test_gradient_matrix_valid_str(self):
+        expected = np.array([[-0.5, 0.5]])
+        self.assertTrue(np.allclose(gradient_matrix("8.e-1", "2.e0"), 
+                                    expected))
+
+    def test_gradient_matrix_invalid_str_arg0(self):
+        with self.assertRaises(ValueError):
+            gradient_matrix("three", 2.0)
+            
+    def test_gradient_matrix_invalid_str_arg1(self):
+        with self.assertRaises(ValueError):
+            gradient_matrix(1.0, "three")
 
 
 if __name__ == "__main__":

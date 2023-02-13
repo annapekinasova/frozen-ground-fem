@@ -16,11 +16,62 @@ from frozen_ground_fem.materials import (
 
 
 def shape_matrix(s):
+    """Calculates the shape (interpolation) function matrix.
+
+    Parameters
+    ----------
+    s : float
+        The local coordinate. Should be between 0.0 and 1.0.
+
+    Returns
+    -------
+    numpy.ndarray
+        The shape function matrix.
+    
+    Raises
+    ------
+    ValueError
+        If s cannot be converted to float.
+
+    Notes
+    -----
+    Assumes linear interpolation of a single variable between two nodes. 
+    The resulting shape matrix N is:
+
+        N = [[(1 - s), s]]
+    """
     s = float(s)
     return np.array([[(1. - s), s]])
 
 
 def gradient_matrix(s, dz):
+    """Calculates the gradient of the shape (interpolation) function matrix.
+
+    Parameters
+    ----------
+    s : float
+        The local coordinate. Should be between 0.0 and 1.0.
+    dz : float
+        The element scale parameter (Jacobian).
+
+    Returns
+    -------
+    numpy.ndarray
+        The gradient of the shape function matrix.
+    
+    Raises
+    ------
+    ValueError
+        If s cannot be converted to float.
+        If dz cannot be converted to float.
+
+    Notes
+    -----
+    Assumes linear interpolation of a single variable between two nodes. 
+    The resulting gradient matrix B is:
+
+        B = [[-1 , 1]] / dz
+    """
     s = float(s)
     dz = float(dz)
     return np.array([[-1., 1.]]) / dz
