@@ -495,3 +495,38 @@ class Element1D:
         tuple of :c:`IntegrationPoint1D`
         """
         return self._int_pts
+
+
+class BoundaryElement1D:
+    """Class for storing boundary condition geometry information.
+
+    Attributes
+    ----------
+    nodes
+
+    Raises
+    ------
+    TypeError
+        If nodes initializer contains non-:c:`Node1D` objects.
+    ValueError
+        If len(nodes) != 1.
+    """
+
+    def __init__(self, nodes):
+        # check for valid node list and assign to self
+        if (nnod := len(nodes)) != 1:
+            raise ValueError(f'len(nodes) is {nnod} not equal to 1')
+        for nd in nodes:
+            if not isinstance(nd, Node1D):
+                raise TypeError('nodes contains invalid objects, not Node1D')
+        self._nodes = tuple(nodes)
+
+    @property
+    def nodes(self):
+        """The tuple of :c:`Node1D` contained in the element.
+
+        Returns
+        ------
+        tuple of :c:`Node1D`
+        """
+        return self._nodes
