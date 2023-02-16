@@ -124,9 +124,6 @@ class Point1D:
     def z(self, value):
         self.coords[0] = value
 
-    def __str__(self):
-        return self.coords.__str__()
-
 
 class Node1D(Point1D):
     """Class for storing the properties of a node.
@@ -202,9 +199,6 @@ class Node1D(Point1D):
         if _value < 0:
             raise ValueError(f"{_value} is negative")
         self._index = _value
-
-    def __str__(self):
-        return super().__str__() + f", temp={self.temp}"
 
 
 class IntegrationPoint1D(Point1D):
@@ -431,13 +425,6 @@ class IntegrationPoint1D(Point1D):
         th_i = self.vol_ice_cont
         th_w = por - th_i
         return ((1 - por) * C_s) + (th_i * C_i) + (th_w * C_w)
-
-    def __str__(self):
-        return (
-            super().__str__()
-            + f", porosity={self.porosity}"
-            + f", vol_ice_cont={self.vol_ice_cont}"
-        )
 
 
 class Element1D:
