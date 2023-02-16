@@ -436,6 +436,7 @@ class Element1D:
     Attributes
     ----------
     nodes
+    int_pts
     jacobian
 
     Raises
