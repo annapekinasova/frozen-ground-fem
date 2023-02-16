@@ -3,76 +3,71 @@ import unittest
 import numpy as np
 
 from frozen_ground_fem.geometry import (
-        Point1D,
-        Node1D,
-        IntegrationPoint1D,
-        Element1D,
-        BoundaryElement1D,
-        shape_matrix,
-        gradient_matrix,
-        )
+    Point1D,
+    Node1D,
+    IntegrationPoint1D,
+    Element1D,
+    BoundaryElement1D,
+    shape_matrix,
+    gradient_matrix,
+)
 from frozen_ground_fem.materials import (
-        Material,
-        NULL_MATERIAL,
-        )
+    Material,
+    NULL_MATERIAL,
+)
 
 
 class TestPoint1DDefaults(unittest.TestCase):
-
     def setUp(self):
         self.p = Point1D()
 
     def test_z_value(self):
-        self.assertEqual(self.p.z, 0.)
+        self.assertEqual(self.p.z, 0.0)
 
     def test_z_type(self):
         self.assertIsInstance(self.p.z, float)
 
     def test_coords_value(self):
-        self.assertTrue(np.array_equal(self.p.coords,
-                                       np.zeros((1, ))))
+        self.assertTrue(np.array_equal(self.p.coords, np.zeros((1,))))
 
     def test_coords_type(self):
         self.assertIsInstance(self.p.coords, np.ndarray)
 
     def test_coords_shape(self):
-        self.assertEqual(self.p.coords.shape, (1, ))
+        self.assertEqual(self.p.coords.shape, (1,))
 
 
 class TestPoint1DInitializers(unittest.TestCase):
-
     def setUp(self):
-        self.p = Point1D(1.)
+        self.p = Point1D(1.0)
 
     def test_z_value(self):
-        self.assertEqual(self.p.z, 1.)
+        self.assertEqual(self.p.z, 1.0)
 
     def test_z_type(self):
         self.assertIsInstance(self.p.z, float)
 
     def test_coords_value(self):
-        self.assertTrue(np.array_equal(self.p.coords,
-                                       np.ones((1, ))))
+        self.assertTrue(np.array_equal(self.p.coords, np.ones((1,))))
 
     def test_coords_type(self):
         self.assertIsInstance(self.p.coords, np.ndarray)
 
     def test_coords_shape(self):
-        self.assertEqual(self.p.coords.shape, (1, ))
+        self.assertEqual(self.p.coords.shape, (1,))
 
 
 class TestPoint1DSetters(unittest.TestCase):
-
     def setUp(self):
         self.p = Point1D()
 
     def test_set_z_valid_float(self):
-        self.p.z = 1.
-        self.assertEqual(self.p.z, 1.)
+        self.p.z = 1.0
+        self.assertEqual(self.p.z, 1.0)
 
     def test_set_z_valid_int(self):
         self.p.z = 1
-        self.assertEqual(self.p.z, 1.)
+        self.assertEqual(self.p.z, 1.0)
 
     def test_set_z_valid_int_type(self):
         self.p.z = 1
@@ -80,7 +75,7 @@ class TestPoint1DSetters(unittest.TestCase):
 
     def test_set_z_valid_str(self):
         self.p.z = "1.e5"
-        self.assertEqual(self.p.z, 1.e5)
+        self.assertEqual(self.p.z, 1.0e5)
 
     def test_set_z_invalid_str(self):
         with self.assertRaises(ValueError):
@@ -88,11 +83,10 @@ class TestPoint1DSetters(unittest.TestCase):
 
     def test_set_coords_invalid(self):
         with self.assertRaises(AttributeError):
-            self.p.coords = 1.
+            self.p.coords = 1.0
 
 
 class TestNode1DDefaults(unittest.TestCase):
-
     def setUp(self):
         self.p = Node1D(0)
 
@@ -103,32 +97,30 @@ class TestNode1DDefaults(unittest.TestCase):
         self.assertIsInstance(self.p.index, int)
 
     def test_z_value(self):
-        self.assertEqual(self.p.z, 0.)
+        self.assertEqual(self.p.z, 0.0)
 
     def test_z_type(self):
         self.assertIsInstance(self.p.z, float)
 
     def test_coords_value(self):
-        self.assertTrue(np.array_equal(self.p.coords,
-                                       np.zeros((1, ))))
+        self.assertTrue(np.array_equal(self.p.coords, np.zeros((1,))))
 
     def test_coords_type(self):
         self.assertIsInstance(self.p.coords, np.ndarray)
 
     def test_coords_shape(self):
-        self.assertEqual(self.p.coords.shape, (1, ))
+        self.assertEqual(self.p.coords.shape, (1,))
 
     def test_temp_value(self):
-        self.assertEqual(self.p.temp, 0.)
+        self.assertEqual(self.p.temp, 0.0)
 
     def test_temp_type(self):
         self.assertIsInstance(self.p.temp, float)
 
 
 class TestNode1DInitializers(unittest.TestCase):
-
     def setUp(self):
-        self.p = Node1D(0, 1., -5.)
+        self.p = Node1D(0, 1.0, -5.0)
 
     def test_index_value(self):
         self.assertEqual(self.p.index, 0)
@@ -137,30 +129,28 @@ class TestNode1DInitializers(unittest.TestCase):
         self.assertIsInstance(self.p.index, int)
 
     def test_z_value(self):
-        self.assertEqual(self.p.z, 1.)
+        self.assertEqual(self.p.z, 1.0)
 
     def test_z_type(self):
         self.assertIsInstance(self.p.z, float)
 
     def test_coords_value(self):
-        self.assertTrue(np.array_equal(self.p.coords,
-                                       np.ones((1, ))))
+        self.assertTrue(np.array_equal(self.p.coords, np.ones((1,))))
 
     def test_coords_type(self):
         self.assertIsInstance(self.p.coords, np.ndarray)
 
     def test_coords_shape(self):
-        self.assertEqual(self.p.coords.shape, (1, ))
+        self.assertEqual(self.p.coords.shape, (1,))
 
     def test_temp_value(self):
-        self.assertEqual(self.p.temp, -5.)
+        self.assertEqual(self.p.temp, -5.0)
 
     def test_temp_type(self):
         self.assertIsInstance(self.p.temp, float)
 
 
 class TestNode1DSetters(unittest.TestCase):
-
     def setUp(self):
         self.p = Node1D(0)
 
@@ -177,24 +167,24 @@ class TestNode1DSetters(unittest.TestCase):
             self.p.index = 2.1
 
     def test_set_index_valid_str(self):
-        self.p.index = '2'
+        self.p.index = "2"
         self.assertEqual(self.p.index, 2)
 
     def test_set_index_invalid_str_float(self):
         with self.assertRaises(ValueError):
-            self.p.index = '2.1'
+            self.p.index = "2.1"
 
     def test_set_index_invalid_str(self):
         with self.assertRaises(ValueError):
-            self.p.index = 'two'
+            self.p.index = "two"
 
     def test_set_z_valid_float(self):
-        self.p.z = 1.
-        self.assertEqual(self.p.z, 1.)
+        self.p.z = 1.0
+        self.assertEqual(self.p.z, 1.0)
 
     def test_set_z_valid_int(self):
         self.p.z = 1
-        self.assertEqual(self.p.z, 1.)
+        self.assertEqual(self.p.z, 1.0)
 
     def test_set_z_valid_int_type(self):
         self.p.z = 1
@@ -202,7 +192,7 @@ class TestNode1DSetters(unittest.TestCase):
 
     def test_set_z_valid_str(self):
         self.p.z = "1.e5"
-        self.assertEqual(self.p.z, 1.e5)
+        self.assertEqual(self.p.z, 1.0e5)
 
     def test_set_z_invalid_str(self):
         with self.assertRaises(ValueError):
@@ -210,15 +200,15 @@ class TestNode1DSetters(unittest.TestCase):
 
     def test_set_coords_invalid(self):
         with self.assertRaises(AttributeError):
-            self.p.coords = 1.
+            self.p.coords = 1.0
 
     def test_set_temp_valid_float(self):
-        self.p.temp = 1.
-        self.assertEqual(self.p.temp, 1.)
+        self.p.temp = 1.0
+        self.assertEqual(self.p.temp, 1.0)
 
     def test_set_temp_valid_int(self):
         self.p.temp = 1
-        self.assertEqual(self.p.temp, 1.)
+        self.assertEqual(self.p.temp, 1.0)
 
     def test_set_temp_valid_int_type(self):
         self.p.temp = 1
@@ -226,7 +216,7 @@ class TestNode1DSetters(unittest.TestCase):
 
     def test_set_temp_valid_str(self):
         self.p.temp = "1.e5"
-        self.assertEqual(self.p.temp, 1.e5)
+        self.assertEqual(self.p.temp, 1.0e5)
 
     def test_set_temp_invalid_str(self):
         with self.assertRaises(ValueError):
@@ -234,46 +224,44 @@ class TestNode1DSetters(unittest.TestCase):
 
 
 class TestIntegrationPoint1DDefaults(unittest.TestCase):
-
     def setUp(self):
         self.p = IntegrationPoint1D()
 
     def test_z_value(self):
-        self.assertEqual(self.p.z, 0.)
+        self.assertEqual(self.p.z, 0.0)
 
     def test_z_type(self):
         self.assertIsInstance(self.p.z, float)
 
     def test_coords_value(self):
-        self.assertTrue(np.array_equal(self.p.coords,
-                                       np.zeros((1, ))))
+        self.assertTrue(np.array_equal(self.p.coords, np.zeros((1,))))
 
     def test_coords_type(self):
         self.assertIsInstance(self.p.coords, np.ndarray)
 
     def test_coords_shape(self):
-        self.assertEqual(self.p.coords.shape, (1, ))
+        self.assertEqual(self.p.coords.shape, (1,))
 
     def test_local_coord_value(self):
-        self.assertEqual(self.p.local_coord, 0.)
+        self.assertEqual(self.p.local_coord, 0.0)
 
     def test_local_coord_type(self):
         self.assertIsInstance(self.p.local_coord, float)
 
     def test_weight_value(self):
-        self.assertEqual(self.p.weight, 0.)
+        self.assertEqual(self.p.weight, 0.0)
 
     def test_weight_type(self):
         self.assertIsInstance(self.p.weight, float)
 
     def test_porosity_value(self):
-        self.assertEqual(self.p.porosity, 0.)
+        self.assertEqual(self.p.porosity, 0.0)
 
     def test_porosity_type(self):
         self.assertIsInstance(self.p.porosity, float)
 
     def test_vol_ice_cont_value(self):
-        self.assertEqual(self.p.vol_ice_cont, 0.)
+        self.assertEqual(self.p.vol_ice_cont, 0.0)
 
     def test_vol_ice_cont_type(self):
         self.assertIsInstance(self.p.vol_ice_cont, float)
@@ -286,28 +274,26 @@ class TestIntegrationPoint1DDefaults(unittest.TestCase):
 
 
 class TestIntegrationPoint1DInitializers(unittest.TestCase):
-
     def setUp(self):
-        self.m = Material(thrm_cond_solids=7.8,
-                          dens_solids=2.5e3,
-                          spec_heat_cap_solids=7.41e5)
-        self.p = IntegrationPoint1D(1., -0.33, 1.0, 0.5, 0.2, self.m)
+        self.m = Material(
+            thrm_cond_solids=7.8, dens_solids=2.5e3, spec_heat_cap_solids=7.41e5
+        )
+        self.p = IntegrationPoint1D(1.0, -0.33, 1.0, 0.5, 0.2, self.m)
 
     def test_z_value(self):
-        self.assertEqual(self.p.z, 1.)
+        self.assertEqual(self.p.z, 1.0)
 
     def test_z_type(self):
         self.assertIsInstance(self.p.z, float)
 
     def test_coords_value(self):
-        self.assertTrue(np.array_equal(self.p.coords,
-                                       np.ones((1, ))))
+        self.assertTrue(np.array_equal(self.p.coords, np.ones((1,))))
 
     def test_coords_type(self):
         self.assertIsInstance(self.p.coords, np.ndarray)
 
     def test_coords_shape(self):
-        self.assertEqual(self.p.coords.shape, (1, ))
+        self.assertEqual(self.p.coords.shape, (1,))
 
     def test_local_coord_value(self):
         self.assertEqual(self.p.local_coord, -0.33)
@@ -316,7 +302,7 @@ class TestIntegrationPoint1DInitializers(unittest.TestCase):
         self.assertIsInstance(self.p.local_coord, float)
 
     def test_weight_value(self):
-        self.assertEqual(self.p.weight, 1.)
+        self.assertEqual(self.p.weight, 1.0)
 
     def test_weight_type(self):
         self.assertIsInstance(self.p.weight, float)
@@ -349,20 +335,19 @@ class TestIntegrationPoint1DInitializers(unittest.TestCase):
 
 
 class TestIntegrationPoint1DSetters(unittest.TestCase):
-
     def setUp(self):
-        self.m = Material(thrm_cond_solids=7.8,
-                          dens_solids=2.5e3,
-                          spec_heat_cap_solids=7.41e5)
-        self.p = IntegrationPoint1D(1., -0.33, 1.0, 0.3, 0.2, self.m)
+        self.m = Material(
+            thrm_cond_solids=7.8, dens_solids=2.5e3, spec_heat_cap_solids=7.41e5
+        )
+        self.p = IntegrationPoint1D(1.0, -0.33, 1.0, 0.3, 0.2, self.m)
 
     def test_set_z_valid_float(self):
-        self.p.z = 1.
-        self.assertEqual(self.p.z, 1.)
+        self.p.z = 1.0
+        self.assertEqual(self.p.z, 1.0)
 
     def test_set_z_valid_int(self):
         self.p.z = 1
-        self.assertEqual(self.p.z, 1.)
+        self.assertEqual(self.p.z, 1.0)
 
     def test_set_z_valid_int_type(self):
         self.p.z = 1
@@ -370,7 +355,7 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
 
     def test_set_z_valid_str(self):
         self.p.z = "1.e5"
-        self.assertEqual(self.p.z, 1.e5)
+        self.assertEqual(self.p.z, 1.0e5)
 
     def test_set_z_invalid_str(self):
         with self.assertRaises(ValueError):
@@ -378,15 +363,15 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
 
     def test_set_coords_invalid(self):
         with self.assertRaises(AttributeError):
-            self.p.coords = 1.
+            self.p.coords = 1.0
 
     def test_set_local_coord_valid_float(self):
-        self.p.local_coord = 1.
-        self.assertEqual(self.p.local_coord, 1.)
+        self.p.local_coord = 1.0
+        self.assertEqual(self.p.local_coord, 1.0)
 
     def test_set_local_coord_valid_int(self):
         self.p.local_coord = 1
-        self.assertEqual(self.p.local_coord, 1.)
+        self.assertEqual(self.p.local_coord, 1.0)
 
     def test_set_local_coord_valid_int_type(self):
         self.p.local_coord = 1
@@ -394,19 +379,19 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
 
     def test_set_local_coord_valid_str(self):
         self.p.local_coord = "1.e0"
-        self.assertEqual(self.p.local_coord, 1.)
+        self.assertEqual(self.p.local_coord, 1.0)
 
     def test_set_local_coord_invalid_str(self):
         with self.assertRaises(ValueError):
             self.p.local_coord = "five"
 
     def test_set_weight_valid_float(self):
-        self.p.weight = 2.
-        self.assertEqual(self.p.weight, 2.)
+        self.p.weight = 2.0
+        self.assertEqual(self.p.weight, 2.0)
 
     def test_set_weight_valid_int(self):
         self.p.weight = 2
-        self.assertEqual(self.p.weight, 2.)
+        self.assertEqual(self.p.weight, 2.0)
 
     def test_set_weight_valid_int_type(self):
         self.p.weight = 2
@@ -414,7 +399,7 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
 
     def test_set_weight_valid_str(self):
         self.p.weight = "1.e0"
-        self.assertEqual(self.p.weight, 1.)
+        self.assertEqual(self.p.weight, 1.0)
 
     def test_set_weight_invalid_str(self):
         with self.assertRaises(ValueError):
@@ -425,12 +410,12 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         self.assertEqual(self.p.porosity, 0.5)
 
     def test_set_porosity_valid_float_edge_0(self):
-        self.p.porosity = 0.
-        self.assertEqual(self.p.porosity, 0.)
+        self.p.porosity = 0.0
+        self.assertEqual(self.p.porosity, 0.0)
 
     def test_set_porosity_valid_float_edge_1(self):
-        self.p.porosity = 1.
-        self.assertEqual(self.p.porosity, 1.)
+        self.p.porosity = 1.0
+        self.assertEqual(self.p.porosity, 1.0)
 
     def test_set_porosity_invalid_float_negative(self):
         with self.assertRaises(ValueError):
@@ -442,7 +427,7 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
 
     def test_set_porosity_valid_int(self):
         self.p.porosity = 1
-        self.assertEqual(self.p.porosity, 1.)
+        self.assertEqual(self.p.porosity, 1.0)
 
     def test_set_porosity_valid_int_type(self):
         self.p.porosity = 1
@@ -450,7 +435,7 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
 
     def test_set_porosity_valid_str(self):
         self.p.porosity = "1.e-1"
-        self.assertEqual(self.p.porosity, 1.e-1)
+        self.assertEqual(self.p.porosity, 1.0e-1)
 
     def test_set_porosity_invalid_str(self):
         with self.assertRaises(ValueError):
@@ -461,8 +446,8 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         self.assertEqual(self.p.vol_ice_cont, 0.2)
 
     def test_set_vol_ice_cont_valid_float_edge_0(self):
-        self.p.vol_ice_cont = 0.
-        self.assertEqual(self.p.vol_ice_cont, 0.)
+        self.p.vol_ice_cont = 0.0
+        self.assertEqual(self.p.vol_ice_cont, 0.0)
 
     def test_set_vol_ice_cont_valid_float_edge_1(self):
         self.p.vol_ice_cont = self.p.porosity
@@ -478,7 +463,7 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
 
     def test_set_vol_ice_cont_valid_int(self):
         self.p.vol_ice_cont = 0
-        self.assertEqual(self.p.vol_ice_cont, 0.)
+        self.assertEqual(self.p.vol_ice_cont, 0.0)
 
     def test_set_vol_ice_cont_valid_int_type(self):
         self.p.vol_ice_cont = 0
@@ -486,7 +471,7 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
 
     def test_set_vol_ice_cont_valid_str(self):
         self.p.vol_ice_cont = "1.e-1"
-        self.assertEqual(self.p.vol_ice_cont, 1.e-1)
+        self.assertEqual(self.p.vol_ice_cont, 1.0e-1)
 
     def test_set_vol_ice_cont_invalid_str(self):
         with self.assertRaises(ValueError):
@@ -503,7 +488,7 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
 
     def test_set_thrm_cond_invalid(self):
         with self.assertRaises(AttributeError):
-            self.p.thrm_cond = 1.e5
+            self.p.thrm_cond = 1.0e5
 
     def test_update_thrm_cond_porosity(self):
         self.p.porosity = 0.25
@@ -516,15 +501,15 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         self.assertAlmostEqual(self.p.thrm_cond, expected, delta=1e-8)
 
     def test_update_thrm_cond_material(self):
-        self.p.material = Material(thrm_cond_solids=6.7,
-                                   dens_solids=2.8e3,
-                                   spec_heat_cap_solids=6.43e5)
+        self.p.material = Material(
+            thrm_cond_solids=6.7, dens_solids=2.8e3, spec_heat_cap_solids=6.43e5
+        )
         expected = 4.19347247030009
         self.assertAlmostEqual(self.p.thrm_cond, expected, delta=1e-8)
 
     def test_set_vol_heat_cap_invalid(self):
         with self.assertRaises(AttributeError):
-            self.p.vol_heat_cap = 1.e5
+            self.p.vol_heat_cap = 1.0e5
 
     def test_update_vol_heat_cap_porosity(self):
         self.p.porosity = 0.25
@@ -537,17 +522,16 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         self.assertAlmostEqual(self.p.vol_heat_cap, expected, delta=1e-8)
 
     def test_update_vol_heat_cap_material(self):
-        self.p.material = Material(thrm_cond_solids=6.7,
-                                   dens_solids=2.8e3,
-                                   spec_heat_cap_solids=6.43e5)
+        self.p.material = Material(
+            thrm_cond_solids=6.7, dens_solids=2.8e3, spec_heat_cap_solids=6.43e5
+        )
         expected = 1.261076600e9
         self.assertAlmostEqual(self.p.vol_heat_cap, expected, delta=1e-8)
 
 
 class TestElement1D(unittest.TestCase):
-
     def setUp(self):
-        self.nodes = tuple(Node1D(k, 2. * k + 1.) for k in range(2))
+        self.nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(2))
         self.e = Element1D(self.nodes)
 
     def test_initialize_without_nodes(self):
@@ -555,7 +539,7 @@ class TestElement1D(unittest.TestCase):
             Element1D()
 
     def test_initialize_valid_nodes_value(self):
-        self.assertEqual(self.e.nodes[1].z, 3.)
+        self.assertEqual(self.e.nodes[1].z, 3.0)
 
     def test_initialize_valid_nodes_type(self):
         nodes = list(self.nodes)
@@ -564,12 +548,12 @@ class TestElement1D(unittest.TestCase):
 
     def test_initialize_too_few_nodes(self):
         with self.assertRaises(ValueError):
-            nodes = (Node1D(0), )
+            nodes = (Node1D(0),)
             Element1D(nodes)
 
     def test_initialize_too_many_nodes(self):
         with self.assertRaises(ValueError):
-            nodes = tuple(Node1D(k, 2. * k + 1.) for k in range(3))
+            nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(3))
             Element1D(nodes)
 
     def test_initialize_invalid_nodes(self):
@@ -578,11 +562,11 @@ class TestElement1D(unittest.TestCase):
             Element1D(nodes)
 
     def test_jacobian_value(self):
-        self.assertEqual(self.e.jacobian, 2.)
+        self.assertEqual(self.e.jacobian, 2.0)
 
     def test_set_jacobian(self):
         with self.assertRaises(AttributeError):
-            self.e.jacobian = 5.
+            self.e.jacobian = 5.0
 
     def test_int_pt_local_coords(self):
         expected = np.array([0.211324865405187, 0.788675134594813])
@@ -608,11 +592,10 @@ class TestElement1D(unittest.TestCase):
 
 
 class TestShapeMatrix(unittest.TestCase):
-
     def setUp(self):
         self.N = shape_matrix(0.8)
-        self.T_1D = np.array([5., 10.])
-        self.T_column = np.array([[5.], [10.]])
+        self.T_1D = np.array([5.0, 10.0])
+        self.T_column = np.array([[5.0], [10.0]])
 
     def test_shape_matrix_valid_float(self):
         expected = np.array([[0.2, 0.8]])
@@ -623,14 +606,14 @@ class TestShapeMatrix(unittest.TestCase):
         self.assertEqual(self.N.shape, expected)
 
     def test_shape_matrix_multiply_1D(self):
-        expected = 9.
+        expected = 9.0
         actual = self.N @ self.T_1D
-        self.assertAlmostEqual(expected, actual, delta=1.e-8)
+        self.assertAlmostEqual(expected, actual, delta=1.0e-8)
 
     def test_shape_matrix_multiply_column(self):
-        expected = 9.
+        expected = 9.0
         actual = self.N @ self.T_column
-        self.assertAlmostEqual(expected, actual, delta=1.e-8)
+        self.assertAlmostEqual(expected, actual, delta=1.0e-8)
 
     def test_shape_matrix_multiply_transpose(self):
         expected = np.array([[0.04, 0.16], [0.16, 0.64]])
@@ -647,11 +630,10 @@ class TestShapeMatrix(unittest.TestCase):
 
 
 class TestGradientMatrix(unittest.TestCase):
-
     def setUp(self):
         self.B = gradient_matrix(0.8, 2.0)
-        self.T_1D = np.array([5., 10.])
-        self.T_column = np.array([[5.], [10.]])
+        self.T_1D = np.array([5.0, 10.0])
+        self.T_column = np.array([[5.0], [10.0]])
 
     def test_gradient_matrix_valid_float(self):
         expected = np.array([[-0.5, 0.5]])
@@ -664,12 +646,12 @@ class TestGradientMatrix(unittest.TestCase):
     def test_gradient_matrix_multiply_1D(self):
         expected = 2.5
         actual = self.B @ self.T_1D
-        self.assertAlmostEqual(expected, actual, delta=1.e-8)
+        self.assertAlmostEqual(expected, actual, delta=1.0e-8)
 
     def test_gradient_matrix_multiply_column(self):
         expected = 2.5
         actual = self.B @ self.T_column
-        self.assertAlmostEqual(expected, actual, delta=1.e-8)
+        self.assertAlmostEqual(expected, actual, delta=1.0e-8)
 
     def test_gradient_matrix_multiply_transpose(self):
         expected = np.array([[0.25, -0.25], [-0.25, 0.25]])
@@ -678,8 +660,7 @@ class TestGradientMatrix(unittest.TestCase):
 
     def test_gradient_matrix_valid_str(self):
         expected = np.array([[-0.5, 0.5]])
-        self.assertTrue(np.allclose(gradient_matrix("8.e-1", "2.e0"),
-                                    expected))
+        self.assertTrue(np.allclose(gradient_matrix("8.e-1", "2.e0"), expected))
 
     def test_gradient_matrix_invalid_str_arg0(self):
         with self.assertRaises(ValueError):
@@ -691,9 +672,8 @@ class TestGradientMatrix(unittest.TestCase):
 
 
 class TestBoundaryElement1D(unittest.TestCase):
-
     def setUp(self):
-        self.nodes = (Node1D(0, 0.5), )
+        self.nodes = (Node1D(0, 0.5),)
         self.e = BoundaryElement1D(self.nodes)
 
     def test_initialize_without_nodes(self):
@@ -710,7 +690,7 @@ class TestBoundaryElement1D(unittest.TestCase):
 
     def test_initialize_too_many_nodes(self):
         with self.assertRaises(ValueError):
-            nodes = tuple(Node1D(k, 2. * k + 1.) for k in range(2))
+            nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(2))
             BoundaryElement1D(nodes)
 
     def test_initialize_invalid_nodes(self):

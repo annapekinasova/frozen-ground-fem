@@ -12,7 +12,7 @@ from frozen_ground_fem.materials import (
     thrm_cond_water as lam_w,
     vol_heat_cap_ice as C_i,
     vol_heat_cap_water as C_w,
-    )
+)
 
 
 def shape_matrix(s):
@@ -41,7 +41,7 @@ def shape_matrix(s):
         N = [[(1 - s), s]]
     """
     s = float(s)
-    return np.array([[(1. - s), s]])
+    return np.array([[(1.0 - s), s]])
 
 
 def gradient_matrix(s, dz):
@@ -74,7 +74,7 @@ def gradient_matrix(s, dz):
     """
     s = float(s)
     dz = float(dz)
-    return np.array([[-1., 1.]]) / dz
+    return np.array([[-1.0, 1.0]]) / dz
 
 
 class Point1D:
@@ -86,7 +86,7 @@ class Point1D:
     z
     """
 
-    def __init__(self, value=0.):
+    def __init__(self, value=0.0):
         self._coords = np.zeros((1,))
         self.z = value
 
@@ -140,7 +140,7 @@ class Node1D(Point1D):
     temp
     """
 
-    def __init__(self, index, coord=0., temp=0.):
+    def __init__(self, index, coord=0.0, temp=0.0):
         super().__init__(coord)
         self._temp = np.zeros((1,))
         self.temp = temp
@@ -197,10 +197,10 @@ class Node1D(Point1D):
     @index.setter
     def index(self, value):
         if isinstance(value, float):
-            raise TypeError(f'{value} is a float, must be int')
+            raise TypeError(f"{value} is a float, must be int")
         _value = int(value)
         if _value < 0:
-            raise ValueError(f'{_value} is negative')
+            raise ValueError(f"{_value} is negative")
         self._index = _value
 
     def __str__(self):
@@ -224,9 +224,15 @@ class IntegrationPoint1D(Point1D):
     vol_heat_cap
     """
 
-    def __init__(self, coord=0., local_coord=0., weight=0.,
-                 porosity=0., vol_ice_cont=0.,
-                 material=NULL_MATERIAL):
+    def __init__(
+        self,
+        coord=0.0,
+        local_coord=0.0,
+        weight=0.0,
+        porosity=0.0,
+        vol_ice_cont=0.0,
+        material=NULL_MATERIAL,
+    ):
         super().__init__(coord)
         self._local_coord = np.zeros((1,))
         self._weight = np.zeros((1,))
@@ -313,7 +319,7 @@ class IntegrationPoint1D(Point1D):
     @porosity.setter
     def porosity(self, value):
         value = float(value)
-        if value < 0. or value > 1.:
+        if value < 0.0 or value > 1.0:
             raise ValueError(f"porosity value {value} not between 0.0 and 1.0")
         self._porosity[0] = value
 
@@ -342,9 +348,11 @@ class IntegrationPoint1D(Point1D):
     @vol_ice_cont.setter
     def vol_ice_cont(self, value):
         value = float(value)
-        if value < 0. or value > self.porosity:
-            raise ValueError(f"vol_ice_cont value {value} "
-                             + f"not between 0.0 and porosity={self.porosity}")
+        if value < 0.0 or value > self.porosity:
+            raise ValueError(
+                f"vol_ice_cont value {value} "
+                + f"not between 0.0 and porosity={self.porosity}"
+            )
         self._vol_ice_cont[0] = value
 
     @property
@@ -370,7 +378,7 @@ class IntegrationPoint1D(Point1D):
     @material.setter
     def material(self, value):
         if not isinstance(value, Material):
-            raise TypeError(f'{value} is not a Material object')
+            raise TypeError(f"{value} is not a Material object")
         self._material = value
 
     @property
@@ -397,7 +405,7 @@ class IntegrationPoint1D(Point1D):
         por = self.porosity
         th_i = self.vol_ice_cont
         th_w = por - th_i
-        return (lam_s ** (1 - por)) * (lam_i ** th_i) * (lam_w ** th_w)
+        return (lam_s ** (1 - por)) * (lam_i**th_i) * (lam_w**th_w)
 
     @property
     def vol_heat_cap(self):
@@ -425,9 +433,11 @@ class IntegrationPoint1D(Point1D):
         return ((1 - por) * C_s) + (th_i * C_i) + (th_w * C_w)
 
     def __str__(self):
-        return (super().__str__()
-                + f", porosity={self.porosity}"
-                + f", vol_ice_cont={self.vol_ice_cont}")
+        return (
+            super().__str__()
+            + f", porosity={self.porosity}"
+            + f", vol_ice_cont={self.vol_ice_cont}"
+        )
 
 
 class Element1D:
@@ -450,17 +460,18 @@ class Element1D:
     def __init__(self, nodes):
         # check for valid node list and assign to self
         if (nnod := len(nodes)) != 2:
-            raise ValueError(f'len(nodes) is {nnod} not equal to 2')
+            raise ValueError(f"len(nodes) is {nnod} not equal to 2")
         for nd in nodes:
             if not isinstance(nd, Node1D):
-                raise TypeError('nodes contains invalid objects, not Node1D')
+                raise TypeError("nodes contains invalid objects, not Node1D")
         self._nodes = tuple(nodes)
         # initialize integration points
         int_pt_coords = [0.211324865405187, 0.788675134594813]
         int_pt_weights = [0.5, 0.5]
-        self._int_pts = tuple(IntegrationPoint1D(local_coord=xi, weight=wt)
-                              for (xi, wt) in
-                              zip(int_pt_coords, int_pt_weights))
+        self._int_pts = tuple(
+            IntegrationPoint1D(local_coord=xi, weight=wt)
+            for (xi, wt) in zip(int_pt_coords, int_pt_weights)
+        )
         z_e = np.array([[nd.z for nd in self.nodes]]).T
         for ip in self.int_pts:
             N = shape_matrix(ip.local_coord)
@@ -515,10 +526,10 @@ class BoundaryElement1D:
     def __init__(self, nodes):
         # check for valid node list and assign to self
         if (nnod := len(nodes)) != 1:
-            raise ValueError(f'len(nodes) is {nnod} not equal to 1')
+            raise ValueError(f"len(nodes) is {nnod} not equal to 1")
         for nd in nodes:
             if not isinstance(nd, Node1D):
-                raise TypeError('nodes contains invalid objects, not Node1D')
+                raise TypeError("nodes contains invalid objects, not Node1D")
         self._nodes = tuple(nodes)
 
     @property

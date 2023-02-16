@@ -39,13 +39,10 @@ class Material:
     vol_heat_cap_solids
     """
 
-    def __init__(self,
-                 thrm_cond_solids=0.,
-                 dens_solids=0.,
-                 spec_heat_cap_solids=0.):
-        self._thrm_cond_solids = 0.
-        self._dens_solids = 0.
-        self._spec_heat_cap_solids = 0.
+    def __init__(self, thrm_cond_solids=0.0, dens_solids=0.0, spec_heat_cap_solids=0.0):
+        self._thrm_cond_solids = 0.0
+        self._dens_solids = 0.0
+        self._spec_heat_cap_solids = 0.0
         self.thrm_cond_solids = thrm_cond_solids
         self.dens_solids = dens_solids
         self.spec_heat_cap_solids = spec_heat_cap_solids
@@ -75,8 +72,8 @@ class Material:
     @thrm_cond_solids.setter
     def thrm_cond_solids(self, value):
         value = float(value)
-        if value < 0.:
-            raise ValueError(f'thrm_cond_solids {value} is not positive')
+        if value < 0.0:
+            raise ValueError(f"thrm_cond_solids {value} is not positive")
         self._thrm_cond_solids = value
 
     @property
@@ -104,8 +101,8 @@ class Material:
     @dens_solids.setter
     def dens_solids(self, value):
         value = float(value)
-        if value < 0.:
-            raise ValueError(f'dens_solids {value} is not positive')
+        if value < 0.0:
+            raise ValueError(f"dens_solids {value} is not positive")
         self._dens_solids = value
         self._update_vol_heat_cap_solids()
 
@@ -134,8 +131,8 @@ class Material:
     @spec_heat_cap_solids.setter
     def spec_heat_cap_solids(self, value):
         value = float(value)
-        if value < 0.:
-            raise ValueError(f'spec_heat_cap_solids {value} is not positive')
+        if value < 0.0:
+            raise ValueError(f"spec_heat_cap_solids {value} is not positive")
         self._spec_heat_cap_solids = value
         self._update_vol_heat_cap_solids()
 
@@ -156,8 +153,7 @@ class Material:
         return self._vol_heat_cap_solids
 
     def _update_vol_heat_cap_solids(self):
-        self._vol_heat_cap_solids = (self.dens_solids
-                                     * self.spec_heat_cap_solids)
+        self._vol_heat_cap_solids = self.dens_solids * self.spec_heat_cap_solids
 
 
 """An instance of the material class with all parameters set to zero.
