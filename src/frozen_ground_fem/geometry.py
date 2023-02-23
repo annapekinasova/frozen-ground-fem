@@ -528,3 +528,69 @@ class BoundaryElement1D:
         tuple of :c:`Node1D`
         """
         return self._nodes
+
+
+class Mesh1D:
+    """Class for generating, storing, and organizing global geometry information
+    about the analysis mesh.
+
+    Attributes
+    ----------
+    nodes
+
+    Raises
+    ------
+    """
+
+    def __init__(self):
+        self._nodes = ()
+        self._elements = ()
+
+    @property
+    def num_nodes(self):
+        return len(self.nodes)
+
+    @property
+    def nodes(self):
+        """The tuple of :c:`Node1D` contained in the mesh.
+
+        Returns
+        ------
+        tuple of :c:`Node1D`
+        """
+        return self._nodes
+
+    @property
+    def num_elements(self):
+        return len(self.elements)
+
+    @property
+    def elements(self):
+        """The tuple of :c:`Element1D` contained in the mesh.
+
+        Returns
+        ------
+        tuple of :c:`Element1D`
+        """
+        return self._elements
+
+    def generate_mesh(self, z_range, dz=0.0, num_nodes=10):
+        self._generate_nodes(z_range, dz, num_nodes)
+        self._generate_elements()
+
+    def _generate_nodes(self, z_range, dz=0.0, num_nodes=10):
+        z_range = np.array(z_range, dtype=float)
+        if len(z_range) != 2:
+            raise ValueError(f"z_range is not an array of two values")
+        z_min = np.min(z_range)
+        z_max = np.max(z_range)
+        if dz > 0.0:
+            num_nodes = int((z_max - z_min) // dz) + 1
+        z_nodes = np.linspace(z_min, z_max, num_nodes)
+        self._nodes = tuple(Node1D(k, zk) for k, zk in enumerate(z_nodes))
+
+    def _generate_elements(self):
+        self._elements = tuple(
+            Element1D((self.nodes[k], self.nodes[k + 1]))
+            for k in range(self.num_nodes - 1)
+        )
