@@ -542,9 +542,112 @@ class Mesh1D:
     ------
     """
 
-    def __init__(self):
-        self._nodes = ()
-        self._elements = ()
+    def __init__(self, z_range=None, grid_size=0.0, num_nodes=10, generate=False):
+        self._z_min = -np.inf
+        self._z_max = np.inf
+        if z_range is not None:
+            self.z_min = np.min(z_range)
+            self.z_max = np.max(z_range)
+        self.grid_size = grid_size
+        if generate:
+            self.generate_mesh(num_nodes)
+
+    @property
+    def z_min(self):
+        """The minimum z value of the mesh.
+
+        Parameters
+        ----------
+        float
+            Value to assign to z_min.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to assign cannot be cast to float.
+            If the value to assign is >= z_max.
+        """
+        return self._z_min
+
+    @setter.z_min
+    def z_min(self, value):
+        value = float(value)
+        if value >= self.z_max:
+            raise ValueError(f"{value} >= z_max := {self.z_max}")
+        self._z_min = value
+        self.mesh_valid = False
+
+    @property
+    def z_max(self):
+        """The maximum z value of the mesh.
+
+        Parameters
+        ----------
+        float
+            Value to assign to z_max.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to assign cannot be cast to float.
+            If the value to assign is <= z_min.
+        """
+        return self._z_max
+
+    @setter.z_max
+    def z_max(self, value):
+        value = float(value)
+        if value <= self.z_min:
+            raise ValueError(f"{value} <= z_min := {self.z_min}")
+        self._z_max = value
+        self.mesh_valid = False
+
+    @property
+    def grid_size(self):
+        """The specified grid size of the mesh.
+
+        Parameters
+        ----------
+        float
+            Value to assign to grid size.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to assign cannot be cast to float.
+            If the value to assign is < 0.0.
+
+        Notes
+        -----
+        This parameter is not the actual size of any element of the mesh.
+        It is a suggested target value that will be recalculated so that
+        an integer number of nodes between z_min and z_max is achieved.
+        The actual element size will typically be smaller.
+        If grid_size is set to 0.0, its value is ignored
+        and the element size is calculated based on a specified (or default)
+        number of nodes.
+        """
+        return self._grid_size
+
+    @setter.grid_size
+    def grid_size(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"{value} is negative")
+        self._grid_size = value
+        self.mesh_valid = False
 
     @property
     def num_nodes(self):
@@ -574,19 +677,55 @@ class Mesh1D:
         """
         return self._elements
 
-    def generate_mesh(self, z_range, dz=0.0, num_nodes=10):
-        self._generate_nodes(z_range, dz, num_nodes)
-        self._generate_elements()
+    @property
+    def mesh_valid(self):
+        """Flag for valid mesh.
 
-    def _generate_nodes(self, z_range, dz=0.0, num_nodes=10):
-        z_range = np.array(z_range, dtype=float)
-        if len(z_range) != 2:
-            raise ValueError(f"z_range is not an array of two values")
-        z_min = np.min(z_range)
-        z_max = np.max(z_range)
-        if dz > 0.0:
-            num_nodes = int((z_max - z_min) // dz) + 1
-        z_nodes = np.linspace(z_min, z_max, num_nodes)
+        Parameters
+        ----------
+        bool
+
+        Returns
+        -------
+        bool
+
+        Raises
+        ------
+        ValueError
+            If the value to assign cannot be cast to bool.
+
+        Notes
+        -----
+        When assigning to False also clears mesh information
+        (e.g. nodes, elements).
+        """
+        return self._grid_size
+
+    @setter.mesh_valid
+    def mesh_valid(self, value):
+        value = bool(value)
+        if value:
+            # TODO: check for mesh validity
+            self._mesh_valid = True
+        else:
+            self._nodes = ()
+            self._elements = ()
+            self._mesh_valid = False
+
+    def generate_mesh(self, num_nodes=10):
+        self.mesh_valid = False
+        self._generate_nodes(num_nodes)
+        self._generate_elements()
+        self.mesh_valid = True
+
+    def _generate_nodes(self, num_nodes=10):
+        if np.isinf(self.z_min) or np.isinf(self.z_max):
+            raise ValueError("cannot generate mesh, non-finite limits")
+        if np.isinf(self.grid_size):
+            raise ValueError("cannot generate mesh, non-finite grid size")
+        if self.grid_size > 0.0:
+            num_nodes = int((self.z_max - self.z_min) // self.grid_size) + 1
+        z_nodes = np.linspace(self.z_min, self.z_max, num_nodes)
         self._nodes = tuple(Node1D(k, zk) for k, zk in enumerate(z_nodes))
 
     def _generate_elements(self):
