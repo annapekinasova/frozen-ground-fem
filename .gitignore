@@ -131,3 +131,11 @@ dmypy.json
 
 # Temporary vim files
 *.swp
+
+# image files
+*.jpg
+*.jpeg
+*.gif
+*.png
+*.tif
+*.svg
