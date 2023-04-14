@@ -531,8 +531,8 @@ class BoundaryElement1D:
 
 
 class Mesh1D:
-    """Class for generating, storing, and organizing global geometry information
-    about the analysis mesh.
+    """Class for generating, storing, and organizing global geometry
+    information about the analysis mesh.
 
     Attributes
     ----------
@@ -543,6 +543,7 @@ class Mesh1D:
     """
 
     def __init__(self, z_range=None, grid_size=0.0, num_nodes=10, generate=False):
+        self.mesh_valid = False
         self._z_min = -np.inf
         self._z_max = np.inf
         if z_range is not None:
@@ -573,7 +574,7 @@ class Mesh1D:
         """
         return self._z_min
 
-    @setter.z_min
+    @z_min.setter
     def z_min(self, value):
         value = float(value)
         if value >= self.z_max:
@@ -602,7 +603,7 @@ class Mesh1D:
         """
         return self._z_max
 
-    @setter.z_max
+    @z_max.setter
     def z_max(self, value):
         value = float(value)
         if value <= self.z_min:
@@ -641,7 +642,7 @@ class Mesh1D:
         """
         return self._grid_size
 
-    @setter.grid_size
+    @grid_size.setter
     def grid_size(self, value):
         value = float(value)
         if value < 0.0:
@@ -678,6 +679,20 @@ class Mesh1D:
         return self._elements
 
     @property
+    def num_boundary_elements(self):
+        return len(self.boundary_elements)
+
+    @property
+    def boundary_elements(self):
+        """The tuple of :c:`BoundaryElement1D` contained in the mesh.
+
+        Returns
+        ------
+        tuple of :c:`BoundaryElement1D`
+        """
+        return self._boundary_elements
+
+    @property
     def mesh_valid(self):
         """Flag for valid mesh.
 
@@ -699,9 +714,9 @@ class Mesh1D:
         When assigning to False also clears mesh information
         (e.g. nodes, elements).
         """
-        return self._grid_size
+        return self._mesh_valid
 
-    @setter.mesh_valid
+    @mesh_valid.setter
     def mesh_valid(self, value):
         value = bool(value)
         if value:
@@ -710,12 +725,14 @@ class Mesh1D:
         else:
             self._nodes = ()
             self._elements = ()
+            self._boundary_elements = ()
             self._mesh_valid = False
 
     def generate_mesh(self, num_nodes=10):
         self.mesh_valid = False
         self._generate_nodes(num_nodes)
         self._generate_elements()
+        self._generate_boundary_elements()
         self.mesh_valid = True
 
     def _generate_nodes(self, num_nodes=10):
@@ -732,4 +749,10 @@ class Mesh1D:
         self._elements = tuple(
             Element1D((self.nodes[k], self.nodes[k + 1]))
             for k in range(self.num_nodes - 1)
+        )
+
+    def _generate_boundary_elements(self):
+        self._boundary_elements = tuple(
+            BoundaryElement1D(self.nodes[0]),
+            BoundaryElement1D(self.nodes[-1]),
         )
