@@ -753,6 +753,8 @@ class Mesh1D:
 
     def _generate_boundary_elements(self):
         self._boundary_elements = tuple(
-            BoundaryElement1D(self.nodes[0]),
-            BoundaryElement1D(self.nodes[-1]),
+            (
+                BoundaryElement1D((self.nodes[0],)),
+                BoundaryElement1D((self.nodes[-1],)),
+            )
         )
