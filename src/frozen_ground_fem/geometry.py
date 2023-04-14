@@ -729,6 +729,27 @@ class Mesh1D:
             self._mesh_valid = False
 
     def generate_mesh(self, num_nodes=10):
+        """Generates a mesh using assigned mesh properties.
+
+        Parameters
+        ----------
+        num_nodes : int, optional, default=10
+            Number of nodes to be created in the generated mesh
+
+        Raises
+        ------
+        ValueError
+            If z_min or z_max are invalid (e.g. left as default +/-inf)
+            If grid_size is invalid (e.g. set to inf)
+
+        Notes
+        -----
+        If the grid_size paramater is set,
+        the argument num_nodes will be ignored
+        and the number of nodes will be calculated
+        as the nearest integer number of nodes:
+            (z_max - z_min) // grid_size + 1
+        """
         self.mesh_valid = False
         self._generate_nodes(num_nodes)
         self._generate_elements()
