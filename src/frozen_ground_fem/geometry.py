@@ -444,6 +444,9 @@ class Element1D:
         If len(nodes) != 2.
     """
 
+    _int_pt_coords = (0.211324865405187, 0.788675134594813)
+    _int_pt_weights = (0.5, 0.5)
+
     def __init__(self, nodes):
         # check for valid node list and assign to self
         if (nnod := len(nodes)) != 2:
@@ -453,11 +456,9 @@ class Element1D:
                 raise TypeError("nodes contains invalid objects, not Node1D")
         self._nodes = tuple(nodes)
         # initialize integration points
-        int_pt_coords = [0.211324865405187, 0.788675134594813]
-        int_pt_weights = [0.5, 0.5]
         self._int_pts = tuple(
             IntegrationPoint1D(local_coord=xi, weight=wt)
-            for (xi, wt) in zip(int_pt_coords, int_pt_weights)
+            for (xi, wt) in zip(Element1D._int_pt_coords, Element1D._int_pt_weights)
         )
         z_e = np.array([[nd.z for nd in self.nodes]]).T
         for ip in self.int_pts:
