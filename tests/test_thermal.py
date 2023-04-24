@@ -35,3 +35,8 @@ class TestThermalElement1D(unittest.TestCase):
     def test_int_pts_equal(self):
         for e_ip, te_ip in zip(self.e.int_pts, self.thrm_e.int_pts):
             self.assertIs(e_ip, te_ip)
+
+    def test_heat_storage_matrix_uninitialized(self):
+        self.assertTrue(
+            np.allclose(self.thrm_e.heat_storage_matrix(), np.zeros((2, 2)))
+        )
