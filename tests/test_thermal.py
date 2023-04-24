@@ -38,3 +38,8 @@ class TestThermalElement1D(unittest.TestCase):
 
     def test_heat_flow_matrix_uninitialized(self):
         self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix(), np.zeros((2, 2))))
+
+    def test_heat_storage_matrix_uninitialized(self):
+        self.assertTrue(
+            np.allclose(self.thrm_e.heat_storage_matrix(), np.zeros((2, 2)))
+        )
