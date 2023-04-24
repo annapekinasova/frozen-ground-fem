@@ -20,3 +20,7 @@ class TestThermalElement1D(unittest.TestCase):
     def test_invalid_no_parent(self):
         with self.assertRaises(TypeError):
             thrm_e = ThermalElement1D()
+
+    def test_invalid_parent(self):
+        with self.assertRaises(TypeError):
+            thrm_e = ThermalElement1D(self.nodes)
