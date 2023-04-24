@@ -24,3 +24,7 @@ class TestThermalElement1D(unittest.TestCase):
     def test_invalid_parent(self):
         with self.assertRaises(TypeError):
             thrm_e = ThermalElement1D(self.nodes)
+
+    def test_nodes_equal(self):
+        for nd, e_nd in zip(self.nodes, self.thrm_e.nodes):
+            self.assertIs(nd, e_nd)
