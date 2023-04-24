@@ -27,3 +27,7 @@ class TestThermalElement1D(unittest.TestCase):
 
     def test_jacobian_equal(self):
         self.assertAlmostEqual(self.e.jacobian, self.thrm_e.jacobian)
+
+    def test_nodes_equal(self):
+        for nd, e_nd in zip(self.nodes, self.thrm_e.nodes):
+            self.assertIs(nd, e_nd)
