@@ -24,3 +24,6 @@ class TestThermalElement1D(unittest.TestCase):
     def test_invalid_parent(self):
         with self.assertRaises(TypeError):
             thrm_e = ThermalElement1D(self.nodes)
+
+    def test_jacobian_equal(self):
+        self.assertAlmostEqual(self.e.jacobian, self.thrm_e.jacobian)
