@@ -2,6 +2,9 @@ import unittest
 
 import numpy as np
 
+from frozen_ground_fem.materials import (
+    Material,
+)
 from frozen_ground_fem.geometry import (
     Node1D,
     Element1D,
@@ -43,3 +46,14 @@ class TestThermalElement1D(unittest.TestCase):
         self.assertTrue(
             np.allclose(self.thrm_e.heat_storage_matrix(), np.zeros((2, 2)))
         )
+
+    def test_heat_storage_matrix(self):
+        m = Material(dens_solids=2.65e3, spec_heat_cap_solids=2.0e2)
+        for ip in self.thrm_e.int_pts:
+            ip.material = m
+            ip.porosity = 0.3
+            ip.vol_ice_cont = 0.2
+        heat_cap = self.thrm_e.int_pts[0].vol_heat_cap
+        jac = self.thrm_e.jacobian
+        expected = heat_cap * jac / 6 * np.array([[2.0, 1.0], [1.0, 2.0]])
+        self.assertTrue(np.allclose(self.thrm_e.heat_storage_matrix(), expected))
