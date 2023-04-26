@@ -115,7 +115,8 @@ class TestThermalBoundary1D(unittest.TestCase):
         )
 
     def test_assign_bnd_value_invalid(self):
-        pass
+        with self.assertRaises(ValueError):
+            self.thrm_bnd.bnd_value = "temp"
 
     def test_assign_bnd_value_valid(self):
         pass
