@@ -191,7 +191,7 @@ class ThermalBoundary1D(BoundaryElement1D):
 
     @bnd_type.setter
     def bnd_type(self, value):
-        if not isinstance(value, BoundaryType):
+        if not isinstance(value, ThermalBoundary1D.BoundaryType):
             raise TypeError(f"{value} is not a ThermalBoundary1D.BoundaryType")
         self._bnd_type = value
 
