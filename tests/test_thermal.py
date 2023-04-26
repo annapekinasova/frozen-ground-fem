@@ -95,7 +95,12 @@ class TestThermalBoundary1D(unittest.TestCase):
             self.assertIs(nd, bnd_nd)
 
     def test_assign_bnd_type_invalid(self):
-        pass
+        with self.assertRaises(TypeError):
+            self.thrm_bnd.bnd_type = 0
+        with self.assertRaises(TypeError):
+            self.thrm_bnd.bnd_type = "temp"
+        with self.assertRaises(AttributeError):
+            self.thrm_bnd.bnd_type = ThermalBoundary1D.BoundaryType.disp
 
     def test_assign_bnd_type_valid(self):
         pass
