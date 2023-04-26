@@ -98,7 +98,16 @@ class TestThermalBoundary1D(unittest.TestCase):
         pass
 
     def test_assign_bnd_type_valid(self):
-        pass
+        self.thrm_bnd.bnd_type = ThermalBoundary1D.BoundaryType.heat_flux
+        self.assertEqual(
+            self.thrm_bnd.bnd_type, ThermalBoundary1D.BoundaryType.heat_flux
+        )
+        self.thrm_bnd.bnd_type = ThermalBoundary1D.BoundaryType.temp
+        self.assertEqual(self.thrm_bnd.bnd_type, ThermalBoundary1D.BoundaryType.temp)
+        self.thrm_bnd.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
+        self.assertEqual(
+            self.thrm_bnd.bnd_type, ThermalBoundary1D.BoundaryType.temp_grad
+        )
 
     def test_assign_bnd_value_invalid(self):
         pass
