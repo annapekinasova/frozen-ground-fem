@@ -87,7 +87,8 @@ class TestThermalBoundary1D(unittest.TestCase):
             ThermalBoundary1D(self.nodes)
 
     def test_defaults(self):
-        pass
+        self.assertEqual(self.thrm_bnd.bnd_type, ThermalBoundary1D.BoundaryType.temp)
+        self.assertAlmostEqual(self.thrm_bnd.bnd_value, 0.0)
 
     def test_nodes_equal(self):
         for nd, bnd_nd in zip(self.nodes, self.thrm_bnd.nodes):
