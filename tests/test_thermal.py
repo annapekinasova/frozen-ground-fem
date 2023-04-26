@@ -118,7 +118,12 @@ class TestThermalBoundary1D(unittest.TestCase):
         pass
 
     def test_assign_bnd_value_valid(self):
-        pass
+        self.thrm_bnd.bnd_value = 1.0
+        self.assertAlmostEqual(self.thrm_bnd.bnd_value, 1.0)
+        self.thrm_bnd.bnd_value = -2
+        self.assertAlmostEqual(self.thrm_bnd.bnd_value, -2.0)
+        self.thrm_bnd.bnd_value = "1e-5"
+        self.assertAlmostEqual(self.thrm_bnd.bnd_value, 1e-5)
 
     def test_update_nodes_bnd_type_temp(self):
         pass
