@@ -42,7 +42,8 @@ class TestThermalElement1D(unittest.TestCase):
             self.assertIs(e_ip, te_ip)
 
     def test_heat_flow_matrix_uninitialized(self):
-        self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix(), np.zeros((2, 2))))
+        self.assertTrue(np.allclose(
+            self.thrm_e.heat_flow_matrix(), np.zeros((2, 2))))
 
     def test_heat_flow_matrix(self):
         m = Material(thrm_cond_solids=1e-5)
@@ -69,7 +70,8 @@ class TestThermalElement1D(unittest.TestCase):
         heat_cap = self.thrm_e.int_pts[0].vol_heat_cap
         jac = self.thrm_e.jacobian
         expected = heat_cap * jac / 6 * np.array([[2.0, 1.0], [1.0, 2.0]])
-        self.assertTrue(np.allclose(self.thrm_e.heat_storage_matrix(), expected))
+        self.assertTrue(np.allclose(
+            self.thrm_e.heat_storage_matrix(), expected))
 
 
 class TestThermalBoundary1D(unittest.TestCase):
@@ -87,7 +89,8 @@ class TestThermalBoundary1D(unittest.TestCase):
             ThermalBoundary1D(self.nodes)
 
     def test_defaults(self):
-        self.assertEqual(self.thrm_bnd.bnd_type, ThermalBoundary1D.BoundaryType.temp)
+        self.assertEqual(self.thrm_bnd.bnd_type,
+                         ThermalBoundary1D.BoundaryType.temp)
         self.assertAlmostEqual(self.thrm_bnd.bnd_value, 0.0)
 
     def test_nodes_equal(self):
@@ -108,7 +111,8 @@ class TestThermalBoundary1D(unittest.TestCase):
             self.thrm_bnd.bnd_type, ThermalBoundary1D.BoundaryType.heat_flux
         )
         self.thrm_bnd.bnd_type = ThermalBoundary1D.BoundaryType.temp
-        self.assertEqual(self.thrm_bnd.bnd_type, ThermalBoundary1D.BoundaryType.temp)
+        self.assertEqual(self.thrm_bnd.bnd_type,
+                         ThermalBoundary1D.BoundaryType.temp)
         self.thrm_bnd.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
         self.assertEqual(
             self.thrm_bnd.bnd_type, ThermalBoundary1D.BoundaryType.temp_grad
