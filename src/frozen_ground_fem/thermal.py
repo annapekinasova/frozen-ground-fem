@@ -230,6 +230,6 @@ class ThermalBoundary1D(BoundaryElement1D):
         only in the case that bnd_type == BoundaryType.temp.
         Otherwise, it does nothing.
         """
-        if self.bnd_type == BoundaryType.temp:
+        if self.bnd_type == ThermalBoundary1D.BoundaryType.temp:
             for nd in self.nodes:
                 nd.temp = self.bnd_value
