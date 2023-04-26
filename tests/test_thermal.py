@@ -90,7 +90,8 @@ class TestThermalBoundary1D(unittest.TestCase):
         pass
 
     def test_nodes_equal(self):
-        pass
+        for nd, bnd_nd in zip(self.nodes, self.thrm_bnd.nodes):
+            self.assertIs(nd, bnd_nd)
 
     def test_assign_bnd_type_invalid(self):
         pass
