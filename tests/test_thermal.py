@@ -73,14 +73,15 @@ class TestThermalElement1D(unittest.TestCase):
 
 class TestThermalBoundary1D(unittest.TestCase):
     def setUp(self):
-        pass
+        self.nodes = (Node1D(0, 2.0),)
 
     def test_invalid_no_parent(self):
         with self.assertRaises(TypeError):
             ThermalElement1D()
 
     def test_invalid_parent(self):
-        pass
+        with self.assertRaises(TypeError):
+            ThermalBoundary1D(self.nodes)
 
     def test_defaults(self):
         pass
