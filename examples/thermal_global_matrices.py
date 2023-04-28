@@ -18,7 +18,7 @@ def main():
     mesh.z_max = 100.0
     mesh.generate_mesh(num_nodes=10)
 
-    mtl = Material(7.0, 2.65e3, 741e3)
+    mtl = Material(7.0, 2.65e3, 741)
     por = 0.3
     vol_ice_cont = 0.05
     for e in mesh.elements:
