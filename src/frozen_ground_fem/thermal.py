@@ -4,12 +4,16 @@ Module for implementing thermal physics using the finite element method.
 from enum import Enum
 
 import numpy as np
+from build.lib.frozen_ground_fem.geometry import Mesh1D
 
 from frozen_ground_fem.geometry import (
     shape_matrix,
     gradient_matrix,
+    Node1D,
+    IntegrationPoint1D,
     Element1D,
     BoundaryElement1D,
+    Mesh1D,
 )
 
 
@@ -28,13 +32,13 @@ class ThermalElement1D(Element1D):
         :c:`frozen_ground_fem.geometry.Element1D`.
     """
 
-    def __init__(self, parent: Element1D):
+    def __init__(self, parent: Element1D) -> None:
         if not isinstance(parent, Element1D):
             raise TypeError(f"type(parent): {type(parent)} is not Element1D")
         self._parent = parent
 
     @property
-    def nodes(self):
+    def nodes(self) -> tuple[Node1D]:
         """The tuple of :c:`Node1D` contained in the element.
 
         Returns
@@ -49,7 +53,7 @@ class ThermalElement1D(Element1D):
         return self._parent.nodes
 
     @property
-    def jacobian(self):
+    def jacobian(self) -> float:
         """The length scale of the element (in Lagrangian coordinates).
 
         Returns
@@ -64,7 +68,7 @@ class ThermalElement1D(Element1D):
         return self._parent.jacobian
 
     @property
-    def int_pts(self):
+    def int_pts(self) -> tuple[IntegrationPoint1D]:
         """The tuple of :c:`IntegrationPoint1D` contained in the element.
 
         Returns
@@ -78,7 +82,7 @@ class ThermalElement1D(Element1D):
         """
         return self._parent.int_pts
 
-    def heat_flow_matrix(self):
+    def heat_flow_matrix(self) -> np.ndarray:
         """The element heat flow (conduction) matrix.
 
         Returns
@@ -99,7 +103,7 @@ class ThermalElement1D(Element1D):
         H *= jac
         return H
 
-    def heat_storage_matrix(self):
+    def heat_storage_matrix(self) -> np.ndarray:
         """The element heat storage matrix.
 
         Returns
@@ -147,7 +151,12 @@ class ThermalBoundary1D(BoundaryElement1D):
 
     BoundaryType = Enum("BoundaryType", ["temp", "heat_flux", "temp_grad"])
 
-    def __init__(self, parent, bnd_type=BoundaryType.temp, bnd_value=0.0):
+    def __init__(
+        self,
+        parent: BoundaryElement1D,
+        bnd_type=BoundaryType.temp,
+        bnd_value: float = 0.0,
+    ) -> None:
         if not isinstance(parent, BoundaryElement1D):
             raise TypeError(f"type(parent): {type(parent)} is not BoundaryElement1D")
         self._parent = parent
@@ -155,7 +164,7 @@ class ThermalBoundary1D(BoundaryElement1D):
         self.bnd_value = bnd_value
 
     @property
-    def nodes(self):
+    def nodes(self) -> tuple[Node1D]:
         """The tuple of :c:`Node1D` contained in the boundary element.
 
         Returns
@@ -220,7 +229,7 @@ class ThermalBoundary1D(BoundaryElement1D):
         value = float(value)
         self._bnd_value = value
 
-    def update_nodes(self):
+    def update_nodes(self) -> None:
         """Update the boundary condition value at the nodes.
 
         Notes
@@ -233,3 +242,9 @@ class ThermalBoundary1D(BoundaryElement1D):
         if self.bnd_type == ThermalBoundary1D.BoundaryType.temp:
             for nd in self.nodes:
                 nd.temp = self.bnd_value
+
+
+class ThermalAnalysis1D:
+    def __init__(self, mesh: Mesh1D) -> None:
+        # TODO: add validation for mesh argument
+        self._mesh = mesh
