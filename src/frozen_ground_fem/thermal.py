@@ -37,7 +37,7 @@ class ThermalElement1D(Element1D):
         self._parent = parent
 
     @property
-    def nodes(self) -> tuple[Node1D]:
+    def nodes(self) -> tuple[Node1D, ...]:
         """The tuple of :c:`Node1D` contained in the element.
 
         Returns
@@ -163,7 +163,7 @@ class ThermalBoundary1D(BoundaryElement1D):
         self.bnd_value = bnd_value
 
     @property
-    def nodes(self) -> tuple[Node1D]:
+    def nodes(self) -> tuple[Node1D, ...]:
         """The tuple of :c:`Node1D` contained in the boundary element.
 
         Returns
@@ -245,22 +245,28 @@ class ThermalBoundary1D(BoundaryElement1D):
 
 class ThermalAnalysis1D:
     def __init__(self, mesh: Mesh1D) -> None:
-        # TODO: add validation for mesh argument
+        if not isinstance(mesh, Mesh1D):
+            raise TypeError(f"mesh has type {type(mesh)}, not Mesh1D")
+        if not mesh.mesh_valid:
+            raise ValueError(
+                f"mesh.mesh_valid is {mesh.mesh_valid}, need to generate mesh"
+            )
         self._mesh = mesh
-        # TODO: generate thermal_elements and thermal_boundaries
-        self._thermal_elements = None
-        self._thermal_boundaries = None
+        self._thermal_elements = tuple(ThermalElement1D(e) for e in self.mesh.elements)
+        self._thermal_boundaries = tuple(
+            ThermalBoundary1D(be) for be in self.mesh.boundary_elements
+        )
 
     @property
-    def mesh(self):
+    def mesh(self) -> Mesh1D:
         return self._mesh
 
     @property
-    def thermal_elements(self):
+    def thermal_elements(self) -> tuple[ThermalElement1D, ...]:
         return self._thermal_elements
 
     @property
-    def thermal_boundaries(self):
+    def thermal_boundaries(self) -> tuple[ThermalBoundary1D, ...]:
         return self._thermal_boundaries
 
     def update_thermal_boundary_conditions(self):
