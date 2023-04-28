@@ -248,3 +248,36 @@ class ThermalAnalysis1D:
     def __init__(self, mesh: Mesh1D) -> None:
         # TODO: add validation for mesh argument
         self._mesh = mesh
+        # TODO: generate thermal_elements and thermal_boundaries
+        self._thermal_elements = tuple()
+        self._thermal_boundaries = tuple()
+
+    @property
+    def mesh(self):
+        return self._mesh
+
+    @property
+    def thermal_elements(self):
+        return self._thermal_elements
+
+    @property
+    def thermal_boundaries(self):
+        return self._thermal_boundaries
+
+    def update_thermal_boundary_conditions(self):
+        raise NotImplementedError()
+
+    def update_heat_flux_vector(self):
+        raise NotImplementedError()
+
+    def update_heat_flow_matrix(self):
+        raise NotImplementedError()
+
+    def update_heat_storage_matrix(self):
+        raise NotImplementedError()
+
+    def update_nodes(self):
+        raise NotImplementedError()
+
+    def update_integration_points(self):
+        raise NotImplementedError()
