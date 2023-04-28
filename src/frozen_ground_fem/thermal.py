@@ -4,7 +4,6 @@ Module for implementing thermal physics using the finite element method.
 from enum import Enum
 
 import numpy as np
-from build.lib.frozen_ground_fem.geometry import Mesh1D
 
 from frozen_ground_fem.geometry import (
     shape_matrix,
@@ -249,8 +248,8 @@ class ThermalAnalysis1D:
         # TODO: add validation for mesh argument
         self._mesh = mesh
         # TODO: generate thermal_elements and thermal_boundaries
-        self._thermal_elements = tuple()
-        self._thermal_boundaries = tuple()
+        self._thermal_elements = None
+        self._thermal_boundaries = None
 
     @property
     def mesh(self):
