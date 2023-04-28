@@ -245,17 +245,23 @@ class ThermalBoundary1D(BoundaryElement1D):
 
 class ThermalAnalysis1D:
     def __init__(self, mesh: Mesh1D) -> None:
+        # validate mesh on which the analysis is to be performed
         if not isinstance(mesh, Mesh1D):
             raise TypeError(f"mesh has type {type(mesh)}, not Mesh1D")
         if not mesh.mesh_valid:
             raise ValueError(
                 f"mesh.mesh_valid is {mesh.mesh_valid}, need to generate mesh"
             )
+        # assign the mesh and create thermal elements
         self._mesh = mesh
         self._thermal_elements = tuple(ThermalElement1D(e) for e in self.mesh.elements)
         self._thermal_boundaries = tuple(
             ThermalBoundary1D(be) for be in self.mesh.boundary_elements
         )
+        # initialize global vectors and matrices
+        self._heat_flux_vector = np.zeros(self.mesh.num_nodes)
+        self._heat_flow_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
+        self._heat_storage_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
 
     @property
     def mesh(self) -> Mesh1D:
@@ -276,10 +282,18 @@ class ThermalAnalysis1D:
         raise NotImplementedError()
 
     def update_heat_flow_matrix(self):
-        raise NotImplementedError()
+        self._heat_flow_matrix[:, :] = 0.0
+        for e in self.thermal_elements:
+            ind = [nd.index for nd in e.nodes]
+            He = e.heat_flow_matrix()
+            self._heat_flow_matrix[np.ix_(ind, ind)] += He
 
     def update_heat_storage_matrix(self):
-        raise NotImplementedError()
+        self._heat_storage_matrix[:, :] = 0.0
+        for e in self.thermal_elements:
+            ind = [nd.index for nd in e.nodes]
+            Ce = e.heat_storage_matrix()
+            self._heat_storage_matrix[np.ix_(ind, ind)] += Ce
 
     def update_nodes(self):
         raise NotImplementedError()
