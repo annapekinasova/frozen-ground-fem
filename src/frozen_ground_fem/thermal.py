@@ -178,6 +178,21 @@ class ThermalBoundary1D(BoundaryElement1D):
         return self._parent.nodes
 
     @property
+    def int_pts(self) -> tuple[IntegrationPoint1D, ...] | None:
+        """The tuple of :c:`IntegrationPoint1D` contained in the boundary element.
+
+        Returns
+        ------
+        tuple of :c:`IntegrationPoint1D`
+
+        Notes
+        -----
+        This is a wrapper that references the int_pts property
+        of the parent BoundaryElement1D.
+        """
+        return self._parent.int_pts
+
+    @property
     def bnd_type(self):
         """The type of boundary condition.
 
@@ -259,9 +274,18 @@ class ThermalAnalysis1D:
             ThermalBoundary1D(be) for be in self.mesh.boundary_elements
         )
         # initialize global vectors and matrices
+        self._temp_vector_0 = np.zeros(self.mesh.num_nodes)
+        self._heat_flux_vector_0 = np.zeros(self.mesh.num_nodes)
+        self._heat_flow_matrix_0 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
+        self._heat_storage_matrix_0 = np.zeros(
+            (self.mesh.num_nodes, self.mesh.num_nodes)
+        )
+        self._temp_vector = np.zeros(self.mesh.num_nodes)
         self._heat_flux_vector = np.zeros(self.mesh.num_nodes)
         self._heat_flow_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
         self._heat_storage_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
+        self._residual_heat_flux_vector = np.zeros(self.mesh.num_nodes)
+        self._delta_temp_vector = np.zeros(self.mesh.num_nodes)
 
     @property
     def mesh(self) -> Mesh1D:
@@ -279,7 +303,14 @@ class ThermalAnalysis1D:
         raise NotImplementedError()
 
     def update_heat_flux_vector(self):
-        raise NotImplementedError()
+        self._heat_flux_vector[:] = 0.0
+        for be in self._thermal_boundaries:
+            if be.bnd_type == ThermalBoundary1D.BoundaryType.heat_flux:
+                self._heat_flux_vector[be.nodes[0].index] += be.bnd_value
+            elif be.bnd_type == ThermalBoundary1D.BoundaryType.temp_grad:
+                self._heat_flux_vector[be.nodes[0].index] += (
+                    -be.int_pts[0].thrm_cond * be.bnd_value
+                )
 
     def update_heat_flow_matrix(self):
         self._heat_flow_matrix[:, :] = 0.0

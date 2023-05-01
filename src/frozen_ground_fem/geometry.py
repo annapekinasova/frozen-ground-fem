@@ -505,13 +505,13 @@ class BoundaryElement1D:
 
     Raises
     ------
-    TypeError
+    TypeError:
         If nodes initializer contains non-:c:`Node1D` objects.
     ValueError
         If len(nodes) != 1.
     """
 
-    def __init__(self, nodes):
+    def __init__(self, nodes, int_pts=None):
         # check for valid node list and assign to self
         if (nnod := len(nodes)) != 1:
             raise ValueError(f"len(nodes) is {nnod} not equal to 1")
@@ -519,6 +519,17 @@ class BoundaryElement1D:
             if not isinstance(nd, Node1D):
                 raise TypeError("nodes contains invalid objects, not Node1D")
         self._nodes = tuple(nodes)
+        if int_pts is None:
+            self._int_pts = None
+        else:
+            if len(int_pts) != 1:
+                raise ValueError(f"len(int_pts) not equal to 1")
+            for ip in int_pts:
+                if not isinstance(ip, IntegrationPoint1D):
+                    raise TypeError(
+                        "int_pts contains invalid objects, not IntegrationPoint1D"
+                    )
+            self._int_pts = tuple(int_pts)
 
     @property
     def nodes(self):
@@ -529,6 +540,16 @@ class BoundaryElement1D:
         tuple of :c:`Node1D`
         """
         return self._nodes
+
+    @property
+    def int_pts(self):
+        """The tuple of :c:`IntegrationPoint1D` contained in the element.
+
+        Returns
+        ------
+        tuple of :c:`IntegrationPoint1D`
+        """
+        return self._int_pts
 
 
 class Mesh1D:
@@ -776,7 +797,7 @@ class Mesh1D:
     def _generate_boundary_elements(self):
         self._boundary_elements = tuple(
             (
-                BoundaryElement1D((self.nodes[0],)),
-                BoundaryElement1D((self.nodes[-1],)),
+                BoundaryElement1D((self.nodes[0],), (self.elements[0].int_pts[0],)),
+                BoundaryElement1D((self.nodes[-1],), (self.elements[-1].int_pts[-1],)),
             )
         )
