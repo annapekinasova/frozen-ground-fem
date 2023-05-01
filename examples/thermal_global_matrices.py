@@ -13,12 +13,15 @@ from frozen_ground_fem.thermal import (
 
 
 def main():
+    # define mesh with 10 nodes
     mesh = Mesh1D()
     mesh.z_min = -8.0
     mesh.z_max = 100.0
     mesh.generate_mesh(num_nodes=10)
 
-    mtl = Material(7.0, 2.65e3, 741)
+    # define material properties
+    # and initialize integration points 
+    mtl = Material(thrm_cond_solids=7.0, dens_solids=2.65e3, spec_heat_cap_solids=741)
     por = 0.3
     vol_ice_cont = 0.05
     for e in mesh.elements:
@@ -27,6 +30,8 @@ def main():
             ip.porosity = por
             ip.vol_ice_cont = vol_ice_cont
 
+    # creating thermal analysis object
+    # and initialize global matrices
     thermal_analysis = ThermalAnalysis1D(mesh)
     thermal_analysis.update_heat_flow_matrix()
     thermal_analysis.update_heat_storage_matrix()
