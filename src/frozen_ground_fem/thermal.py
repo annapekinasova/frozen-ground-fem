@@ -284,6 +284,15 @@ class ThermalAnalysis1D:
         self._heat_flux_vector = np.zeros(self.mesh.num_nodes)
         self._heat_flow_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
         self._heat_storage_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
+        self._weighted_heat_flux_vector = np.zeros(self.mesh.num_nodes)
+        self._weighted_heat_flow_matrix = np.zeros(
+            (self.mesh.num_nodes, self.mesh.num_nodes)
+        )
+        self._weighted_heat_storage_matrix = np.zeros(
+            (self.mesh.num_nodes, self.mesh.num_nodes)
+        )
+        self._coef_matrix_0 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
+        self._coef_matrix_1 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
         self._residual_heat_flux_vector = np.zeros(self.mesh.num_nodes)
         self._delta_temp_vector = np.zeros(self.mesh.num_nodes)
 
@@ -300,7 +309,7 @@ class ThermalAnalysis1D:
         return self._thermal_boundaries
 
     def update_thermal_boundary_conditions(self):
-        raise NotImplementedError()
+        pass
 
     def update_heat_flux_vector(self):
         self._heat_flux_vector[:] = 0.0
@@ -327,7 +336,16 @@ class ThermalAnalysis1D:
             self._heat_storage_matrix[np.ix_(ind, ind)] += Ce
 
     def update_nodes(self):
-        raise NotImplementedError()
+        for nd in self.mesh.nodes:
+            nd.temp = self._temp_vector[nd.index]
 
     def update_integration_points(self):
-        raise NotImplementedError()
+        for e in self.mesh.elements:
+            Te = np.array([nd.temp for nd in e.nodes])
+            for ip in e.int_pts:
+                N = shape_matrix(ip.local_coord)
+                T = N @ Te
+                if T <= 0.0:
+                    ip.vol_ice_cont = ip.porosity
+                else:
+                    ip.vol_ice_cont = 0.0
