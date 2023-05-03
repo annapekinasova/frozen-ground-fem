@@ -71,110 +71,24 @@ def main():
         grad_boundary,
     )
 
-    # initialize global matrices and vectors
-    for tb in thermal_analysis._thermal_boundaries:
-        tb.update_nodes()
-    for nd in mesh.nodes:
-        thermal_analysis._temp_vector[nd.index] = nd.temp
-    thermal_analysis.update_integration_points()
-    thermal_analysis.update_heat_flux_vector()
-    thermal_analysis.update_heat_flow_matrix()
-    thermal_analysis.update_heat_storage_matrix()
+    # **********************************************
+    # TIME STEPPING ALGORITHM
+    # **********************************************
 
     # initialize plot
     z_vec = np.array([nd.z for nd in mesh.nodes])
     plt.figure(figsize=(6, 9))
 
-    # **********************************************
-    # TIME STEPPING ALGORITHM
-    # **********************************************
-
-    dt = 8.64e5 * 7  # one week, in seconds
-    over_dt = 1.0 / dt
-    t0 = 0.0
-    alpha = 0.5  # 0.5 --> Crank-Nicolson method
-    eps_s = 1e-3  # error tolerance, stopping criterion
-    max_iter = 100  # maximum number of iterations
-
-    # create list of free node indices
-    # that will be updated at each iteration
-    # (i.e. are not fixed/Dirichlet boundary conditions)
-    free_ind = [nd.index for nd in mesh.nodes]
-    for tb in ta._thermal_boundaries:
-        if tb.bnd_type == ThermalBoundary1D.BoundaryType.temp:
-            free_ind.remove(tb.nodes[0].index)
-    free_vec = np.ix_(free_ind)
-    free_arr = np.ix_(free_ind, free_ind)
+    # initialize global matrices and vectors
+    ta.time_step = 8.64e5 * 7  # one week, in seconds
+    thermal_analysis.initialize_global_system(t0=0.0)
 
     for k in range(1000):
         # generate temperature distribution plot
         if not k % 100:
-            plt.plot(ta._temp_vector, z_vec, label=f"t={t0 / 8.64e5} days")
-
-        # update time coordinate
-        t1 = t0 + dt
-
-        # store previous converged matrices and vectors
-        ta._temp_vector_0[:] = ta._temp_vector[:]
-        ta._heat_flux_vector_0[:] = ta._heat_flux_vector[:]
-        ta._heat_flow_matrix_0[:, :] = ta._heat_flow_matrix[:, :]
-        ta._heat_storage_matrix_0[:, :] = ta._heat_storage_matrix[:, :]
-
-        # update boundary conditions
-        ta.update_thermal_boundary_conditions()
-        ta.update_heat_flux_vector()
-        ta._weighted_heat_flux_vector[:] = (
-            1.0 - alpha
-        ) * ta._heat_flux_vector_0 + alpha * ta._heat_flux_vector
-
-        # iterative correction loop
-        eps_a = 1.0
-        j = 0
-        while eps_a > eps_s and j < max_iter:
-            # calculate weighted matrices
-            ta._weighted_heat_flow_matrix[:, :] = (
-                1.0 - alpha
-            ) * ta._heat_flow_matrix_0 + alpha * ta._heat_flow_matrix
-            ta._weighted_heat_storage_matrix[:, :] = (
-                1.0 - alpha
-            ) * ta._heat_storage_matrix_0 + alpha * ta._heat_storage_matrix
-            ta._coef_matrix_0[:, :] = (
-                ta._weighted_heat_storage_matrix * over_dt
-                - (1.0 - alpha) * ta._weighted_heat_flow_matrix
-            )
-            ta._coef_matrix_1[:, :] = (
-                ta._weighted_heat_storage_matrix * over_dt
-                + alpha * ta._weighted_heat_flow_matrix
-            )
-
-            # calculate residual heat flux vector
-            ta._residual_heat_flux_vector[:] = (
-                ta._coef_matrix_0 @ ta._temp_vector_0
-                - ta._coef_matrix_1 @ ta._temp_vector
-                - ta._weighted_heat_flux_vector
-            )
-
-            # calculate temperature correction
-            ta._delta_temp_vector[free_vec] = np.linalg.solve(
-                ta._coef_matrix_1[free_arr],
-                ta._residual_heat_flux_vector[free_vec],
-            )
-            ta._temp_vector[free_vec] += ta._delta_temp_vector[free_vec]
-
-            # update error and iteration counter
-            eps_a = np.linalg.norm(ta._delta_temp_vector) / np.linalg.norm(
-                ta._temp_vector
-            )
-            j += 1
-
-            # update global matrices
-            ta.update_nodes()
-            ta.update_integration_points()
-            ta.update_heat_flow_matrix()
-            ta.update_heat_storage_matrix()
-
-        # increment time step
-        t0 = t1
+            plt.plot(ta._temp_vector, z_vec, label=f"t={ta._t0 / 8.64e5} days")
+        ta.initialize_time_step()
+        ta.iterative_correction_step()
 
     # finalize plot labels
     plt.ylim(mesh.z_max, mesh.z_min)

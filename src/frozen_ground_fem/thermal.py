@@ -273,6 +273,10 @@ class ThermalAnalysis1D:
         self._thermal_boundaries = tuple(
             ThermalBoundary1D(be) for be in self.mesh.boundary_elements
         )
+        # set default values for time stepping algorithm
+        self.implicit_factor = 0.5  # (Crank-Nicolson)
+        self.implicit_error_tolerance = 1e-3
+        self.max_iterations = 100
         # initialize global vectors and matrices
         self._temp_vector_0 = np.zeros(self.mesh.num_nodes)
         self._heat_flux_vector_0 = np.zeros(self.mesh.num_nodes)
@@ -307,6 +311,81 @@ class ThermalAnalysis1D:
     @property
     def thermal_boundaries(self) -> tuple[ThermalBoundary1D, ...]:
         return self._thermal_boundaries
+
+    @property
+    def time_step(self):
+        """The time_step property."""
+        return self._time_step
+
+    @time_step.setter
+    def time_step(self, value):
+        value = float(value)
+        if value <= 0.0:
+            raise ValueError(f"invalid time_step {value}, must be positive")
+        self._time_step = value
+        self._inv_time_step = 1.0 / value
+
+    @property
+    def dt(self):
+        return self._time_step
+
+    @property
+    def over_dt(self):
+        return self._inv_time_step
+
+    @property
+    def implicit_factor(self):
+        """The implicit_factor property."""
+        return self._implicit_factor
+
+    @implicit_factor.setter
+    def implicit_factor(self, value):
+        value = float(value)
+        if value < 0.0 or value > 1.0:
+            raise ValueError(
+                f"invalid implicit_factor {value}, must be between 0.0 and 1.0"
+            )
+        self._implicit_factor = value
+        self._inv_implicit_factor = 1.0 - value
+
+    @property
+    def alpha(self):
+        return self._implicit_factor
+
+    @property
+    def one_minus_alpha(self):
+        return self._inv_implicit_factor
+
+    @property
+    def implicit_error_tolerance(self):
+        """The implicit_error_tolerance property."""
+        return self._implicit_error_tolerance
+
+    @implicit_error_tolerance.setter
+    def implicit_error_tolerance(self, value):
+        value = float(value)
+        if value <= 0.0:
+            raise ValueError(
+                f"invalid implicit_error_tolerance {value}, must be positive"
+            )
+        self._implicit_error_tolerance = value
+
+    @property
+    def eps_s(self):
+        return self._implicit_error_tolerance
+
+    @property
+    def max_iterations(self):
+        """The max_iterations property."""
+        return self._max_iterations
+
+    @max_iterations.setter
+    def max_iterations(self, value):
+        if not isinstance(value, int):
+            raise TypeError(f"type(max_iterations) {type(value)} invalid, must be int")
+        if value <= 0:
+            raise ValueError(f"max_iterations {value} invalid, must be positive")
+        self._max_iterations = value
 
     def update_thermal_boundary_conditions(self):
         pass
@@ -349,3 +428,97 @@ class ThermalAnalysis1D:
                     ip.vol_ice_cont = ip.porosity
                 else:
                     ip.vol_ice_cont = 0.0
+
+    def initialize_global_system(self, t0):
+        # initialize global time
+        self._t0 = t0
+        self._t1 = t0
+        # update nodes with boundary conditions first
+        self.update_thermal_boundary_conditions()
+        for tb in self.thermal_boundaries:
+            tb.update_nodes()
+        # now get the temperatures from the nodes
+        # (we assume that initial conditions have already been applied)
+        for nd in self.mesh.nodes:
+            self._temp_vector[nd.index] = nd.temp
+        # now build the global matrices and vectors
+        self.update_integration_points()
+        self.update_heat_flux_vector()
+        self.update_heat_flow_matrix()
+        self.update_heat_storage_matrix()
+        # create list of free node indices
+        # that will be updated at each iteration
+        # (i.e. are not fixed/Dirichlet boundary conditions)
+        free_ind = [nd.index for nd in self.mesh.nodes]
+        for tb in self.thermal_boundaries:
+            if tb.bnd_type == ThermalBoundary1D.BoundaryType.temp:
+                free_ind.remove(tb.nodes[0].index)
+        self._free_vec = np.ix_(free_ind)
+        self._free_arr = np.ix_(free_ind, free_ind)
+
+    def initialize_time_step(self):
+        # update time coordinate
+        self._t0 = self._t1
+        self._t1 = self._t0 + self.dt
+        # store previous converged matrices and vectors
+        self._temp_vector_0[:] = self._temp_vector[:]
+        self._heat_flux_vector_0[:] = self._heat_flux_vector[:]
+        self._heat_flow_matrix_0[:, :] = self._heat_flow_matrix[:, :]
+        self._heat_storage_matrix_0[:, :] = self._heat_storage_matrix[:, :]
+        # update boundary conditions
+        self.update_thermal_boundary_conditions()
+        self.update_heat_flux_vector()
+        self._weighted_heat_flux_vector[:] = (
+            self.one_minus_alpha * self._heat_flux_vector_0
+            + self.alpha * self._heat_flux_vector
+        )
+        # initialize iteration parameters
+        self._eps_a = 1.0
+        self._iter = 0
+
+    def update_weighted_matrices(self):
+        self._weighted_heat_flow_matrix[:, :] = (
+            self.one_minus_alpha * self._heat_flow_matrix_0
+            + self.alpha * self._heat_flow_matrix
+        )
+        self._weighted_heat_storage_matrix[:, :] = (
+            self.one_minus_alpha * self._heat_storage_matrix_0
+            + self.alpha * self._heat_storage_matrix
+        )
+        self._coef_matrix_0[:, :] = (
+            self._weighted_heat_storage_matrix * self.over_dt
+            - self.one_minus_alpha * self._weighted_heat_flow_matrix
+        )
+        self._coef_matrix_1[:, :] = (
+            self._weighted_heat_storage_matrix * self.over_dt
+            + self.alpha * self._weighted_heat_flow_matrix
+        )
+
+    def calculate_temperature_correction(self):
+        # update residual vector
+        self._residual_heat_flux_vector[:] = (
+            self._coef_matrix_0 @ self._temp_vector_0
+            - self._coef_matrix_1 @ self._temp_vector
+            - self._weighted_heat_flux_vector
+        )
+        # calculate temperature increment
+        self._delta_temp_vector[self._free_vec] = np.linalg.solve(
+            self._coef_matrix_1[self._free_arr],
+            self._residual_heat_flux_vector[self._free_vec],
+        )
+        # increment temperature and iteration variables
+        self._temp_vector[self._free_vec] += self._delta_temp_vector[self._free_vec]
+        self._eps_a = np.linalg.norm(self._delta_temp_vector) / np.linalg.norm(
+            self._temp_vector
+        )
+        self._iter += 1
+        # update global system
+        self.update_nodes()
+        self.update_integration_points()
+        self.update_heat_flow_matrix()
+        self.update_heat_storage_matrix()
+
+    def iterative_correction_step(self):
+        while self._eps_a > self.eps_s and self._iter < self.max_iterations:
+            self.update_weighted_matrices()
+            self.calculate_temperature_correction()
