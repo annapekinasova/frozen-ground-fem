@@ -86,8 +86,9 @@ def main():
     for k in range(1500):
         # generate temperature distribution plot
         if not k % 105:
-            plt.plot(ta._temp_vector, z_vec, 
-                     label=f"t={ta._t0 / 8.64e5 / 365: 0.2f} years")
+            plt.plot(
+                ta._temp_vector, z_vec, label=f"t={ta._t0 / 8.64e5 / 365: 0.2f} years"
+            )
         ta.initialize_time_step()
         ta.iterative_correction_step()
 
