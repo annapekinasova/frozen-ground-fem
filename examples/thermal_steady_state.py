@@ -60,7 +60,7 @@ def main():
     # create thermal boundary conditions
     temp_boundary = ThermalBoundary1D(upper_boundary)
     temp_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp
-    temp_boundary.bnd_value = 20.0
+    temp_boundary.bnd_value = -10.0
     grad_boundary = ThermalBoundary1D(lower_boundary)
     grad_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
     grad_boundary.bnd_value = 0.2
@@ -83,10 +83,11 @@ def main():
     ta.time_step = 8.64e5 * 7  # one week, in seconds
     thermal_analysis.initialize_global_system(t0=0.0)
 
-    for k in range(1000):
+    for k in range(1500):
         # generate temperature distribution plot
-        if not k % 100:
-            plt.plot(ta._temp_vector, z_vec, label=f"t={ta._t0 / 8.64e5} days")
+        if not k % 105:
+            plt.plot(ta._temp_vector, z_vec, 
+                     label=f"t={ta._t0 / 8.64e5 / 365: 0.2f} years")
         ta.initialize_time_step()
         ta.iterative_correction_step()
 

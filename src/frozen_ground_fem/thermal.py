@@ -155,12 +155,14 @@ class ThermalBoundary1D(BoundaryElement1D):
         parent: BoundaryElement1D,
         bnd_type=BoundaryType.temp,
         bnd_value: float = 0.0,
+        bnd_function=None,
     ) -> None:
         if not isinstance(parent, BoundaryElement1D):
             raise TypeError(f"type(parent): {type(parent)} is not BoundaryElement1D")
         self._parent = parent
         self.bnd_type = bnd_type
         self.bnd_value = bnd_value
+        self.bnd_function = bnd_function
 
     @property
     def nodes(self) -> tuple[Node1D, ...]:
@@ -243,6 +245,41 @@ class ThermalBoundary1D(BoundaryElement1D):
         value = float(value)
         self._bnd_value = value
 
+    @property
+    def bnd_function(self):
+        """The reference to the function
+        the updates the boundary condition.
+
+        Parameters
+        ----------
+        value : callable or None
+            The value to set for the boundary function
+
+        Returns
+        -------
+        callable or None
+
+        Raises
+        ------
+        TypeError
+            If the value to be assigned is not callable or None
+
+        Notes
+        -----
+        If a callable (i.e. function or class that implements __call__)
+        reference is provided
+        it should take one argument
+        which is a time (in seconds).
+        This function is called by the method update_value().
+        """
+        return self._bnd_function
+
+    @bnd_function.setter
+    def bnd_function(self, value):
+        if not (callable(value) or value is None):
+            raise TypeError(f"type(value) {type(value)} is not callable or None")
+        self._bnd_function = value
+
     def update_nodes(self) -> None:
         """Update the boundary condition value at the nodes.
 
@@ -256,6 +293,30 @@ class ThermalBoundary1D(BoundaryElement1D):
         if self.bnd_type == ThermalBoundary1D.BoundaryType.temp:
             for nd in self.nodes:
                 nd.temp = self.bnd_value
+
+    def update_value(self, time):
+        """Update the value of the boundary conditions.
+
+        Parameters
+        ----------
+        time: float
+            The time in seconds
+
+        Raises
+        ------
+        ValueError
+            It time is not convertible to float
+
+        Notes
+        -----
+        This method uses the bnd_function callable property
+        to update the bnd_value property
+        If bnd_function is None
+        the time argument is ignored and nothing happens.
+        """
+        time = float(time)
+        if self.bnd_function is not None:
+            self.bnd_value = self.bnd_function(time)
 
 
 class ThermalAnalysis1D:
@@ -387,12 +448,14 @@ class ThermalAnalysis1D:
             raise ValueError(f"max_iterations {value} invalid, must be positive")
         self._max_iterations = value
 
-    def update_thermal_boundary_conditions(self):
-        pass
+    def update_thermal_boundary_conditions(self, time):
+        for tb in self.thermal_boundaries:
+            tb.update_value(time)
+            tb.update_nodes()
 
     def update_heat_flux_vector(self):
         self._heat_flux_vector[:] = 0.0
-        for be in self._thermal_boundaries:
+        for be in self.thermal_boundaries:
             if be.bnd_type == ThermalBoundary1D.BoundaryType.heat_flux:
                 self._heat_flux_vector[be.nodes[0].index] += be.bnd_value
             elif be.bnd_type == ThermalBoundary1D.BoundaryType.temp_grad:
@@ -431,12 +494,11 @@ class ThermalAnalysis1D:
 
     def initialize_global_system(self, t0):
         # initialize global time
+        t0 = float(t0)
         self._t0 = t0
         self._t1 = t0
         # update nodes with boundary conditions first
-        self.update_thermal_boundary_conditions()
-        for tb in self.thermal_boundaries:
-            tb.update_nodes()
+        self.update_thermal_boundary_conditions(self._t0)
         # now get the temperatures from the nodes
         # (we assume that initial conditions have already been applied)
         for nd in self.mesh.nodes:
@@ -466,7 +528,7 @@ class ThermalAnalysis1D:
         self._heat_flow_matrix_0[:, :] = self._heat_flow_matrix[:, :]
         self._heat_storage_matrix_0[:, :] = self._heat_storage_matrix[:, :]
         # update boundary conditions
-        self.update_thermal_boundary_conditions()
+        self.update_thermal_boundary_conditions(self._t1)
         self.update_heat_flux_vector()
         self._weighted_heat_flux_vector[:] = (
             self.one_minus_alpha * self._heat_flux_vector_0
