@@ -452,6 +452,9 @@ class ThermalAnalysis1D:
         for tb in self.thermal_boundaries:
             tb.update_value(time)
             tb.update_nodes()
+            if tb.bnd_type == ThermalBoundary1D.BoundaryType.temp:
+                for nd in tb.nodes:
+                    self._temp_vector[nd.index] = nd.temp
 
     def update_heat_flux_vector(self):
         self._heat_flux_vector[:] = 0.0
