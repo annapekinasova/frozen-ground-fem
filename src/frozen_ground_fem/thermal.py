@@ -386,6 +386,21 @@ class ThermalAnalysis1D:
 
     @property
     def thermal_elements(self) -> tuple[ThermalElement1D, ...]:
+        """A tuple of thermal elements contained in the mesh.
+
+        Returns
+        -------
+        tuple[ThermalElement1D]
+
+        Notes
+        -----
+        The tuple of ThermalElement1D is created
+        during the __init__() method.
+        It is assumed that the parent Element1D
+        objects in the parent Mesh1D do not change.
+        Therefore, the set of ThermalElement1D
+        is immutable.
+        """
         return self._thermal_elements
 
     @property
@@ -429,10 +444,23 @@ class ThermalAnalysis1D:
 
     @property
     def dt(self):
+        """An alias for time_step."""
         return self._time_step
 
     @property
     def over_dt(self):
+        """The value 1 / time_step.
+
+        Returns
+        -------
+        float
+
+        Notes
+        -----
+        This value is calculated and stored
+        when time_step is set,
+        so this property call just returns the value.
+        """
         return self._inv_time_step
 
     @property
@@ -482,10 +510,23 @@ class ThermalAnalysis1D:
 
     @property
     def alpha(self):
+        """An alias for implicit_factor."""
         return self._implicit_factor
 
     @property
     def one_minus_alpha(self):
+        """The value (1 - implicit_factor).
+
+        Returns
+        -------
+        float
+
+        Notes
+        -----
+        This value is calculated and stored
+        when implicit_factor is set,
+        so this property call just returns the value.
+        """
         return self._inv_implicit_factor
 
     @property
@@ -521,6 +562,7 @@ class ThermalAnalysis1D:
 
     @property
     def eps_s(self):
+        """An alias for implicit_error_tolerance."""
         return self._implicit_error_tolerance
 
     @property
@@ -582,7 +624,16 @@ class ThermalAnalysis1D:
                 for nd in tb.nodes:
                     self._temp_vector[nd.index] = nd.temp
 
-    def update_heat_flux_vector(self):
+    def update_heat_flux_vector(self) -> None:
+        """Updates the global heat flux vector.
+
+        Notes
+        -----
+        This convenience method clears the global heat flux vector
+        then loops over the thermal_boundaries and
+        assigns values for flux and gradient type boundaries
+        to the global heat flux vector.
+        """
         self._heat_flux_vector[:] = 0.0
         for be in self.thermal_boundaries:
             if be.bnd_type == ThermalBoundary1D.BoundaryType.heat_flux:
@@ -609,7 +660,17 @@ class ThermalAnalysis1D:
             He = e.heat_flow_matrix()
             self._heat_flow_matrix[np.ix_(ind, ind)] += He
 
-    def update_heat_storage_matrix(self):
+    def update_heat_storage_matrix(self) -> None:
+        """Updates the global heat storage matrix.
+
+        Notes
+        -----
+        This convenience method clears the global heat storage matrix
+        then loops over the thermal_elements
+        to get the element heat storage matrices
+        and sums them into the global heat storage matrix
+        respecting connectivity of global degrees of freedom.
+        """
         self._heat_storage_matrix[:, :] = 0.0
         for e in self.thermal_elements:
             ind = [nd.index for nd in e.nodes]
@@ -629,7 +690,16 @@ class ThermalAnalysis1D:
         for nd in self.mesh.nodes:
             nd.temp = self._temp_vector[nd.index]
 
-    def update_integration_points(self):
+    def update_integration_points(self) -> None:
+        """Updates the properties of integration points
+        in the parent mesh according to changes in temperature.
+
+        Notes
+        -----
+        This convenience method loops over integration points
+        in the parent mesh,
+        interpolates temperatures from corresponding nodes
+        and updates volumetric ice content accordingly."""
         for e in self.mesh.elements:
             Te = np.array([nd.temp for nd in e.nodes])
             for ip in e.int_pts:
@@ -686,7 +756,21 @@ class ThermalAnalysis1D:
         self._free_vec = np.ix_(free_ind)
         self._free_arr = np.ix_(free_ind, free_ind)
 
-    def initialize_time_step(self):
+    def initialize_time_step(self) -> None:
+        """Sets up the system at the beginning of a time step.
+
+        Notes
+        -----
+        This convenience method is meant to be called once
+        at the beginning of each time step.
+        It increments time stepping variables,
+        saves global vectors and matrices from the end
+        of the previous time step,
+        updates thermal boundary conditions
+        and global heat flux vector at the end of
+        the current time step,
+        and initializes iterative correction parameters.
+        """
         # update time coordinate
         self._t0 = self._t1
         self._t1 = self._t0 + self.dt
@@ -706,7 +790,18 @@ class ThermalAnalysis1D:
         self._eps_a = 1.0
         self._iter = 0
 
-    def update_weighted_matrices(self):
+    def update_weighted_matrices(self) -> None:
+        """Updates global weighted matrices
+        according to implicit time stepping factor.
+
+        Notes
+        -----
+        This convenience method updates
+        the weighted heat flow matrix,
+        the weighted heat storage matrix,
+        and coefficient matrices
+        using the implicit_factor property.
+        """
         self._weighted_heat_flow_matrix[:, :] = (
             self.one_minus_alpha * self._heat_flow_matrix_0
             + self.alpha * self._heat_flow_matrix
