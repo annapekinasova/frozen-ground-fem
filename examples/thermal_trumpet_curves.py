@@ -102,18 +102,27 @@ def main():
 
     temp_curve = np.zeros((mesh.num_nodes, 52))
     for k in range(1500):
-        if not k % 260:
-            print(f"t = {ta._t1 / 8.64e4 / 365: 0.5f} years")
         ta.initialize_time_step()
         ta.iterative_correction_step()
         temp_curve[:, k % 52] = ta._temp_vector
+        if k and not (k % 260):
+            print(f"t = {ta._t0 / 8.64e4 / 365: 0.5f} years")
+            plt.plot(temp_curve[:, 0], z_vec, "-b", linewidth=0.5)
+            temp_min_curve = np.amin(temp_curve, axis=1)
+            plt.plot(temp_min_curve, z_vec, "--b", linewidth=0.5)
+        elif (k > 52) and not (k % 260 - 25):
+            print(f"t = {ta._t1 / 8.64e4 / 365: 0.5f} years")
+            plt.plot(temp_curve[:, 25], z_vec, "-r", linewidth=0.5)
+            temp_max_curve = np.amax(temp_curve, axis=1)
+            plt.plot(temp_max_curve, z_vec, "--r", linewidth=0.5)
 
     # generate temperature distribution plot
     temp_min_curve = np.amin(temp_curve, axis=1)
     temp_max_curve = np.amax(temp_curve, axis=1)
-    plt.plot(temp_min_curve, z_vec, "--b", label="annual minimum")
-    plt.plot(temp_max_curve, z_vec, "--r", label="annual maximum")
-    plt.plot(ta._temp_vector, z_vec, "-k", label=f"temp dist, jan 1")
+    plt.plot(temp_curve[:, 0], z_vec, "-b", linewidth=2, label=f"temp dist, jan 1")
+    plt.plot(temp_curve[:, 25], z_vec, "-r", linewidth=2, label=f"temp dist, jun 1")
+    plt.plot(temp_min_curve, z_vec, "--b", linewidth=2, label="annual minimum")
+    plt.plot(temp_max_curve, z_vec, "--r", linewidth=2, label="annual maximum")
     plt.ylim(mesh.z_max, mesh.z_min)
     plt.legend()
     plt.xlabel("temperature, T [deg C]")
