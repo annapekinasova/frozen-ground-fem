@@ -363,6 +363,25 @@ class ThermalAnalysis1D:
 
     @property
     def mesh(self) -> Mesh1D:
+        """A reference to the parent mesh object.
+
+        Returns
+        -------
+        frozen_ground_fem.geometry.Mesh1D
+
+        Notes
+        -----
+        This property is not intended to be set
+        after creation of the ThermalAnalysis1D object.
+        It is assigned during the __init__() method.
+        Other methods and properties of ThermalAnalysis1D
+        assume that the mesh object does not change
+        (i.e. mesh is not regenerated,
+        number of nodes and elements is fixed).
+        Use caution with modifying mesh after creation of
+        ThermalAnalysis1D,
+        otherwise unexpected behaviour could occur.
+        """
         return self._mesh
 
     @property
@@ -375,7 +394,29 @@ class ThermalAnalysis1D:
 
     @property
     def time_step(self):
-        """The time_step property."""
+        """The time step for the transient analysis.
+
+        Parameters
+        ----------
+        value : float
+            The value to assign to the time step.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float
+            If the value to assign is negative
+
+        Notes
+        -----
+        Also computes and stores an inverse value
+        1 / time_step
+        for convenience in the simulation.
+        """
         return self._time_step
 
     @time_step.setter
@@ -396,7 +437,37 @@ class ThermalAnalysis1D:
 
     @property
     def implicit_factor(self):
-        """The implicit_factor property."""
+        """The implicit time stepping factor for the analysis.
+
+        Parameters
+        ----------
+        value : float
+            The value to assign to the implicit factor
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to be assigned is not convertible to float
+            If the value is < 0.0 or > 1.0
+
+        Notes
+        -----
+        This parameter sets the weighting between
+        vectors and matrices at the beginning and end of the time step
+        in the implicit time stepping scheme.
+        For example, a value of 0.0 would put no weight at the beginning
+        implying a fully implicit scheme.
+        A value of 1.0 would put no weight at the end
+        implying a fully explicit scheme
+        (in this case, the iterative correction will have no effect).
+        A value of 0.5 puts equal weight at the beginning and end
+        which is the well known Crank-Nicolson scheme.
+        The default set by the __init__() method is 0.5.
+        """
         return self._implicit_factor
 
     @implicit_factor.setter
@@ -419,7 +490,24 @@ class ThermalAnalysis1D:
 
     @property
     def implicit_error_tolerance(self):
-        """The implicit_error_tolerance property."""
+        """The error tolerance for the iterative correction
+        in the implicit time stepping scheme.
+
+        Parameters
+        ----------
+        value : float
+            The value to assign for the error tolerance
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float
+            If the value to assign is negative
+        """
         return self._implicit_error_tolerance
 
     @implicit_error_tolerance.setter
@@ -437,7 +525,25 @@ class ThermalAnalysis1D:
 
     @property
     def max_iterations(self):
-        """The max_iterations property."""
+        """The maximum number of iterations for iterative correction
+        in the implicit time stepping scheme.
+
+        Parameters
+        ----------
+        value : int
+            The value to be assigned to the maximum number of iterations
+
+        Returns
+        -------
+        int
+
+        Raises
+        ------
+        TypeError
+            If the value to be assigned is not an int
+        ValueError
+            If the value to be assigned is negative
+        """
         return self._max_iterations
 
     @max_iterations.setter
@@ -448,7 +554,27 @@ class ThermalAnalysis1D:
             raise ValueError(f"max_iterations {value} invalid, must be positive")
         self._max_iterations = value
 
-    def update_thermal_boundary_conditions(self, time):
+    def update_thermal_boundary_conditions(self, time) -> None:
+        """Update the thermal boundary conditions in the ThermalAnalysis1D
+        and in the parent Mesh1D.
+
+        Parameters
+        ----------
+        time : float
+            The time in seconds.
+            Gets passed through to ThermalBoundary1D.update_value().
+
+        Notes
+        -----
+        This convenience methods
+        loops over all ThermalBoundary1D objects in thermal_boundaries
+        and calls update_value() to update the boundary value
+        and then calls update_nodes() to assign the new value
+        to each boundary Node1D.
+        For Dirichlet (temperature) boundary conditions,
+        the value is then assigned to the global temperature vector
+        in the ThermalAnalysis1D object.
+        """
         for tb in self.thermal_boundaries:
             tb.update_value(time)
             tb.update_nodes()
@@ -466,7 +592,17 @@ class ThermalAnalysis1D:
                     -be.int_pts[0].thrm_cond * be.bnd_value
                 )
 
-    def update_heat_flow_matrix(self):
+    def update_heat_flow_matrix(self) -> None:
+        """Updates the global heat flow matrix.
+
+        Notes
+        -----
+        This convenience method first clears the global heat flow matrix
+        then loops over the thermal_elements
+        to get the element heat flow matrices
+        and sums them into the global heat flow matrix
+        respecting connectivity of global degrees of freedom.
+        """
         self._heat_flow_matrix[:, :] = 0.0
         for e in self.thermal_elements:
             ind = [nd.index for nd in e.nodes]
@@ -480,7 +616,16 @@ class ThermalAnalysis1D:
             Ce = e.heat_storage_matrix()
             self._heat_storage_matrix[np.ix_(ind, ind)] += Ce
 
-    def update_nodes(self):
+    def update_nodes(self) -> None:
+        """Updates the temperature values at the nodes
+        in the parent mesh.
+
+        Notes
+        -----
+        This convenience method loops over nodes in the parent mesh
+        and assigns the temperature from the global temperature vector
+        in the ThermalAnalysis1D.
+        """
         for nd in self.mesh.nodes:
             nd.temp = self._temp_vector[nd.index]
 
@@ -495,7 +640,27 @@ class ThermalAnalysis1D:
                 else:
                     ip.vol_ice_cont = 0.0
 
-    def initialize_global_system(self, t0):
+    def initialize_global_system(self, t0) -> None:
+        """Sets up the global system before the first time step.
+
+        Parameters
+        ----------
+        t0 : float
+            The value of time (in seconds)
+            at the beginning of the first time step
+
+        Notes
+        -----
+        This convenience method is meant to be called once
+        at the beginning of the analysis.
+        It assumes that initial conditions have already been assigned
+        to the nodes in the parent mesh.
+        It initializes variables tracking the time coordinate,
+        updates the thermal boundary conditions at the initial time,
+        assigns initial temperature values from the nodes to the global time vector,
+        updates the integration points in the parent mesh,
+        then updates all global vectors and matrices.
+        """
         # initialize global time
         t0 = float(t0)
         self._t0 = t0
@@ -559,7 +724,20 @@ class ThermalAnalysis1D:
             + self.alpha * self._weighted_heat_flow_matrix
         )
 
-    def calculate_temperature_correction(self):
+    def calculate_temperature_correction(self) -> None:
+        """Performs a single iteration of temperature correction
+        in the implicit time stepping scheme.
+
+        Notes
+        -----
+        This convenience method
+        updates the global residual heat flux vector,
+        calculates the temperature correction
+        using the global weighted matrices,
+        applies the correction to the global temperature vector,
+        then updates the nodes, integration points,
+        and the global heat flux and heat storage matrices.
+        """
         # update residual vector
         self._residual_heat_flux_vector[:] = (
             self._coef_matrix_0 @ self._temp_vector_0
@@ -583,7 +761,20 @@ class ThermalAnalysis1D:
         self.update_heat_flow_matrix()
         self.update_heat_storage_matrix()
 
-    def iterative_correction_step(self):
+    def iterative_correction_step(self) -> None:
+        """Performs iterative correction of the
+        global temperature vector for a single time step.
+
+        Notes
+        -----
+        This convenience method performs an iterative correction loop
+        based on the implicit_error_tolerance and max_iterations properties.
+        It iteratively updates the global weighted matrices
+        and performs correction of the global temperature vector.
+        This method does not update the global heat flux vector
+        since it assumes this is updated only once at the beginning
+        of a new time step by initialize_time_step().
+        """
         while self._eps_a > self.eps_s and self._iter < self.max_iterations:
             self.update_weighted_matrices()
             self.calculate_temperature_correction()
