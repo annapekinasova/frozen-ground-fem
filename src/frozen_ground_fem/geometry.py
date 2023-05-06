@@ -496,7 +496,7 @@ class Element1D:
         return self._int_pts
 
 
-class BoundaryElement1D:
+class Boundary1D:
     """Class for storing boundary condition geometry information.
 
     Attributes
@@ -701,18 +701,18 @@ class Mesh1D:
         return self._elements
 
     @property
-    def num_boundary_elements(self):
-        return len(self.boundary_elements)
+    def num_boundaries(self):
+        return len(self.boundaries)
 
     @property
-    def boundary_elements(self):
-        """The tuple of :c:`BoundaryElement1D` contained in the mesh.
+    def boundaries(self):
+        """The tuple of :c:`Boundary1D` contained in the mesh.
 
         Returns
         ------
-        tuple of :c:`BoundaryElement1D`
+        tuple of :c:`Boundary1D`
         """
-        return self._boundary_elements
+        return self._boundaries
 
     @property
     def mesh_valid(self):
@@ -747,7 +747,7 @@ class Mesh1D:
         else:
             self._nodes = ()
             self._elements = ()
-            self._boundary_elements = ()
+            self._boundaries = []
             self._mesh_valid = False
 
     def generate_mesh(self, num_nodes=10):
@@ -775,7 +775,6 @@ class Mesh1D:
         self.mesh_valid = False
         self._generate_nodes(num_nodes)
         self._generate_elements()
-        self._generate_boundary_elements()
         self.mesh_valid = True
 
     def _generate_nodes(self, num_nodes=10):
@@ -792,12 +791,4 @@ class Mesh1D:
         self._elements = tuple(
             Element1D((self.nodes[k], self.nodes[k + 1]))
             for k in range(self.num_nodes - 1)
-        )
-
-    def _generate_boundary_elements(self):
-        self._boundary_elements = tuple(
-            (
-                BoundaryElement1D((self.nodes[0],), (self.elements[0].int_pts[0],)),
-                BoundaryElement1D((self.nodes[-1],), (self.elements[-1].int_pts[-1],)),
-            )
         )
