@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from frozen_ground_fem.materials import Material
 
 from frozen_ground_fem.geometry import (
-    BoundaryElement1D,
+    Boundary1D,
     Mesh1D,
 )
 
@@ -32,21 +32,16 @@ def main():
 
     # create geometric boundaries
     # and assign them to the mesh
-    upper_boundary = BoundaryElement1D(
+    upper_boundary = Boundary1D(
         (mesh.nodes[0],),
         (mesh.elements[0].int_pts[0],),
     )
-    lower_boundary = BoundaryElement1D(
+    lower_boundary = Boundary1D(
         (mesh.nodes[-1],),
         (mesh.elements[-1].int_pts[-1],),
     )
-    # TODO: modify Mesh1D so that this can be done with method calls
-    # mesh.add_boundary(upper_boundary)
-    # mesh.add_boundary(lower_boundary)
-    mesh._boundary_elements = (
-        upper_boundary,
-        lower_boundary,
-    )
+    mesh.add_boundary(upper_boundary)
+    mesh.add_boundary(lower_boundary)
 
     # create thermal analysis object
     thermal_analysis = ThermalAnalysis1D(mesh)
@@ -66,10 +61,8 @@ def main():
     grad_boundary.bnd_value = 0.2
 
     # assign thermal boundaries to the analysis
-    thermal_analysis._thermal_boundaries = (
-        temp_boundary,
-        grad_boundary,
-    )
+    thermal_analysis.add_boundary(temp_boundary)
+    thermal_analysis.add_boundary(grad_boundary)
 
     # **********************************************
     # TIME STEPPING ALGORITHM

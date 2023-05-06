@@ -334,8 +334,8 @@ class ThermalAnalysis1D:
             )
         # assign the mesh and create thermal elements
         self._mesh = mesh
-        self._thermal_elements = tuple(ThermalElement1D(e) for e in self.mesh.elements)
-        self._thermal_boundaries: set[ThermalBoundary1D] = set()
+        self._elements = tuple(ThermalElement1D(e) for e in self.mesh.elements)
+        self._boundaries: set[ThermalBoundary1D] = set()
         # set default values for time stepping algorithm
         self.implicit_factor = 0.5  # (Crank-Nicolson)
         self.implicit_error_tolerance = 1e-3
@@ -387,7 +387,7 @@ class ThermalAnalysis1D:
         return self._mesh
 
     @property
-    def thermal_elements(self) -> tuple[ThermalElement1D, ...]:
+    def elements(self) -> tuple[ThermalElement1D, ...]:
         """A tuple of thermal elements contained in the mesh.
 
         Returns
@@ -403,11 +403,11 @@ class ThermalAnalysis1D:
         Therefore, the set of ThermalElement1D
         is immutable.
         """
-        return self._thermal_elements
+        return self._elements
 
     @property
-    def thermal_boundaries(self) -> set[ThermalBoundary1D]:
-        return self._thermal_boundaries
+    def boundaries(self) -> set[ThermalBoundary1D]:
+        return self._boundaries
 
     @property
     def time_step(self) -> float:
@@ -598,6 +598,23 @@ class ThermalAnalysis1D:
             raise ValueError(f"max_iterations {value} invalid, must be positive")
         self._max_iterations = value
 
+    def add_boundary(self, new_boundary: ThermalBoundary1D) -> None:
+        if not isinstance(new_boundary, ThermalBoundary1D):
+            raise TypeError(
+                f"type(new_boundary) {type(new_boundary)} invalid, must be ThermalBoundary1D"
+            )
+        if new_boundary._parent not in self.mesh.boundaries:
+            raise ValueError(
+                "new_boundary does not have parent Boundary1D in the parent mesh"
+            )
+        self._boundaries.add(new_boundary)
+
+    def remove_boundary(self, boundary: ThermalBoundary1D) -> None:
+        self._boundaries.remove(boundary)
+
+    def clear_boundaries(self):
+        self._boundaries.clear()
+
     def update_thermal_boundary_conditions(self, time) -> None:
         """Update the thermal boundary conditions in the ThermalAnalysis1D
         and in the parent Mesh1D.
@@ -611,7 +628,7 @@ class ThermalAnalysis1D:
         Notes
         -----
         This convenience methods
-        loops over all ThermalBoundary1D objects in thermal_boundaries
+        loops over all ThermalBoundary1D objects in boundaries
         and calls update_value() to update the boundary value
         and then calls update_nodes() to assign the new value
         to each boundary Node1D.
@@ -619,7 +636,7 @@ class ThermalAnalysis1D:
         the value is then assigned to the global temperature vector
         in the ThermalAnalysis1D object.
         """
-        for tb in self.thermal_boundaries:
+        for tb in self.boundaries:
             tb.update_value(time)
             tb.update_nodes()
             if tb.bnd_type == ThermalBoundary1D.BoundaryType.temp:
@@ -632,12 +649,12 @@ class ThermalAnalysis1D:
         Notes
         -----
         This convenience method clears the global heat flux vector
-        then loops over the thermal_boundaries and
+        then loops over the boundaries and
         assigns values for flux and gradient type boundaries
         to the global heat flux vector.
         """
         self._heat_flux_vector[:] = 0.0
-        for be in self.thermal_boundaries:
+        for be in self.boundaries:
             if be.bnd_type == ThermalBoundary1D.BoundaryType.heat_flux:
                 self._heat_flux_vector[be.nodes[0].index] += be.bnd_value
             elif be.bnd_type == ThermalBoundary1D.BoundaryType.temp_grad:
@@ -653,13 +670,13 @@ class ThermalAnalysis1D:
         Notes
         -----
         This convenience method first clears the global heat flow matrix
-        then loops over the thermal_elements
+        then loops over the elements
         to get the element heat flow matrices
         and sums them into the global heat flow matrix
         respecting connectivity of global degrees of freedom.
         """
         self._heat_flow_matrix[:, :] = 0.0
-        for e in self.thermal_elements:
+        for e in self.elements:
             ind = [nd.index for nd in e.nodes]
             He = e.heat_flow_matrix()
             self._heat_flow_matrix[np.ix_(ind, ind)] += He
@@ -670,13 +687,13 @@ class ThermalAnalysis1D:
         Notes
         -----
         This convenience method clears the global heat storage matrix
-        then loops over the thermal_elements
+        then loops over the elements
         to get the element heat storage matrices
         and sums them into the global heat storage matrix
         respecting connectivity of global degrees of freedom.
         """
         self._heat_storage_matrix[:, :] = 0.0
-        for e in self.thermal_elements:
+        for e in self.elements:
             ind = [nd.index for nd in e.nodes]
             Ce = e.heat_storage_matrix()
             self._heat_storage_matrix[np.ix_(ind, ind)] += Ce
@@ -754,7 +771,7 @@ class ThermalAnalysis1D:
         # that will be updated at each iteration
         # (i.e. are not fixed/Dirichlet boundary conditions)
         free_ind = [nd.index for nd in self.mesh.nodes]
-        for tb in self.thermal_boundaries:
+        for tb in self.boundaries:
             if tb.bnd_type == ThermalBoundary1D.BoundaryType.temp:
                 free_ind.remove(tb.nodes[0].index)
         self._free_vec = np.ix_(free_ind)

@@ -80,7 +80,7 @@ def main():
     print(f"mesh_valid: {mesh.mesh_valid}")
     print(f"num_nodes: {mesh.num_nodes}")
     print(f"num_elements: {mesh.num_elements}")
-    print(f"num_boundary_elements: {mesh.num_boundary_elements}")
+    print(f"num_boundaries: {mesh.num_boundaries}")
     print()
 
     # to generate a mesh, you need to assign geometry parameters
@@ -95,7 +95,7 @@ def main():
     print(f"mesh_valid: {mesh.mesh_valid}")
     print(f"num_nodes: {mesh.num_nodes}")
     print(f"num_elements: {mesh.num_elements}")
-    print(f"num_boundary_elements: {mesh.num_boundary_elements}")
+    print(f"num_boundaries: {mesh.num_boundaries}")
     print()
     plot_mesh(mesh, "examples/simple_mesh_10.png")
 
@@ -113,7 +113,7 @@ def main():
     print(f"grid_size (actual): {mesh.elements[0].jacobian}")
     print(f"num_nodes: {mesh.num_nodes}")
     print(f"num_elements: {mesh.num_elements}")
-    print(f"num_boundary_elements: {mesh.num_boundary_elements}")
+    print(f"num_boundaries: {mesh.num_boundaries}")
     print()
     plot_mesh(mesh, "examples/simple_mesh_grid_size.png")
 

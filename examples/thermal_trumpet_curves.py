@@ -18,8 +18,8 @@ def main():
     # define mesh
     mesh = Mesh1D()
     mesh.z_min = 0.0
-    mesh.z_max = 50.0
-    mesh.generate_mesh(num_nodes=50)
+    mesh.z_max = 70.0
+    mesh.generate_mesh(num_nodes=25)
 
     # define material properties
     # and initialize integration point porosity
@@ -42,10 +42,6 @@ def main():
     )
     mesh.add_boundary(upper_boundary)
     mesh.add_boundary(lower_boundary)
-    # mesh._boundary_elements = (
-    #     upper_boundary,
-    #     lower_boundary,
-    # )
 
     # create thermal analysis object
     thermal_analysis = ThermalAnalysis1D(mesh)
@@ -82,14 +78,8 @@ def main():
     grad_boundary.bnd_value = 0.2
 
     # assign thermal boundaries to the analysis
-    # TODO: modify ThemralAnalysis1D so this
-    # can be done with method calls
-    # thermal_analysis.add_boundary(temp_boundary)
-    # thermal_analysis.add_boundary(grad_boundary)
-    thermal_analysis._thermal_boundaries = (
-        temp_boundary,
-        grad_boundary,
-    )
+    thermal_analysis.add_boundary(temp_boundary)
+    thermal_analysis.add_boundary(grad_boundary)
 
     # **********************************************
     # TIME STEPPING ALGORITHM
