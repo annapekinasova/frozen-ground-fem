@@ -565,6 +565,7 @@ class Mesh1D:
     """
 
     def __init__(self, z_range=None, grid_size=0.0, num_nodes=10, generate=False):
+        self._boundaries = set()
         self.mesh_valid = False
         self._z_min = -np.inf
         self._z_max = np.inf
@@ -747,7 +748,7 @@ class Mesh1D:
         else:
             self._nodes = ()
             self._elements = ()
-            self._boundaries = []
+            self.clear_boundaries()
             self._mesh_valid = False
 
     def generate_mesh(self, num_nodes=10):
@@ -792,3 +793,24 @@ class Mesh1D:
             Element1D((self.nodes[k], self.nodes[k + 1]))
             for k in range(self.num_nodes - 1)
         )
+
+    def add_boundary(self, new_boundary: Boundary1D) -> None:
+        if not isinstance(new_boundary, Boundary1D):
+            raise TypeError(
+                f"type(new_boundary) {type(new_boundary)} invalid, must be Boundary1D"
+            )
+        for nd in new_boundary.nodes:
+            if nd not in self.nodes:
+                raise ValueError(f"new_boundary contains node {nd} not in mesh")
+        if new_boundary.int_pts is not None:
+            int_pts = tuple(ip for e in self.elements for ip in e.int_pts)
+            for ip in new_boundary.int_pts:
+                if ip not in int_pts:
+                    raise ValueError(f"new_boundary contains int_pt {ip} not in mesh")
+        self._boundaries.add(new_boundary)
+
+    def remove_boundary(self, boundary: Boundary1D) -> None:
+        self._boundaries.remove(boundary)
+
+    def clear_boundaries(self):
+        self._boundaries.clear()

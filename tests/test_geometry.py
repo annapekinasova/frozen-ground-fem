@@ -7,7 +7,7 @@ from frozen_ground_fem.geometry import (
     Node1D,
     IntegrationPoint1D,
     Element1D,
-    BoundaryElement1D,
+    Boundary1D,
     Mesh1D,
     shape_matrix,
     gradient_matrix,
@@ -672,32 +672,32 @@ class TestGradientMatrix(unittest.TestCase):
             gradient_matrix(1.0, "three")
 
 
-class TestBoundaryElement1D(unittest.TestCase):
+class TestBoundary1D(unittest.TestCase):
     def setUp(self):
         self.nodes = (Node1D(0, 0.5),)
-        self.e = BoundaryElement1D(self.nodes)
+        self.e = Boundary1D(self.nodes)
 
     def test_initialize_without_nodes(self):
         with self.assertRaises(TypeError):
-            BoundaryElement1D()
+            Boundary1D()
 
     def test_initialize_valid_nodes_value(self):
         self.assertEqual(self.e.nodes[0].z, 0.5)
 
     def test_initialize_valid_nodes_type(self):
         nodes = list(self.nodes)
-        e = BoundaryElement1D(nodes)
+        e = Boundary1D(nodes)
         self.assertIsInstance(e.nodes, tuple)
 
     def test_initialize_too_many_nodes(self):
         with self.assertRaises(ValueError):
             nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(2))
-            BoundaryElement1D(nodes)
+            Boundary1D(nodes)
 
     def test_initialize_invalid_nodes(self):
         with self.assertRaises(TypeError):
             nodes = tuple(k for k in range(1))
-            BoundaryElement1D(nodes)
+            Boundary1D(nodes)
 
 
 class TestMesh1D(unittest.TestCase):
@@ -709,7 +709,7 @@ class TestMesh1D(unittest.TestCase):
         self.assertFalse(msh.mesh_valid)
         self.assertEqual(msh.num_nodes, 0)
         self.assertEqual(msh.num_elements, 0)
-        self.assertEqual(msh.num_boundary_elements, 0)
+        self.assertEqual(msh.num_boundaries, 0)
         self.assertTrue(np.isinf(msh.z_min))
         self.assertTrue(np.isinf(msh.z_max))
         self.assertTrue(msh.z_min < 0)
@@ -721,7 +721,7 @@ class TestMesh1D(unittest.TestCase):
         self.assertTrue(msh.mesh_valid)
         self.assertEqual(msh.num_nodes, 10)
         self.assertEqual(msh.num_elements, 9)
-        self.assertEqual(msh.num_boundary_elements, 2)
+        self.assertEqual(msh.num_boundaries, 0)
         self.assertAlmostEqual(msh.z_min, -8.0)
         self.assertAlmostEqual(msh.z_max, 100.0)
         self.assertEqual(msh.grid_size, 0.0)
@@ -759,7 +759,7 @@ class TestMesh1D(unittest.TestCase):
         msh.generate_mesh()
         self.assertEqual(msh.num_nodes, 109)
         self.assertEqual(msh.num_elements, 108)
-        self.assertEqual(msh.num_boundary_elements, 2)
+        self.assertEqual(msh.num_boundaries, 0)
         self.assertAlmostEqual(msh.nodes[1].z - msh.nodes[0].z, 1.0)
 
     def test_generate_mesh(self):
@@ -779,18 +779,18 @@ class TestMesh1D(unittest.TestCase):
         self.assertTrue(msh.mesh_valid)
         self.assertEqual(msh.num_nodes, 10)
         self.assertEqual(msh.num_elements, 9)
-        self.assertEqual(msh.num_boundary_elements, 2)
+        self.assertEqual(msh.num_boundaries, 0)
         self.assertAlmostEqual(msh.elements[0].jacobian, 12.0)
         msh.grid_size = 1
         self.assertFalse(msh.mesh_valid)
         self.assertEqual(msh.num_nodes, 0)
         self.assertEqual(msh.num_elements, 0)
-        self.assertEqual(msh.num_boundary_elements, 0)
+        self.assertEqual(msh.num_boundaries, 0)
         msh.generate_mesh()
         self.assertTrue(msh.mesh_valid)
         self.assertEqual(msh.num_nodes, 109)
         self.assertEqual(msh.num_elements, 108)
-        self.assertEqual(msh.num_boundary_elements, 2)
+        self.assertEqual(msh.num_boundaries, 0)
         self.assertAlmostEqual(msh.elements[0].jacobian, 1.0)
 
 

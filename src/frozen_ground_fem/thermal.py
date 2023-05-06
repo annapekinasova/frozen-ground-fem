@@ -1,6 +1,10 @@
 """thermal.py
 Module for implementing thermal physics using the finite element method.
 """
+from typing import (
+    Callable,
+    Optional,
+)
 from enum import Enum
 
 import numpy as np
@@ -11,7 +15,7 @@ from frozen_ground_fem.geometry import (
     Node1D,
     IntegrationPoint1D,
     Element1D,
-    BoundaryElement1D,
+    Boundary1D,
     Mesh1D,
 )
 
@@ -67,7 +71,7 @@ class ThermalElement1D(Element1D):
         return self._parent.jacobian
 
     @property
-    def int_pts(self) -> tuple[IntegrationPoint1D]:
+    def int_pts(self) -> tuple[IntegrationPoint1D, ...]:
         """The tuple of :c:`IntegrationPoint1D` contained in the element.
 
         Returns
@@ -124,12 +128,12 @@ class ThermalElement1D(Element1D):
         return C
 
 
-class ThermalBoundary1D(BoundaryElement1D):
+class ThermalBoundary1D(Boundary1D):
     """Class for storing and updating boundary conditions for thermal physics.
 
     Parameters
     ----------
-    parent : frozen_ground_fem.geometry.BoundaryElement1D
+    parent : frozen_ground_fem.geometry.Boundary1D
         The parent boundary element from the mesh
     bnd_type : ThermalBoundary1D.BoundaryType, optional
         The type of boundary condition
@@ -145,20 +149,20 @@ class ThermalBoundary1D(BoundaryElement1D):
     ------
     TypeError
         If parent initializer is not a
-        :c:`frozen_ground_fem.geometry.BoundaryElement1D`.
+        :c:`frozen_ground_fem.geometry.Boundary1D`.
     """
 
     BoundaryType = Enum("BoundaryType", ["temp", "heat_flux", "temp_grad"])
 
     def __init__(
         self,
-        parent: BoundaryElement1D,
+        parent: Boundary1D,
         bnd_type=BoundaryType.temp,
         bnd_value: float = 0.0,
         bnd_function=None,
     ) -> None:
-        if not isinstance(parent, BoundaryElement1D):
-            raise TypeError(f"type(parent): {type(parent)} is not BoundaryElement1D")
+        if not isinstance(parent, Boundary1D):
+            raise TypeError(f"type(parent): {type(parent)} is not Boundary1D")
         self._parent = parent
         self.bnd_type = bnd_type
         self.bnd_value = bnd_value
@@ -175,12 +179,12 @@ class ThermalBoundary1D(BoundaryElement1D):
         Notes
         -----
         This is a wrapper that references the nodes property
-        of the parent BoundaryElement1D.
+        of the parent Boundary1D.
         """
         return self._parent.nodes
 
     @property
-    def int_pts(self) -> tuple[IntegrationPoint1D, ...] | None:
+    def int_pts(self) -> Optional[tuple[IntegrationPoint1D, ...]]:
         """The tuple of :c:`IntegrationPoint1D` contained in the boundary element.
 
         Returns
@@ -190,12 +194,12 @@ class ThermalBoundary1D(BoundaryElement1D):
         Notes
         -----
         This is a wrapper that references the int_pts property
-        of the parent BoundaryElement1D.
+        of the parent Boundary1D.
         """
         return self._parent.int_pts
 
     @property
-    def bnd_type(self):
+    def bnd_type(self) -> BoundaryType:
         """The type of boundary condition.
 
         Parameters
@@ -221,7 +225,7 @@ class ThermalBoundary1D(BoundaryElement1D):
         self._bnd_type = value
 
     @property
-    def bnd_value(self):
+    def bnd_value(self) -> float:
         """The value of the boundary condition.
 
         Parameters
@@ -246,7 +250,7 @@ class ThermalBoundary1D(BoundaryElement1D):
         self._bnd_value = value
 
     @property
-    def bnd_function(self):
+    def bnd_function(self) -> Optional[Callable]:
         """The reference to the function
         the updates the boundary condition.
 
@@ -331,9 +335,7 @@ class ThermalAnalysis1D:
         # assign the mesh and create thermal elements
         self._mesh = mesh
         self._thermal_elements = tuple(ThermalElement1D(e) for e in self.mesh.elements)
-        self._thermal_boundaries = tuple(
-            ThermalBoundary1D(be) for be in self.mesh.boundary_elements
-        )
+        self._thermal_boundaries: set[ThermalBoundary1D] = set()
         # set default values for time stepping algorithm
         self.implicit_factor = 0.5  # (Crank-Nicolson)
         self.implicit_error_tolerance = 1e-3
@@ -404,11 +406,11 @@ class ThermalAnalysis1D:
         return self._thermal_elements
 
     @property
-    def thermal_boundaries(self) -> tuple[ThermalBoundary1D, ...]:
+    def thermal_boundaries(self) -> set[ThermalBoundary1D]:
         return self._thermal_boundaries
 
     @property
-    def time_step(self):
+    def time_step(self) -> float:
         """The time step for the transient analysis.
 
         Parameters
@@ -443,12 +445,12 @@ class ThermalAnalysis1D:
         self._inv_time_step = 1.0 / value
 
     @property
-    def dt(self):
+    def dt(self) -> float:
         """An alias for time_step."""
         return self._time_step
 
     @property
-    def over_dt(self):
+    def over_dt(self) -> float:
         """The value 1 / time_step.
 
         Returns
@@ -464,7 +466,7 @@ class ThermalAnalysis1D:
         return self._inv_time_step
 
     @property
-    def implicit_factor(self):
+    def implicit_factor(self) -> float:
         """The implicit time stepping factor for the analysis.
 
         Parameters
@@ -509,12 +511,12 @@ class ThermalAnalysis1D:
         self._inv_implicit_factor = 1.0 - value
 
     @property
-    def alpha(self):
+    def alpha(self) -> float:
         """An alias for implicit_factor."""
         return self._implicit_factor
 
     @property
-    def one_minus_alpha(self):
+    def one_minus_alpha(self) -> float:
         """The value (1 - implicit_factor).
 
         Returns
@@ -530,7 +532,7 @@ class ThermalAnalysis1D:
         return self._inv_implicit_factor
 
     @property
-    def implicit_error_tolerance(self):
+    def implicit_error_tolerance(self) -> float:
         """The error tolerance for the iterative correction
         in the implicit time stepping scheme.
 
@@ -561,12 +563,12 @@ class ThermalAnalysis1D:
         self._implicit_error_tolerance = value
 
     @property
-    def eps_s(self):
+    def eps_s(self) -> float:
         """An alias for implicit_error_tolerance."""
         return self._implicit_error_tolerance
 
     @property
-    def max_iterations(self):
+    def max_iterations(self) -> int:
         """The maximum number of iterations for iterative correction
         in the implicit time stepping scheme.
 
@@ -639,6 +641,8 @@ class ThermalAnalysis1D:
             if be.bnd_type == ThermalBoundary1D.BoundaryType.heat_flux:
                 self._heat_flux_vector[be.nodes[0].index] += be.bnd_value
             elif be.bnd_type == ThermalBoundary1D.BoundaryType.temp_grad:
+                if be.int_pts is None:
+                    raise AttributeError(f"boundary {be} has no int_pts")
                 self._heat_flux_vector[be.nodes[0].index] += (
                     -be.int_pts[0].thrm_cond * be.bnd_value
                 )
@@ -846,8 +850,8 @@ class ThermalAnalysis1D:
         )
         # increment temperature and iteration variables
         self._temp_vector[self._free_vec] += self._delta_temp_vector[self._free_vec]
-        self._eps_a = np.linalg.norm(self._delta_temp_vector) / np.linalg.norm(
-            self._temp_vector
+        self._eps_a = float(
+            np.linalg.norm(self._delta_temp_vector) / np.linalg.norm(self._temp_vector)
         )
         self._iter += 1
         # update global system
