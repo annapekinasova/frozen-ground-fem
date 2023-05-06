@@ -340,14 +340,14 @@ class ThermalAnalysis1D:
         self.max_iterations = 100
         # initialize global vectors and matrices
         self._temp_vector_0 = np.zeros(self.mesh.num_nodes)
+        self._temp_vector = np.zeros(self.mesh.num_nodes)
         self._heat_flux_vector_0 = np.zeros(self.mesh.num_nodes)
+        self._heat_flux_vector = np.zeros(self.mesh.num_nodes)
         self._heat_flow_matrix_0 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
+        self._heat_flow_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
         self._heat_storage_matrix_0 = np.zeros(
             (self.mesh.num_nodes, self.mesh.num_nodes)
         )
-        self._temp_vector = np.zeros(self.mesh.num_nodes)
-        self._heat_flux_vector = np.zeros(self.mesh.num_nodes)
-        self._heat_flow_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
         self._heat_storage_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
         self._weighted_heat_flux_vector = np.zeros(self.mesh.num_nodes)
         self._weighted_heat_flow_matrix = np.zeros(
