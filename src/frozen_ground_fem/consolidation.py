@@ -1,5 +1,5 @@
-"""thermal.py
-Module for implementing thermal physics using the finite element method.
+"""consolidation.py
+Module for implementing large strain consolidation physics using the finite element method.
 """
 from typing import (
     Callable,
@@ -8,6 +8,11 @@ from typing import (
 from enum import Enum
 
 import numpy as np
+
+from frozen_ground_fem.materials import (
+    gam_w,
+    spec_grav_ice,
+)
 
 from frozen_ground_fem.geometry import (
     shape_matrix,
@@ -20,8 +25,8 @@ from frozen_ground_fem.geometry import (
 )
 
 
-class ThermalElement1D(Element1D):
-    """Class for computing element matrices for thermal physics.
+class ConsolidationElement1D(Element1D):
+    """Class for computing element matrices for large strain consolidation physics.
 
     Parameters
     ----------
@@ -85,8 +90,8 @@ class ThermalElement1D(Element1D):
         """
         return self._parent.int_pts
 
-    def heat_flow_matrix(self) -> np.ndarray:
-        """The element heat flow (conduction) matrix.
+    def stiffness_matrix(self) -> np.ndarray:
+        """The element stiffness matrix.
 
         Returns
         -------
@@ -94,20 +99,34 @@ class ThermalElement1D(Element1D):
 
         Notes
         -----
-        Integrates B^T * lambda * B over the element
-        where lambda is the thermal conductivity.
+        Integrates B^T * (k * dsig'/de / gam_w) * B over the element
+        where
+        k is the hydraulic conductivity,
+        dsig'/de is the stress-strain coefficient from the consolidation curve,
+        gam_w is the unit weight of water.
         """
         B = gradient_matrix(0, 1)
-        H = np.zeros_like(B.T @ B)
+        K = np.zeros_like(B.T @ B)
         jac = self.jacobian
         for ip in self.int_pts:
             B = gradient_matrix(ip.local_coord, jac)
-            H += B.T @ (ip.thrm_cond * B) * ip.weight
-        H *= jac
-        return H
+            K += (
+                B.T
+                @ (
+                    ip.material.hyd_cond
+                    * ip.material.grad_sig_void_ratio(
+                        ip.void_ratio, ip.pre_consol_stress
+                    )
+                    / gam_w
+                    * B
+                )
+                * ip.weight
+            )
+        K *= jac
+        return K
 
-    def heat_storage_matrix(self) -> np.ndarray:
-        """The element heat storage matrix.
+    def mass_matrix(self) -> np.ndarray:
+        """The element mass matrix.
 
         Returns
         -------
@@ -115,17 +134,30 @@ class ThermalElement1D(Element1D):
 
         Notes
         -----
-        Integrates N^T * C * N over the element
-        where C is the volumetric heat capacity.
+        Integrates
+        N^T * ((Sw + Gi * (1 - Sw)) / (1 + e0)) * N
+        over the element
+        where
+        Sw is the degree of saturation of water,
+        Gi is the specific gravity of ice,
+        and e0 is the initial void ratio.
         """
         N = shape_matrix(0)
-        C = np.zeros_like(N.T @ N)
+        M = np.zeros_like(N.T @ N)
         jac = self.jacobian
         for ip in self.int_pts:
             N = shape_matrix(ip.local_coord)
-            C += N.T @ (ip.vol_heat_cap * N) * ip.weight
-        C *= jac
-        return C
+            M += (
+                N.T
+                @ (
+                    (ip.deg_sat_water + spec_grav_ice * ip.deg_sat_ice)
+                    / (1.0 + ip.init_void_ratio)
+                    * N
+                )
+                * ip.weight
+            )
+        M *= jac
+        return M
 
 
 class ThermalBoundary1D(Boundary1D):
