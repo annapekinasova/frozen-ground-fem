@@ -128,14 +128,14 @@ class ThermalElement1D(Element1D):
         return C
 
 
-class ThermalBoundary1D(Boundary1D):
-    """Class for storing and updating boundary conditions for thermal physics.
+class ConsolidationBoundary1D(Boundary1D):
+    """Class for storing and updating boundary conditions for consolidation physics.
 
     Parameters
     ----------
     parent : frozen_ground_fem.geometry.Boundary1D
         The parent boundary element from the mesh
-    bnd_type : ThermalBoundary1D.BoundaryType, optional
+    bnd_type : ConsolidationBoundary1D.BoundaryType, optional
         The type of boundary condition
     bnd_value : float, optional
         The value of the boundary condition
@@ -152,12 +152,12 @@ class ThermalBoundary1D(Boundary1D):
         :c:`frozen_ground_fem.geometry.Boundary1D`.
     """
 
-    BoundaryType = Enum("BoundaryType", ["temp", "heat_flux", "temp_grad"])
+    BoundaryType = Enum("BoundaryType", ["void_ratio", "fixed_flux", "water_flux"])
 
     def __init__(
         self,
         parent: Boundary1D,
-        bnd_type=BoundaryType.temp,
+        bnd_type=BoundaryType.fixed_flux,
         bnd_value: float = 0.0,
         bnd_function=None,
     ) -> None:
@@ -204,24 +204,24 @@ class ThermalBoundary1D(Boundary1D):
 
         Parameters
         ----------
-        value : ThermalBoundary1D.BoundaryType
+        value : ConsolidationBoundary1D.BoundaryType
             The value to set the type of boundary condition.
 
         Returns
         -------
-        ThermalBoundary1D.BoundaryType
+        ConsolidationBoundary1D.BoundaryType
 
         Raises
         ------
         TypeError
-            If the value to be assigned is not a ThermalBoundary1D.BoundaryType
+            If the value to be assigned is not a ConsolidationBoundary1D.BoundaryType
         """
         return self._bnd_type
 
     @bnd_type.setter
     def bnd_type(self, value):
-        if not isinstance(value, ThermalBoundary1D.BoundaryType):
-            raise TypeError(f"{value} is not a ThermalBoundary1D.BoundaryType")
+        if not isinstance(value, ConsolidationBoundary1D.BoundaryType):
+            raise TypeError(f"{value} is not a ConsolidationBoundary1D.BoundaryType")
         self._bnd_type = value
 
     @property
@@ -289,14 +289,14 @@ class ThermalBoundary1D(Boundary1D):
 
         Notes
         -----
-        This method updates the temperature at each of the nodes
-        in the ThermalBoundary1D
-        only in the case that bnd_type == BoundaryType.temp.
+        This method updates the void_ratio at each of the nodes
+        in the ConsolidationBoundary1D
+        only in the case that bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio.
         Otherwise, it does nothing.
         """
-        if self.bnd_type == ThermalBoundary1D.BoundaryType.temp:
+        if self.bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio:
             for nd in self.nodes:
-                nd.temp = self.bnd_value
+                nd.void_ratio = self.bnd_value
 
     def update_value(self, time):
         """Update the value of the boundary conditions.
