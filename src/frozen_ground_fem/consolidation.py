@@ -10,7 +10,7 @@ from enum import Enum
 import numpy as np
 
 from frozen_ground_fem.materials import (
-    gam_w,
+    unit_weight_water as gam_w,
     spec_grav_ice,
 )
 

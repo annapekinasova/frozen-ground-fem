@@ -4,6 +4,30 @@ for tracking material properties.
 """
 
 """
+grav_acc : float
+    The gravitational acceleration in SI units, m * s^{-2}
+"""
+grav_acc = 9.81
+
+"""
+dens_water : float
+    The density of water in SI units, kg * m^{-3}
+"""
+dens_water = 1e3
+
+"""
+unit_weight_water : float
+    The unit weight of water in SI units, N * m^{-3}
+"""
+unit_weight_water = grav_acc * dens_water
+
+"""
+spec_grav_ice : float
+    The specific gravity of ice
+"""
+spec_grav_ice = 0.91
+
+"""
 vol_heat_cap_water : float
     The volumetric heat capacity of water in SI units, J.m^{-3}.K^{-1}
 """
