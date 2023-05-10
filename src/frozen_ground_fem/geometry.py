@@ -417,8 +417,7 @@ class IntegrationPoint1D(Point1D):
         value = float(value)
         if value < 0.0 or value > 1.0:
             raise ValueError(
-                f"deg_sat_water value {value} "
-                + f"not between 0.0 and 1.0"
+                f"deg_sat_water value {value} " + f"not between 0.0 and 1.0"
             )
         self._deg_sat_water = value
         self._deg_sat_ice = 1.0 - value
