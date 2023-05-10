@@ -48,8 +48,8 @@ class TestThermalElement1D(unittest.TestCase):
         m = Material(thrm_cond_solids=1e-5)
         for ip in self.thrm_e.int_pts:
             ip.material = m
-            ip.porosity = 0.2
-            ip.vol_ice_cont = 0.1
+            ip.void_ratio = 0.2
+            ip.deg_sat_water = 0.1
         lam = self.thrm_e.int_pts[0].thrm_cond
         jac = self.thrm_e.jacobian
         expected = lam / jac * np.array([[1.0, -1.0], [-1.0, 1.0]])
@@ -64,8 +64,8 @@ class TestThermalElement1D(unittest.TestCase):
         m = Material(spec_grav_solids=2.65, spec_heat_cap_solids=2.0e2)
         for ip in self.thrm_e.int_pts:
             ip.material = m
-            ip.porosity = 0.3
-            ip.vol_ice_cont = 0.2
+            ip.void_ratio = 0.3
+            ip.deg_sat_water = 0.2
         heat_cap = self.thrm_e.int_pts[0].vol_heat_cap
         jac = self.thrm_e.jacobian
         expected = heat_cap * jac / 6 * np.array([[2.0, 1.0], [1.0, 2.0]])
