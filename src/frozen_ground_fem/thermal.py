@@ -720,16 +720,16 @@ class ThermalAnalysis1D:
         This convenience method loops over integration points
         in the parent mesh,
         interpolates temperatures from corresponding nodes
-        and updates volumetric ice content accordingly."""
+        and updates degree of saturation of water accordingly."""
         for e in self.mesh.elements:
             Te = np.array([nd.temp for nd in e.nodes])
             for ip in e.int_pts:
                 N = shape_matrix(ip.local_coord)
                 T = N @ Te
                 if T <= 0.0:
-                    ip.vol_ice_cont = ip.porosity
+                    ip.deg_sat_water = 0.0
                 else:
-                    ip.vol_ice_cont = 0.0
+                    ip.deg_sat_water = 1.0
 
     def initialize_global_system(self, t0) -> None:
         """Sets up the global system before the first time step.
