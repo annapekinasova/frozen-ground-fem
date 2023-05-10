@@ -64,15 +64,21 @@ class Material:
     """
 
     def __init__(
-        self, thrm_cond_solids=0.0, spec_grav_solids=0.0, spec_heat_cap_solids=0.0
+        self,
+        thrm_cond_solids=0.0,
+        spec_grav_solids=0.0,
+        spec_heat_cap_solids=0.0,
+        hyd_cond=0.0,
     ):
         self._thrm_cond_solids = 0.0
         self._spec_grav_solids = 0.0
         self._dens_solids = 0.0
         self._spec_heat_cap_solids = 0.0
+        self._hyd_cond = 0.0
         self.thrm_cond_solids = thrm_cond_solids
         self.spec_grav_solids = spec_grav_solids
         self.spec_heat_cap_solids = spec_heat_cap_solids
+        self.hyd_cond = hyd_cond
 
     @property
     def thrm_cond_solids(self):
@@ -193,6 +199,35 @@ class Material:
 
     def _update_vol_heat_cap_solids(self):
         self._vol_heat_cap_solids = self.dens_solids * self.spec_heat_cap_solids
+
+    @property
+    def hyd_cond(self):
+        """Hydraulic conductivity of the material.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the hydraulic conductivity.
+
+        Returns
+        -------
+        float
+            Current value of hydraulic conductivity.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        return self._hyd_cond
+
+    @hyd_cond.setter
+    def hyd_cond(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"hyd_cond {value} is not positive")
+        self._hyd_cond = value
 
 
 """An instance of the material class with all parameters set to zero.
