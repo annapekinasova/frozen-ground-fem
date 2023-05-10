@@ -277,7 +277,7 @@ class TestIntegrationPoint1DDefaults(unittest.TestCase):
 class TestIntegrationPoint1DInitializers(unittest.TestCase):
     def setUp(self):
         self.m = Material(
-            thrm_cond_solids=7.8, dens_solids=2.5e3, spec_heat_cap_solids=7.41e5
+            thrm_cond_solids=7.8, spec_grav_solids=2.5, spec_heat_cap_solids=7.41e5
         )
         self.p = IntegrationPoint1D(1.0, -0.33, 1.0, 0.5, 0.2, self.m)
 
@@ -338,7 +338,7 @@ class TestIntegrationPoint1DInitializers(unittest.TestCase):
 class TestIntegrationPoint1DSetters(unittest.TestCase):
     def setUp(self):
         self.m = Material(
-            thrm_cond_solids=7.8, dens_solids=2.5e3, spec_heat_cap_solids=7.41e5
+            thrm_cond_solids=7.8, spec_grav_solids=2.5, spec_heat_cap_solids=7.41e5
         )
         self.p = IntegrationPoint1D(1.0, -0.33, 1.0, 0.3, 0.2, self.m)
 
@@ -503,7 +503,7 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
 
     def test_update_thrm_cond_material(self):
         self.p.material = Material(
-            thrm_cond_solids=6.7, dens_solids=2.8e3, spec_heat_cap_solids=6.43e5
+            thrm_cond_solids=6.7, spec_grav_solids=2.8, spec_heat_cap_solids=6.43e5
         )
         expected = 4.19347247030009
         self.assertAlmostEqual(self.p.thrm_cond, expected, delta=1e-8)
@@ -524,7 +524,7 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
 
     def test_update_vol_heat_cap_material(self):
         self.p.material = Material(
-            thrm_cond_solids=6.7, dens_solids=2.8e3, spec_heat_cap_solids=6.43e5
+            thrm_cond_solids=6.7, spec_grav_solids=2.8, spec_heat_cap_solids=6.43e5
         )
         expected = 1.261076600e9
         self.assertAlmostEqual(self.p.vol_heat_cap, expected, delta=1e-8)

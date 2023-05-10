@@ -61,7 +61,7 @@ class TestThermalElement1D(unittest.TestCase):
         )
 
     def test_heat_storage_matrix(self):
-        m = Material(dens_solids=2.65e3, spec_heat_cap_solids=2.0e2)
+        m = Material(spec_grav_solids=2.65, spec_heat_cap_solids=2.0e2)
         for ip in self.thrm_e.int_pts:
             ip.material = m
             ip.porosity = 0.3

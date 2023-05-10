@@ -23,7 +23,9 @@ def main():
 
     # define material properties
     # and initialize integration points
-    mtl = Material(thrm_cond_solids=7.0, dens_solids=2.65e3, spec_heat_cap_solids=741)
+    mtl = Material(
+        thrm_cond_solids=7.0, spec_grav_solids=2.65, spec_heat_cap_solids=741
+    )
     por = 0.3
     vol_ice_cont = 0.05
     for e in mesh.elements:
