@@ -319,6 +319,35 @@ class IntegrationPoint1D(Point1D):
         self._weight = value
 
     @property
+    def void_ratio(self):
+        """Void ratio of the integration point.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the void ratio of the :c:`IntegrationPoint1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value to assign is negative.
+        """
+        return self._void_ratio
+
+    @void_ratio.setter
+    def void_ratio(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"void_ratio {value} is not positive")
+        self._void_ratio = value
+        self._porosity = value / (1.0 + value)
+
+    @property
     def porosity(self):
         """Porosity of the integration point.
 
