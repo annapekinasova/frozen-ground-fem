@@ -122,12 +122,13 @@ class Material:
         """
         return self._dens_solids
 
-    @dens_solids.setter
-    def dens_solids(self, value):
+    @spec_grav_solids.setter
+    def spec_grav_solids(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(f"dens_solids {value} is not positive")
-        self._dens_solids = value
+            raise ValueError(f"spec_grav_solids {value} is not positive")
+        self._spec_grav_solids = value
+        self._dens_solids = value * dens_water
         self._update_vol_heat_cap_solids()
 
     @property
