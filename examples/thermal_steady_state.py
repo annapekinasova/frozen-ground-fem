@@ -26,11 +26,11 @@ def main():
     mtl = Material(
         thrm_cond_solids=7.0, spec_grav_solids=2.65, spec_heat_cap_solids=741
     )
-    por = 0.3
+    void_ratio = 0.3
     for e in mesh.elements:
         for ip in e.int_pts:
             ip.material = mtl
-            ip.porosity = por
+            ip.void_ratio = void_ratio
 
     # create geometric boundaries
     # and assign them to the mesh
@@ -77,17 +77,29 @@ def main():
     # initialize global matrices and vectors
     ta.time_step = 8.64e4 * 7  # one week, in seconds
     thermal_analysis.initialize_global_system(t0=0.0)
+    plt.plot(
+        ta._temp_vector,
+        z_vec,
+        "-r",
+        label=f"initial conditions",
+        linewidth=2.0,
+    )
 
     for k in range(1500):
         # generate temperature distribution plot
-        if not k % 105:
-            plt.plot(
-                ta._temp_vector, z_vec, label=f"t={ta._t1 / 8.64e4 / 365: 0.2f} years"
-            )
+        if k and not k % 105:
+            plt.plot(ta._temp_vector, z_vec, "--b", linewidth=0.5)
         ta.initialize_time_step()
         ta.iterative_correction_step()
 
     # finalize plot labels
+    plt.plot(
+        ta._temp_vector,
+        z_vec,
+        "-b",
+        label=f"steady state",
+        linewidth=2.0,
+    )
     plt.ylim(mesh.z_max, mesh.z_min)
     plt.legend()
     plt.xlabel("temperature, T [deg C]")

@@ -26,11 +26,11 @@ def main():
     mtl = Material(
         thrm_cond_solids=7.0, spec_grav_solids=2.65, spec_heat_cap_solids=741
     )
-    por = 0.3
+    void_ratio = 0.3
     for e in mesh.elements:
         for ip in e.int_pts:
             ip.material = mtl
-            ip.porosity = por
+            ip.void_ratio = void_ratio
 
     # create geometric boundaries
     # and assign them to the mesh
@@ -100,28 +100,41 @@ def main():
         ta.initialize_time_step()
         ta.iterative_correction_step()
         temp_curve[:, k % 52] = ta._temp_vector
-        if k and not (k % 260):
+        if not (k % 260):
             print(f"t = {ta._t0 / 8.64e4 / 365: 0.5f} years")
-            plt.plot(temp_curve[:, 0], z_vec, "-b", linewidth=0.5)
-            temp_min_curve = np.amin(temp_curve, axis=1)
-            plt.plot(temp_min_curve, z_vec, "--b", linewidth=0.5)
-        elif (k > 52) and not (k % 260 - 25):
+            plt.plot(temp_curve[:, 0], z_vec, "--b", linewidth=0.5)
+        elif not (k % 260 - 25):
             print(f"t = {ta._t1 / 8.64e4 / 365: 0.5f} years")
-            plt.plot(temp_curve[:, 25], z_vec, "-r", linewidth=0.5)
-            temp_max_curve = np.amax(temp_curve, axis=1)
-            plt.plot(temp_max_curve, z_vec, "--r", linewidth=0.5)
+            plt.plot(temp_curve[:, 25], z_vec, "--r", linewidth=0.5)
 
-    # generate temperature distribution plot
-    temp_min_curve = np.amin(temp_curve, axis=1)
-    temp_max_curve = np.amax(temp_curve, axis=1)
+    # generate converged temperature distribution plot
     plt.plot(temp_curve[:, 0], z_vec, "-b", linewidth=2, label=f"temp dist, jan 1")
     plt.plot(temp_curve[:, 25], z_vec, "-r", linewidth=2, label=f"temp dist, jun 1")
-    plt.plot(temp_min_curve, z_vec, "--b", linewidth=2, label="annual minimum")
-    plt.plot(temp_max_curve, z_vec, "--r", linewidth=2, label="annual maximum")
     plt.ylim(mesh.z_max, mesh.z_min)
     plt.legend()
     plt.xlabel("temperature, T [deg C]")
     plt.ylabel("depth, z [m]")
+    plt.title(
+        f"Converged temperature distributions (t={ta._t1 / 8.64e4 / 365: 0.5f} years)"
+    )
+    plt.savefig("examples/thermal_temp_dist_curves.png")
+
+    plt.figure(figsize=(6, 9))
+    temp_min_curve = np.amin(temp_curve, axis=1)
+    temp_max_curve = np.amax(temp_curve, axis=1)
+    plt.plot(temp_curve[:, 0], z_vec, "--b", linewidth=1, label=f"temp dist, jan")
+    plt.plot(temp_curve[:, 13], z_vec, ":b", linewidth=1, label=f"temp dist, apr")
+    plt.plot(temp_curve[:, 26], z_vec, "--r", linewidth=1, label=f"temp dist, jul")
+    plt.plot(temp_curve[:, 39], z_vec, ":r", linewidth=1, label=f"temp dist, oct")
+    plt.plot(temp_min_curve, z_vec, "-b", linewidth=2, label="annual minimum")
+    plt.plot(temp_max_curve, z_vec, "-r", linewidth=2, label="annual maximum")
+    plt.ylim(mesh.z_max, mesh.z_min)
+    plt.legend()
+    plt.xlabel("temperature, T [deg C]")
+    plt.ylabel("depth, z [m]")
+    plt.title(
+        f"Converged annual min/max temperatures (t={ta._t1 / 8.64e4 / 365: 0.5f} years)"
+    )
     plt.savefig("examples/thermal_trumpet_curves.png")
 
 

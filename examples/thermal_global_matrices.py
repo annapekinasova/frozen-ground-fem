@@ -26,13 +26,13 @@ def main():
     mtl = Material(
         thrm_cond_solids=7.0, spec_grav_solids=2.65, spec_heat_cap_solids=741
     )
-    por = 0.3
-    vol_ice_cont = 0.05
+    void_ratio = 0.3
+    deg_sat_water = 0.8
     for e in mesh.elements:
         for ip in e.int_pts:
             ip.material = mtl
-            ip.porosity = por
-            ip.vol_ice_cont = vol_ice_cont
+            ip.void_ratio = void_ratio
+            ip.deg_sat_water = deg_sat_water
 
     # create geometric boundaries
     # and assign them to the mesh
@@ -91,7 +91,7 @@ def main():
     plt.colorbar()
     plt.title("Global Temperature Field")
 
-    plt.savefig("examples/global_matrices.png")
+    plt.savefig("examples/thermal_global_matrices.png")
 
 
 if __name__ == "__main__":
