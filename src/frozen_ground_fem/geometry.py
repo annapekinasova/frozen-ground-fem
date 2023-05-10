@@ -253,19 +253,18 @@ class IntegrationPoint1D(Point1D):
         coord=0.0,
         local_coord=0.0,
         weight=0.0,
-        porosity=0.0,
-        vol_ice_cont=0.0,
+        void_ratio=0.0,
         material=NULL_MATERIAL,
     ):
         super().__init__(coord)
-        self._local_coord = np.zeros((1,))
-        self._weight = np.zeros((1,))
-        self._porosity = np.zeros((1,))
-        self._vol_ice_cont = np.zeros((1,))
+        self._local_coord = 0.0
+        self._weight = 0.0
+        self._void_ratio = 0.0
+        self._porosity = 0.0
+        self._vol_ice_cont = 0.0
         self.local_coord = local_coord
         self.weight = weight
-        self.porosity = porosity
-        self.vol_ice_cont = vol_ice_cont
+        self.void_ratio = void_ratio
         self.material = material
 
     @property
@@ -287,12 +286,12 @@ class IntegrationPoint1D(Point1D):
         ValueError
             If value to assign is not convertible to float.
         """
-        return self._local_coord[0]
+        return self._local_coord
 
     @local_coord.setter
     def local_coord(self, value):
         value = float(value)
-        self._local_coord[0] = value
+        self._local_coord = value
 
     @property
     def weight(self):
@@ -312,49 +311,46 @@ class IntegrationPoint1D(Point1D):
         ValueError
             If value to assign is not convertible to float.
         """
-        return self._weight[0]
+        return self._weight
 
     @weight.setter
     def weight(self, value):
         value = float(value)
-        self._weight[0] = value
+        self._weight = value
 
     @property
     def porosity(self):
         """Porosity of the integration point.
 
-        Parameters
-        ----------
-        float
-            Value to assign to the porosity of the :c:`IntegrationPoint1D`.
-
         Returns
         -------
         float
-
-        Raises
-        ------
-        ValueError
-            If value to assign is not convertible to float.
-            If value < 0. or value > 1.
         """
-        return self._porosity[0]
-
-    @porosity.setter
-    def porosity(self, value):
-        value = float(value)
-        if value < 0.0 or value > 1.0:
-            raise ValueError(f"porosity value {value} not between 0.0 and 1.0")
-        self._porosity[0] = value
+        return self._porosity
 
     @property
     def vol_ice_cont(self):
         """Volumetric ice content of the integration point.
 
+        Returns
+        -------
+        float
+
+        Notes
+        ------
+        Volumetric ice content is not intended to be set directly.
+        It is updated when degree of saturation of water is updated.
+        """
+        return self._vol_ice_cont
+
+    @property
+    def deg_sat_water(self):
+        """Degree of saturation of water of the integration point.
+
         Parameters
         ----------
         float
-            Value to assign to the volumetric ice content of the
+            Value to assign to the degree of saturation of water of the
             :c:`IntegrationPoint1D`.
 
         Returns
@@ -366,18 +362,42 @@ class IntegrationPoint1D(Point1D):
         ValueError
             If value to assign is not convertible to float.
             If value < 0. or value > 1.
-        """
-        return self._vol_ice_cont[0]
 
-    @vol_ice_cont.setter
-    def vol_ice_cont(self, value):
+        Notes
+        -----
+        Also updates degree of saturation of ice (assuming full saturation)
+        and volumetric ice content.
+        """
+        return self._deg_sat_water
+
+    @deg_sat_water.setter
+    def deg_sat_water(self, value):
         value = float(value)
-        if value < 0.0 or value > self.porosity:
+        if value < 0.0 or value > 1.0:
             raise ValueError(
-                f"vol_ice_cont value {value} "
-                + f"not between 0.0 and porosity={self.porosity}"
+                f"deg_sat_water value {value} "
+                + f"not between 0.0 and 1.0"
             )
-        self._vol_ice_cont[0] = value
+        self._deg_sat_water = value
+        self._deg_sat_ice = 1.0 - value
+        self._vol_ice_cont = self.porosity * self._deg_sat_ice
+
+    @property
+    def deg_sat_ice(self):
+        """Degree of saturation of ice of the integration point.
+
+        Returns
+        -------
+        float
+
+        Notes
+        ------
+        Degree of saturation of ice is not intended to be set directly.
+        It is updated when degree of saturation of water is updated,
+        assuming fully saturated conditions, i.e.
+            deg_sat_water + deg_sat_ice = 1.0
+        """
+        return self._deg_sat_ice
 
     @property
     def material(self):
