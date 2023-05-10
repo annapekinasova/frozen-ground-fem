@@ -135,14 +135,17 @@ class Node1D(Point1D):
     coords
     z
     temp
+    void_ratio
     """
 
-    def __init__(self, index, coord=0.0, temp=0.0):
+    def __init__(self, index, coord=0.0, temp=0.0, void_ratio=0.0):
         super().__init__(coord)
         self._temp = np.zeros((1,))
         self.temp = temp
         self._index = None
         self.index = index
+        self._void_ratio = 0.0
+        self.void_ratio = void_ratio
 
     @property
     def temp(self):
@@ -199,6 +202,33 @@ class Node1D(Point1D):
         if _value < 0:
             raise ValueError(f"{_value} is negative")
         self._index = _value
+
+    @property
+    def void_ratio(self):
+        """Void ratio of the node.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the void ratio of the :c:`Node1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+        """
+        return self._void_ratio
+
+    @void_ratio.setter
+    def void_ratio(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"void_ratio {value} is not positive")
+        self._void_ratio = value
 
 
 class IntegrationPoint1D(Point1D):
