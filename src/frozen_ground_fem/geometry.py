@@ -254,6 +254,7 @@ class IntegrationPoint1D(Point1D):
         local_coord=0.0,
         weight=0.0,
         void_ratio=0.0,
+        deg_sat_water=1.0,
         material=NULL_MATERIAL,
     ):
         super().__init__(coord)
@@ -261,10 +262,13 @@ class IntegrationPoint1D(Point1D):
         self._weight = 0.0
         self._void_ratio = 0.0
         self._porosity = 0.0
+        self._deg_sat_water = 1.0
+        self._deg_sat_ice = 0.0
         self._vol_ice_cont = 0.0
         self.local_coord = local_coord
         self.weight = weight
         self.void_ratio = void_ratio
+        self.deg_sat_water = deg_sat_water
         self.material = material
 
     @property
@@ -336,6 +340,10 @@ class IntegrationPoint1D(Point1D):
         ValueError
             If value to assign is not convertible to float.
             If value to assign is negative.
+
+        Notes
+        -----
+        Also updates porosity.
         """
         return self._void_ratio
 
@@ -354,6 +362,11 @@ class IntegrationPoint1D(Point1D):
         Returns
         -------
         float
+
+        Notes
+        -----
+        Porosity is not intended to be updated directly.
+        It is updated each time void ratio is set.
         """
         return self._porosity
 
@@ -390,7 +403,7 @@ class IntegrationPoint1D(Point1D):
         ------
         ValueError
             If value to assign is not convertible to float.
-            If value < 0. or value > 1.
+            If value < 0.0 or value > 1.0
 
         Notes
         -----
