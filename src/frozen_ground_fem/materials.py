@@ -63,12 +63,15 @@ class Material:
     vol_heat_cap_solids
     """
 
-    def __init__(self, thrm_cond_solids=0.0, dens_solids=0.0, spec_heat_cap_solids=0.0):
+    def __init__(
+        self, thrm_cond_solids=0.0, spec_grav_solids=0.0, spec_heat_cap_solids=0.0
+    ):
         self._thrm_cond_solids = 0.0
+        self._spec_grav_solids = 0.0
         self._dens_solids = 0.0
         self._spec_heat_cap_solids = 0.0
         self.thrm_cond_solids = thrm_cond_solids
-        self.dens_solids = dens_solids
+        self.spec_grav_solids = spec_grav_solids
         self.spec_heat_cap_solids = spec_heat_cap_solids
 
     @property
