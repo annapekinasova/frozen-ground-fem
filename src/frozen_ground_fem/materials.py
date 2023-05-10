@@ -104,15 +104,26 @@ class Material:
     def dens_solids(self):
         """Density of solids.
 
-        Parameters
-        ----------
-        value : float or int or str
-            Value to assign to the density of solids.
-
         Returns
         -------
         float
             Current value of density of solids.
+        """
+        return self._dens_solids
+
+    @property
+    def spec_grav_solids(self):
+        """Specific gravity of solids.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the specific gravity of solids.
+
+        Returns
+        -------
+        float
+            Current value of specific gravity of solids.
 
         Raises
         ------
@@ -120,7 +131,7 @@ class Material:
             If value to assign is not convertible to float.
             If value < 0.
         """
-        return self._dens_solids
+        return self._spec_grav_solids
 
     @dens_solids.setter
     def dens_solids(self, value):
