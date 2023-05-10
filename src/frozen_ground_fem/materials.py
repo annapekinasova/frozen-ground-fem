@@ -69,16 +69,19 @@ class Material:
         spec_grav_solids=0.0,
         spec_heat_cap_solids=0.0,
         hyd_cond=0.0,
+        comp_index=0.0,
     ):
         self._thrm_cond_solids = 0.0
         self._spec_grav_solids = 0.0
         self._dens_solids = 0.0
         self._spec_heat_cap_solids = 0.0
         self._hyd_cond = 0.0
+        self._comp_index = 0.0
         self.thrm_cond_solids = thrm_cond_solids
         self.spec_grav_solids = spec_grav_solids
         self.spec_heat_cap_solids = spec_heat_cap_solids
         self.hyd_cond = hyd_cond
+        self.comp_index = comp_index
 
     @property
     def thrm_cond_solids(self):
@@ -229,6 +232,41 @@ class Material:
             raise ValueError(f"hyd_cond {value} is not positive")
         self._hyd_cond = value
 
+    @property
+    def comp_index(self):
+        """Compression index of the material.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the compression index.
+
+        Returns
+        -------
+        float
+            Current value of compression index.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        return self._comp_index
+
+    @comp_index.setter
+    def comp_index(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"comp_index {value} is not positive")
+        self._comp_index = value
+
+    # TODO: update this method for nonlinear large strain
+    # currently it just returns the compression index,
+    # which can be used like the modulus parameter in
+    # Terzaghi consolidation
+    def grad_sig_void_ratio(self, void_ratio, pre_consol_stress):
+        return self.comp_index
 
 """An instance of the material class with all parameters set to zero.
 """
