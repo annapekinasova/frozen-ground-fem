@@ -123,7 +123,8 @@ class TestMaterialDensSolidsSetter(unittest.TestCase):
     def test_set_spec_grav_solids_valid_int(self):
         self.m.spec_grav_solids = 12
         self.assertEqual(self.m.spec_grav_solids, 12.0)
-        self.assertEqual(self.m.dens_solids, float)
+        self.assertEqual(self.m.dens_solids, 12e3)
+        self.assertIsInstance(self.m.spec_grav_solids, float)
         self.assertIsInstance(self.m.dens_solids, float)
 
     def test_set_spec_grav_solids_valid_str(self):
