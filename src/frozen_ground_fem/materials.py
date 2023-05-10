@@ -268,6 +268,7 @@ class Material:
     def grad_sig_void_ratio(self, void_ratio, pre_consol_stress):
         return self.comp_index
 
+
 """An instance of the material class with all parameters set to zero.
 """
 NULL_MATERIAL = Material()
