@@ -58,7 +58,7 @@ class TestNullMaterial(unittest.TestCase):
 class TestMaterialInitializers(unittest.TestCase):
     def setUp(self):
         self.m = Material(
-            thrm_cond_solids=7.8, dens_solids=2.5e3, spec_heat_cap_solids=7.41e5
+            thrm_cond_solids=7.8, spec_grav_solids=2.5, spec_heat_cap_solids=7.41e5
         )
 
     def test_thrm_cond_solids(self):
@@ -115,37 +115,39 @@ class TestMaterialDensSolidsSetter(unittest.TestCase):
     def setUp(self):
         self.m = Material()
 
-    def test_set_dens_solids_valid_float(self):
-        self.m.dens_solids = 1.2
-        self.assertEqual(self.m.dens_solids, 1.2)
+    def test_set_spec_grav_solids_valid_float(self):
+        self.m.spec_grav_solids = 1.2
+        self.assertEqual(self.m.spec_grav_solids, 1.2)
+        self.assertEqual(self.m.dens_solids, 1.2e3)
 
-    def test_set_dens_solids_valid_int(self):
-        self.m.dens_solids = 12
-        self.assertEqual(self.m.dens_solids, 12.0)
-
-    def test_set_dens_solids_valid_int_type(self):
-        self.m.dens_solids = 12
+    def test_set_spec_grav_solids_valid_int(self):
+        self.m.spec_grav_solids = 12
+        self.assertEqual(self.m.spec_grav_solids, 12.0)
+        self.assertEqual(self.m.dens_solids, 12e3)
+        self.assertIsInstance(self.m.spec_grav_solids, float)
         self.assertIsInstance(self.m.dens_solids, float)
 
-    def test_set_dens_solids_valid_str(self):
-        self.m.dens_solids = "1.2e1"
-        self.assertEqual(self.m.dens_solids, 12.0)
+    def test_set_spec_grav_solids_valid_str(self):
+        self.m.spec_grav_solids = "1.2e1"
+        self.assertEqual(self.m.spec_grav_solids, 12.0)
+        self.assertEqual(self.m.dens_solids, 12.0e3)
 
-    def test_set_dens_solids_valid_str_type(self):
-        self.m.dens_solids = "1.2e1"
+    def test_set_spec_grav_solids_valid_str_type(self):
+        self.m.spec_grav_solids = "1.2e1"
+        self.assertIsInstance(self.m.spec_grav_solids, float)
         self.assertIsInstance(self.m.dens_solids, float)
 
-    def test_set_dens_solids_invalid_type(self):
+    def test_set_spec_grav_solids_invalid_type(self):
         with self.assertRaises(TypeError):
-            self.m.dens_solids = (12.0, 1.8)
+            self.m.spec_grav_solids = (12.0, 1.8)
 
-    def test_set_dens_solids_invalid_value(self):
+    def test_set_spec_grav_solids_invalid_value(self):
         with self.assertRaises(ValueError):
-            self.m.dens_solids = -12.0
+            self.m.spec_grav_solids = -12.0
 
-    def test_set_dens_solids_invalid_str(self):
+    def test_set_spec_grav_solids_invalid_str(self):
         with self.assertRaises(ValueError):
-            self.m.dens_solids = "twelve"
+            self.m.spec_grav_solids = "twelve"
 
 
 class TestMaterialSpecHeatCapSolidsSetter(unittest.TestCase):
@@ -188,7 +190,7 @@ class TestMaterialSpecHeatCapSolidsSetter(unittest.TestCase):
 class TestMaterialVolHeatCapSolidsSetter(unittest.TestCase):
     def setUp(self):
         self.m = Material(
-            thrm_cond_solids=7.8, dens_solids=2.5e3, spec_heat_cap_solids=7.41e5
+            thrm_cond_solids=7.8, spec_grav_solids=2.5, spec_heat_cap_solids=7.41e5
         )
 
     def test_set_spec_heat_cap_solids(self):
@@ -197,7 +199,7 @@ class TestMaterialVolHeatCapSolidsSetter(unittest.TestCase):
         self.assertEqual(self.m.vol_heat_cap_solids, expected)
 
     def test_set_dens_solids(self):
-        self.m.dens_solids = 3.0e3
+        self.m.spec_grav_solids = 3.0
         expected = 7.41e5 * 3.0e3
         self.assertEqual(self.m.vol_heat_cap_solids, expected)
 
