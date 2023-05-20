@@ -86,10 +86,12 @@ def main():
     # **********************************************
     # TIME STEPPING ALGORITHM
     # **********************************************
+    
+    plt.rc('font', size=8)
 
     # initialize plot
     z_vec = np.array([nd.z for nd in mesh.nodes])
-    plt.figure(figsize=(6, 9))
+    plt.figure(figsize=(3.7, 5.2))
 
     # initialize global matrices and vectors
     ta.time_step = 365 * 8.64e4 / 52  # ~one week, in seconds
@@ -114,12 +116,12 @@ def main():
     plt.legend()
     plt.xlabel("temperature, T [deg C]")
     plt.ylabel("depth, z [m]")
-    plt.title(
-        f"Converged temperature distributions (t={ta._t1 / 8.64e4 / 365: 0.5f} years)"
-    )
+    # plt.title(
+    #     f"Converged temperature distributions (t={ta._t1 / 8.64e4 / 365: 0.1f} years)",
+    # )
     plt.savefig("examples/thermal_temp_dist_curves.png")
 
-    plt.figure(figsize=(6, 9))
+    plt.figure(figsize=(3.9, 5.2))
     temp_min_curve = np.amin(temp_curve, axis=1)
     temp_max_curve = np.amax(temp_curve, axis=1)
     plt.plot(temp_curve[:, 0], z_vec, "--b", linewidth=1, label=f"temp dist, jan")
@@ -130,11 +132,11 @@ def main():
     plt.plot(temp_max_curve, z_vec, "-r", linewidth=2, label="annual maximum")
     plt.ylim(mesh.z_max, mesh.z_min)
     plt.legend()
-    plt.xlabel("temperature, T [deg C]")
-    plt.ylabel("depth, z [m]")
-    plt.title(
-        f"Converged annual min/max temperatures (t={ta._t1 / 8.64e4 / 365: 0.5f} years)"
-    )
+    plt.xlabel("Temperature, T [deg C]")
+    plt.ylabel("Lagrangian coordinate, Z [m]")
+    # plt.title(
+    #     f"Converged annual min/max temperatures (t={ta._t1 / 8.64e4 / 365: 0.1f} years)",
+    # )
     plt.savefig("examples/thermal_trumpet_curves.png")
 
 
