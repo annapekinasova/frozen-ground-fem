@@ -86,8 +86,8 @@ def main():
     # **********************************************
     # TIME STEPPING ALGORITHM
     # **********************************************
-    
-    plt.rc('font', size=8)
+
+    plt.rc("font", size=8)
 
     # initialize plot
     z_vec = np.array([nd.z for nd in mesh.nodes])
