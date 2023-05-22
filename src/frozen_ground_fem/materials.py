@@ -69,6 +69,11 @@ class Material:
         thrm_cond_solids=0.0,
         spec_grav_solids=0.0,
         spec_heat_cap_solids=0.0,
+        deg_sat_water_alpha=0.0,
+        deg_sat_water_beta=0.0,
+        hyd_cond_index=0.0,
+        hyd_cond_mult=0.0,
+        hyd_cond_0=0.0,
         void_ratio_min=0.0,
         void_ratio_sep=0.0,
         void_ratio_lim=0.0,
@@ -83,6 +88,11 @@ class Material:
         self._spec_grav_solids = 0.0
         self._dens_solids = 0.0
         self._spec_heat_cap_solids = 0.0
+        self._deg_sat_water_alpha = 0.0
+        self._deg_sat_water_beta = 0.0
+        self._hyd_cond_index = 0.0
+        self._hyd_cond_mult = 0.0
+        self._hyd_cond_0 = 0.0
         self._void_ratio_min = 0.0
         self._void_ratio_sep = 0.0
         self._void_ratio_lim = 0.0
@@ -95,6 +105,11 @@ class Material:
         self.thrm_cond_solids = thrm_cond_solids
         self.spec_grav_solids = spec_grav_solids
         self.spec_heat_cap_solids = spec_heat_cap_solids
+        self.deg_sat_water_alpha = deg_sat_water_alpha
+        self.deg_sat_water_beta = deg_sat_water_beta
+        self.hyd_cond_index = hyd_cond_index
+        self.hyd_cond_mult = hyd_cond_mult
+        self.hyd_cond_0 = hyd_cond_0
         self.void_ratio_min = void_ratio_min
         self.void_ratio_sep = void_ratio_sep
         self.void_ratio_lim = void_ratio_lim
@@ -224,6 +239,157 @@ class Material:
 
     def _update_vol_heat_cap_solids(self):
         self._vol_heat_cap_solids = self.dens_solids * self.spec_heat_cap_solids
+
+    @property
+    def deg_sat_water_alpha(self):
+        """Alpha material constant [kPa]
+        for calculation of degree of saturation of water.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the alpha constant.
+
+        Returns
+        -------
+        float
+            Current value of alpha.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        self._deg_sat_water_alpha
+
+    @deg_sat_water_alpha.setter
+    def deg_sat_water_alpha(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"deg_sat_water_alpha {value} is not positive")
+        self._deg_sat_water_alpha = value
+
+    @property
+    def deg_sat_water_beta(self):
+        """Beta material constant []
+        for calculation of degree of saturation of water.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the beta constant.
+
+        Returns
+        -------
+        float
+            Current value of beta.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        self._deg_sat_water_beta
+
+    @deg_sat_water_beta.setter
+    def deg_sat_water_beta(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"deg_sat_water_beta {value} is not positive")
+        self._deg_sat_water_beta = value
+
+    @property
+    def hyd_cond_index(self):
+        """Hydraulic conductivity index constant of unfrozen soil []
+        for calculation of void ratio difference.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the hydraulic conductivity index.
+
+        Returns
+        -------
+        float
+            Current value of hydraulic conductivity index.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        self._hyd_cond_index
+
+    @hyd_cond_index.setter
+    def hyd_cond_index(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"hyd_cond_index {value} is not positive")
+        self._hyd_cond_index = value
+
+    @property
+    def hyd_cond_mult(self):
+        """Hydraulic conductivity multiplier constant []
+        for adjusting the hydraulic conductivity of
+        thawed soil encoutered in freeze-thaw cycle.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the hydraulic conductivity multiplier.
+
+        Returns
+        -------
+        float
+            Current value of hydraulic conductivity multiplier.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        self._hyd_cond_mult
+
+    @hyd_cond_mult.setter
+    def hyd_cond_mult(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"hyd_cond_mult {value} is not positive")
+        self._hyd_cond_mult = value
+
+    @property
+    def hyd_cond_0(self):
+        """Reference hydraulic conductivity [m/s]
+        with unfrozen reference void ratio.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the reference hydraulic conductivity.
+
+        Returns
+        -------
+        float
+            Current value of reference hydraulic conductivity.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        self._hyd_cond_0
+
+    @hyd_cond_0.setter
+    def hyd_cond_0(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"hyd_cond_0 {value} is not positive")
+        self._hyd_cond_0 = value
 
     @property
     def void_ratio_min(self):
