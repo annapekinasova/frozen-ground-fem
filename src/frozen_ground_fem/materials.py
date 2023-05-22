@@ -302,8 +302,7 @@ class Material:
 
     @property
     def hyd_cond_index(self):
-        """Hydraulic conductivity index constant of unfrozen soil []
-        for calculation of void ratio difference.
+        """Hydraulic conductivity index constant of unfrozen soil.
 
         Parameters
         ----------
