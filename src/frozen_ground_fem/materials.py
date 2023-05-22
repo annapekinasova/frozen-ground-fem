@@ -59,7 +59,6 @@ latent_heat_fusion_water : float
 latent_heat_fusion_water = 333.55e3
 
 
-
 class Material:
     """Class for storing the properties of the solids in porous medium.
 
@@ -693,7 +692,7 @@ class Material:
         deg_sat_base = (latent_heat_ratio * log_temp_ratio) ** beta_ratio_0
         deg_sat_water = (1.0 + deg_sat_base) ** (-beta)
         deg_sat_deriv = -beta_ratio_1 * latent_heat_ratio / temp_kelvin
-        deg_sat_deriv *= (deg_sat_water ** beta_ratio_2) * (deg_sat_base ** beta)
+        deg_sat_deriv *= (deg_sat_water**beta_ratio_2) * (deg_sat_base**beta)
         return deg_sat_water, deg_sat_deriv
 
     def water_flux(self, e, e0, temp, temp_rate, temp_grad, sigma_1):
