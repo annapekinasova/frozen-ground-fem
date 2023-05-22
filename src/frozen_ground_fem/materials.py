@@ -2,6 +2,7 @@
 for tracking material properties.
 
 """
+import numpy as np
 
 """
 grav_acc : float
@@ -487,6 +488,55 @@ class Material:
         if value < 0.0:
             raise ValueError(f"seg_pot_0 {value} is not positive")
         self._seg_pot_0 = value
+
+    def water_flux(self, e, e0, temp, temp_rate, temp_grad, sigma_1):
+        """The water flux function for frozen soil.
+
+        Parameters
+        ----------
+        e : float
+            Current void ratio.
+        e0 : float
+            Initial void ratio.
+        temp : float
+            Current temperature.
+        temp_rate : float
+            Current temperature time derivative.
+        temp_grad : float
+            Current temperature gradient (in Lagrangian coordinates).
+        sigma_1 : float
+            Current local stress (overburden and void ratio correction).
+
+        Returns
+        -------
+        float
+            The water flux rate.
+
+        Raises
+        ------
+        ValueError
+            If the given temp > 0.0 since this only applies for frozen soil.
+        """
+        if temp > 0.0:
+            raise ValueError(f"temp {temp} is above Tf = 0.0")
+        void_ratio_factor = (1.0 + e0) / (1.0 + e)
+        temp_rate_ratio = np.abs(temp_rate / self.temp_rate_ref)
+        temp_rate_factor = 1.0
+        if temp_rate < 0.0:
+            temp_rate_factor += self.water_flux_b1 * np.log(temp_rate_ratio)
+        elif temp_rate > 0.0:
+            temp_rate_factor -= self.water_flux_b1 * np.log(temp_rate_ratio)
+        exp_factor = np.exp(
+            self.water_flux_b2 * (temp - 0.0) - self.water_flux_b3 * sigma_1
+        )
+        water_flux = (
+            -void_ratio_factor
+            * temp_rate_factor
+            * self.seg_pot_0
+            * exp_factor
+            * temp_grad
+        )
+        return water_flux
 
     # TODO: update this method for nonlinear large strain
     # currently it just returns the compression index,
