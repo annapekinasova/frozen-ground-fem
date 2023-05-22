@@ -68,20 +68,19 @@ class Material:
         thrm_cond_solids=0.0,
         spec_grav_solids=0.0,
         spec_heat_cap_solids=0.0,
-        hyd_cond=0.0,
-        comp_index=0.0,
+        void_ratio_min=0.0,
     ):
         self._thrm_cond_solids = 0.0
         self._spec_grav_solids = 0.0
         self._dens_solids = 0.0
         self._spec_heat_cap_solids = 0.0
-        self._hyd_cond = 0.0
-        self._comp_index = 0.0
+        self._void_ratio_min = 0.0
         self.thrm_cond_solids = thrm_cond_solids
         self.spec_grav_solids = spec_grav_solids
         self.spec_heat_cap_solids = spec_heat_cap_solids
         self.hyd_cond = hyd_cond
         self.comp_index = comp_index
+        self.void_ratio_min = void_ratio_min
 
     @property
     def thrm_cond_solids(self):
@@ -202,6 +201,10 @@ class Material:
 
     def _update_vol_heat_cap_solids(self):
         self._vol_heat_cap_solids = self.dens_solids * self.spec_heat_cap_solids
+
+    @property
+    def void_ratio_min(self):
+        return self._void_ratio_min
 
     # TODO: update this method for nonlinear large strain
     # currently it just returns the compression index,
