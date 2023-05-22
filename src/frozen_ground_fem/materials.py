@@ -268,7 +268,7 @@ class Material:
             If value to assign is not convertible to float.
             If value < 0.
         """
-        self._deg_sat_water_alpha
+        return self._deg_sat_water_alpha
 
     @deg_sat_water_alpha.setter
     def deg_sat_water_alpha(self, value):
@@ -298,7 +298,7 @@ class Material:
             If value to assign is not convertible to float.
             If value < 0.
         """
-        self._deg_sat_water_beta
+        return self._deg_sat_water_beta
 
     @deg_sat_water_beta.setter
     def deg_sat_water_beta(self, value):
@@ -327,7 +327,7 @@ class Material:
             If value to assign is not convertible to float.
             If value < 0.
         """
-        self._hyd_cond_index
+        return self._hyd_cond_index
 
     @hyd_cond_index.setter
     def hyd_cond_index(self, value):
@@ -358,7 +358,7 @@ class Material:
             If value to assign is not convertible to float.
             If value < 0.
         """
-        self._hyd_cond_mult
+        return self._hyd_cond_mult
 
     @hyd_cond_mult.setter
     def hyd_cond_mult(self, value):
@@ -388,7 +388,7 @@ class Material:
             If value to assign is not convertible to float.
             If value < 0.
         """
-        self._hyd_cond_0
+        return self._hyd_cond_0
 
     @hyd_cond_0.setter
     def hyd_cond_0(self, value):
