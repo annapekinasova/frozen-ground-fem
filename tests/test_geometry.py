@@ -1,4 +1,3 @@
-from ctypes import wstring_at
 import unittest
 
 import numpy as np
@@ -257,20 +256,17 @@ class TestIntegrationPoint1DDefaults(unittest.TestCase):
         self.assertIsInstance(self.p.weight, float)
 
     def test_void_ratio_value(self):
-        self.assertEqual(self.p.void_ratio, 0.5)
-        expected_porosity = 0.5 / 1.5
-        self.assertAlmostEqual(self.p.porosity, expected_porosity)
+        self.assertAlmostEqual(self.p.void_ratio, 0.0)
+        self.assertAlmostEqual(self.p.porosity, 0.0)
 
     def test_void_ratio_type(self):
         self.assertIsInstance(self.p.void_ratio, float)
         self.assertIsInstance(self.p.porosity, float)
 
     def test_deg_sat_water_value(self):
-        self.assertEqual(self.p.deg_sat_water, 0.2)
-        expected_deg_sat_ice = 0.8
-        self.assertAlmostEqual(self.p.deg_sat_ice, expected_deg_sat_ice)
-        expected_vol_ice_cont = 0.5 * 0.8 / 1.5
-        self.assertAlmostEqual(self.p.vol_ice_cont, expected_vol_ice_cont)
+        self.assertAlmostEqual(self.p.deg_sat_water, 1.0)
+        self.assertAlmostEqual(self.p.deg_sat_ice, 0.0)
+        self.assertAlmostEqual(self.p.vol_ice_cont, 0.0)
 
     def test_vol_ice_cont_type(self):
         self.assertIsInstance(self.p.deg_sat_water, float)
@@ -353,12 +349,12 @@ class TestIntegrationPoint1DInitializers(unittest.TestCase):
         self.assertIsInstance(self.p.material, Material)
 
     def test_thrm_cond(self):
-        expected = 2.75721361713449
-        self.assertAlmostEqual(self.p.thrm_cond, expected, delta=1e-8)
+        expected = 4.682284029228440
+        self.assertAlmostEqual(self.p.thrm_cond, expected)
 
     def test_vol_heat_cap(self):
-        expected = 9.278874e08
-        self.assertAlmostEqual(self.p.vol_heat_cap, expected, delta=1e-8)
+        expected = 1235781866.66667
+        self.assertAlmostEqual(self.p.vol_heat_cap, expected, places=4)
 
 
 class TestIntegrationPoint1DSetters(unittest.TestCase):
@@ -440,7 +436,8 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
             self.p.weight = "five"
 
     def test_set_ratio_valid_float(self):
-        self.assertEqual(self.p.void_ratio, 0.5)
+        self.p.void_ratio = 0.5
+        self.assertAlmostEqual(self.p.void_ratio, 0.5)
         expected_porosity = 0.5 / 1.5
         self.assertAlmostEqual(self.p.porosity, expected_porosity)
 
@@ -465,10 +462,6 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
     def test_set_void_ratio_invalid_float_negative(self):
         with self.assertRaises(ValueError):
             self.p.void_ratio = -0.2
-
-    def test_set_void_ratio_invalid_float_positive(self):
-        with self.assertRaises(ValueError):
-            self.p.void_ratio = 1.2
 
     def test_set_void_ratio_valid_int(self):
         self.p.void_ratio = 1
@@ -504,7 +497,7 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
 
     def test_set_deg_sat_water_invalid_float_positive(self):
         with self.assertRaises(ValueError):
-            self.p.deg_sat_water = self.p.deg_sat_water + 0.1
+            self.p.deg_sat_water = 1.1
 
     def test_set_deg_sat_water_valid_int(self):
         self.p.deg_sat_water = 0
@@ -531,48 +524,47 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.p.material = 1
 
-    # TODO: start from here
     def test_set_thrm_cond_invalid(self):
         with self.assertRaises(AttributeError):
             self.p.thrm_cond = 1.0e5
 
-    def test_update_thrm_cond_porosity(self):
-        self.p.porosity = 0.25
-        expected = 5.31945288503591
-        self.assertAlmostEqual(self.p.thrm_cond, expected, delta=1e-8)
+    def test_update_thrm_cond_void_ratio(self):
+        self.p.void_ratio = 0.25
+        expected = 5.74265192951243
+        self.assertAlmostEqual(self.p.thrm_cond, expected)
 
-    def test_update_thrm_cond_vol_ice_cont(self):
-        self.p.vol_ice_cont = 0.05
-        expected = 3.79674097529634
-        self.assertAlmostEqual(self.p.thrm_cond, expected, delta=1e-8)
+    def test_update_thrm_cond_deg_sat_water(self):
+        self.p.deg_sat_water = 0.05
+        expected = 5.744855338606900
+        self.assertAlmostEqual(self.p.thrm_cond, expected)
 
     def test_update_thrm_cond_material(self):
         self.p.material = Material(
             thrm_cond_solids=6.7, spec_grav_solids=2.8, spec_heat_cap_solids=6.43e5
         )
-        expected = 4.19347247030009
-        self.assertAlmostEqual(self.p.thrm_cond, expected, delta=1e-8)
+        expected = 4.873817313136410
+        self.assertAlmostEqual(self.p.thrm_cond, expected)
 
     def test_set_vol_heat_cap_invalid(self):
         with self.assertRaises(AttributeError):
             self.p.vol_heat_cap = 1.0e5
 
-    def test_update_vol_heat_cap_porosity(self):
-        self.p.porosity = 0.25
-        expected = 1.389961400e9
-        self.assertAlmostEqual(self.p.vol_heat_cap, expected, delta=1e-8)
+    def test_update_vol_heat_cap_void_ratio(self):
+        self.p.void_ratio = 0.25
+        expected = 1482469120.0000
+        self.assertAlmostEqual(self.p.vol_heat_cap, expected, places=4)
 
-    def test_update_vol_heat_cap_vol_ice_cont(self):
-        self.p.vol_ice_cont = 0.05
-        expected = 1.297895050e9
-        self.assertAlmostEqual(self.p.vol_heat_cap, expected, delta=1e-8)
+    def test_update_vol_heat_cap_deg_sat_water(self):
+        self.p.deg_sat_water = 0.05
+        expected = 1425460880.769230
+        self.assertAlmostEqual(self.p.vol_heat_cap, expected, places=4)
 
     def test_update_vol_heat_cap_material(self):
         self.p.material = Material(
             thrm_cond_solids=6.7, spec_grav_solids=2.8, spec_heat_cap_solids=6.43e5
         )
-        expected = 1.261076600e9
-        self.assertAlmostEqual(self.p.vol_heat_cap, expected, delta=1e-8)
+        expected = 1385464369.230770
+        self.assertAlmostEqual(self.p.vol_heat_cap, expected, places=4)
 
 
 class TestElement1D(unittest.TestCase):

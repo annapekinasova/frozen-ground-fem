@@ -354,6 +354,7 @@ class IntegrationPoint1D(Point1D):
             raise ValueError(f"void_ratio {value} is not positive")
         self._void_ratio = value
         self._porosity = value / (1.0 + value)
+        self._vol_ice_cont = self.porosity * self.deg_sat_ice
 
     @property
     def porosity(self):
