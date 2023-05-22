@@ -52,6 +52,13 @@ thrm_cond_ice : float
 """
 thrm_cond_ice = 2.22
 
+"""
+latent_heat_fusion_water : float
+    The specific latent heat fusion water in SI units, J.kg^{-1}
+"""
+latent_heat_fusion_water = 333.55e3
+
+
 
 class Material:
     """Class for storing the properties of the solids in porous medium.
@@ -654,6 +661,32 @@ class Material:
         if value < 0.0:
             raise ValueError(f"seg_pot_0 {value} is not positive")
         self._seg_pot_0 = value
+
+    def deg_sat_water(self, temp):
+        """The degree of saturation of water function.
+
+        Parameters
+        ----------
+        temp : float
+            Current temperature.
+
+        Returns
+        -------
+        float
+            The degree of saturation of water.
+        """
+        deg_sat_water = 1.0
+        if temp > 0.0:
+            return  deg_sat_water
+        rho_i = spec_grav_ice * dens_water
+        temp_ratio = (temp + 273.15) / 273.15
+        alpha = self.deg_sat_water_alpha
+        beta = self.deg_sat_water_beta
+        latent_heat_ratio = - latent_heat_fusion_water * rho_i / alpha
+        beta_ratio = 1.0 / (1.0 - beta)
+        deg_sat_water += (latent_heat_ratio * np.log(temp_ratio))**beta_ratio
+        deg_sat_water **= (-beta)
+        return deg_sat_water
 
     def water_flux(self, e, e0, temp, temp_rate, temp_grad, sigma_1):
         """The water flux function for frozen soil.
