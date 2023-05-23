@@ -151,7 +151,6 @@ class Material:
         self.eff_stress_0_comp = eff_stress_0_comp
         self.eff_stress_0_rebound = eff_stress_0_rebound
 
-
     @property
     def thrm_cond_solids(self):
         """Thermal conductivity of solids.
@@ -718,7 +717,7 @@ class Material:
     @property
     def void_rat_0_comp(self):
         """Reference unfrozen void ratio
-        corresponding to compression 
+        corresponding to compression
         (normal consolidation line).
 
         Parameters
@@ -749,7 +748,7 @@ class Material:
     @property
     def void_rat_0_rebound(self):
         """Reference unfrozen void ratio
-        corresponding to rebound 
+        corresponding to rebound
         (unloading-reloading line).
 
         Parameters
