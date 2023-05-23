@@ -80,6 +80,7 @@ class Material:
         hyd_cond_index=0.0,
         hyd_cond_mult=0.0,
         hyd_cond_0=0.0,
+        void_ratio_0_hyd_cond=0.0,
         void_ratio_min=0.0,
         void_ratio_sep=0.0,
         void_ratio_lim=0.0,
@@ -99,6 +100,7 @@ class Material:
         self._hyd_cond_index = 0.0
         self._hyd_cond_mult = 0.0
         self._hyd_cond_0 = 0.0
+        self._void_ratio_0_hyd_cond = 0.0
         self._void_ratio_min = 0.0
         self._void_ratio_sep = 0.0
         self._void_ratio_lim = 0.0
@@ -116,6 +118,7 @@ class Material:
         self.hyd_cond_index = hyd_cond_index
         self.hyd_cond_mult = hyd_cond_mult
         self.hyd_cond_0 = hyd_cond_0
+        self.void_ratio_0_hyd_cond = void_ratio_0_hyd_cond
         self.void_ratio_min = void_ratio_min
         self.void_ratio_sep = void_ratio_sep
         self.void_ratio_lim = void_ratio_lim
@@ -395,6 +398,35 @@ class Material:
         if value < 0.0:
             raise ValueError(f"hyd_cond_0 {value} is not positive")
         self._hyd_cond_0 = value
+
+    @property
+    def void_ratio_0_hyd_cond(self):
+        """Reference unfrozen void ratio.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the reference unfrozen void ratio.
+
+        Returns
+        -------
+        float
+            Current value of reference unfrozen void ratio.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        return self._void_ratio_0_hyd_cond
+
+    @void_ratio_0_hyd_cond.setter
+    def void_ratio_0_hyd_cond(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"void_ratio_0_hyd_cond {value} is not positive")
+        self._void_ratio_0_hyd_cond = value
 
     @property
     def void_ratio_min(self):
