@@ -59,6 +59,10 @@ latent_heat_fusion_water : float
 latent_heat_fusion_water = 333.55e3
 
 
+# private constants (for convenience / efficiency)
+_LOG_10 = np.log(10)
+
+
 class Material:
     """Class for storing the properties of the solids in porous medium.
 
@@ -711,41 +715,6 @@ class Material:
             raise ValueError(f"seg_pot_0 {value} is not positive")
         self._seg_pot_0 = value
 
-    def deg_sat_water(self, temp):
-        """The degree of saturation of water function.
-
-        Parameters
-        ----------
-        temp : float
-            Current temperature.
-
-        Returns
-        -------
-        float
-            The degree of saturation of water.
-        float
-            The derivative of degree of saturation of water
-            with respect to temperature.
-        """
-        deg_sat_water = 1.0
-        deg_sat_deriv = 0.0
-        if temp > 0.0:
-            return deg_sat_water, deg_sat_deriv
-        rho_i = spec_grav_ice * dens_water
-        temp_kelvin = temp + 273.15
-        log_temp_ratio = np.log(temp_kelvin / 273.15)
-        alpha = self.deg_sat_water_alpha
-        beta = self.deg_sat_water_beta
-        latent_heat_ratio = -latent_heat_fusion_water * rho_i / alpha
-        beta_ratio_0 = 1.0 / (1.0 - beta)
-        beta_ratio_1 = beta * beta_ratio_0
-        beta_ratio_2 = (1 + beta) / beta
-        deg_sat_base = (latent_heat_ratio * log_temp_ratio) ** beta_ratio_0
-        deg_sat_water = (1.0 + deg_sat_base) ** (-beta)
-        deg_sat_deriv = -beta_ratio_1 * latent_heat_ratio / temp_kelvin
-        deg_sat_deriv *= (deg_sat_water**beta_ratio_2) * (deg_sat_base**beta)
-        return deg_sat_water, deg_sat_deriv
-
     @property
     def void_rat_0_comp(self):
         """Reference unfrozen void ratio
@@ -923,6 +892,80 @@ class Material:
         if value < 0.0:
             raise ValueError(f"eff_stress_0_rebound {value} is not positive")
         self._eff_stress_0_rebound = value
+
+    def deg_sat_water(self, temp):
+        """The degree of saturation of water function.
+
+        Parameters
+        ----------
+        temp : float
+            Current temperature.
+
+        Returns
+        -------
+        float
+            The degree of saturation of water.
+        float
+            The derivative of degree of saturation of water
+            with respect to temperature.
+        """
+        deg_sat_water = 1.0
+        deg_sat_deriv = 0.0
+        if temp > 0.0:
+            return deg_sat_water, deg_sat_deriv
+        rho_i = spec_grav_ice * dens_water
+        temp_kelvin = temp + 273.15
+        log_temp_ratio = np.log(temp_kelvin / 273.15)
+        alpha = self.deg_sat_water_alpha
+        beta = self.deg_sat_water_beta
+        latent_heat_ratio = -latent_heat_fusion_water * rho_i / alpha
+        beta_ratio_0 = 1.0 / (1.0 - beta)
+        beta_ratio_1 = beta * beta_ratio_0
+        beta_ratio_2 = (1 + beta) / beta
+        deg_sat_base = (latent_heat_ratio * log_temp_ratio) ** beta_ratio_0
+        deg_sat_water = (1.0 + deg_sat_base) ** (-beta)
+        deg_sat_deriv = -beta_ratio_1 * latent_heat_ratio / temp_kelvin
+        deg_sat_deriv *= (deg_sat_water**beta_ratio_2) * (deg_sat_base**beta)
+        return deg_sat_water, deg_sat_deriv
+
+    def hyd_cond(self, e, temp, thawed):
+        """The hydraulic conductivity for unfrozen and thawed soil.
+
+        Parameters
+        ----------
+        e : float
+            Current void ratio.
+        temp : float
+            Current temperature.
+        thawed : logical
+            Flag for whether soil is thawed or unfrozen.
+
+        Returns
+        -------
+        float
+            The hydraulic conductivity.
+        float
+            The gradient of hydraulic conductivity
+            with respect to void raito.
+
+        Raises
+        ------
+        ValueError
+            If temp <= 0.0.
+        """
+        if temp <= 0.0:
+            raise ValueError(f"temp {temp} is not positive.")
+        eu0 = self.void_ratio_0_hyd_cond
+        e_min = self.void_ratio_min
+        e_tr = self.void_ratio_tr
+        m = 1.0
+        if thawed and e >= e_min and e <= e_tr:
+            m = self.hyd_cond_mult
+        k0 = m * self.hyd_cond_0
+        C_ku = self.hyd_cond_index
+        k = k0 * 10 ** ((e - eu0) / C_ku)
+        dk_de = k * _LOG_10 / C_ku
+        return k, dk_de
 
     def water_flux(self, e, e0, temp, temp_rate, temp_grad, sigma_1):
         """The water flux function for frozen soil.
