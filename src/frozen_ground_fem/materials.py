@@ -90,6 +90,12 @@ class Material:
         water_flux_b3=0.0,
         temp_rate_ref=0.0,
         seg_pot_0=0.0,
+        void_rat_0_comp=0.0,
+        void_rat_0_rebound=0.0,
+        comp_index_unfrozen=0.0,
+        rebound_index_unfrozen=0.0,
+        eff_stress_0_comp=0.0,
+        eff_stress_0_rebound=0.0,
     ):
         self._thrm_cond_solids = 0.0
         self._spec_grav_solids = 0.0
@@ -110,6 +116,12 @@ class Material:
         self._water_flux_b3 = 0.0
         self._temp_rate_ref = 0.0
         self._seg_pot_0 = 0.0
+        self._void_rat_0_comp = 0.0
+        self._void_rat_0_rebound = 0.0
+        self._comp_index_unfrozen = 0.0
+        self._rebound_index_unfrozen = 0.0
+        self._eff_stress_0_comp = 0.0
+        self._eff_stress_0_rebound = 0.0
         self.thrm_cond_solids = thrm_cond_solids
         self.spec_grav_solids = spec_grav_solids
         self.spec_heat_cap_solids = spec_heat_cap_solids
@@ -128,6 +140,13 @@ class Material:
         self.water_flux_b3 = water_flux_b3
         self.temp_rate_ref = temp_rate_ref
         self.seg_pot_0 = seg_pot_0
+        self.void_rat_0_comp = void_rat_0_comp
+        self.void_rat_0_rebound = void_rat_0_rebound
+        self.comp_index_unfrozen = comp_index_unfrozen
+        self.rebound_index_unfrozen = rebound_index_unfrozen
+        self.eff_stress_0_comp = eff_stress_0_comp
+        self.eff_stress_0_rebound = eff_stress_0_rebound
+
 
     @property
     def thrm_cond_solids(self):
@@ -726,6 +745,184 @@ class Material:
         deg_sat_deriv = -beta_ratio_1 * latent_heat_ratio / temp_kelvin
         deg_sat_deriv *= (deg_sat_water**beta_ratio_2) * (deg_sat_base**beta)
         return deg_sat_water, deg_sat_deriv
+
+    @property
+    def void_rat_0_comp(self):
+        """Reference unfrozen void ratio
+        corresponding to compression 
+        (normal consolidation line).
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the reference unfrozen compression void ratio.
+
+        Returns
+        -------
+        float
+            Current value of reference unfrozen compression void ratio.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        return self._void_rat_0_comp
+
+    @void_rat_0_comp.setter
+    def void_rat_0_comp(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"void_rat_0_comp {value} is not positive")
+        self._void_rat_0_comp = value
+
+    @property
+    def void_rat_0_rebound(self):
+        """Reference unfrozen void ratio
+        corresponding to rebound 
+        (unloading-reloading line).
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the reference unfrozen rebound void ratio.
+
+        Returns
+        -------
+        float
+            Current value of reference unfrozen rebound void ratio.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        return self._void_rat_0_rebound
+
+    @void_rat_0_rebound.setter
+    def void_rat_0_rebound(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"void_rat_0_rebound {value} is not positive")
+        self._void_rat_0_rebound = value
+
+    @property
+    def comp_index_unfrozen(self):
+        """Compression index in unfrozen soil.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the compression index.
+
+        Returns
+        -------
+        float
+            Current value of the compression index.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        return self._comp_index_unfrozen
+
+    @comp_index_unfrozen.setter
+    def comp_index_unfrozen(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"comp_index_unforzen {value} is not positive")
+        self._comp_index_unfrozen = value
+
+    @property
+    def rebound_index_unfrozen(self):
+        """Rebound index in unfrozen soil.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the rebound index.
+
+        Returns
+        -------
+        float
+            Current value of the rebound index.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        return self._rebound_index_unfrozen
+
+    @rebound_index_unfrozen.setter
+    def rebound_index_unfrozen(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"rebound_index_unfrozen {value} is not positive")
+        self._rebound_index_unfrozen = value
+
+    @property
+    def eff_stress_0_comp(self):
+        """Effective stress for compression curve.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the compression effective stress.
+
+        Returns
+        -------
+        float
+            Current value of the compression effective stress.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        return self._eff_stress_0_comp
+
+    @eff_stress_0_comp.setter
+    def eff_stress_0_comp(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"eff_stress_0_comp {value} is not positive")
+        self._eff_stress_0_comp = value
+
+    @property
+    def eff_stress_0_rebound(self):
+        """Effective stress for rebound curve.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the rebound effective stress.
+
+        Returns
+        -------
+        float
+            Current value of the rebound effective stress.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        return self._eff_stress_0_rebound
+
+    @eff_stress_0_rebound.setter
+    def eff_stress_0_rebound(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"eff_stress_0_rebound {value} is not positive")
+        self._eff_stress_0_rebound = value
 
     def water_flux(self, e, e0, temp, temp_rate, temp_grad, sigma_1):
         """The water flux function for frozen soil.
