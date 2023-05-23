@@ -94,8 +94,8 @@ class Material:
         water_flux_b3=0.0,
         temp_rate_ref=0.0,
         seg_pot_0=0.0,
-        void_rat_0_comp=0.0,
-        void_rat_0_rebound=0.0,
+        void_ratio_0_comp=0.0,
+        void_ratio_0_rebound=0.0,
         comp_index_unfrozen=0.0,
         rebound_index_unfrozen=0.0,
         eff_stress_0_comp=0.0,
@@ -120,8 +120,8 @@ class Material:
         self._water_flux_b3 = 0.0
         self._temp_rate_ref = 0.0
         self._seg_pot_0 = 0.0
-        self._void_rat_0_comp = 0.0
-        self._void_rat_0_rebound = 0.0
+        self._void_ratio_0_comp = 0.0
+        self._void_ratio_0_rebound = 0.0
         self._comp_index_unfrozen = 0.0
         self._rebound_index_unfrozen = 0.0
         self._eff_stress_0_comp = 0.0
@@ -144,8 +144,8 @@ class Material:
         self.water_flux_b3 = water_flux_b3
         self.temp_rate_ref = temp_rate_ref
         self.seg_pot_0 = seg_pot_0
-        self.void_rat_0_comp = void_rat_0_comp
-        self.void_rat_0_rebound = void_rat_0_rebound
+        self.void_ratio_0_comp = void_ratio_0_comp
+        self.void_ratio_0_rebound = void_ratio_0_rebound
         self.comp_index_unfrozen = comp_index_unfrozen
         self.rebound_index_unfrozen = rebound_index_unfrozen
         self.eff_stress_0_comp = eff_stress_0_comp
@@ -715,7 +715,7 @@ class Material:
         self._seg_pot_0 = value
 
     @property
-    def void_rat_0_comp(self):
+    def void_ratio_0_comp(self):
         """Reference unfrozen void ratio
         corresponding to compression
         (normal consolidation line).
@@ -736,17 +736,17 @@ class Material:
             If value to assign is not convertible to float.
             If value < 0.
         """
-        return self._void_rat_0_comp
+        return self._void_ratio_0_comp
 
-    @void_rat_0_comp.setter
-    def void_rat_0_comp(self, value):
+    @void_ratio_0_comp.setter
+    def void_ratio_0_comp(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(f"void_rat_0_comp {value} is not positive")
-        self._void_rat_0_comp = value
+            raise ValueError(f"void_ratio_0_comp {value} is not positive")
+        self._void_ratio_0_comp = value
 
     @property
-    def void_rat_0_rebound(self):
+    def void_ratio_0_rebound(self):
         """Reference unfrozen void ratio
         corresponding to rebound
         (unloading-reloading line).
@@ -767,14 +767,14 @@ class Material:
             If value to assign is not convertible to float.
             If value < 0.
         """
-        return self._void_rat_0_rebound
+        return self._void_ratio_0_rebound
 
-    @void_rat_0_rebound.setter
-    def void_rat_0_rebound(self, value):
+    @void_ratio_0_rebound.setter
+    def void_ratio_0_rebound(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(f"void_rat_0_rebound {value} is not positive")
-        self._void_rat_0_rebound = value
+            raise ValueError(f"void_ratio_0_rebound {value} is not positive")
+        self._void_ratio_0_rebound = value
 
     @property
     def comp_index_unfrozen(self):
