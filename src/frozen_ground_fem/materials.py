@@ -740,6 +740,35 @@ class Material:
         self._void_rat_0_comp = value
 
     @property
+    def eff_stress_0_comp(self):
+        """Effective stress for compression curve.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the compression effective stress.
+
+        Returns
+        -------
+        float
+            Current value of the compression effective stress.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        return self._eff_stress_0_comp
+
+    @eff_stress_0_comp.setter
+    def eff_stress_0_comp(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"eff_stress_0_comp {value} is not positive")
+        self._eff_stress_0_comp = value
+
+    @property
     def comp_index_unfrozen(self):
         """Compression index in unfrozen soil.
 
@@ -796,64 +825,6 @@ class Material:
         if value < 0.0:
             raise ValueError(f"rebound_index_unfrozen {value} is not positive")
         self._rebound_index_unfrozen = value
-
-    @property
-    def eff_stress_0_comp(self):
-        """Effective stress for compression curve.
-
-        Parameters
-        ----------
-        value : float or int or str
-            Value to assign to the compression effective stress.
-
-        Returns
-        -------
-        float
-            Current value of the compression effective stress.
-
-        Raises
-        ------
-        ValueError
-            If value to assign is not convertible to float.
-            If value < 0.
-        """
-        return self._eff_stress_0_comp
-
-    @eff_stress_0_comp.setter
-    def eff_stress_0_comp(self, value):
-        value = float(value)
-        if value < 0.0:
-            raise ValueError(f"eff_stress_0_comp {value} is not positive")
-        self._eff_stress_0_comp = value
-
-    @property
-    def eff_stress_0_rebound(self):
-        """Effective stress for rebound curve.
-
-        Parameters
-        ----------
-        value : float or int or str
-            Value to assign to the rebound effective stress.
-
-        Returns
-        -------
-        float
-            Current value of the rebound effective stress.
-
-        Raises
-        ------
-        ValueError
-            If value to assign is not convertible to float.
-            If value < 0.
-        """
-        return self._eff_stress_0_rebound
-
-    @eff_stress_0_rebound.setter
-    def eff_stress_0_rebound(self, value):
-        value = float(value)
-        if value < 0.0:
-            raise ValueError(f"eff_stress_0_rebound {value} is not positive")
-        self._eff_stress_0_rebound = value
 
     def deg_sat_water(self, temp):
         """The degree of saturation of water function.
