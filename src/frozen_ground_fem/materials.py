@@ -94,7 +94,7 @@ class Material:
         water_flux_b3=0.0,
         temp_rate_ref=0.0,
         seg_pot_0=0.0,
-        void_rat_0_comp=0.0,
+        void_ratio_0_comp=0.0,
         comp_index_unfrozen=0.0,
         rebound_index_unfrozen=0.0,
         eff_stress_0_comp=0.0,
@@ -118,7 +118,7 @@ class Material:
         self._water_flux_b3 = 0.0
         self._temp_rate_ref = 0.0
         self._seg_pot_0 = 0.0
-        self._void_rat_0_comp = 0.0
+        self._void_ratio_0_comp = 0.0
         self._comp_index_unfrozen = 0.0
         self._rebound_index_unfrozen = 0.0
         self._eff_stress_0_comp = 0.0
@@ -140,7 +140,7 @@ class Material:
         self.water_flux_b3 = water_flux_b3
         self.temp_rate_ref = temp_rate_ref
         self.seg_pot_0 = seg_pot_0
-        self.void_rat_0_comp = void_rat_0_comp
+        self.void_ratio_0_comp = void_ratio_0_comp
         self.comp_index_unfrozen = comp_index_unfrozen
         self.rebound_index_unfrozen = rebound_index_unfrozen
         self.eff_stress_0_comp = eff_stress_0_comp
@@ -709,7 +709,7 @@ class Material:
         self._seg_pot_0 = value
 
     @property
-    def void_rat_0_comp(self):
+    def void_ratio_0_comp(self):
         """Reference unfrozen void ratio
         corresponding to compression
         (normal consolidation line).
@@ -730,14 +730,14 @@ class Material:
             If value to assign is not convertible to float.
             If value < 0.
         """
-        return self._void_rat_0_comp
+        return self._void_ratio_0_comp
 
-    @void_rat_0_comp.setter
-    def void_rat_0_comp(self, value):
+    @void_ratio_0_comp.setter
+    def void_ratio_0_comp(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(f"void_rat_0_comp {value} is not positive")
-        self._void_rat_0_comp = value
+            raise ValueError(f"void_ratio_0_comp {value} is not positive")
+        self._void_ratio_0_comp = value
 
     @property
     def eff_stress_0_comp(self):
@@ -949,12 +949,42 @@ class Material:
         )
         return water_flux
 
-    # TODO: update this method for nonlinear large strain
-    # currently it just returns the compression index,
-    # which can be used like the modulus parameter in
-    # Terzaghi consolidation
-    def grad_sig_void_ratio(self, void_ratio, pre_consol_stress):
-        raise NotImplementedError()
+    def eff_stress(self, e, ppc):
+        """Calculate effective stress and
+        gradient with respect to void ratio.
+
+        Parameters
+        ----------
+        e : float
+            Current void ratio.
+        ppc : float
+            Preconsolidation stress.
+
+        Returns
+        -------
+        float
+            Effective stress at the specified void ratio.
+        float
+            Gradient of effective stress
+            with respect to void ratio.
+        """
+        # get normal consolidation line (NCL) parameters
+        sig_cu0 = self.eff_stress_0_comp
+        e_cu0 = self.void_ratio_0_comp
+        Ccu = self.comp_index_unfrozen
+        # check if current void ratio implies stress above preconsolidation
+        sig_p_ncl = sig_cu0 * 10 ** ((e_cu0 - e) / Ccu)
+        if sig_p_ncl >= ppc:
+            # here, we are on the NCL, so calculate gradient and return
+            dsig_de = -sig_p_ncl * _LOG_10 / Ccu
+            return sig_p_ncl, dsig_de
+        # here, we are on the unloading-reloading line (URL)
+        # calculate parameters, effective stress, and gradient
+        e_ru0 = e_cu0 - Ccu * np.log(ppc / sig_cu0)
+        Cru = self.rebound_index_unfrozen
+        sig_p = ppc * 10 ** ((e_ru0 - e) / Cru)
+        dsig_de = -sig_p * _LOG_10 / Cru
+        return sig_p, dsig_de
 
 
 """An instance of the material class with all parameters set to zero.
