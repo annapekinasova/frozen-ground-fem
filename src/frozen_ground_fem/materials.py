@@ -1145,7 +1145,7 @@ class Material:
             return sig_p_ncl, dsig_de
         # here, we are on the unloading-reloading line (URL)
         # calculate parameters, effective stress, and gradient
-        e_ru0 = e_cu0 - Ccu * np.log(ppc / sig_cu0)
+        e_ru0 = e_cu0 - Ccu * np.log10(ppc / sig_cu0)
         Cru = self.rebound_index_unfrozen
         sig_p = ppc * 10 ** ((e_ru0 - e) / Cru)
         dsig_de = -sig_p * _LOG_10 / Cru
