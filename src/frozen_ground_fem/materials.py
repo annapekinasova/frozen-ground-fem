@@ -98,8 +98,6 @@ class Material:
         comp_index_unfrozen=0.0,
         rebound_index_unfrozen=0.0,
         eff_stress_0_comp=0.0,
-        void_ratio_0_frozen=0.0,
-        tot_stress_0_frozen=0.0,
         comp_index_frozen_a1=0.0,
         comp_index_frozen_a2=0.0,
         comp_index_frozen_a3=0.0,
@@ -127,8 +125,6 @@ class Material:
         self._comp_index_unfrozen = 0.0
         self._rebound_index_unfrozen = 0.0
         self._eff_stress_0_comp = 0.0
-        self._void_ratio_0_frozen = 0.0
-        self._tot_stress_0_frozen = 0.0
         self._comp_index_frozen_a1 = 0.0
         self._comp_index_frozen_a2 = 0.0
         self._comp_index_frozen_a3 = 0.0
@@ -154,8 +150,6 @@ class Material:
         self.comp_index_unfrozen = comp_index_unfrozen
         self.rebound_index_unfrozen = rebound_index_unfrozen
         self.eff_stress_0_comp = eff_stress_0_comp
-        self.void_ratio_0_frozen = void_ratio_0_frozen
-        self.tot_stress_0_frozen = tot_stress_0_frozen
         self.comp_index_frozen_a1 = comp_index_frozen_a1
         self.comp_index_frozen_a2 = comp_index_frozen_a2
         self.comp_index_frozen_a3 = comp_index_frozen_a3
@@ -842,66 +836,6 @@ class Material:
         self._rebound_index_unfrozen = value
 
     @property
-    def void_ratio_0_frozen(self):
-        """Reference initial frozen void ratio.
-
-        Parameters
-        ----------
-        value : float or int or str
-            Value to assign to the reference initial frozen
-            void ratio.
-
-        Returns
-        -------
-        float
-            Current value of the initial frozen void ratio.
-
-        Raises
-        ------
-        ValueError
-            If value to assign is not convertible to float.
-            If value < 0.
-        """
-        return self._void_ratio_0_frozen
-
-    @void_ratio_0_frozen.setter
-    def void_ratio_0_frozen(self, value):
-        value = float(value)
-        if value < 0.0:
-            raise ValueError(f"void_ratio_0_frozen {value} is not positive")
-        self._void_ratio_0_frozen = value
-
-    @property
-    def tot_stress_0_frozen(self):
-        """Reference initial frozen total stress.
-
-        Parameters
-        ----------
-        value : float or int or str
-            Value to assign to the reference initial frozen
-            total stress.
-
-        Returns
-        -------
-        float
-            Current value of the initial frozen total stress.
-
-        Raises
-        ------
-        ValueError
-            If value to assign is not convertible to float.
-            If value < 0.
-        """
-        return self._tot_stress_0_frozen
-
-    @tot_stress_0_frozen.setter
-    def tot_stress_0_frozen(self, value):
-        value = float(value)
-        if value < 0.0:
-            raise ValueError(f"tot_stress_0_frozen {value} is not positive")
-        self._tot_stress_0_frozen = value
-
-    @property
     def comp_index_frozen_a1(self):
         """Material parameter a1 (constant)
            for calculation of frozen compression or rebound index.
@@ -1150,6 +1084,60 @@ class Material:
         sig_p = ppc * 10 ** ((e_ru0 - e) / Cru)
         dsig_de = -sig_p * _LOG_10 / Cru
         return sig_p, dsig_de
+
+    def comp_index_frozen(self, temp):
+        """Compression and rebound index
+        for frozen soil.
+
+        Parameters
+        ----------
+        temp : float
+            The current temperature.
+
+        Returns
+        -------
+        float
+            The compression / rebound index of frozen soil.
+        """
+        return (
+            self.comp_index_frozen_a1
+            - self.comp_index_frozen_a2 
+            * np.abs(temp) ** self.comp_index_frozen_a3
+        )
+
+    def tot_stress(self, temp, e, e_f0, sig_f0):
+        """Calculate the total stress in frozen soil.
+
+        Parameters
+        ----------
+        temp : float
+            Current temperature.
+        e : float
+            Current void ratio.
+        e_f0 : float
+            Reference void ratio for frozen soil.
+        sig_f0 : float
+            Reference total stress for frozen soil.
+
+        Returns
+        -------
+        float
+            The total stress at the point.
+        float
+            The total stress gradient
+            with respect to void ratio.
+
+        Raises
+        ------
+        ValueError
+            If temp > 0.0.
+        """
+        if temp > 0.0:
+            raise ValueError(f"temp {temp} must be negative.")
+        Cf = self.comp_index_frozen(temp)
+        sig = sig_f0 * 10 ** ((e_f0 - e) / Cf)
+        dsig_de = -sig * _LOG_10 / Cf
+        return sig, dsig_de
 
 
 """An instance of the material class with all parameters set to zero.
