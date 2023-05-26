@@ -1101,8 +1101,7 @@ class Material:
         """
         return (
             self.comp_index_frozen_a1
-            - self.comp_index_frozen_a2 
-            * np.abs(temp) ** self.comp_index_frozen_a3
+            - self.comp_index_frozen_a2 * np.abs(temp) ** self.comp_index_frozen_a3
         )
 
     def tot_stress(self, temp, e, e_f0, sig_f0):
