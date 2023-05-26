@@ -98,6 +98,11 @@ class Material:
         comp_index_unfrozen=0.0,
         rebound_index_unfrozen=0.0,
         eff_stress_0_comp=0.0,
+        void_ratio_0_frozen=0.0,
+        tot_stress_0_frozen=0.0,
+        comp_index_frozen_a1=0.0,
+        comp_index_frozen_a2=0.0,
+        comp_index_frozen_a3=0.0,
     ):
         self._thrm_cond_solids = 0.0
         self._spec_grav_solids = 0.0
@@ -122,6 +127,11 @@ class Material:
         self._comp_index_unfrozen = 0.0
         self._rebound_index_unfrozen = 0.0
         self._eff_stress_0_comp = 0.0
+        self._void_ratio_0_frozen = 0.0
+        self._tot_stress_0_frozen = 0.0
+        self._comp_index_frozen_a1 = 0.0
+        self._comp_index_frozen_a2 = 0.0
+        self._comp_index_frozen_a3 = 0.0
         self.thrm_cond_solids = thrm_cond_solids
         self.spec_grav_solids = spec_grav_solids
         self.spec_heat_cap_solids = spec_heat_cap_solids
@@ -144,6 +154,11 @@ class Material:
         self.comp_index_unfrozen = comp_index_unfrozen
         self.rebound_index_unfrozen = rebound_index_unfrozen
         self.eff_stress_0_comp = eff_stress_0_comp
+        self.void_ratio_0_frozen = void_ratio_0_frozen
+        self.tot_stress_0_frozen = tot_stress_0_frozen
+        self.comp_index_frozen_a1 = comp_index_frozen_a1
+        self.comp_index_frozen_a2 = comp_index_frozen_a2
+        self.comp_index_frozen_a3 = comp_index_frozen_a3
 
     @property
     def thrm_cond_solids(self):
@@ -825,6 +840,156 @@ class Material:
         if value < 0.0:
             raise ValueError(f"rebound_index_unfrozen {value} is not positive")
         self._rebound_index_unfrozen = value
+
+    @property
+    def void_ratio_0_frozen(self):
+        """Reference initial frozen void ratio.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the reference initial frozen
+            void ratio.
+
+        Returns
+        -------
+        float
+            Current value of the initial frozen void ratio.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        return self._void_ratio_0_frozen
+
+    @void_ratio_0_frozen.setter
+    def void_ratio_0_frozen(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"void_ratio_0_frozen {value} is not positive")
+        self._void_ratio_0_frozen = value
+
+    @property
+    def tot_stress_0_frozen(self):
+        """Reference initial frozen total stress.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the reference initial frozen
+            total stress.
+
+        Returns
+        -------
+        float
+            Current value of the initial frozen total stress.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        return self._tot_stress_0_frozen
+
+    @tot_stress_0_frozen.setter
+    def tot_stress_0_frozen(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"tot_stress_0_frozen {value} is not positive")
+        self._tot_stress_0_frozen = value
+
+    @property
+    def comp_index_frozen_a1(self):
+        """Material parameter a1 (constant)
+           for calculation of frozen compression or rebound index.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the material parameter a1
+
+        Returns
+        -------
+        float
+            Current value of the material parameter a1.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        return self._comp_index_frozen_a1
+
+    @comp_index_frozen_a1.setter
+    def comp_index_frozen_a1(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"comp_index_frozen_a1 {value} is not positive")
+        return self._comp_index_frozen_a1
+
+    @property
+    def comp_index_frozen_a2(self):
+        """Material parameter a2 (constant)
+           for calculation of frozen compression or rebound index.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the material parameter a2
+
+        Returns
+        -------
+        float
+            Current value of the material parameter a2.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        return self._comp_index_frozen_a2
+
+    @comp_index_frozen_a2.setter
+    def comp_index_frozen_a2(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"comp_index_frozen_a2 {value} is not positive")
+        return self._comp_index_frozen_a2
+
+    @property
+    def comp_index_frozen_a3(self):
+        """Material parameter a3 (constant)
+           for calculation of frozen compression or rebound index.
+
+        Parameters
+        ----------
+        value : float or int or str
+            Value to assign to the material parameter a3
+
+        Returns
+        -------
+        float
+            Current value of the material parameter a3.
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.
+        """
+        return self._comp_index_frozen_a3
+
+    @comp_index_frozen_a3.setter
+    def comp_index_frozen_a3(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"comp_index_frozen_a3 {value} is not positive")
+        return self._comp_index_frozen_a3
 
     def deg_sat_water(self, temp):
         """The degree of saturation of water function.
