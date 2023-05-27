@@ -416,9 +416,6 @@ class IntegrationPoint1D(Point1D):
         ValueError
             If value to assign is not convertible to float.
             If value to assign is negative.
-
-        Notes
-        -----
         """
         return self._void_ratio_0
 
@@ -446,9 +443,6 @@ class IntegrationPoint1D(Point1D):
         ------
         ValueError
             If value to assign is not convertible to float.
-
-        Notes
-        -----
         """
         return self._temp
 
@@ -473,9 +467,6 @@ class IntegrationPoint1D(Point1D):
         ------
         ValueError
             If value to assign is not convertible to float.
-
-        Notes
-        -----
         """
         return self._temp_rate
 
@@ -500,9 +491,6 @@ class IntegrationPoint1D(Point1D):
         ------
         ValueError
             If value to assign is not convertible to float.
-
-        Notes
-        -----
         """
         return self._temp_gradient
 
