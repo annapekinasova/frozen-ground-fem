@@ -360,7 +360,7 @@ class ConsolidationBoundary1D(Boundary1D):
             self.bnd_value = self.bnd_function(time)
 
 
-class ThermalAnalysis1D:
+class ConsolidationAnalysis1D:
     def __init__(self, mesh: Mesh1D) -> None:
         # validate mesh on which the analysis is to be performed
         if not isinstance(mesh, Mesh1D):
@@ -371,34 +371,32 @@ class ThermalAnalysis1D:
             )
         # assign the mesh and create thermal elements
         self._mesh = mesh
-        self._elements = tuple(ThermalElement1D(e) for e in self.mesh.elements)
-        self._boundaries: set[ThermalBoundary1D] = set()
+        self._elements = tuple(ConsolidationElement1D(e) for e in self.mesh.elements)
+        self._boundaries: set[ConsolidationBoundary1D] = set()
         # set default values for time stepping algorithm
         self.implicit_factor = 0.5  # (Crank-Nicolson)
         self.implicit_error_tolerance = 1e-3
         self.max_iterations = 100
         # initialize global vectors and matrices
-        self._temp_vector_0 = np.zeros(self.mesh.num_nodes)
-        self._temp_vector = np.zeros(self.mesh.num_nodes)
-        self._heat_flux_vector_0 = np.zeros(self.mesh.num_nodes)
-        self._heat_flux_vector = np.zeros(self.mesh.num_nodes)
-        self._heat_flow_matrix_0 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
-        self._heat_flow_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
-        self._heat_storage_matrix_0 = np.zeros(
+        self._void_ratio_vector_0 = np.zeros(self.mesh.num_nodes)
+        self._void_ratio_vector = np.zeros(self.mesh.num_nodes)
+        self._water_flux_vector_0 = np.zeros(self.mesh.num_nodes)
+        self._water_flux_vector = np.zeros(self.mesh.num_nodes)
+        self._stiffness_matrix_0 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
+        self._stiffness_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
+        self._mass_matrix_0 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
+        self._mass_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
+        self._weighted_water_flux_vector = np.zeros(self.mesh.num_nodes)
+        self._weighted_stiffness_matrix = np.zeros(
             (self.mesh.num_nodes, self.mesh.num_nodes)
         )
-        self._heat_storage_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
-        self._weighted_heat_flux_vector = np.zeros(self.mesh.num_nodes)
-        self._weighted_heat_flow_matrix = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes)
-        )
-        self._weighted_heat_storage_matrix = np.zeros(
+        self._weighted_mass_matrix = np.zeros(
             (self.mesh.num_nodes, self.mesh.num_nodes)
         )
         self._coef_matrix_0 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
         self._coef_matrix_1 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
-        self._residual_heat_flux_vector = np.zeros(self.mesh.num_nodes)
-        self._delta_temp_vector = np.zeros(self.mesh.num_nodes)
+        self._residual_water_flux_vector = np.zeros(self.mesh.num_nodes)
+        self._delta_void_ratio_vector = np.zeros(self.mesh.num_nodes)
 
     @property
     def mesh(self) -> Mesh1D:
@@ -411,39 +409,39 @@ class ThermalAnalysis1D:
         Notes
         -----
         This property is not intended to be set
-        after creation of the ThermalAnalysis1D object.
+        after creation of the ConsolidationAnalysis1D object.
         It is assigned during the __init__() method.
-        Other methods and properties of ThermalAnalysis1D
+        Other methods and properties of ConsolidationAnalysis1D
         assume that the mesh object does not change
         (i.e. mesh is not regenerated,
         number of nodes and elements is fixed).
         Use caution with modifying mesh after creation of
-        ThermalAnalysis1D,
+        ConsolidationAnalysis1D,
         otherwise unexpected behaviour could occur.
         """
         return self._mesh
 
     @property
-    def elements(self) -> tuple[ThermalElement1D, ...]:
-        """A tuple of thermal elements contained in the mesh.
+    def elements(self) -> tuple[ConsolidationElement1D, ...]:
+        """A tuple of consolidation elements contained in the mesh.
 
         Returns
         -------
-        tuple[ThermalElement1D]
+        tuple[ConsolidationElement1D]
 
         Notes
         -----
-        The tuple of ThermalElement1D is created
+        The tuple of ConsolidationElement1D is created
         during the __init__() method.
         It is assumed that the parent Element1D
         objects in the parent Mesh1D do not change.
-        Therefore, the set of ThermalElement1D
+        Therefore, the set of ConsolidationElement1D
         is immutable.
         """
         return self._elements
 
     @property
-    def boundaries(self) -> set[ThermalBoundary1D]:
+    def boundaries(self) -> set[ConsolidationBoundary1D]:
         return self._boundaries
 
     @property
@@ -635,10 +633,10 @@ class ThermalAnalysis1D:
             raise ValueError(f"max_iterations {value} invalid, must be positive")
         self._max_iterations = value
 
-    def add_boundary(self, new_boundary: ThermalBoundary1D) -> None:
-        if not isinstance(new_boundary, ThermalBoundary1D):
+    def add_boundary(self, new_boundary: ConsolidationBoundary1D) -> None:
+        if not isinstance(new_boundary, ConsolidationBoundary1D):
             raise TypeError(
-                f"type(new_boundary) {type(new_boundary)} invalid, must be ThermalBoundary1D"
+                f"type(new_boundary) {type(new_boundary)} invalid, must be ConsolidationBoundary1D"
             )
         if new_boundary._parent not in self.mesh.boundaries:
             raise ValueError(
@@ -646,127 +644,141 @@ class ThermalAnalysis1D:
             )
         self._boundaries.add(new_boundary)
 
-    def remove_boundary(self, boundary: ThermalBoundary1D) -> None:
+    def remove_boundary(self, boundary: ConsolidationBoundary1D) -> None:
         self._boundaries.remove(boundary)
 
     def clear_boundaries(self):
         self._boundaries.clear()
 
-    def update_thermal_boundary_conditions(self, time) -> None:
-        """Update the thermal boundary conditions in the ThermalAnalysis1D
+    def update_boundary_conditions(self, time) -> None:
+        """Update the boundary conditions in the ConsolidationAnalysis1D
         and in the parent Mesh1D.
 
         Parameters
         ----------
         time : float
             The time in seconds.
-            Gets passed through to ThermalBoundary1D.update_value().
+            Gets passed through to ConsolidationBoundary1D.update_value().
 
         Notes
         -----
         This convenience methods
-        loops over all ThermalBoundary1D objects in boundaries
+        loops over all ConsolidationBoundary1D objects in boundaries
         and calls update_value() to update the boundary value
         and then calls update_nodes() to assign the new value
         to each boundary Node1D.
-        For Dirichlet (temperature) boundary conditions,
+        For Dirichlet (void ratio) boundary conditions,
         the value is then assigned to the global temperature vector
-        in the ThermalAnalysis1D object.
+        in the ConsolidationAnalysis1D object.
         """
         for tb in self.boundaries:
             tb.update_value(time)
             tb.update_nodes()
-            if tb.bnd_type == ThermalBoundary1D.BoundaryType.temp:
+            if tb.bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio:
                 for nd in tb.nodes:
-                    self._temp_vector[nd.index] = nd.temp
+                    self._void_ratio_vector[nd.index] = nd.void_ratio
 
-    def update_heat_flux_vector(self) -> None:
-        """Updates the global heat flux vector.
+    def update_water_flux_vector(self) -> None:
+        """Updates the global water flux vector.
 
         Notes
         -----
-        This convenience method clears the global heat flux vector
+        This convenience method clears the global water flux vector,
+        then loops over elements integrating
+        the element water flux vectors,
         then loops over the boundaries and
-        assigns values for flux and gradient type boundaries
-        to the global heat flux vector.
+        assigns values for fixed flux and water flux type boundaries
+        to the global water flux vector.
         """
-        self._heat_flux_vector[:] = 0.0
+        self._water_flux_vector[:] = 0.0
         for be in self.boundaries:
-            if be.bnd_type == ThermalBoundary1D.BoundaryType.heat_flux:
-                self._heat_flux_vector[be.nodes[0].index] += be.bnd_value
-            elif be.bnd_type == ThermalBoundary1D.BoundaryType.temp_grad:
-                if be.int_pts is None:
-                    raise AttributeError(f"boundary {be} has no int_pts")
-                self._heat_flux_vector[be.nodes[0].index] += (
-                    -be.int_pts[0].thrm_cond * be.bnd_value
-                )
+            if not be.bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio:
+                self._water_flux_vector[be.nodes[0].index] += be.bnd_value
 
-    def update_heat_flow_matrix(self) -> None:
-        """Updates the global heat flow matrix.
+    def update_stiffness_matrix(self) -> None:
+        """Updates the global stiffness matrix.
 
         Notes
         -----
-        This convenience method first clears the global heat flow matrix
+        This convenience method first clears the global stiffness matrix
         then loops over the elements
-        to get the element heat flow matrices
-        and sums them into the global heat flow matrix
+        to get the element stiffness matrices
+        and sums them into the global stiffness matrix
         respecting connectivity of global degrees of freedom.
         """
-        self._heat_flow_matrix[:, :] = 0.0
+        self._stiffness_matrix[:, :] = 0.0
         for e in self.elements:
             ind = [nd.index for nd in e.nodes]
-            He = e.heat_flow_matrix()
-            self._heat_flow_matrix[np.ix_(ind, ind)] += He
+            Ke = e.stiffness_matrix()
+            self._stiffness_matrix[np.ix_(ind, ind)] += Ke
 
-    def update_heat_storage_matrix(self) -> None:
-        """Updates the global heat storage matrix.
+    def update_mass_matrix(self) -> None:
+        """Updates the global mass matrix.
 
         Notes
         -----
-        This convenience method clears the global heat storage matrix
+        This convenience method clears the global mass matrix
         then loops over the elements
-        to get the element heat storage matrices
-        and sums them into the global heat storage matrix
+        to get the element mass matrices
+        and sums them into the global mass matrix
         respecting connectivity of global degrees of freedom.
         """
-        self._heat_storage_matrix[:, :] = 0.0
+        self._mass_matrix[:, :] = 0.0
         for e in self.elements:
             ind = [nd.index for nd in e.nodes]
-            Ce = e.heat_storage_matrix()
-            self._heat_storage_matrix[np.ix_(ind, ind)] += Ce
+            Me = e.mass_matrix()
+            self._mass_matrix[np.ix_(ind, ind)] += Me
 
     def update_nodes(self) -> None:
-        """Updates the temperature values at the nodes
+        """Updates the void ratio values at the nodes
         in the parent mesh.
 
         Notes
         -----
         This convenience method loops over nodes in the parent mesh
-        and assigns the temperature from the global temperature vector
-        in the ThermalAnalysis1D.
+        and assigns the void ratio from the global void ratio vector
+        in the ConsolidationAnalysis1D.
         """
         for nd in self.mesh.nodes:
-            nd.temp = self._temp_vector[nd.index]
+            nd.void_ratio = self._void_ratio_vector[nd.index]
 
     def update_integration_points(self) -> None:
         """Updates the properties of integration points
-        in the parent mesh according to changes in temperature.
+        in the parent mesh according to changes in void ratio.
 
         Notes
         -----
         This convenience method loops over integration points
         in the parent mesh,
-        interpolates temperatures from corresponding nodes
-        and updates volumetric ice content accordingly."""
+        interpolates void ratio from corresponding nodes
+        and updates void ratio dependent parameters accordingly.
+        """
         for e in self.mesh.elements:
-            Te = np.array([nd.temp for nd in e.nodes])
+            ee = np.array([nd.void_ratio for nd in e.nodes])
             for ip in e.int_pts:
                 N = shape_matrix(ip.local_coord)
-                T = N @ Te
-                if T <= 0.0:
-                    ip.vol_ice_cont = ip.porosity
-                else:
-                    ip.vol_ice_cont = 0.0
+                ep = N @ ee
+                ip.void_ratio = ep
+                k, dk_de = ip.material.hyd_cond(ep, 1.0, False)
+                ip.hyd_cond = k
+                ip.hyd_cond_gradient = dk_de
+                ppc = ip.pre_consol_stress
+                sig, dsig_de = ip.material.eff_stress(ep, ppc)
+                if sig > ppc:
+                    ip.pre_consol_stress = sig
+                ip.eff_stress = sig
+                ip.eff_stress_gradient = dsig_de
+                B = gradient_matrix(ip.local_coord, e.jacobian)
+                de_dZ = B @ ee
+                e0 = ip.void_ratio_0
+                Gs = ip.material.spec_grav_solids
+                e_ratio = (1.0 + e0) / (1.0 + ep)
+                ip.water_flux_rate = (
+                    -k
+                    / gam_w
+                    * e_ratio
+                    * ((Gs - 1.0) * gam_w / (1.0 + e0) - dsig_de * de_dZ)
+                )
 
     def initialize_global_system(self, t0) -> None:
         """Sets up the global system before the first time step.
@@ -784,8 +796,8 @@ class ThermalAnalysis1D:
         It assumes that initial conditions have already been assigned
         to the nodes in the parent mesh.
         It initializes variables tracking the time coordinate,
-        updates the thermal boundary conditions at the initial time,
-        assigns initial temperature values from the nodes to the global time vector,
+        updates the boundary conditions at the initial time,
+        assigns initial void ratio values from the nodes to the global vector,
         updates the integration points in the parent mesh,
         then updates all global vectors and matrices.
         """
@@ -794,22 +806,22 @@ class ThermalAnalysis1D:
         self._t0 = t0
         self._t1 = t0
         # update nodes with boundary conditions first
-        self.update_thermal_boundary_conditions(self._t0)
-        # now get the temperatures from the nodes
+        self.update_boundary_conditions(self._t0)
+        # now get the void ratio from the nodes
         # (we assume that initial conditions have already been applied)
         for nd in self.mesh.nodes:
-            self._temp_vector[nd.index] = nd.temp
+            self._void_ratio_vector[nd.index] = nd.void_ratio
         # now build the global matrices and vectors
         self.update_integration_points()
-        self.update_heat_flux_vector()
-        self.update_heat_flow_matrix()
-        self.update_heat_storage_matrix()
+        self.update_water_flux_vector()
+        self.update_stiffness_matrix()
+        self.update_mass_matrix()
         # create list of free node indices
         # that will be updated at each iteration
         # (i.e. are not fixed/Dirichlet boundary conditions)
         free_ind = [nd.index for nd in self.mesh.nodes]
         for tb in self.boundaries:
-            if tb.bnd_type == ThermalBoundary1D.BoundaryType.temp:
+            if tb.bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio:
                 free_ind.remove(tb.nodes[0].index)
         self._free_vec = np.ix_(free_ind)
         self._free_arr = np.ix_(free_ind, free_ind)
@@ -824,8 +836,8 @@ class ThermalAnalysis1D:
         It increments time stepping variables,
         saves global vectors and matrices from the end
         of the previous time step,
-        updates thermal boundary conditions
-        and global heat flux vector at the end of
+        updates boundary conditions
+        and global water flux vector at the end of
         the current time step,
         and initializes iterative correction parameters.
         """
@@ -833,17 +845,14 @@ class ThermalAnalysis1D:
         self._t0 = self._t1
         self._t1 = self._t0 + self.dt
         # store previous converged matrices and vectors
-        self._temp_vector_0[:] = self._temp_vector[:]
-        self._heat_flux_vector_0[:] = self._heat_flux_vector[:]
-        self._heat_flow_matrix_0[:, :] = self._heat_flow_matrix[:, :]
-        self._heat_storage_matrix_0[:, :] = self._heat_storage_matrix[:, :]
+        self._void_ratio_vector_0[:] = self._void_ratio_vector[:]
+        self._water_flux_vector_0[:] = self._water_flux_vector[:]
+        self._stiffness_matrix_0[:, :] = self._stiffness_matrix[:, :]
+        self._mass_matrix_0[:, :] = self._mass_matrix[:, :]
         # update boundary conditions
-        self.update_thermal_boundary_conditions(self._t1)
-        self.update_heat_flux_vector()
-        self._weighted_heat_flux_vector[:] = (
-            self.one_minus_alpha * self._heat_flux_vector_0
-            + self.alpha * self._heat_flux_vector
-        )
+        self.update_boundary_conditions(self._t1)
+        self.update_water_flux_vector()
+        self.update_weighted_matrices()
         # initialize iteration parameters
         self._eps_a = 1.0
         self._iter = 0
@@ -855,79 +864,84 @@ class ThermalAnalysis1D:
         Notes
         -----
         This convenience method updates
-        the weighted heat flow matrix,
-        the weighted heat storage matrix,
+        the weighted water flux vector,
+        the weighted stiffness matrix,
+        the weighted mass matrix,
         and coefficient matrices
         using the implicit_factor property.
         """
-        self._weighted_heat_flow_matrix[:, :] = (
-            self.one_minus_alpha * self._heat_flow_matrix_0
-            + self.alpha * self._heat_flow_matrix
+        self._weighted_water_flux_vector[:] = (
+            self.one_minus_alpha * self._water_flux_vector_0
+            + self.alpha * self._water_flux_vector
         )
-        self._weighted_heat_storage_matrix[:, :] = (
-            self.one_minus_alpha * self._heat_storage_matrix_0
-            + self.alpha * self._heat_storage_matrix
+        self._weighted_stiffness_matrix[:, :] = (
+            self.one_minus_alpha * self._stiffness_matrix_0
+            + self.alpha * self._stiffness_matrix
+        )
+        self._weighted_mass_matrix[:, :] = (
+            self.one_minus_alpha * self._mass_matrix_0 + self.alpha * self._mass_matrix
         )
         self._coef_matrix_0[:, :] = (
-            self._weighted_heat_storage_matrix * self.over_dt
-            - self.one_minus_alpha * self._weighted_heat_flow_matrix
+            self._weighted_mass_matrix * self.over_dt
+            + self.one_minus_alpha * self._weighted_stiffness_matrix
         )
         self._coef_matrix_1[:, :] = (
-            self._weighted_heat_storage_matrix * self.over_dt
-            + self.alpha * self._weighted_heat_flow_matrix
+            self._weighted_mass_matrix * self.over_dt
+            - self.alpha * self._weighted_stiffness_matrix
         )
 
-    def calculate_temperature_correction(self) -> None:
-        """Performs a single iteration of temperature correction
+    def calculate_void_ratio_correction(self) -> None:
+        """Performs a single iteration of void ratio correction
         in the implicit time stepping scheme.
 
         Notes
         -----
         This convenience method
-        updates the global residual heat flux vector,
-        calculates the temperature correction
+        updates the global residual water flux vector,
+        calculates the void ratio correction
         using the global weighted matrices,
-        applies the correction to the global temperature vector,
+        applies the correction to the global void ratio vector,
         then updates the nodes, integration points,
-        and the global heat flux and heat storage matrices.
+        and the global vectors and matrices.
         """
         # update residual vector
-        self._residual_heat_flux_vector[:] = (
-            self._coef_matrix_0 @ self._temp_vector_0
-            - self._coef_matrix_1 @ self._temp_vector
-            - self._weighted_heat_flux_vector
+        self._residual_water_flux_vector[:] = (
+            self._coef_matrix_0 @ self._void_ratio_vector_0
+            - self._coef_matrix_1 @ self._void_ratio_vector
+            - self._weighted_water_flux_vector
         )
-        # calculate temperature increment
-        self._delta_temp_vector[self._free_vec] = np.linalg.solve(
+        # calculate void ratio increment
+        self._delta_void_ratio_vector[self._free_vec] = np.linalg.solve(
             self._coef_matrix_1[self._free_arr],
-            self._residual_heat_flux_vector[self._free_vec],
+            self._residual_water_flux_vector[self._free_vec],
         )
-        # increment temperature and iteration variables
-        self._temp_vector[self._free_vec] += self._delta_temp_vector[self._free_vec]
+        # increment void ratio and iteration variables
+        self._void_ratio_vector[self._free_vec] += self._delta_void_ratio_vector[
+            self._free_vec
+        ]
         self._eps_a = float(
-            np.linalg.norm(self._delta_temp_vector) / np.linalg.norm(self._temp_vector)
+            np.linalg.norm(self._delta_void_ratio_vector)
+            / np.linalg.norm(self._void_ratio_vector)
         )
         self._iter += 1
         # update global system
         self.update_nodes()
         self.update_integration_points()
-        self.update_heat_flow_matrix()
-        self.update_heat_storage_matrix()
+        self.update_water_flux_vector()
+        self.update_stiffness_matrix()
+        self.update_mass_matrix()
 
     def iterative_correction_step(self) -> None:
         """Performs iterative correction of the
-        global temperature vector for a single time step.
+        global void ratio vector for a single time step.
 
         Notes
         -----
         This convenience method performs an iterative correction loop
         based on the implicit_error_tolerance and max_iterations properties.
         It iteratively updates the global weighted matrices
-        and performs correction of the global temperature vector.
-        This method does not update the global heat flux vector
-        since it assumes this is updated only once at the beginning
-        of a new time step by initialize_time_step().
+        and performs correction of the global void ratio vector.
         """
         while self._eps_a > self.eps_s and self._iter < self.max_iterations:
             self.update_weighted_matrices()
-            self.calculate_temperature_correction()
+            self.calculate_void_ratio_correction()
