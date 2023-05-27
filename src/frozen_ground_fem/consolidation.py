@@ -90,6 +90,7 @@ class ConsolidationElement1D(Element1D):
         """
         return self._parent.int_pts
 
+    @property
     def stiffness_matrix(self) -> np.ndarray:
         """The element stiffness matrix.
 
@@ -127,6 +128,7 @@ class ConsolidationElement1D(Element1D):
         K *= jac
         return K
 
+    @property
     def mass_matrix(self) -> np.ndarray:
         """The element mass matrix.
 
@@ -160,6 +162,21 @@ class ConsolidationElement1D(Element1D):
             )
         M *= jac
         return M
+
+    @property
+    def deformed_length(self):
+        """The deformed length of the element.
+
+        Returns
+        -------
+        float
+        """
+        L = 0.0
+        for ip in self.int_pts:
+            e = ip.void_ratio
+            e0 = ip.void_ratio_0
+            L += (1.0 + e) / (1.0 + e0) * ip.weight
+        return L * self.jacobian
 
 
 class ConsolidationBoundary1D(Boundary1D):
@@ -709,7 +726,7 @@ class ConsolidationAnalysis1D:
         self._stiffness_matrix[:, :] = 0.0
         for e in self.elements:
             ind = [nd.index for nd in e.nodes]
-            Ke = e.stiffness_matrix()
+            Ke = e.stiffness_matrix
             self._stiffness_matrix[np.ix_(ind, ind)] += Ke
 
     def update_mass_matrix(self) -> None:
@@ -726,7 +743,7 @@ class ConsolidationAnalysis1D:
         self._mass_matrix[:, :] = 0.0
         for e in self.elements:
             ind = [nd.index for nd in e.nodes]
-            Me = e.mass_matrix()
+            Me = e.mass_matrix
             self._mass_matrix[np.ix_(ind, ind)] += Me
 
     def update_nodes(self) -> None:
@@ -945,3 +962,39 @@ class ConsolidationAnalysis1D:
         while self._eps_a > self.eps_s and self._iter < self.max_iterations:
             self.update_weighted_matrices()
             self.calculate_void_ratio_correction()
+
+    def calculate_total_settlement(self):
+        """Integrates volume change ratio
+        to calculate total settlement.
+
+        Returns
+        -------
+        float
+            Total settlement
+
+        Notes
+        -----
+        Positive values indicate net settlement,
+        negative values indicate net heave.
+        """
+        s = 0.0
+        for e in self.elements:
+            s += e.jacobian - e.deformed_length
+        return s
+
+    def calculate_deformed_coords(self):
+        """Integrates volume change ratio
+        to calculate deformed coordinates of the nodes.
+
+        Returns
+        -------
+        numpy.ndarray, shape = (mesh.num_nodes, )
+            Vector of deformed coordinates
+        """
+        s = self.calculate_total_settlement()
+        def_coords = np.array(self.mesh.num_nodes)
+        def_coords[0] = self.mesh.nodes[0].z + s
+        for k, e in enumerate(self.elements):
+            dz = e.deformed_length
+            def_coords[k + 1] = def_coords[k] + dz
+        return def_coords
