@@ -256,6 +256,16 @@ class IntegrationPoint1D(Point1D):
         void_ratio=0.0,
         deg_sat_water=1.0,
         material=NULL_MATERIAL,
+        hyd_cond=0.0,
+        hyd_cond_gradient=0.0,
+        water_flux_rate=0.0,
+        pre_consol_stress=0.0,
+        eff_stress=0.0,
+        eff_stress_gradient=0.0,
+        void_ratio_0_ref_frozen=0.0,
+        tot_stress_0_ref_frozen=0.0,
+        tot_stress=0.0,
+        tot_stress_gradient=0.0,
     ):
         super().__init__(coord)
         self._local_coord = 0.0
@@ -265,11 +275,31 @@ class IntegrationPoint1D(Point1D):
         self._deg_sat_water = 1.0
         self._deg_sat_ice = 0.0
         self._vol_ice_cont = 0.0
+        self._hyd_cond = 0.0
+        self._hyd_cond_gradient = 0.0
+        self._water_flux_rate = 0.0
+        self._pre_consol_stress = 0.0
+        self._eff_stress = 0.0
+        self._eff_stress_gradient = 0.0
+        self._void_ratio_0_ref_frozen = 0.0
+        self._tot_stress_0_ref_frozen = 0.0
+        self._tot_stress = 0.0
+        self._tot_stress_gradient = 0.0
         self.local_coord = local_coord
         self.weight = weight
         self.void_ratio = void_ratio
         self.deg_sat_water = deg_sat_water
         self.material = material
+        self.hyd_cond = hyd_cond
+        self.hyd_cond_gradient = hyd_cond_gradient
+        self.water_flux_rate = water_flux_rate
+        self.pre_consol_stress = pre_consol_stress
+        self.eff_stress = eff_stress
+        self.eff_stress_gradient = eff_stress_gradient
+        self.void_ratio_0_ref_frozen = void_ratio_0_ref_frozen
+        self.tot_stress_0_ref_frozen = tot_stress_0_ref_frozen
+        self.tot_stress = tot_stress
+        self.tot_stress_gradient = tot_stress_gradient
 
     @property
     def local_coord(self):
@@ -517,6 +547,306 @@ class IntegrationPoint1D(Point1D):
         th_i = self.vol_ice_cont
         th_w = por - th_i
         return ((1 - por) * C_s) + (th_i * C_i) + (th_w * C_w)
+
+    @property
+    def hyd_cond(self):
+        """Hydraulic conductivity of the integration point.
+
+        Parameters
+        ----------
+        float
+            The value to assign to hydraulic conductivity.
+
+        Returns
+        -------
+        float
+            The current value of hydraulic conductivity.
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+            If the value to assign is negative.
+        """
+        return self._hyd_cond
+
+    @hyd_cond.setter
+    def hyd_cond(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"value {value} for hyd_cond cannot be negative.")
+        self._hyd_cond = value
+
+    @property
+    def hyd_cond_gradient(self):
+        """Hydraulic conductivity gradient
+        (with respect to void ratio)
+        of the integration point.
+
+        Parameters
+        ----------
+        float
+            The value to assign to hydraulic conductivity gradient.
+
+        Returns
+        -------
+        float
+            The current value of hydraulic conductivity gradient.
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+            If the value to assign is negative.
+        """
+        return self._hyd_cond_gradient
+
+    @hyd_cond_gradient.setter
+    def hyd_cond_gradient(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"value {value} for hyd_cond_gradient cannot be negative.")
+        self._hyd_cond_gradient = value
+
+    @property
+    def water_flux_rate(self):
+        """Water flux rate of the integration point.
+
+        Parameters
+        ----------
+        float
+            The value to assign to the water flux rate.
+
+        Returns
+        -------
+        float
+            The current value of the water flux rate.
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+        """
+        return self._water_flux_rate
+
+    @water_flux_rate.setter
+    def water_flux_rate(self, value):
+        self._water_flux_rate = float(value)
+
+    @property
+    def pre_consol_stress(self):
+        """Preconsolidation stress of the integration point.
+
+        Parameters
+        ----------
+        float
+            The value to assign to preconsolidation stress.
+
+        Returns
+        -------
+        float
+            The current value of preconsolidation stress.
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+            If the value to assign is negative.
+        """
+        return self._pre_consol_stress
+
+    @pre_consol_stress.setter
+    def pre_consol_stress(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"value {value} for pre_consol_stress cannot be negative.")
+        self._pre_consol_stress = value
+
+    @property
+    def eff_stress(self):
+        """Effective stress of the integration point.
+
+        Parameters
+        ----------
+        float
+            The value to assign to effective stress.
+
+        Returns
+        -------
+        float
+            The current value of effective stress.
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+            If the value to assign is negative.
+        """
+        return self._eff_stress
+
+    @eff_stress.setter
+    def eff_stress(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"value {value} for eff_stress cannot be negative.")
+        self._eff_stress = value
+
+    @property
+    def eff_stress_gradient(self):
+        """Effective stress gradient
+        (with respect to void ratio)
+        of the integration point.
+
+        Parameters
+        ----------
+        float
+            The value to assign to effective stress gradient.
+
+        Returns
+        -------
+        float
+            The current value of effective stress gradient.
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+            If the value to assign is positive.
+        """
+        return self._eff_stress_gradient
+
+    @eff_stress_gradient.setter
+    def eff_stress_gradient(self, value):
+        value = float(value)
+        if value > 0.0:
+            raise ValueError(
+                f"value {value} for eff_stress_gradient cannot be positive."
+            )
+        self._eff_stress_gradient = value
+
+    @property
+    def void_ratio_0_ref_frozen(self):
+        """Reference void ratio for frozen void ratio - total stress curve.
+
+        Parameters
+        ----------
+        float
+            The value to assign to the reference void ratio.
+
+        Returns
+        -------
+        float
+            The current value of the reference void ratio.
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+            If the value to assign is negative.
+        """
+        return self._void_ratio_0_ref_frozen
+
+    @void_ratio_0_ref_frozen.setter
+    def void_ratio_0_ref_frozen(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(
+                f"value {value} for void_ratio_0_ref_frozen cannot be negative."
+            )
+        self._void_ratio_0_ref_frozen = value
+
+    @property
+    def tot_stress_0_ref_frozen(self):
+        """Reference total stress for frozen void ratio - total stress curve.
+
+        Parameters
+        ----------
+        float
+            The value to assign to the reference total stress.
+
+        Returns
+        -------
+        float
+            The current value of the reference total stress.
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+            If the value to assign is negative.
+        """
+        return self._tot_stress_0_ref_frozen
+
+    @tot_stress_0_ref_frozen.setter
+    def tot_stress_0_ref_frozen(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(
+                f"value {value} for tot_stress_0_ref_frozen cannot be negative."
+            )
+        self._tot_stress_0_ref_frozen = value
+
+    @property
+    def tot_stress(self):
+        """Total stress of the integration point.
+
+        Parameters
+        ----------
+        float
+            The value to assign to total stress.
+
+        Returns
+        -------
+        float
+            The current value of total stress.
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+            If the value to assign is negative.
+        """
+        return self._tot_stress
+
+    @tot_stress.setter
+    def tot_stress(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"value {value} for tot_stress cannot be negative.")
+        self._tot_stress = value
+
+    @property
+    def tot_stress_gradient(self):
+        """Total stress gradient
+        (with respect to void ratio)
+        of the integration point.
+
+        Parameters
+        ----------
+        float
+            The value to assign to total stress gradient.
+
+        Returns
+        -------
+        float
+            The current value of total stress gradient.
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+            If the value to assign is positive.
+        """
+        return self._tot_stress_gradient
+
+    @tot_stress_gradient.setter
+    def tot_stress_gradient(self, value):
+        value = float(value)
+        if value > 0.0:
+            raise ValueError(
+                f"value {value} for tot_stress_gradient cannot be positive."
+            )
+        self._tot_stress_gradient = value
 
 
 class Element1D:
