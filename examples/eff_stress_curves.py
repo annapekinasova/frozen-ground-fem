@@ -295,11 +295,13 @@ def main():
         ]
     )
 
+    # define material properties
+    # Note: eff_stress_0_comp in Pa here
     m = Material(
         comp_index_unfrozen=0.421,
         rebound_index_unfrozen=0.08,
         void_ratio_0_comp=2.60,
-        eff_stress_0_comp=2.80e-03,
+        eff_stress_0_comp=2.80,
     )
 
     e = m.void_ratio_0_comp
@@ -322,9 +324,12 @@ def main():
         if np.abs(e - e_lim[j_lim]) < np.abs(de):
             de *= -1
             j_lim += 1
+
+    # store results as numpy arrays
+    # convert stresses to kPa
     e_act = np.array(e_act)
-    sig_p_act = np.array(sig_p_act)
-    dsig_de_act = np.array(dsig_de_act)
+    sig_p_act = np.array(sig_p_act) * 1.0e-03
+    dsig_de_act = np.array(dsig_de_act) * 1.0e-03
 
     plt.rc("font", size=8)
 
