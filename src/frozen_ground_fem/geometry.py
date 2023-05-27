@@ -254,6 +254,10 @@ class IntegrationPoint1D(Point1D):
         local_coord=0.0,
         weight=0.0,
         void_ratio=0.0,
+        void_ratio_0=0.0,
+        temp=0.0,
+        temp_rate=0.0,
+        temp_gradient=0.0,
         deg_sat_water=1.0,
         material=NULL_MATERIAL,
         hyd_cond=0.0,
@@ -272,6 +276,10 @@ class IntegrationPoint1D(Point1D):
         self._weight = 0.0
         self._void_ratio = 0.0
         self._porosity = 0.0
+        self._void_ratio_0 = 0.0
+        self._temp = 0.0
+        self._temp_rate = 0.0
+        self._temp_gradient = 0.0
         self._deg_sat_water = 1.0
         self._deg_sat_ice = 0.0
         self._vol_ice_cont = 0.0
@@ -288,6 +296,10 @@ class IntegrationPoint1D(Point1D):
         self.local_coord = local_coord
         self.weight = weight
         self.void_ratio = void_ratio
+        self.void_ratio_0 = void_ratio_0
+        self.temp = temp
+        self.temp_rate = temp_rate
+        self.temp_gradient = temp_gradient
         self.deg_sat_water = deg_sat_water
         self.material = material
         self.hyd_cond = hyd_cond
@@ -385,6 +397,118 @@ class IntegrationPoint1D(Point1D):
         self._void_ratio = value
         self._porosity = value / (1.0 + value)
         self._vol_ice_cont = self.porosity * self.deg_sat_ice
+
+    @property
+    def void_ratio_0(self):
+        """Initial void ratio of the integration point.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the initial void ratio of the :c:`IntegrationPoint1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value to assign is negative.
+
+        Notes
+        -----
+        """
+        return self._void_ratio_0
+
+    @void_ratio_0.setter
+    def void_ratio_0(self, value):
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"void_ratio_0 {value} is not positive")
+        self._void_ratio_0 = value
+
+    @property
+    def temp(self):
+        """Temperature at the integration point.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the temperature of the :c:`IntegrationPoint1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+
+        Notes
+        -----
+        """
+        return self._temp
+
+    @temp.setter
+    def temp(self, value):
+        self._temp = float(value)
+
+    @property
+    def temp_rate(self):
+        """Temperature rate at the integration point.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the temperature rate of the :c:`IntegrationPoint1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+
+        Notes
+        -----
+        """
+        return self._temp_rate
+
+    @temp_rate.setter
+    def temp_rate(self, value):
+        self._temp_rate = float(value)
+
+    @property
+    def temp_gradient(self):
+        """Temperature gradient at the integration point.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the temperature gradient of the :c:`IntegrationPoint1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+
+        Notes
+        -----
+        """
+        return self._temp_gradient
+
+    @temp_gradient.setter
+    def temp_gradient(self, value):
+        self._temp_gradient = float(value)
 
     @property
     def porosity(self):
