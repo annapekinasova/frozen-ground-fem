@@ -109,18 +109,20 @@ class ConsolidationElement1D(Element1D):
         K = np.zeros_like(B.T @ B)
         jac = self.jacobian
         for ip in self.int_pts:
+            e0 = ip.void_ratio_0
+            e = ip.void_ratio
+            e_ratio = (1.0 + e0) / (1.0 + e)
+            dsig_de = ip.eff_stress_gradient
+            Gs = ip.material.spec_grav_solids
+            k = ip.hyd_cond
+            dk_de = ip.hyd_cond_gradient
+            k_coef = dk_de * (Gs - 1.0) / (1.0 + e) - k * (Gs - 1.0) / (1.0 + e) ** 2
             B = gradient_matrix(ip.local_coord, jac)
+            N = shape_matrix(ip.local_coord)
             K += (
-                B.T
-                @ (
-                    ip.material.hyd_cond
-                    * ip.material.grad_sig_void_ratio(
-                        ip.void_ratio, ip.pre_consol_stress
-                    )
-                    / gam_w
-                    * B
-                )
+                ((B.T @ (k * e_ratio * dsig_de / gam_w * B) + N.T @ (k_coef * B)))
                 * ip.weight
+                * np.heaviside(ip.temp, 0.0)
             )
         K *= jac
         return K
@@ -151,7 +153,7 @@ class ConsolidationElement1D(Element1D):
                 N.T
                 @ (
                     (ip.deg_sat_water + spec_grav_ice * ip.deg_sat_ice)
-                    / (1.0 + ip.init_void_ratio)
+                    / (1.0 + ip.void_ratio_0)
                     * N
                 )
                 * ip.weight
