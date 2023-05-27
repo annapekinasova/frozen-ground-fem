@@ -352,6 +352,9 @@ class ConsolidationBoundary1D(Boundary1D):
         If bnd_function is None
         the time argument is ignored and nothing happens.
         """
+        if self.bnd_type == ConsolidationBoundary1D.BoundaryType.water_flux:
+            self.bnd_value = self.int_pts[0].water_flux_rate
+            return
         time = float(time)
         if self.bnd_function is not None:
             self.bnd_value = self.bnd_function(time)
