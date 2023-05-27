@@ -259,7 +259,7 @@ class IntegrationPoint1D(Point1D):
         void_ratio_0=0.0,
         temp=0.0,
         temp_rate=0.0,
-        temp_gradient=0.0
+        temp_gradient=0.0,
     ):
         super().__init__(coord)
         self._local_coord = 0.0
