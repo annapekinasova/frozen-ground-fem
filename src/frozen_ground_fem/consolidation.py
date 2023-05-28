@@ -123,7 +123,6 @@ class ConsolidationElement1D(Element1D):
             K += (
                 ((B.T @ (k * e_ratio * dsig_de / gam_w * B) + N.T @ (k_coef * B)))
                 * ip.weight
-                * np.heaviside(ip.temp, 0.0)
             )
         K *= jac
         return K
@@ -833,6 +832,7 @@ class ConsolidationAnalysis1D:
         self.update_water_flux_vector()
         self.update_stiffness_matrix()
         self.update_mass_matrix()
+        self.update_weighted_matrices()
         # create list of free node indices
         # that will be updated at each iteration
         # (i.e. are not fixed/Dirichlet boundary conditions)
