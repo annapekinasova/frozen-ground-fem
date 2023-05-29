@@ -18,7 +18,7 @@ def main():
     # define mesh
     mesh = Mesh1D()
     mesh.z_min = 0.0
-    mesh.z_max = 70.0
+    mesh.z_max = 50.0
     mesh.generate_mesh(num_nodes=25)
 
     # define material properties
@@ -57,8 +57,8 @@ def main():
     # define temperature boundary curve
     t_max = 195.0 * 8.64e4
     omega = 2.0 * np.pi / 365 / 8.64e4
-    T_mean = -5.0
-    T_amp = 15.0
+    T_mean = -10.0
+    T_amp = 25.0
 
     def air_temp(t):
         return T_amp * np.cos(omega * (t - t_max)) + T_mean
@@ -77,7 +77,7 @@ def main():
     temp_boundary.bnd_function = air_temp
     grad_boundary = ThermalBoundary1D(lower_boundary)
     grad_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
-    grad_boundary.bnd_value = 0.2
+    grad_boundary.bnd_value = 0.03
 
     # assign thermal boundaries to the analysis
     thermal_analysis.add_boundary(temp_boundary)
@@ -91,7 +91,7 @@ def main():
 
     # initialize plot
     z_vec = np.array([nd.z for nd in mesh.nodes])
-    plt.figure(figsize=(3.7, 5.2))
+    plt.figure(figsize=(3.7, 3.7))
 
     # initialize global matrices and vectors
     ta.time_step = 365 * 8.64e4 / 52  # ~one week, in seconds
@@ -114,14 +114,14 @@ def main():
     plt.plot(temp_curve[:, 25], z_vec, "-r", linewidth=2, label=f"temp dist, jun 1")
     plt.ylim(mesh.z_max, mesh.z_min)
     plt.legend()
-    plt.xlabel("temperature, T [deg C]")
-    plt.ylabel("depth, z [m]")
+    plt.xlabel("Temperature, T [deg C]")
+    plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
     # plt.title(
     #     f"Converged temperature distributions (t={ta._t1 / 8.64e4 / 365: 0.1f} years)",
     # )
-    plt.savefig("examples/thermal_temp_dist_curves.png")
+    plt.savefig("examples/thermal_temp_dist_curves.svg")
 
-    plt.figure(figsize=(3.9, 5.2))
+    plt.figure(figsize=(3.7, 3.7))
     temp_min_curve = np.amin(temp_curve, axis=1)
     temp_max_curve = np.amax(temp_curve, axis=1)
     plt.plot(temp_curve[:, 0], z_vec, "--b", linewidth=1, label=f"temp dist, jan")
@@ -133,11 +133,11 @@ def main():
     plt.ylim(mesh.z_max, mesh.z_min)
     plt.legend()
     plt.xlabel("Temperature, T [deg C]")
-    plt.ylabel("Lagrangian coordinate, Z [m]")
+    plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
     # plt.title(
     #     f"Converged annual min/max temperatures (t={ta._t1 / 8.64e4 / 365: 0.1f} years)",
     # )
-    plt.savefig("examples/thermal_trumpet_curves.png")
+    plt.savefig("examples/thermal_trumpet_curves.svg")
 
 
 if __name__ == "__main__":

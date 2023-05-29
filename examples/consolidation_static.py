@@ -130,7 +130,7 @@ def main():
     plt.colorbar()
     plt.title("Global Void Ratio Field")
 
-    plt.savefig("examples/consolidation_static_global_matrices.png")
+    plt.savefig("examples/consolidation_static_global_matrices.svg")
 
     # stabilize at initial void ratio profile
     # (no settlement expected during this period)
@@ -232,44 +232,44 @@ def main():
 
     plt.figure(figsize=(4, 4))
     plt.plot(t_con, s_con, "-k")
-    plt.xlabel("time [min]")
-    plt.ylabel("settlement [mm]")
+    plt.xlabel("Time [min]")
+    plt.ylabel("Settlement [mm]")
 
-    plt.savefig("examples/con_static_settlement.png")
+    plt.savefig("examples/con_static_settlement.svg")
 
-    plt.figure(figsize=(7, 4))
+    plt.figure(figsize=(10, 4))
 
     plt.subplot(1, 3, 1)
-    plt.plot(e0, z_exp, "-k", label="exp 0")
-    plt.plot(e0_act, z_vec, "xk", label="act 0", markersize=ms)
+    plt.plot(e0, z_exp * 100, "-k", label="exp")
+    plt.plot(e0_act, z_vec * 100, "--r", label="act")
     # plt.plot(e_fin_exp, z_exp, "--r", label="exp fin")
     # plt.plot(e_fin_act, z_vec, "or", label="act fin")
-    plt.ylim((0.2, 0))
+    plt.ylim((20, 0))
     plt.legend()
-    plt.xlabel("void ratio")
-    plt.ylabel("depth [m]")
+    plt.xlabel("Void Ratio, e")
+    plt.ylabel("Depth (Lagrangian coordinate) [cm]")
 
     plt.subplot(1, 3, 2)
-    plt.plot(sig_p_0_exp, z_exp, "-k", label="exp 0")
-    plt.plot(sig_p_0_int, z_int, "xk", label="act 0", markersize=ms)
+    plt.plot(sig_p_0_exp, z_exp * 100, "-k", label="exp")
+    plt.plot(sig_p_0_int, z_int * 100, "--r", label="act")
     # plt.plot(sig_p_fin_exp, z_exp, "--r", label="exp fin")
     # plt.plot(sig_p_f_int, z_int, "or", label="act fin")
-    plt.ylim((0.2, 0))
+    plt.ylim((20, 0))
     plt.legend()
-    plt.xlabel("effective stress [kPa]")
+    plt.xlabel("Eff Stress [kPa]")
 
     plt.subplot(1, 3, 3)
-    plt.semilogx(qw_0_int, z_int, ":b", label="water flux 0")
+    plt.semilogx(qw_0_int, z_int * 100, ":b", label="water flux")
     # plt.semilogx(qw_f_int, z_int, ":k", label="water flux fin")
-    plt.semilogx(hyd_cond_0_exp, z_exp, "-k", label="exp 0")
-    plt.semilogx(hyd_cond_0_int, z_int, "xk", label="act 0", markersize=ms)
+    plt.semilogx(hyd_cond_0_exp, z_exp * 100, "-k", label="exp")
+    plt.semilogx(hyd_cond_0_int, z_int * 100, "--r", label="act")
     # plt.semilogx(hyd_cond_fin_exp, z_exp, "--r", label="exp fin")
     # plt.semilogx(hyd_cond_f_int, z_int, "or", label="act fin")
-    plt.ylim((0.2, 0))
+    plt.ylim((20, 0))
     plt.legend()
-    plt.xlabel("hydraulic conductivity [m/s]")
+    plt.xlabel("Hyd Cond, k [m/s]")
 
-    plt.savefig("examples/con_static_void_sig_profiles.png")
+    plt.savefig("examples/con_static_void_sig_profiles.svg")
 
 
 if __name__ == "__main__":
