@@ -121,9 +121,8 @@ class ConsolidationElement1D(Element1D):
             B = gradient_matrix(ip.local_coord, jac)
             N = shape_matrix(ip.local_coord)
             K += (
-                ((B.T @ (k * e_ratio * dsig_de / gam_w * B) + N.T @ (k_coef * B)))
-                * ip.weight
-            )
+                (B.T @ (k * e_ratio * dsig_de / gam_w * B) + N.T @ (k_coef * B))
+            ) * ip.weight
         K *= jac
         return K
 
