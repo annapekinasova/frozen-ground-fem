@@ -65,7 +65,7 @@ def main():
 
     # set plotting parameters
     plt.rc("font", size=8)
-    dt_plot = 60.0 * 20      # in seconds
+    dt_plot = 60.0 * 20  # in seconds
     n_plot = 8
     arrow_props = {
         "width": 0.5,
@@ -183,8 +183,12 @@ def main():
 
     print(f"t = {con_static._t1 / 60.0:0.3f} min")
     e_nod[:, k_plot] = con_static._void_ratio_vector[:]
-    sig_p_int[:, k_plot] = 1.0e-3 * np.array([ip.eff_stress for e in mesh.elements for ip in e.int_pts])
-    hyd_cond_int[:, k_plot] = np.array([ip.hyd_cond for e in mesh.elements for ip in e.int_pts])
+    sig_p_int[:, k_plot] = 1.0e-3 * np.array(
+        [ip.eff_stress for e in mesh.elements for ip in e.int_pts]
+    )
+    hyd_cond_int[:, k_plot] = np.array(
+        [ip.hyd_cond for e in mesh.elements for ip in e.int_pts]
+    )
     sig_p_trz[:, k_plot] = sig_p_1_trz[:] - ui
     e_trz[:, k_plot] = e0[:]
     s_trz[k_plot] = 0.0
@@ -205,8 +209,12 @@ def main():
         s_con.append(con_static.calculate_total_settlement())
     print(f"t = {(con_static._t1 - dt_plot) / 60.0:0.3f} min")
     e_nod[:, k_plot] = con_static._void_ratio_vector[:]
-    sig_p_int[:, k_plot] = 1.0e-3 * np.array([ip.eff_stress for e in mesh.elements for ip in e.int_pts])
-    hyd_cond_int[:, k_plot] = np.array([ip.hyd_cond for e in mesh.elements for ip in e.int_pts])
+    sig_p_int[:, k_plot] = 1.0e-3 * np.array(
+        [ip.eff_stress for e in mesh.elements for ip in e.int_pts]
+    )
+    hyd_cond_int[:, k_plot] = np.array(
+        [ip.hyd_cond for e in mesh.elements for ip in e.int_pts]
+    )
     ue, U_avg, Uz = terzaghi_consolidation(z_nod, con_static._t1 - dt_plot, cv, H, ui)
     sig_p_trz[:, k_plot] = sig_p_1_trz[:] - ue
     e_trz[:, k_plot] = e0[:] - de_trz[:] * Uz[:]
@@ -223,9 +231,15 @@ def main():
             s_con.append(con_static.calculate_total_settlement())
         print(f"t = {(con_static._t1 - dt_plot) / 60.0:0.3f} min")
         e_nod[:, k_plot] = con_static._void_ratio_vector[:]
-        sig_p_int[:, k_plot] = 1.0e-3 * np.array([ip.eff_stress for e in mesh.elements for ip in e.int_pts])
-        hyd_cond_int[:, k_plot] = np.array([ip.hyd_cond for e in mesh.elements for ip in e.int_pts])
-        ue, U_avg, Uz = terzaghi_consolidation(z_nod, con_static._t1 - dt_plot, cv, H, ui)
+        sig_p_int[:, k_plot] = 1.0e-3 * np.array(
+            [ip.eff_stress for e in mesh.elements for ip in e.int_pts]
+        )
+        hyd_cond_int[:, k_plot] = np.array(
+            [ip.hyd_cond for e in mesh.elements for ip in e.int_pts]
+        )
+        ue, U_avg, Uz = terzaghi_consolidation(
+            z_nod, con_static._t1 - dt_plot, cv, H, ui
+        )
         sig_p_trz[:, k_plot] = sig_p_1_trz[:] - ue
         e_trz[:, k_plot] = e0[:] - de_trz[:] * Uz[:]
         s_trz[k_plot] = s_tot_trz * U_avg
@@ -269,11 +283,15 @@ def main():
     t_con = np.array(t_con) / 60.0  # convert to min
     s_con = np.array(s_con) * 1.0e03  # convert to mm
     t_trz[:] = t_trz[:] / 60.0
-    k_lab = np.array([np.floor(0.2 * mesh.num_nodes), 
-                      np.floor(0.4 * mesh.num_nodes), 
-                      np.floor(0.6 * mesh.num_nodes)],
-                     dtype=int)
-    t_lab = np.array([dt_plot, 9*dt_plot, 17*dt_plot]) / 60.0
+    k_lab = np.array(
+        [
+            np.floor(0.2 * mesh.num_nodes),
+            np.floor(0.4 * mesh.num_nodes),
+            np.floor(0.6 * mesh.num_nodes),
+        ],
+        dtype=int,
+    )
+    t_lab = np.array([dt_plot, 9 * dt_plot, 17 * dt_plot]) / 60.0
     e_lab = np.array([1.35, 1.30, 1.30])
     z_lab = np.array([1.25, 5.00, 10.0])
 
@@ -315,13 +333,13 @@ def main():
         plt.plot(e_nod[:, k_plot], z_nod, ":b")
         if k_plot > 0:
             plt.annotate(
-                text="   ", 
+                text="   ",
                 xy=(e_trz[k_lab[k_plot - 1], k_plot], z_nod[k_lab[k_plot - 1]]),
                 xytext=(e_lab[k_plot - 1], z_lab[k_plot - 1]),
                 arrowprops=arrow_props,
             )
             plt.annotate(
-                text=f"{t_lab[k_plot - 1]:0.0f}", 
+                text=f"{t_lab[k_plot - 1]:0.0f}",
                 xy=(e_nod[k_lab[k_plot - 1], k_plot], z_nod[k_lab[k_plot - 1]]),
                 xytext=(e_lab[k_plot - 1], z_lab[k_plot - 1]),
                 arrowprops=arrow_props,
@@ -361,7 +379,7 @@ def main():
 
 
 def terzaghi_consolidation(z, t, cv, H, ui):
-    Tv = cv * t / H ** 2
+    Tv = cv * t / H**2
     Uz = np.zeros_like(z)
     U_avg = 0.0
     eps_a = 1.0
@@ -369,8 +387,8 @@ def terzaghi_consolidation(z, t, cv, H, ui):
     m = 0
     while eps_a > eps_s:
         M = 0.5 * np.pi * (2 * m + 1)
-        dUz = (2.0 / M) * np.sin(M * z / H) * np.exp(-Tv * M ** 2)
-        dU = (2.0 / M ** 2) * np.exp(-Tv * M ** 2)
+        dUz = (2.0 / M) * np.sin(M * z / H) * np.exp(-Tv * M**2)
+        dU = (2.0 / M**2) * np.exp(-Tv * M**2)
         Uz[:] += dUz[:]
         U_avg += dU
         eps_a = np.max([np.linalg.norm(dUz), dU])
