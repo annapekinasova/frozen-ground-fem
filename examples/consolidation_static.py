@@ -5,6 +5,10 @@ import frozen_ground_fem.materials as mtl
 import frozen_ground_fem.geometry as geom
 import frozen_ground_fem.consolidation as consol
 
+from frozen_ground_fem.materials import (
+    unit_weight_water as gam_w,
+)
+
 
 def main():
     # define the material properties
@@ -49,19 +53,19 @@ def main():
     # create consolidation analysis
     con_static = consol.ConsolidationAnalysis1D(mesh)
 
-    # load expected output
-    exp_data_0 = np.loadtxt(
-        fname="examples/con_static_data_0.csv", delimiter=",", skiprows=1
-    )
-    e0 = exp_data_0[:, 1]
-    sig_p_0_exp = 1.0e-03 * exp_data_0[:, 2]
-    hyd_cond_0_exp = exp_data_0[:, 3]
-    exp_data_1 = np.loadtxt(
-        fname="examples/con_static_data_1.csv", delimiter=",", skiprows=1
-    )
-    e1 = exp_data_1[:, 1]
-    sig_p_1_exp = 1.0e-03 * exp_data_1[:, 2]
-    hyd_cond_1_exp = exp_data_1[:, 3]
+    # # load expected output
+    # exp_data_0 = np.loadtxt(
+    #     fname="examples/con_static_data_0.csv", delimiter=",", skiprows=1
+    # )
+    # e0 = exp_data_0[:, 1]
+    # sig_p_0_exp = 1.0e-03 * exp_data_0[:, 2]
+    # hyd_cond_0_exp = exp_data_0[:, 3]
+    # exp_data_1 = np.loadtxt(
+    #     fname="examples/con_static_data_1.csv", delimiter=",", skiprows=1
+    # )
+    # e1 = exp_data_1[:, 1]
+    # sig_p_1_exp = 1.0e-03 * exp_data_1[:, 2]
+    # hyd_cond_1_exp = exp_data_1[:, 3]
 
     # set plotting parameters
     plt.rc("font", size=8)
@@ -81,32 +85,58 @@ def main():
     e_nod = np.zeros((len(z_nod), n_plot + 1))
     sig_p_int = np.zeros((len(z_int), n_plot + 1))
     hyd_cond_int = np.zeros((len(z_int), n_plot + 1))
-    sig_p_trz = np.zeros((len(z_nod), n_plot + 1))
-    e_trz = np.zeros((len(z_nod), n_plot + 1))
-    s_trz = np.zeros(n_plot + 1)
-    t_trz = np.zeros(n_plot + 1)
+    # sig_p_trz = np.zeros((len(z_nod), n_plot + 1))
+    # e_trz = np.zeros((len(z_nod), n_plot + 1))
+    # s_trz = np.zeros(n_plot + 1)
+    # t_trz = np.zeros(n_plot + 1)
+    #
+    # # # compute expected Terzaghi result
+    # H = 0.5 * (mesh.nodes[-1].z - mesh.nodes[0].z)
+    # ui = sig_p_1_exp[0] - sig_p_0_exp[0]
+    # e0t = np.average(e0)
+    # e1t = np.average(e1)
+    # de_trz = e0 - e1
+    # Gs = m.spec_grav_solids
+    # gam_w = mtl.unit_weight_water * 1e-3
+    # gam_b = (Gs - 1.0) / (1.0 + e0t) * gam_w
+    # dsig_de_0 = -m.eff_stress(e0t, sig_p_0_exp[0] * 1e3)[1] * 1e-3
+    # dsig_de_1 = -m.eff_stress(e1t, sig_p_0_exp[0] * 1e3)[1] * 1e-3
+    # dsig_de_avg = 0.5 * (dsig_de_0 + dsig_de_1)
+    # mv = 1.0 / (1.0 + e0t) / dsig_de_avg
+    # kt = np.average(hyd_cond_0_exp)
+    # cv = kt / mv / gam_w
+    # sig_p_1_trz = sig_p_1_exp[0] + gam_b * z_nod
+    # s_tot_trz = 1e3 * (mesh.nodes[-1].z - mesh.nodes[0].z) / (1.0 + e0t) * (e0t - e1t)
 
-    # compute expected Terzaghi result
-    H = 0.5 * (mesh.nodes[-1].z - mesh.nodes[0].z)
-    ui = sig_p_1_exp[0] - sig_p_0_exp[0]
-    e0t = np.average(e0)
-    e1t = np.average(e1)
-    de_trz = e0 - e1
+    #initialize void ratio profile
+    qs = 1.0e3 # surface load of 1kPa
     Gs = m.spec_grav_solids
-    gam_w = mtl.unit_weight_water * 1e-3
-    gam_b = (Gs - 1.0) / (1.0 + e0t) * gam_w
-    dsig_de_0 = -m.eff_stress(e0t, sig_p_0_exp[0] * 1e3)[1] * 1e-3
-    dsig_de_1 = -m.eff_stress(e1t, sig_p_0_exp[0] * 1e3)[1] * 1e-3
-    dsig_de_avg = 0.5 * (dsig_de_0 + dsig_de_1)
-    mv = 1.0 / (1.0 + e0t) / dsig_de_avg
-    kt = np.average(hyd_cond_0_exp)
-    cv = kt / mv / gam_w
-    sig_p_1_trz = sig_p_1_exp[0] + gam_b * z_nod
-    s_tot_trz = 1e3 * (mesh.nodes[-1].z - mesh.nodes[0].z) / (1.0 + e0t) * (e0t - e1t)
-
-    # assign initial void ratio conditions at the nodes
+    Ccu = m.comp_index_unfrozen
+    sig_cu0 = m.eff_stress_0_comp
+    e_cu0 = m.void_ratio_0_comp
+    gam_p = np.zeros(mesh.num_nodes)
+    sig_p_nd = nd.zeros(mesh.num_nodes)
+    sig_p_nd[0] = qs
+    ee0 = np.zeros(mesh.num_nodes)
+    ee1 = np.zeros(mesh.num_nodes)
     for k, nd in enumerate(mesh.nodes):
-        nd.void_ratio = e0[k]
+        nd.void_ratio = 1.0
+    eps_s = 1e-8
+    eps_a = 1.0
+    while eps_a > eps_s:
+        for k, nd in enumerate(mesh.nodes):
+            ee[k] = nd.void_ratio
+            gam_p[k] = (Gs - 1.0)/(1.0 + ee0[k]) * gam_w
+            if k:
+                dz = nd.z - mesh.nodes[k-1].z
+                gam_p_avg = 0.5 * (gam_p[k-1] + gam_p[k])
+                sig_p_nd[k] = sig_p_nd[k-1] + gam_p_avg * dz 
+            ee1[k] = e_cu0 - Ccu * np.log10(sig_p_nd[k] / sig_cu0)
+            nd.void_ratio = ee1[k]
+        eps_a = np.linalg.norm(ee1 - ee0) / np.linalg.norm(ee1)
+    print(ee1)
+    for nd in mesh.nodes:
+        print(nd.void_ratio)
 
     # update void ratio conditions at the integration points
     # (first interpolates void ratio profile from the nodes,
