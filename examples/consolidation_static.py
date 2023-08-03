@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -11,6 +12,24 @@ from frozen_ground_fem.materials import (
 
 
 def main():
+    # define simulation parameters
+    H_layer = 0.2  # in m
+    num_elements = 200
+    dt_sim = 1.2e2  # in s
+    t_max = 1500 * 60    # in s
+
+    # set plotting parameters
+    plt.rc("font", size=8)
+    dt_plot = 60.0 * 100  # in seconds
+    n_plot = int(np.floor(t_max / dt_plot) + 1)
+    # arrow_props = {
+    #     "width": 0.5,
+    #     "linewidth": 0.5,
+    #     "headwidth": 3.0,
+    #     "headlength": 5.5,
+    #     "fill": False,
+    # }
+
     # define the material properties
     m = mtl.Material(
         spec_grav_solids=2.60,
@@ -27,8 +46,8 @@ def main():
 
     # generate the mesh
     mesh = geom.Mesh1D(
-        z_range=[0.0, 0.2],
-        num_nodes=201,
+        z_range=[0.0, H_layer],
+        num_nodes=num_elements + 1,
         generate=True,
     )
 
@@ -53,90 +72,20 @@ def main():
     # create consolidation analysis
     con_static = consol.ConsolidationAnalysis1D(mesh)
 
-    # # load expected output
-    # exp_data_0 = np.loadtxt(
-    #     fname="examples/con_static_data_0.csv", delimiter=",", skiprows=1
-    # )
-    # e0 = exp_data_0[:, 1]
-    # sig_p_0_exp = 1.0e-03 * exp_data_0[:, 2]
-    # hyd_cond_0_exp = exp_data_0[:, 3]
-    # exp_data_1 = np.loadtxt(
-    #     fname="examples/con_static_data_1.csv", delimiter=",", skiprows=1
-    # )
-    # e1 = exp_data_1[:, 1]
-    # sig_p_1_exp = 1.0e-03 * exp_data_1[:, 2]
-    # hyd_cond_1_exp = exp_data_1[:, 3]
-
-    # set plotting parameters
-    plt.rc("font", size=8)
-    dt_plot = 60.0 * 20  # in seconds
-    n_plot = 8
-    arrow_props = {
-        "width": 0.5,
-        "linewidth": 0.5,
-        "headwidth": 3.0,
-        "headlength": 5.5,
-        "fill": False,
-    }
-
     # initialize plotting arrays
     z_nod = np.array([nd.z for nd in mesh.nodes])
     z_int = np.array([ip.z for e in mesh.elements for ip in e.int_pts])
     e_nod = np.zeros((len(z_nod), n_plot + 1))
     sig_p_int = np.zeros((len(z_int), n_plot + 1))
     hyd_cond_int = np.zeros((len(z_int), n_plot + 1))
-    # sig_p_trz = np.zeros((len(z_nod), n_plot + 1))
-    # e_trz = np.zeros((len(z_nod), n_plot + 1))
-    # s_trz = np.zeros(n_plot + 1)
-    # t_trz = np.zeros(n_plot + 1)
-    #
-    # # # compute expected Terzaghi result
-    # H = 0.5 * (mesh.nodes[-1].z - mesh.nodes[0].z)
-    # ui = sig_p_1_exp[0] - sig_p_0_exp[0]
-    # e0t = np.average(e0)
-    # e1t = np.average(e1)
-    # de_trz = e0 - e1
-    # Gs = m.spec_grav_solids
-    # gam_w = mtl.unit_weight_water * 1e-3
-    # gam_b = (Gs - 1.0) / (1.0 + e0t) * gam_w
-    # dsig_de_0 = -m.eff_stress(e0t, sig_p_0_exp[0] * 1e3)[1] * 1e-3
-    # dsig_de_1 = -m.eff_stress(e1t, sig_p_0_exp[0] * 1e3)[1] * 1e-3
-    # dsig_de_avg = 0.5 * (dsig_de_0 + dsig_de_1)
-    # mv = 1.0 / (1.0 + e0t) / dsig_de_avg
-    # kt = np.average(hyd_cond_0_exp)
-    # cv = kt / mv / gam_w
-    # sig_p_1_trz = sig_p_1_exp[0] + gam_b * z_nod
-    # s_tot_trz = 1e3 * (mesh.nodes[-1].z - mesh.nodes[0].z) / (1.0 + e0t) * (e0t - e1t)
 
-    #initialize void ratio profile
-    qs = 1.0e3 # surface load of 1kPa
-    Gs = m.spec_grav_solids
-    Ccu = m.comp_index_unfrozen
-    sig_cu0 = m.eff_stress_0_comp
-    e_cu0 = m.void_ratio_0_comp
-    gam_p = np.zeros(mesh.num_nodes)
-    sig_p_nd = nd.zeros(mesh.num_nodes)
-    sig_p_nd[0] = qs
-    ee0 = np.zeros(mesh.num_nodes)
-    ee1 = np.zeros(mesh.num_nodes)
+    # initialize void ratio profile
+    e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(m, 1.0e3, z_nod)
+    e1, sig_p_1_exp, hyd_cond_1_exp = calculate_static_profile(m, 1.1e4, z_nod)
+    sig_p_0_exp *= 1.0e-3
+    sig_p_1_exp *= 1.0e-3
     for k, nd in enumerate(mesh.nodes):
-        nd.void_ratio = 1.0
-    eps_s = 1e-8
-    eps_a = 1.0
-    while eps_a > eps_s:
-        for k, nd in enumerate(mesh.nodes):
-            ee[k] = nd.void_ratio
-            gam_p[k] = (Gs - 1.0)/(1.0 + ee0[k]) * gam_w
-            if k:
-                dz = nd.z - mesh.nodes[k-1].z
-                gam_p_avg = 0.5 * (gam_p[k-1] + gam_p[k])
-                sig_p_nd[k] = sig_p_nd[k-1] + gam_p_avg * dz 
-            ee1[k] = e_cu0 - Ccu * np.log10(sig_p_nd[k] / sig_cu0)
-            nd.void_ratio = ee1[k]
-        eps_a = np.linalg.norm(ee1 - ee0) / np.linalg.norm(ee1)
-    print(ee1)
-    for nd in mesh.nodes:
-        print(nd.void_ratio)
+        nd.void_ratio = e0[k]
 
     # update void ratio conditions at the integration points
     # (first interpolates void ratio profile from the nodes,
@@ -145,6 +94,28 @@ def main():
     for e in con_static.elements:
         for ip in e.int_pts:
             ip.void_ratio_0 = ip.void_ratio
+
+    # compute expected Terzaghi result
+    sig_p_trz = np.zeros((len(z_nod), n_plot + 1))
+    e_trz = np.zeros((len(z_nod), n_plot + 1))
+    s_trz = np.zeros(n_plot + 1)
+    t_trz = np.zeros(n_plot + 1)
+    H = 0.5 * (mesh.nodes[-1].z - mesh.nodes[0].z)
+    ui = sig_p_1_exp[0] - sig_p_0_exp[0]
+    e0t = np.average(e0)
+    e1t = np.average(e1)
+    de_trz = e0 - e1
+    Gs = m.spec_grav_solids
+    gam_w = mtl.unit_weight_water * 1e-3
+    gam_b = (Gs - 1.0) / (1.0 + e0t) * gam_w
+    dsig_de_0 = -m.eff_stress(e0t, sig_p_0_exp[0] * 1e3)[1] * 1e-3
+    dsig_de_1 = -m.eff_stress(e1t, sig_p_0_exp[0] * 1e3)[1] * 1e-3
+    dsig_de_avg = 0.5 * (dsig_de_0 + dsig_de_1)
+    mv = 1.0 / (1.0 + e0t) / dsig_de_avg
+    kt = np.average(hyd_cond_0_exp)
+    cv = kt / mv / gam_w
+    sig_p_1_trz = sig_p_1_exp[0] + gam_b * z_nod
+    s_tot_trz = 1e3 * (mesh.nodes[-1].z - mesh.nodes[0].z) / (1.0 + e0t) * (e0t - e1t)
 
     # create void ratio boundary conditions
     void_ratio_boundary_0 = consol.ConsolidationBoundary1D(upper_boundary)
@@ -161,42 +132,44 @@ def main():
     con_static.add_boundary(void_ratio_boundary_1)
 
     # initialize global matrices and vectors
-    con_static.time_step = 120.0  # in seconds
+    con_static.time_step = dt_sim  # in seconds
     con_static.initialize_global_system(t0=0.0)
 
-    plt.figure(figsize=(7, 9))
+    # plt.figure(figsize=(7, 9))
+    #
+    # plt.subplot(4, 2, 1)
+    # plt.imshow(con_static._stiffness_matrix)
+    # plt.colorbar()
+    # plt.title("Global Stiffness Matrix")
+    #
+    # plt.subplot(4, 2, 2)
+    # plt.imshow(con_static._mass_matrix)
+    # plt.colorbar()
+    # plt.title("Global Mass Matrix")
+    #
+    # plt.subplot(4, 2, 3)
+    # plt.imshow(con_static._coef_matrix_0)
+    # plt.colorbar()
+    # plt.title("Coefficient Matrix 0")
+    #
+    # plt.subplot(4, 2, 4)
+    # plt.imshow(con_static._coef_matrix_1)
+    # plt.colorbar()
+    # plt.title("Coefficient Matrix 1")
+    #
+    # plt.subplot2grid((4, 2), (2, 0), colspan=2)
+    # plt.imshow(con_static._water_flux_vector.reshape((1, mesh.num_nodes)))
+    # plt.colorbar()
+    # plt.title("Global Water Flux Vector")
+    #
+    # plt.subplot2grid((4, 2), (3, 0), colspan=2)
+    # plt.imshow(con_static._void_ratio_vector.reshape((1, mesh.num_nodes)))
+    # plt.colorbar()
+    # plt.title("Global Void Ratio Field")
+    #
+    # plt.savefig("examples/con_static_global_matrices_0.svg")
 
-    plt.subplot(4, 2, 1)
-    plt.imshow(con_static._stiffness_matrix)
-    plt.colorbar()
-    plt.title("Global Stiffness Matrix")
-
-    plt.subplot(4, 2, 2)
-    plt.imshow(con_static._mass_matrix)
-    plt.colorbar()
-    plt.title("Global Mass Matrix")
-
-    plt.subplot(4, 2, 3)
-    plt.imshow(con_static._coef_matrix_0)
-    plt.colorbar()
-    plt.title("Coefficient Matrix 0")
-
-    plt.subplot(4, 2, 4)
-    plt.imshow(con_static._coef_matrix_1)
-    plt.colorbar()
-    plt.title("Coefficient Matrix 1")
-
-    plt.subplot2grid((4, 2), (2, 0), colspan=2)
-    plt.imshow(con_static._water_flux_vector.reshape((1, mesh.num_nodes)))
-    plt.colorbar()
-    plt.title("Global Water Flux Vector")
-
-    plt.subplot2grid((4, 2), (3, 0), colspan=2)
-    plt.imshow(con_static._void_ratio_vector.reshape((1, mesh.num_nodes)))
-    plt.colorbar()
-    plt.title("Global Void Ratio Field")
-
-    plt.savefig("examples/con_static_global_matrices_0.svg")
+    tic = time.perf_counter()
 
     # stabilize at initial void ratio profile
     # (no settlement expected during this period)
@@ -253,7 +226,7 @@ def main():
 
     while k_plot < n_plot:
         k_plot += 1
-        t_plot += 8 * dt_plot
+        t_plot += dt_plot
         while con_static._t1 < t_plot:
             con_static.initialize_time_step()
             con_static.iterative_correction_step()
@@ -275,66 +248,69 @@ def main():
         s_trz[k_plot] = s_tot_trz * U_avg
         t_trz[k_plot] = t_con[-1]
 
-    plt.figure(figsize=(7, 9))
+    toc = time.perf_counter()
+    print(f"Run time = {toc - tic: 0.4f} s")
 
-    plt.subplot(4, 2, 1)
-    plt.imshow(con_static._stiffness_matrix)
-    plt.colorbar()
-    plt.title("Global Stiffness Matrix")
-
-    plt.subplot(4, 2, 2)
-    plt.imshow(con_static._mass_matrix)
-    plt.colorbar()
-    plt.title("Global Mass Matrix")
-
-    plt.subplot(4, 2, 3)
-    plt.imshow(con_static._coef_matrix_0)
-    plt.colorbar()
-    plt.title("Coefficient Matrix 0")
-
-    plt.subplot(4, 2, 4)
-    plt.imshow(con_static._coef_matrix_1)
-    plt.colorbar()
-    plt.title("Coefficient Matrix 1")
-
-    plt.subplot2grid((4, 2), (2, 0), colspan=2)
-    plt.imshow(con_static._water_flux_vector.reshape((1, mesh.num_nodes)))
-    plt.colorbar()
-    plt.title("Global Water Flux Vector")
-
-    plt.subplot2grid((4, 2), (3, 0), colspan=2)
-    plt.imshow(con_static._void_ratio_vector.reshape((1, mesh.num_nodes)))
-    plt.colorbar()
-    plt.title("Global Void Ratio Field")
-
-    plt.savefig("examples/con_static_global_matrices_1.svg")
+    # plt.figure(figsize=(7, 9))
+    #
+    # plt.subplot(4, 2, 1)
+    # plt.imshow(con_static._stiffness_matrix)
+    # plt.colorbar()
+    # plt.title("Global Stiffness Matrix")
+    #
+    # plt.subplot(4, 2, 2)
+    # plt.imshow(con_static._mass_matrix)
+    # plt.colorbar()
+    # plt.title("Global Mass Matrix")
+    #
+    # plt.subplot(4, 2, 3)
+    # plt.imshow(con_static._coef_matrix_0)
+    # plt.colorbar()
+    # plt.title("Coefficient Matrix 0")
+    #
+    # plt.subplot(4, 2, 4)
+    # plt.imshow(con_static._coef_matrix_1)
+    # plt.colorbar()
+    # plt.title("Coefficient Matrix 1")
+    #
+    # plt.subplot2grid((4, 2), (2, 0), colspan=2)
+    # plt.imshow(con_static._water_flux_vector.reshape((1, mesh.num_nodes)))
+    # plt.colorbar()
+    # plt.title("Global Water Flux Vector")
+    #
+    # plt.subplot2grid((4, 2), (3, 0), colspan=2)
+    # plt.imshow(con_static._void_ratio_vector.reshape((1, mesh.num_nodes)))
+    # plt.colorbar()
+    # plt.title("Global Void Ratio Field")
+    #
+    # plt.savefig("examples/con_static_global_matrices_1.svg")
 
     # convert settlement to arrays
     t_con = np.array(t_con) / 60.0  # convert to min
     s_con = np.array(s_con) * 1.0e03  # convert to mm
     t_trz[:] = t_trz[:] / 60.0
-    k_lab = np.array(
-        [
-            np.floor(0.2 * mesh.num_nodes),
-            np.floor(0.4 * mesh.num_nodes),
-            np.floor(0.6 * mesh.num_nodes),
-        ],
-        dtype=int,
-    )
-    t_lab = np.array([dt_plot, 9 * dt_plot, 17 * dt_plot]) / 60.0
-    e_lab = np.array([1.35, 1.30, 1.30])
-    z_lab = np.array([1.25, 5.00, 10.0])
+    # k_lab = np.array(
+    #     [
+    #         np.floor(0.2 * mesh.num_nodes),
+    #         np.floor(0.4 * mesh.num_nodes),
+    #         np.floor(0.6 * mesh.num_nodes),
+    #     ],
+    #     dtype=int,
+    # )
+    # t_lab = np.array([dt_plot, 9 * dt_plot, 17 * dt_plot]) / 60.0
+    # e_lab = np.array([1.35, 1.30, 1.30])
+    # z_lab = np.array([1.25, 5.00, 10.0])
 
     # convert z to cm
-    z_nod *= 100.0
-    z_int *= 100.0
+    # z_nod *= 100.0
+    # z_int *= 100.0
 
     plt.figure(figsize=(3.5, 4))
     plt.plot(np.sqrt(t_con), s_con, "-k", label="current")
     plt.plot(np.sqrt(t_trz), s_trz, "--k", label="Terzaghi")
     plt.xlabel(r"Root Time, $t^{0.5}$ [$min^{0.5}$]")
     plt.ylabel(r"Settlement, $s$ [$mm$]")
-    plt.ylim((31, -1))
+    # plt.ylim((31, -1))
     plt.legend()
 
     plt.savefig("examples/con_static_settlement.svg")
@@ -345,41 +321,41 @@ def main():
     plt.plot(e0, z_nod, "-k", label="init")
     plt.plot(e_nod[:, 0], z_nod, ":r", label="post-stab")
     plt.plot(e_trz[:, 1], z_nod, "-.b", label="Terzaghi", linewidth=0.5)
-    plt.annotate(
-        text="      ",
-        xy=(e_trz[k_lab[0], 1], z_nod[k_lab[0]]),
-        xytext=(e_lab[0], z_lab[0]),
-        arrowprops=arrow_props,
-    )
+    # plt.annotate(
+    #     text="      ",
+    #     xy=(e_trz[k_lab[0], 1], z_nod[k_lab[0]]),
+    #     xytext=(e_lab[0], z_lab[0]),
+    #     arrowprops=arrow_props,
+    # )
     plt.plot(e_nod[:, 1], z_nod, ":b", label="consol (act)")
-    plt.annotate(
-        text=f"{t_lab[0]:0.0f} min",
-        xy=(e_nod[k_lab[0], 1], z_nod[k_lab[0]]),
-        xytext=(e_lab[0], z_lab[0]),
-        arrowprops=arrow_props,
-    )
+    # plt.annotate(
+    #     text=f"{t_lab[0]:0.0f} min",
+    #     xy=(e_nod[k_lab[0], 1], z_nod[k_lab[0]]),
+    #     xytext=(e_lab[0], z_lab[0]),
+    #     arrowprops=arrow_props,
+    # )
     for k_plot in [2, 3, -1]:
         plt.plot(e_trz[:, k_plot], z_nod, "-.b", linewidth=0.5)
         plt.plot(e_nod[:, k_plot], z_nod, ":b")
-        if k_plot > 0:
-            plt.annotate(
-                text="   ",
-                xy=(e_trz[k_lab[k_plot - 1], k_plot], z_nod[k_lab[k_plot - 1]]),
-                xytext=(e_lab[k_plot - 1], z_lab[k_plot - 1]),
-                arrowprops=arrow_props,
-            )
-            plt.annotate(
-                text=f"{t_lab[k_plot - 1]:0.0f}",
-                xy=(e_nod[k_lab[k_plot - 1], k_plot], z_nod[k_lab[k_plot - 1]]),
-                xytext=(e_lab[k_plot - 1], z_lab[k_plot - 1]),
-                arrowprops=arrow_props,
-            )
+        # if k_plot > 0:
+        #     plt.annotate(
+        #         text="   ",
+        #         xy=(e_trz[k_lab[k_plot - 1], k_plot], z_nod[k_lab[k_plot - 1]]),
+        #         xytext=(e_lab[k_plot - 1], z_lab[k_plot - 1]),
+        #         arrowprops=arrow_props,
+        #     )
+        #     plt.annotate(
+        #         text=f"{t_lab[k_plot - 1]:0.0f}",
+        #         xy=(e_nod[k_lab[k_plot - 1], k_plot], z_nod[k_lab[k_plot - 1]]),
+        #         xytext=(e_lab[k_plot - 1], z_lab[k_plot - 1]),
+        #         arrowprops=arrow_props,
+        # )
     plt.plot(e1, z_nod, "--k", label="final (exp)")
-    plt.ylim((20, 0))
-    plt.xlim((1.0, 1.8))
+    # plt.ylim((20, 0))
+    # plt.xlim((1.0, 1.8))
     plt.legend()
     plt.xlabel(r"Void Ratio, $e$")
-    plt.ylabel(r"Depth (Lagrangian), $Z$ [$cm$]")
+    plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
 
     plt.subplot(1, 3, 2)
     plt.plot(sig_p_0_exp, z_nod, "-k", label="init")
@@ -390,7 +366,7 @@ def main():
     for k_plot in [2, 3, -1]:
         plt.plot(sig_p_int[:, k_plot], z_int, ":b")
         plt.plot(sig_p_trz[:, k_plot], z_nod, "-.b", linewidth=0.5)
-    plt.ylim((20, 0))
+    # plt.ylim((20, 0))
     # plt.legend()
     plt.xlabel(r"Eff Stress, $\sigma^\prime$ [$kPa$]")
 
@@ -401,7 +377,7 @@ def main():
     plt.semilogx(hyd_cond_int[:, 1], z_int, ":b", label="consol (act)")
     for k_plot in [2, 3, -1]:
         plt.semilogx(hyd_cond_int[:, k_plot], z_int, ":b")
-    plt.ylim((20, 0))
+    # plt.ylim((20, 0))
     # plt.legend()
     plt.xlabel(r"Hyd Cond, $k$ [$m/s$]")
 
@@ -427,6 +403,33 @@ def terzaghi_consolidation(z, t, cv, H, ui):
     Uz = 1.0 - Uz
     U_avg = 1.0 - U_avg
     return ue, U_avg, Uz
+
+
+def calculate_static_profile(m, qs, z):
+    nnod = len(z)
+    Gs = m.spec_grav_solids
+    Ccu = m.comp_index_unfrozen
+    sig_cu0 = m.eff_stress_0_comp
+    e_cu0 = m.void_ratio_0_comp
+    gam_p = np.zeros(nnod)
+    sig_p = np.zeros(nnod)
+    sig_p[0] = qs
+    e0 = np.ones(nnod)
+    e1 = np.zeros(nnod)
+    eps_s = 1e-8
+    eps_a = 1.0
+    while eps_a > eps_s:
+        for k, e in enumerate(e0):
+            gam_p[k] = (Gs - 1.0) / (1.0 + e) * gam_w
+            if k:
+                dz = z[k] - z[k - 1]
+                gam_p_avg = 0.5 * (gam_p[k - 1] + gam_p[k])
+                sig_p[k] = sig_p[k - 1] + gam_p_avg * dz
+            e1[k] = e_cu0 - Ccu * np.log10(sig_p[k] / sig_cu0)
+        eps_a = np.linalg.norm(e1 - e0) / np.linalg.norm(e1)
+        e0[:] = e1[:]
+    hyd_cond = m.hyd_cond_0 * 10 ** ((e1 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index)
+    return e1, sig_p, hyd_cond
 
 
 if __name__ == "__main__":
