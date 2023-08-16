@@ -13,14 +13,19 @@ from frozen_ground_fem.materials import (
 
 def main():
     # define simulation parameters
-    H_layer = 0.2  # in m
-    num_elements = 200
-    dt_sim = 1.2e2  # in s
-    t_max = 1500 * 60    # in s
+    # H_layer = 0.2  # in m
+    # num_elements = 200
+    # dt_sim =5e3  # in s
+    # t_max = 1500 * 60    # in s
+    sim_params = np.loadtxt('examples/con_static_params.csv')
+    H_layer = sim_params[0]
+    num_elements = int(sim_params[1])
+    dt_sim = sim_params[2]
+    t_max = sim_params[3]
 
     # set plotting parameters
     plt.rc("font", size=8)
-    dt_plot = 60.0 * 100  # in seconds
+    dt_plot = np.max([60.0 * 100, dt_sim])  # in seconds
     n_plot = int(np.floor(t_max / dt_plot) + 1)
     # arrow_props = {
     #     "width": 0.5,
@@ -249,7 +254,29 @@ def main():
         t_trz[k_plot] = t_con[-1]
 
     toc = time.perf_counter()
+
+    # convert settlement to arrays
+    t_con = np.array(t_con) / 60.0  # convert to min
+    s_con = np.array(s_con) * 1.0e03  # convert to mm
+    t_trz[:] = t_trz[:] / 60.0
+
+    # calculate time to 50 percent settlement 
+    s_50 = 0.5 * s_con[-1]
+    k_50 = 0
+    for k, s in enumerate(s_con):
+        if s > s_50:
+            k_50 = k
+            break
+    s1 = s_con[k_50]
+    s0 = s_con[k_50 - 1]
+    t1 = t_con[k_50]
+    t0 = t_con[k_50 - 1]
+    t_50_05 = np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0))*
+                            (s_50 - s0) / (s1 - s0))
+
     print(f"Run time = {toc - tic: 0.4f} s")
+    print(f"Total settlement = {s_con[-1]} m")
+    print(f"t_50_05 = {t_50_05} min^0.5")
 
     # plt.figure(figsize=(7, 9))
     #
@@ -285,10 +312,6 @@ def main():
     #
     # plt.savefig("examples/con_static_global_matrices_1.svg")
 
-    # convert settlement to arrays
-    t_con = np.array(t_con) / 60.0  # convert to min
-    s_con = np.array(s_con) * 1.0e03  # convert to mm
-    t_trz[:] = t_trz[:] / 60.0
     # k_lab = np.array(
     #     [
     #         np.floor(0.2 * mesh.num_nodes),
