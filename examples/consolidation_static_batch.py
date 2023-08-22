@@ -41,17 +41,9 @@ def main():
         eff_stress_0_comp=2.80e00,
     )
 
-    for k_bat, (
-        H_layer, 
-        num_elements, 
-        dt_sim,
-        t_max
-        ) in enumerate(zip(
-            H_layer_bat,
-            num_elements_bat,
-            dt_sim_bat,
-            t_max_bat
-            )):
+    for k_bat, (H_layer, num_elements, dt_sim, t_max) in enumerate(
+        zip(H_layer_bat, num_elements_bat, dt_sim_bat, t_max_bat)
+    ):
         dt_plot = np.max([60.0 * 20, dt_sim])  # in seconds
         n_plot = int(np.floor(t_max / dt_plot) + 1)
         # generate the mesh
@@ -125,7 +117,9 @@ def main():
         kt = np.average(hyd_cond_0_exp)
         cv = kt / mv / gam_w
         sig_p_1_trz = sig_p_1_exp[0] + gam_b * z_nod
-        s_tot_trz = 1e3 * (mesh.nodes[-1].z - mesh.nodes[0].z) / (1.0 + e0t) * (e0t - e1t)
+        s_tot_trz = (
+            1e3 * (mesh.nodes[-1].z - mesh.nodes[0].z) / (1.0 + e0t) * (e0t - e1t)
+        )
 
         # create void ratio boundary conditions
         void_ratio_boundary_0 = consol.ConsolidationBoundary1D(upper_boundary)
@@ -192,7 +186,9 @@ def main():
         hyd_cond_int[:, k_plot] = np.array(
             [ip.hyd_cond for e in mesh.elements for ip in e.int_pts]
         )
-        ue, U_avg, Uz = terzaghi_consolidation(z_nod, con_static._t1 - dt_plot, cv, H, ui)
+        ue, U_avg, Uz = terzaghi_consolidation(
+            z_nod, con_static._t1 - dt_plot, cv, H, ui
+        )
         sig_p_trz[:, k_plot] = sig_p_1_trz[:] - ue
         e_trz[:, k_plot] = e0[:] - de_trz[:] * Uz[:]
         s_trz[k_plot] = s_tot_trz * U_avg
@@ -303,35 +299,38 @@ def main():
 
     # save results to .out file
     np.savetxt(
-        fname + ".out", 
-        np.vstack([
-            H_layer_bat, 
-            num_elements_bat,
-            dt_sim_bat,
-            t_max_bat,
-            t_50_bat,
-            s_tot_bat,
-            runtime_bat,
-        ]).T,
-        fmt="%.8e %d %.8e %.8e %.8e %.8e %.8e", 
+        fname + ".out",
+        np.vstack(
+            [
+                H_layer_bat,
+                num_elements_bat,
+                dt_sim_bat,
+                t_max_bat,
+                t_50_bat,
+                s_tot_bat,
+                runtime_bat,
+            ]
+        ).T,
+        fmt="%.8e %d %.8e %.8e %.8e %.8e %.8e",
         header=(
             f"batch run on {datetime.now()}\n"
-            +"properties:\n"
-                +f"Gs={m.spec_grav_solids:0.5f}\n"
-                +f"Ck={m.hyd_cond_index}\n"
-                +f"k0={m.hyd_cond_0}\n"
-                +f"e0k={m.void_ratio_0_hyd_cond}\n"
-                +f"emin={m.void_ratio_min}\n"
-                +f"etr={m.void_ratio_tr}\n"
-                +f"Cu={m.comp_index_unfrozen}\n"
-                +f"Cr={m.rebound_index_unfrozen}\n"
-                +f"sig_cu0={m.eff_stress_0_comp}\n"
-                +f"e0u={m.void_ratio_0_comp}\n"
-            +"\n"
-            +"H [m]   Ne   dt [s]   t_max [s]   t_50 [min]   s_tot [mm]   runtime [s] \n"
+            + "properties:\n"
+            + f"Gs={m.spec_grav_solids:0.5f}\n"
+            + f"Ck={m.hyd_cond_index}\n"
+            + f"k0={m.hyd_cond_0}\n"
+            + f"e0k={m.void_ratio_0_hyd_cond}\n"
+            + f"emin={m.void_ratio_min}\n"
+            + f"etr={m.void_ratio_tr}\n"
+            + f"Cu={m.comp_index_unfrozen}\n"
+            + f"Cr={m.rebound_index_unfrozen}\n"
+            + f"sig_cu0={m.eff_stress_0_comp}\n"
+            + f"e0u={m.void_ratio_0_comp}\n"
+            + "\n"
+            + "H [m]   Ne   dt [s]   t_max [s]   "
+            + "t_50 [min]   s_tot [mm]   runtime [s] \n"
         ),
     )
-    
+
 
 def terzaghi_consolidation(z, t, cv, H, ui):
     Tv = cv * t / H**2
