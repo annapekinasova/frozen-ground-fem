@@ -23,8 +23,8 @@ def main():
     t_50_bat = np.zeros_like(H_layer_bat)
     s_tot_bat = np.zeros_like(H_layer_bat)
     runtime_bat = np.zeros_like(H_layer_bat)
-    qs0 = 1.0e3     # initial surface load, Pa
-    qs1 = 1.1e4     # final surface load, Pa
+    qs0 = 1.0e4  # initial surface load, Pa
+    qs1 = 5.0e4  # final surface load, Pa
 
     # set plotting parameters
     plt.rc("font", size=8)
@@ -86,10 +86,8 @@ def main():
         hyd_cond_int = np.zeros((len(z_int), n_plot + 1))
 
         # initialize void ratio and effective stress profiles
-        e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(
-            m, qs0, z_nod)
-        e1, sig_p_1_exp, hyd_cond_1_exp = calculate_static_profile(
-            m, qs1, z_nod)
+        e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(m, qs0, z_nod)
+        e1, sig_p_1_exp, hyd_cond_1_exp = calculate_static_profile(m, qs1, z_nod)
         sig_p_0_exp *= 1.0e-3
         sig_p_1_exp *= 1.0e-3
         for k, nd in enumerate(mesh.nodes):
@@ -163,7 +161,8 @@ def main():
                 t_con_stab.append(con_static._t1)
                 s_con_stab.append(con_static.calculate_total_settlement())
             print(
-                f"t = {con_static._t1 / 60.0:0.3f} min, s_con = {s_con_stab[-1] * 1e3:0.3f} mm")
+                f"t = {con_static._t1 / 60.0:0.3f} min, s_con = {s_con_stab[-1] * 1e3:0.3f} mm"
+            )
             t_plot += dt_plot
 
         # save stabilized profiles
@@ -203,7 +202,8 @@ def main():
                 t_con.append(con_static._t1)
                 s_con.append(con_static.calculate_total_settlement())
             print(
-                f"t = {con_static._t1 / 60.0:0.3f} min, s_con = {s_con[-1] * 1e3:0.3f} mm")
+                f"t = {con_static._t1 / 60.0:0.3f} min, s_con = {s_con[-1] * 1e3:0.3f} mm"
+            )
             e_nod[:, k_plot] = con_static._void_ratio_vector[:]
             sig_p_int[:, k_plot] = 1.0e-3 * np.array(
                 [ip.eff_stress for e in mesh.elements for ip in e.int_pts]
@@ -241,8 +241,7 @@ def main():
         s0 = s_con[k_50 - 1]
         t1 = t_con[k_50]
         t0 = t_con[k_50 - 1]
-        t_50_05 = np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0))
-                                 * (s_50 - s0) / (s1 - s0))
+        t_50_05 = np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0)) * (s_50 - s0) / (s1 - s0))
 
         print(f"Run time = {toc - tic: 0.4f} s")
         runtime_bat[k_bat] = toc - tic
@@ -383,8 +382,7 @@ def calculate_static_profile(m, qs, z):
             e1[k] = e_cu0 - Ccu * np.log10(sig_p[k] / sig_cu0)
         eps_a = np.linalg.norm(e1 - e0) / np.linalg.norm(e1)
         e0[:] = e1[:]
-    hyd_cond = m.hyd_cond_0 * \
-        10 ** ((e1 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index)
+    hyd_cond = m.hyd_cond_0 * 10 ** ((e1 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index)
     return e1, sig_p, hyd_cond
 
 
