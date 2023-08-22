@@ -139,3 +139,6 @@ dmypy.json
 *.png
 *.tif
 *.svg
+
+# output files
+*.out
