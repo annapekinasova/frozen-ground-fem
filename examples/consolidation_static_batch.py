@@ -14,7 +14,7 @@ from frozen_ground_fem.materials import (
 
 def main():
     # load simulation parameters
-    fname = "examples/con_static_params_2.bat"
+    fname = "examples/con_static_params.bat"
     sim_params = np.loadtxt(fname)
     H_layer_bat = sim_params[:, 0]
     num_elements_bat = np.array(sim_params[:, 1], dtype=int)
@@ -42,6 +42,26 @@ def main():
         rebound_index_unfrozen=0.08,
         eff_stress_0_comp=2.80e00,
     )
+
+    # initialize .out file
+    with open(fname + ".out", "w", encoding="utf-8") as fout:
+        fout.write(
+            f"batch run on {datetime.now()}\n"
+            + "properties:\n"
+            + f"Gs={m.spec_grav_solids:0.5f}\n"
+            + f"Ck={m.hyd_cond_index}\n"
+            + f"k0={m.hyd_cond_0}\n"
+            + f"e0k={m.void_ratio_0_hyd_cond}\n"
+            + f"emin={m.void_ratio_min}\n"
+            + f"etr={m.void_ratio_tr}\n"
+            + f"Cu={m.comp_index_unfrozen}\n"
+            + f"Cr={m.rebound_index_unfrozen}\n"
+            + f"sig_cu0={m.eff_stress_0_comp}\n"
+            + f"e0u={m.void_ratio_0_comp}\n"
+            + "\n"
+            + "         H [m]    Ne          dt [s]       t_max [s]"
+            + "      t_50 [min]      s_tot [mm]     runtime [s]\n"
+        )
 
     for k_bat, (H_layer, num_elements, dt_sim, t_max) in enumerate(
         zip(H_layer_bat, num_elements_bat, dt_sim_bat, t_max_bat)
@@ -250,6 +270,18 @@ def main():
         print(f"t_50_05 = {t_50_05} min^0.5")
         t_50_bat[k_bat] = t_50_05
 
+        # save results to .out file
+        with open(fname + ".out", "a", encoding="utf-8") as fout:
+            fout.write(
+                f"{H_layer_bat[k_bat]:.8e}"
+                + f"  {num_elements_bat[k_bat]: 4d}"
+                + f"  {dt_sim_bat[k_bat]:.8e}"
+                + f"  {t_max_bat[k_bat]:.8e}"
+                + f"  {t_50_bat[k_bat]:.8e}"
+                + f"  {s_tot_bat[k_bat]:.8e}"
+                + f"  {runtime_bat[k_bat]:.8e}\n"
+            )
+
         plt.figure(figsize=(3.5, 4))
         plt.plot(np.sqrt(t_con_stab), s_con_stab, ":r", label="stabilization")
         plt.plot(np.sqrt(t_con), s_con, "-k", label="consolidation")
@@ -302,40 +334,6 @@ def main():
         plt.xlabel(r"Hyd Cond, $k$ [$m/s$]")
 
         plt.savefig(f"examples/con_static_void_sig_profiles_{k_bat}.svg")
-
-    # save results to .out file
-    np.savetxt(
-        fname + ".out",
-        np.vstack(
-            [
-                H_layer_bat,
-                num_elements_bat,
-                dt_sim_bat,
-                t_max_bat,
-                t_50_bat,
-                s_tot_bat,
-                runtime_bat,
-            ]
-        ).T,
-        fmt="%.8e %d %.8e %.8e %.8e %.8e %.8e",
-        header=(
-            f"batch run on {datetime.now()}\n"
-            + "properties:\n"
-            + f"Gs={m.spec_grav_solids:0.5f}\n"
-            + f"Ck={m.hyd_cond_index}\n"
-            + f"k0={m.hyd_cond_0}\n"
-            + f"e0k={m.void_ratio_0_hyd_cond}\n"
-            + f"emin={m.void_ratio_min}\n"
-            + f"etr={m.void_ratio_tr}\n"
-            + f"Cu={m.comp_index_unfrozen}\n"
-            + f"Cr={m.rebound_index_unfrozen}\n"
-            + f"sig_cu0={m.eff_stress_0_comp}\n"
-            + f"e0u={m.void_ratio_0_comp}\n"
-            + "\n"
-            + "       H [m]  Ne         dt [s]      t_max [s]"
-            + "     t_50 [min]     s_tot [mm]    runtime [s]\n"
-        ),
-    )
 
 
 def terzaghi_consolidation(z, t, cv, H, ui):
