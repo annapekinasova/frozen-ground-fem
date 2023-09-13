@@ -23,8 +23,8 @@ def main():
     t_50_bat = np.zeros_like(H_layer_bat)
     s_tot_bat = np.zeros_like(H_layer_bat)
     runtime_bat = np.zeros_like(H_layer_bat)
-    qs0 = 1.0e4  # initial surface load, Pa
-    qs1 = 5.0e4  # final surface load, Pa
+    qs0 = 5.0e5  # initial surface load, Pa
+    qs1 = 1.0e6  # final surface load, Pa
 
     # set plotting parameters
     plt.rc("font", size=8)
@@ -290,7 +290,15 @@ def main():
         plt.ylabel(r"Settlement, $s$ [$mm$]")
         plt.legend()
 
-        plt.savefig(f"examples/con_static_settlement_{k_bat}.svg")
+        plt.savefig(
+            "examples/settle"
+            + f"_H{H_layer:0.3g}m"
+            + f"_Ne{num_elements:d}"
+            + f"_dt{dt_sim:0.2e}s"
+            + f"_qi{qs0:0.2e}Pa"
+            + f"_qf{qs1:0.2e}Pa"
+            + ".svg"
+        )
 
         plt.figure(figsize=(10, 4))
 
@@ -333,7 +341,15 @@ def main():
         # plt.legend()
         plt.xlabel(r"Hyd Cond, $k$ [$m/s$]")
 
-        plt.savefig(f"examples/con_static_void_sig_profiles_{k_bat}.svg")
+        plt.savefig(
+            "examples/void_sig"
+            + f"_H{H_layer:0.3g}m"
+            + f"_Ne{num_elements:d}"
+            + f"_dt{dt_sim:0.2e}s"
+            + f"_qi{qs0:0.2e}Pa"
+            + f"_qf{qs1:0.2e}Pa"
+            + ".svg"
+        )
 
 
 def terzaghi_consolidation(z, t, cv, H, ui):
