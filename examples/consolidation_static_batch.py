@@ -23,8 +23,8 @@ def main():
     t_50_bat = np.zeros_like(H_layer_bat)
     s_tot_bat = np.zeros_like(H_layer_bat)
     runtime_bat = np.zeros_like(H_layer_bat)
-    qs0 = 5.0e5  # initial surface load, Pa
-    qs1 = 1.0e6  # final surface load, Pa
+    qs0 = 1.0e5  # initial surface load, Pa
+    qs1 = 5.0e5  # final surface load, Pa
 
     # set plotting parameters
     plt.rc("font", size=8)
