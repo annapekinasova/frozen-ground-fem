@@ -2,6 +2,7 @@ import time
 from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.interpolate import CubicSpline
 
 import frozen_ground_fem.materials as mtl
 import frozen_ground_fem.geometry as geom
@@ -103,7 +104,8 @@ def main():
         z_int = np.array([ip.z for e in mesh.elements for ip in e.int_pts])
         e_nod = np.zeros((len(z_nod), n_plot + 1))
         sig_p_int = np.zeros((len(z_int), n_plot + 1))
-        hyd_cond_int = np.zeros((len(z_int), n_plot + 1))
+        ue_int = np.zeros_like(sig_p_int)
+        hyd_cond_int = np.zeros_like(sig_p_int)
 
         # initialize void ratio and effective stress profiles
         e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(
@@ -114,6 +116,10 @@ def main():
         sig_p_1_exp *= 1.0e-3
         for k, nd in enumerate(mesh.nodes):
             nd.void_ratio = e0[k]
+
+        # interpolate expected effective stress at integration points
+        sig_p_1_spl = CubicSpline(z_nod, sig_p_1_exp)
+        sig_p_1_exp_int = sig_p_1_spl(z_int)
 
         # update void ratio conditions at the integration points
         # (first interpolates void ratio profile from the nodes,
@@ -230,6 +236,7 @@ def main():
             sig_p_int[:, k_plot] = 1.0e-3 * np.array(
                 [ip.eff_stress for e in mesh.elements for ip in e.int_pts]
             )
+            ue_int[:, k_plot] = sig_p_1_exp_int - sig_p_int[:, k_plot]
             hyd_cond_int[:, k_plot] = np.array(
                 [ip.hyd_cond for e in mesh.elements for ip in e.int_pts]
             )
@@ -303,9 +310,9 @@ def main():
             + ".svg"
         )
 
-        plt.figure(figsize=(10, 4))
+        plt.figure(figsize=(8, 8))
 
-        plt.subplot(1, 3, 1)
+        plt.subplot(2, 2, 1)
         plt.plot(e0, z_nod, "-k", label="init e0")
         plt.plot(e_nod[:, 0], z_nod, ":r", label="post-stab e0")
         # plt.plot(e_trz[:, 1], z_nod, "-.b", label="Terzaghi", linewidth=0.5)
@@ -319,7 +326,18 @@ def main():
         plt.xlabel(r"Void Ratio, $e$")
         plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
 
-        plt.subplot(1, 3, 2)
+        plt.subplot(2, 2, 2)
+        plt.semilogx(hyd_cond_0_exp, z_nod, "-k", label="init e0")
+        plt.semilogx(hyd_cond_int[:, 0], z_int, ":r", label="post-stab e0")
+        plt.semilogx(hyd_cond_1_exp, z_nod, "--k", label="final (exp)")
+        plt.semilogx(hyd_cond_int[:, 1], z_int, ":b", label="consol (act)")
+        for k_plot in [2, 3, -1]:
+            plt.semilogx(hyd_cond_int[:, k_plot], z_int, ":b")
+        plt.ylim((np.max(z_nod), np.min(z_nod)))
+        # plt.legend()
+        plt.xlabel(r"Hyd Cond, $k$ [$m/s$]")
+
+        plt.subplot(2, 2, 3)
         plt.plot(sig_p_0_exp, z_nod, "-k", label="init e0")
         plt.plot(sig_p_int[:, 0], z_int, ":r", label="post-stab e0")
         plt.plot(sig_p_1_exp, z_nod, "--k", label="final (exp)")
@@ -331,17 +349,15 @@ def main():
         plt.ylim((np.max(z_nod), np.min(z_nod)))
         # plt.legend()
         plt.xlabel(r"Eff Stress, $\sigma^\prime$ [$kPa$]")
+        plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
 
-        plt.subplot(1, 3, 3)
-        plt.semilogx(hyd_cond_0_exp, z_nod, "-k", label="init e0")
-        plt.semilogx(hyd_cond_int[:, 0], z_int, ":r", label="post-stab e0")
-        plt.semilogx(hyd_cond_1_exp, z_nod, "--k", label="final (exp)")
-        plt.semilogx(hyd_cond_int[:, 1], z_int, ":b", label="consol (act)")
+        plt.subplot(2, 2, 4)
+        plt.plot(ue_int[:, 1], z_int, ":b", label="consol (act)")
         for k_plot in [2, 3, -1]:
-            plt.semilogx(hyd_cond_int[:, k_plot], z_int, ":b")
+            plt.plot(ue_int[:, k_plot], z_int, ":b")
         plt.ylim((np.max(z_nod), np.min(z_nod)))
         # plt.legend()
-        plt.xlabel(r"Hyd Cond, $k$ [$m/s$]")
+        plt.xlabel(r"Excess Pore Pressure, $u_e$ [$kPa$]")
 
         plt.savefig(
             "examples/void_sig"
