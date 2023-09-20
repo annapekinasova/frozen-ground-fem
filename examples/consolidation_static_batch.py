@@ -71,6 +71,13 @@ def main():
         dt_plot = np.max([t_max / 20, dt_sim])  # in seconds
         n_plot = int(np.floor(t_max / dt_plot) + 1)
 
+        print(f"H_layer = {H_layer}")
+        print(f"num_elements = {num_elements}")
+        print(f"dt_sim = {dt_sim}")
+        print(f"t_max = {t_max}")
+        print(f"qs0 = {qs0}")
+        print(f"qs1 = {qs1}")
+
         # generate the mesh
         mesh = geom.Mesh1D(
             z_range=[0.0, H_layer],
