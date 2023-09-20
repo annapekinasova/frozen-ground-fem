@@ -83,6 +83,13 @@ def main():
         k_plot_list = [2, 40, 100, 1200]
         k_plot_labels = ["t=0.1 yr", "t=2 yr", "t=5 yr", "Final"]
 
+        print(f"H_layer = {H_layer}")
+        print(f"num_elements = {num_elements}")
+        print(f"dt_sim = {dt_sim}")
+        print(f"t_max = {t_max}")
+        print(f"qs0 = {qs0}")
+        print(f"qs1 = {qs1}")
+
         # generate the mesh
         mesh = geom.Mesh1D(
             z_range=[0.0, H_layer],
