@@ -15,8 +15,9 @@ from frozen_ground_fem.materials import (
 )
 
 
-def shape_matrix(s):
-    """Calculates the shape (interpolation) function matrix.
+def shape_matrix_linear(s):
+    """Calculates the shape (interpolation) function matrix
+    for linear interpolation.
 
     Parameters
     ----------
@@ -44,8 +45,49 @@ def shape_matrix(s):
     return np.array([[(1.0 - s), s]])
 
 
-def gradient_matrix(s, dz):
-    """Calculates the gradient of the shape (interpolation) function matrix.
+def shape_matrix_cubic(s):
+    """Calculates the shape (interpolation) function matrix
+    for cubic interpolation.
+
+    Parameters
+    ----------
+    s : float
+        The local coordinate. Should be between 0.0 and 1.0.
+
+    Returns
+    -------
+    numpy.ndarray
+        The shape function matrix.
+
+    Raises
+    ------
+    ValueError
+        If s cannot be converted to float.
+
+    Notes
+    -----
+    Assumes cubic interpolation of a single variable between two nodes.
+    The resulting shape matrix N is:
+
+        N = [[-0.5 * ( 9 * s**3 - 18 * s**2 + 11 * s - 2),
+               0.5 * (27 * s**3 - 45 * s**2 + 18 * s),
+              -0.5 * (27 * s**3 - 36 * s**2 +  9 * s),
+               0.5 * ( 9 * s**3 -  9 * s**2 +  2 * s)]]
+    """
+    s = float(s)
+    s3 = s ** 3
+    s2 = s ** 2
+    return np.array([[
+        -0.5 * (9 * s3 - 18 * s2 + 11 * s - 2),
+        0.5 * (27 * s3 - 45 * s2 + 18 * s),
+        -0.5 * (27 * s3 - 36 * s2 + 9 * s),
+        0.5 * (9 * s3 - 9 * s2 + 2 * s)
+    ]])
+
+
+def gradient_matrix_linear(s, dz):
+    """Calculates the gradient of the shape (interpolation) function matrix
+    for linear interpolation.
 
     Parameters
     ----------
@@ -75,6 +117,49 @@ def gradient_matrix(s, dz):
     s = float(s)
     dz = float(dz)
     return np.array([[-1.0, 1.0]]) / dz
+
+
+def gradient_matrix_cubic(s, dz):
+    """Calculates the gradient of the shape (interpolation) function matrix
+    for cubic interpolation.
+
+    Parameters
+    ----------
+    s : float
+        The local coordinate. Should be between 0.0 and 1.0.
+    dz : float
+        The element scale parameter (Jacobian).
+
+    Returns
+    -------
+    numpy.ndarray
+        The gradient of the shape function matrix.
+
+    Raises
+    ------
+    ValueError
+        If s cannot be converted to float.
+        If dz cannot be converted to float.
+
+    Notes
+    -----
+    Assumes cubic interpolation of a single variable between two nodes.
+    The resulting gradient matrix B is:
+
+        B = [[-0.5 * (27 * s**2 - 36 * s + 11),
+               0.5 * (81 * s**2 - 90 * s + 18),
+              -0.5 * (81 * s**2 - 72 * s +  9),
+               0.5 * (27 * s**2 - 18 * s +  2)]] / dz
+    """
+    s = float(s)
+    dz = float(dz)
+    s2 = s ** 2
+    return np.array([[
+        -0.5 * (27 * s2 - 36 * s + 11),
+        0.5 * (81 * s2 - 90 * s + 18),
+        -0.5 * (81 * s2 - 72 * s + 9),
+        0.5 * (27 * s2 - 18 * s + 2)
+    ]]) / dz
 
 
 class Point1D:
@@ -717,7 +802,8 @@ class IntegrationPoint1D(Point1D):
     def hyd_cond_gradient(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(f"value {value} for hyd_cond_gradient cannot be negative.")
+            raise ValueError(
+                f"value {value} for hyd_cond_gradient cannot be negative.")
         self._hyd_cond_gradient = value
 
     @property
@@ -771,7 +857,8 @@ class IntegrationPoint1D(Point1D):
     def pre_consol_stress(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(f"value {value} for pre_consol_stress cannot be negative.")
+            raise ValueError(
+                f"value {value} for pre_consol_stress cannot be negative.")
         self._pre_consol_stress = value
 
     @property
@@ -800,7 +887,8 @@ class IntegrationPoint1D(Point1D):
     def eff_stress(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(f"value {value} for eff_stress cannot be negative.")
+            raise ValueError(
+                f"value {value} for eff_stress cannot be negative.")
         self._eff_stress = value
 
     @property
@@ -924,7 +1012,8 @@ class IntegrationPoint1D(Point1D):
     def tot_stress(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(f"value {value} for tot_stress cannot be negative.")
+            raise ValueError(
+                f"value {value} for tot_stress cannot be negative.")
         self._tot_stress = value
 
     @property
@@ -1335,12 +1424,14 @@ class Mesh1D:
             )
         for nd in new_boundary.nodes:
             if nd not in self.nodes:
-                raise ValueError(f"new_boundary contains node {nd} not in mesh")
+                raise ValueError(
+                    f"new_boundary contains node {nd} not in mesh")
         if new_boundary.int_pts is not None:
             int_pts = tuple(ip for e in self.elements for ip in e.int_pts)
             for ip in new_boundary.int_pts:
                 if ip not in int_pts:
-                    raise ValueError(f"new_boundary contains int_pt {ip} not in mesh")
+                    raise ValueError(
+                        f"new_boundary contains int_pt {ip} not in mesh")
         self._boundaries.add(new_boundary)
 
     def remove_boundary(self, boundary: Boundary1D) -> None:
