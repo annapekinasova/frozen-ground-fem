@@ -54,6 +54,35 @@ def main():
         eff_stress_0_comp=4.0e4,
     )
 
+    t_con_bench = np.array([
+        0.05,
+        0.1,
+        0.5,
+        1,
+        2,
+        3,
+        4,
+        5,
+        10,
+        20,
+        40,
+        60,
+    ])
+    s_con_bench1_278 = np.array([
+        1.880E-01,
+        2.150E-01,
+        5.920E-01,
+        8.350E-01,
+        1.178E+00,
+        1.439E+00,
+        1.651E+00,
+        1.826E+00,
+        2.296E+00,
+        2.462E+00,
+        2.473E+00,
+        2.473E+00,
+    ])
+
     # initialize .out file
     with open(fname + ".out", "w", encoding="utf-8") as fout:
         fout.write(
@@ -82,6 +111,8 @@ def main():
         n_plot = int(np.floor(t_max / dt_plot) + 1)
         k_plot_list = [2, 40, 100, 1200]
         k_plot_labels = ["t=0.1 yr", "t=2 yr", "t=5 yr", "Final"]
+        k_plot_linetype = ["--b", ":b", "-.b", "--k"]
+        k_plot_init = "-k"
 
         print(f"H_layer = {H_layer}")
         print(f"num_elements = {num_elements}")
@@ -175,17 +206,25 @@ def main():
         t_plot = dt_plot
         k_plot = 0
         k_stab_max = 10
+        k_stab = 0
+        tol_stab = 1E-8
+        eps_s_stab = 2*tol_stab
         print("initial stabilization")
-        for k_stab in range(k_stab_max):
+        while k_stab <= k_stab_max and eps_s_stab > tol_stab:
             while con_static._t1 < t_plot:
                 con_static.initialize_time_step()
                 con_static.iterative_correction_step()
                 t_con_stab.append(con_static._t1)
                 s_con_stab.append(con_static.calculate_total_settlement())
+            eps_s_stab = np.abs(
+                (s_con_stab[-1] - s_con_stab[-2])/s_con_stab[-1])
             print(
-                f"t = {con_static._t1 / 60.0:0.3f} min, s_con = {s_con_stab[-1] * 1e3:0.3f} mm"
+                f"t = {con_static._t1 / 60.0:0.3f} min, "
+                + f"s_con = {s_con_stab[-1] * 1e3:0.3f} mm, "
+                + f"eps_s =  {eps_s_stab:0.4e}"
             )
             t_plot += dt_plot
+            k_stab += 1
 
         # save stabilized profiles
         e_nod[:, k_plot] = con_static._void_ratio_vector[:]
@@ -214,14 +253,19 @@ def main():
         s_con = [0.0]
         k_plot += 1
         t_plot = dt_plot
-        while k_plot <= n_plot:
+        tol = 1E-8
+        eps_s = 2*tol
+        while k_plot <= n_plot and eps_s > tol:
             while con_static._t1 < t_plot:
                 con_static.initialize_time_step()
                 con_static.iterative_correction_step()
                 t_con.append(con_static._t1)
                 s_con.append(con_static.calculate_total_settlement())
+            eps_s = np.abs((s_con[-1] - s_con[-2])/s_con[-1])
             print(
-                f"t = {con_static._t1 / 60.0:0.3f} min, s_con = {s_con[-1] * 1e3:0.3f} mm"
+                f"t = {con_static._t1 / 60.0:0.3f} min, "
+                + f"s_con = {s_con[-1] * 1e3:0.3f} mm, "
+                + f"eps_s =  {eps_s:0.4e}"
             )
             e_nod[:, k_plot] = con_static._void_ratio_vector[:]
             sig_p_int[:, k_plot] = 1.0e-3 * np.array(
@@ -235,6 +279,9 @@ def main():
             t_plot += dt_plot
 
         toc = time.perf_counter()
+
+        k_plot_list[-1] = k_plot - 1
+        t_max_bat[k_bat] = t_con[-1]
 
         # convert settlement to arrays
         t_con_stab = np.array(t_con_stab) / 3600.0 / 24 / 365
@@ -276,7 +323,8 @@ def main():
             )
 
         plt.figure(figsize=(3.5, 4))
-        plt.semilogx(t_con, s_con, "-k", label="Gs=2.78")
+        plt.semilogx(t_con, s_con, k_plot_init, label="Gs=2.78")
+        plt.semilogx(t_con_bench, s_con_bench1_278, "ok", label="FoxPu2015")
         plt.xlabel(r"Time, $t$ [$yr$]")
         plt.ylabel(r"Settlement, $s$ [$m$]")
         plt.legend()
@@ -294,9 +342,11 @@ def main():
         plt.figure(figsize=(8, 8))
 
         plt.subplot(2, 2, 1)
-        plt.plot(e_nod[:, 0], z_nod, "-k", label="Initial")
-        for k_plot, k_label in zip(k_plot_list, k_plot_labels):
-            plt.plot(e_nod[:, k_plot], z_nod, "-k",
+        plt.plot(e_nod[:, 0], z_nod, k_plot_init, label="Initial")
+        for k_plot, k_label, k_line in zip(k_plot_list,
+                                           k_plot_labels,
+                                           k_plot_linetype):
+            plt.plot(e_nod[:, k_plot], z_nod, k_line,
                      label=k_label)
         plt.ylim((np.max(z_nod), np.min(z_nod)))
         plt.legend()
@@ -304,18 +354,22 @@ def main():
         plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
 
         plt.subplot(2, 2, 2)
-        plt.semilogx(hyd_cond_int[:, 0], z_int, "-k", label="Initial")
-        for k_plot, k_label in zip(k_plot_list, k_plot_labels):
-            plt.semilogx(hyd_cond_int[:, k_plot], z_int, "-k",
+        plt.semilogx(hyd_cond_int[:, 0], z_int, k_plot_init, label="Initial")
+        for k_plot, k_label, k_line in zip(k_plot_list,
+                                           k_plot_labels,
+                                           k_plot_linetype):
+            plt.semilogx(hyd_cond_int[:, k_plot], z_int, k_line,
                          label=k_label)
         plt.ylim((np.max(z_nod), np.min(z_nod)))
         # plt.legend()
         plt.xlabel(r"Hyd Cond, $k$ [$m/s$]")
 
         plt.subplot(2, 2, 3)
-        plt.plot(sig_p_int[:, 0], z_int, "-k", label="Initial")
-        for k_plot, k_label in zip(k_plot_list, k_plot_labels):
-            plt.plot(sig_p_int[:, k_plot], z_int, "-k",
+        plt.plot(sig_p_int[:, 0], z_int, k_plot_init, label="Initial")
+        for k_plot, k_label, k_line in zip(k_plot_list,
+                                           k_plot_labels,
+                                           k_plot_linetype):
+            plt.plot(sig_p_int[:, k_plot], z_int, k_line,
                      label=k_label)
         plt.ylim((np.max(z_nod), np.min(z_nod)))
         # plt.legend()
@@ -323,8 +377,10 @@ def main():
         plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
 
         plt.subplot(2, 2, 4)
-        for k_plot, k_label in zip(k_plot_list, k_plot_labels):
-            plt.plot(ue_int[:, k_plot] / (qs1 - qs0) * 1e3, z_int, "-k",
+        for k_plot, k_label, k_line in zip(k_plot_list,
+                                           k_plot_labels,
+                                           k_plot_linetype):
+            plt.plot(ue_int[:, k_plot] / (qs1 - qs0) * 1e3, z_int, k_line,
                      label=k_label)
         plt.ylim((np.max(z_nod), np.min(z_nod)))
         # plt.legend()
