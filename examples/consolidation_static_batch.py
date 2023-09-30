@@ -115,10 +115,8 @@ def main():
         hyd_cond_int = np.zeros_like(sig_p_int)
 
         # initialize void ratio and effective stress profiles
-        e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(
-            m, qs0, z_nod)
-        e1, sig_p_1_exp, hyd_cond_1_exp = calculate_static_profile(
-            m, qs1, z_nod)
+        e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(m, qs0, z_nod)
+        e1, sig_p_1_exp, hyd_cond_1_exp = calculate_static_profile(m, qs1, z_nod)
         sig_p_0_exp *= 1.0e-3
         sig_p_1_exp *= 1.0e-3
         for k, nd in enumerate(mesh.nodes):
@@ -277,8 +275,7 @@ def main():
         s0 = s_con[k_50 - 1]
         t1 = t_con[k_50]
         t0 = t_con[k_50 - 1]
-        t_50_05 = np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0))
-                                 * (s_50 - s0) / (s1 - s0))
+        t_50_05 = np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0)) * (s_50 - s0) / (s1 - s0))
 
         print(f"Run time = {toc - tic: 0.4f} s")
         runtime_bat[k_bat] = toc - tic
@@ -421,8 +418,7 @@ def calculate_static_profile(m, qs, z):
             e1[k] = e_cu0 - Ccu * np.log10(sig_p[k] / sig_cu0)
         eps_a = np.linalg.norm(e1 - e0) / np.linalg.norm(e1)
         e0[:] = e1[:]
-    hyd_cond = m.hyd_cond_0 * \
-        10 ** ((e1 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index)
+    hyd_cond = m.hyd_cond_0 * 10 ** ((e1 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index)
     return e1, sig_p, hyd_cond
 
 

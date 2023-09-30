@@ -107,7 +107,7 @@ def main():
         zip(H_layer_bat, num_elements_bat, dt_sim_bat, t_max_bat)
     ):
         # compute plotting time step
-        dt_plot = 0.05*365*24*60*60  # in seconds
+        dt_plot = 0.05 * 365 * 24 * 60 * 60  # in seconds
         n_plot = int(np.floor(t_max / dt_plot) + 1)
         k_plot_list = [2, 40, 100, 1200]
         k_plot_labels = ["t=0.1 yr", "t=2 yr", "t=5 yr", "Final"]
@@ -382,7 +382,6 @@ def main():
                                            k_plot_linetype):
             plt.plot(ue_int[:, k_plot] / (qs1 - qs0) * 1e3, z_int, k_line,
                      label=k_label)
-        plt.ylim((np.max(z_nod), np.min(z_nod)))
         # plt.legend()
         plt.xlabel(r"Norm Exc Pore Pres, $u_e/\Delta q$")
 
