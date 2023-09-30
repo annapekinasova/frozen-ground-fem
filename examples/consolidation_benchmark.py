@@ -124,7 +124,7 @@ def main():
         # generate the mesh
         mesh = geom.Mesh1D(
             z_range=[0.0, H_layer],
-            num_nodes=num_elements + 1,
+            num_elements=num_elements,
             generate=True,
         )
 

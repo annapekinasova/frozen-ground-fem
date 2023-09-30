@@ -19,7 +19,7 @@ def main():
     mesh = Mesh1D()
     mesh.z_min = 0.0
     mesh.z_max = 100.0
-    mesh.generate_mesh(num_nodes=20)
+    mesh.generate_mesh(num_elements=20)
 
     # define material properties
     # and initialize integration point porosity
@@ -81,7 +81,7 @@ def main():
         ta._temp_vector,
         z_vec,
         "-r",
-        label=f"initial conditions",
+        label="initial conditions",
         linewidth=2.0,
     )
 
@@ -97,7 +97,7 @@ def main():
         ta._temp_vector,
         z_vec,
         "-b",
-        label=f"steady state",
+        label="steady state",
         linewidth=2.0,
     )
     plt.ylim(mesh.z_max, mesh.z_min)

@@ -1058,35 +1058,84 @@ class Element1D:
     nodes
     int_pts
     jacobian
+    order
 
     Raises
     ------
     TypeError
         If nodes initializer contains non-:c:`Node1D` objects.
     ValueError
-        If len(nodes) != 2.
+        If len(nodes) != (order + 1).
     """
 
-    _int_pt_coords = (0.211324865405187, 0.788675134594813)
-    _int_pt_weights = (0.5, 0.5)
+    _int_pt_coords_linear = (0.211324865405187, 0.788675134594813)
+    _int_pt_weights_linear = (0.5, 0.5)
 
-    def __init__(self, nodes):
+    _int_pt_coords_cubic = (
+        0.04691007703066802,
+        0.2307653449471585,
+        0.5,
+        0.7692346550528415,
+        0.9530899229693319,
+    )
+    _int_pt_weights_cubic = (
+        0.11846344252809454,
+        0.23931433524968324,
+        0.28444444444444444,
+        0.23931433524968324,
+        0.11846344252809454,
+    )
+
+    def __init__(self, nodes, order=3):
+        # assign order parameter
+        self.order = order
         # check for valid node list and assign to self
-        if (nnod := len(nodes)) != 2:
-            raise ValueError(f"len(nodes) is {nnod} not equal to 2")
+        if (nnod := len(nodes)) != self.order + 1:
+            raise ValueError(
+                f"len(nodes) is {nnod} not equal to order+1 = {self.order + 1}"
+            )
         for nd in nodes:
             if not isinstance(nd, Node1D):
                 raise TypeError("nodes contains invalid objects, not Node1D")
         self._nodes = tuple(nodes)
         # initialize integration points
-        self._int_pts = tuple(
-            IntegrationPoint1D(local_coord=xi, weight=wt)
-            for (xi, wt) in zip(Element1D._int_pt_coords, Element1D._int_pt_weights)
-        )
-        z_e = np.array([[nd.z for nd in self.nodes]]).T
+        if self.order == 1:
+            self._shape_matrix = shape_matrix_linear
+            self._gradient_matrix = gradient_matrix_linear
+            self._int_pts = tuple(
+                IntegrationPoint1D(local_coord=xi, weight=wt)
+                for (xi, wt) in zip(Element1D._int_pt_coords_linear,
+                                    Element1D._int_pt_weights_linear)
+            )
+        elif self.order == 3:
+            self._shape_matrix = shape_matrix_cubic
+            self._gradient_matrix = gradient_matrix_cubic
+            self._int_pts = tuple(
+                IntegrationPoint1D(local_coord=xi, weight=wt)
+                for (xi, wt) in zip(Element1D._int_pt_coords_cubic,
+                                    Element1D._int_pt_weights_cubic)
+            )
+        z_e = np.array([[self.nodes[0].z, self.nodes[-1].z]]).T
         for ip in self.int_pts:
-            N = shape_matrix(ip.local_coord)
+            N = shape_matrix_linear(ip.local_coord)
             ip.z = float(N @ z_e)
+
+    @property
+    def order(self):
+        """The order of interpolation used in the element.
+
+        Returns
+        ------
+        float
+        """
+        return self._order
+
+    @order.setter
+    def order(self, value):
+        value = int(value)
+        if value != 1 and value != 3:
+            raise ValueError(f"order {value} not 1 or 3")
+        self._order = value
 
     @property
     def nodes(self):
@@ -1106,7 +1155,7 @@ class Element1D:
         -------
         float
         """
-        return self.nodes[1].z - self.nodes[0].z
+        return self.nodes[-1].z - self.nodes[0].z
 
     @property
     def int_pts(self):
@@ -1146,11 +1195,12 @@ class Boundary1D:
             self._int_pts = None
         else:
             if len(int_pts) != 1:
-                raise ValueError(f"len(int_pts) not equal to 1")
+                raise ValueError(f"len(int_pts) {len(int_pts)} not equal to 1")
             for ip in int_pts:
                 if not isinstance(ip, IntegrationPoint1D):
                     raise TypeError(
-                        "int_pts contains invalid objects, not IntegrationPoint1D"
+                        "int_pts contains invalid objects, "
+                        + "not IntegrationPoint1D"
                     )
             self._int_pts = tuple(int_pts)
 
@@ -1187,7 +1237,12 @@ class Mesh1D:
     ------
     """
 
-    def __init__(self, z_range=None, grid_size=0.0, num_nodes=10, generate=False):
+    def __init__(self,
+                 z_range=None,
+                 grid_size=0.0,
+                 num_elements=10,
+                 order=3,
+                 generate=False):
         self._boundaries = set()
         self.mesh_valid = False
         self._z_min = -np.inf
@@ -1197,7 +1252,7 @@ class Mesh1D:
             self.z_max = np.max(z_range)
         self.grid_size = grid_size
         if generate:
-            self.generate_mesh(num_nodes)
+            self.generate_mesh(num_elements, order)
 
     @property
     def z_min(self):
@@ -1374,13 +1429,15 @@ class Mesh1D:
             self.clear_boundaries()
             self._mesh_valid = False
 
-    def generate_mesh(self, num_nodes=10):
+    def generate_mesh(self, num_elements=10, order=3):
         """Generates a mesh using assigned mesh properties.
 
         Parameters
         ----------
-        num_nodes : int, optional, default=10
-            Number of nodes to be created in the generated mesh
+        num_elements : int, optional, default=10
+            Number of elements to be created in the generated mesh
+        order : int, optional, default=3
+            The order of interpolation to be used
 
         Raises
         ------
@@ -1391,36 +1448,52 @@ class Mesh1D:
         Notes
         -----
         If the grid_size paramater is set,
-        the argument num_nodes will be ignored
-        and the number of nodes will be calculated
-        as the nearest integer number of nodes:
-            (z_max - z_min) // grid_size + 1
+        the argument num_elements will be ignored
+        and the number of elements will be calculated
+        as the nearest integer number of elements:
+            (z_max - z_min) // grid_size
         """
         self.mesh_valid = False
-        self._generate_nodes(num_nodes)
-        self._generate_elements()
+        num_elements = int(num_elements)
+        if num_elements < 1:
+            raise ValueError(
+                f"num_elements {num_elements} not strictly positive")
+        order = int(order)
+        if order != 1 and order != 3:
+            raise ValueError(f"order {order} not 1 or 3")
+        num_elements_out = self._generate_nodes(
+            num_elements * order + 1, order)
+        if num_elements_out:
+            num_elements = num_elements_out
+        self._generate_elements(num_elements, order)
         self.mesh_valid = True
 
-    def _generate_nodes(self, num_nodes=10):
+    def _generate_nodes(self, num_nodes, order):
         if np.isinf(self.z_min) or np.isinf(self.z_max):
             raise ValueError("cannot generate mesh, non-finite limits")
         if np.isinf(self.grid_size):
             raise ValueError("cannot generate mesh, non-finite grid size")
         if self.grid_size > 0.0:
-            num_nodes = int((self.z_max - self.z_min) // self.grid_size) + 1
+            num_elements = int((self.z_max - self.z_min) // self.grid_size)
+            num_nodes = num_elements * order + 1
+        else:
+            num_elements = 0
         z_nodes = np.linspace(self.z_min, self.z_max, num_nodes)
         self._nodes = tuple(Node1D(k, zk) for k, zk in enumerate(z_nodes))
+        return num_elements
 
-    def _generate_elements(self):
+    def _generate_elements(self, num_elements, order):
         self._elements = tuple(
-            Element1D((self.nodes[k], self.nodes[k + 1]))
-            for k in range(self.num_nodes - 1)
+            Element1D(tuple(
+                self.nodes[order * k + j] for j in range(order + 1)))
+            for k in range(num_elements)
         )
 
     def add_boundary(self, new_boundary: Boundary1D) -> None:
         if not isinstance(new_boundary, Boundary1D):
             raise TypeError(
-                f"type(new_boundary) {type(new_boundary)} invalid, must be Boundary1D"
+                f"type(new_boundary) {type(new_boundary)} invalid, "
+                + "must be Boundary1D"
             )
         for nd in new_boundary.nodes:
             if nd not in self.nodes:

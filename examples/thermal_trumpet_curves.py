@@ -19,7 +19,7 @@ def main():
     mesh = Mesh1D()
     mesh.z_min = 0.0
     mesh.z_max = 50.0
-    mesh.generate_mesh(num_nodes=25)
+    mesh.generate_mesh(num_elements=20)
 
     # define material properties
     # and initialize integration point porosity
@@ -110,33 +110,33 @@ def main():
             plt.plot(temp_curve[:, 25], z_vec, "--r", linewidth=0.5)
 
     # generate converged temperature distribution plot
-    plt.plot(temp_curve[:, 0], z_vec, "-b", linewidth=2, label=f"temp dist, jan 1")
-    plt.plot(temp_curve[:, 25], z_vec, "-r", linewidth=2, label=f"temp dist, jun 1")
+    plt.plot(temp_curve[:, 0], z_vec, "-b", linewidth=2,
+             label="temp dist, jan 1")
+    plt.plot(temp_curve[:, 25], z_vec, "-r", linewidth=2,
+             label="temp dist, jun 1")
     plt.ylim(mesh.z_max, mesh.z_min)
     plt.legend()
     plt.xlabel("Temperature, T [deg C]")
     plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
-    # plt.title(
-    #     f"Converged temperature distributions (t={ta._t1 / 8.64e4 / 365: 0.1f} years)",
-    # )
     plt.savefig("examples/thermal_temp_dist_curves.svg")
 
     plt.figure(figsize=(3.7, 3.7))
     temp_min_curve = np.amin(temp_curve, axis=1)
     temp_max_curve = np.amax(temp_curve, axis=1)
-    plt.plot(temp_curve[:, 0], z_vec, "--b", linewidth=1, label=f"temp dist, jan")
-    plt.plot(temp_curve[:, 13], z_vec, ":b", linewidth=1, label=f"temp dist, apr")
-    plt.plot(temp_curve[:, 26], z_vec, "--r", linewidth=1, label=f"temp dist, jul")
-    plt.plot(temp_curve[:, 39], z_vec, ":r", linewidth=1, label=f"temp dist, oct")
+    plt.plot(temp_curve[:, 0], z_vec, "--b", linewidth=1,
+             label="temp dist, jan")
+    plt.plot(temp_curve[:, 13], z_vec, ":b", linewidth=1,
+             label="temp dist, apr")
+    plt.plot(temp_curve[:, 26], z_vec, "--r", linewidth=1,
+             label="temp dist, jul")
+    plt.plot(temp_curve[:, 39], z_vec, ":r", linewidth=1,
+             label="temp dist, oct")
     plt.plot(temp_min_curve, z_vec, "-b", linewidth=2, label="annual minimum")
     plt.plot(temp_max_curve, z_vec, "-r", linewidth=2, label="annual maximum")
     plt.ylim(mesh.z_max, mesh.z_min)
     plt.legend()
     plt.xlabel("Temperature, T [deg C]")
     plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
-    # plt.title(
-    #     f"Converged annual min/max temperatures (t={ta._t1 / 8.64e4 / 365: 0.1f} years)",
-    # )
     plt.savefig("examples/thermal_trumpet_curves.svg")
 
 

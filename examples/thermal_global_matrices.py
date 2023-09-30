@@ -1,4 +1,3 @@
-import numpy as np
 import matplotlib.pyplot as plt
 
 from frozen_ground_fem.materials import Material
@@ -15,11 +14,11 @@ from frozen_ground_fem.thermal import (
 
 
 def main():
-    # define mesh with 10 nodes
+    # define mesh with 10 elements, cubic interpolation
     mesh = Mesh1D()
     mesh.z_min = -8.0
     mesh.z_max = 100.0
-    mesh.generate_mesh(num_nodes=10)
+    mesh.generate_mesh(num_elements=10)
 
     # define material properties
     # and initialize integration points
