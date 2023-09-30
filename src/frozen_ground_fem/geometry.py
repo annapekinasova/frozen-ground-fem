@@ -75,14 +75,18 @@ def shape_matrix_cubic(s):
                0.5 * ( 9 * s**3 -  9 * s**2 +  2 * s)]]
     """
     s = float(s)
-    s3 = s ** 3
-    s2 = s ** 2
-    return np.array([[
-        -0.5 * (9 * s3 - 18 * s2 + 11 * s - 2),
-        0.5 * (27 * s3 - 45 * s2 + 18 * s),
-        -0.5 * (27 * s3 - 36 * s2 + 9 * s),
-        0.5 * (9 * s3 - 9 * s2 + 2 * s)
-    ]])
+    s3 = s**3
+    s2 = s**2
+    return np.array(
+        [
+            [
+                -0.5 * (9 * s3 - 18 * s2 + 11 * s - 2),
+                0.5 * (27 * s3 - 45 * s2 + 18 * s),
+                -0.5 * (27 * s3 - 36 * s2 + 9 * s),
+                0.5 * (9 * s3 - 9 * s2 + 2 * s),
+            ]
+        ]
+    )
 
 
 def gradient_matrix_linear(s, dz):
@@ -153,13 +157,20 @@ def gradient_matrix_cubic(s, dz):
     """
     s = float(s)
     dz = float(dz)
-    s2 = s ** 2
-    return np.array([[
-        -0.5 * (27 * s2 - 36 * s + 11),
-        0.5 * (81 * s2 - 90 * s + 18),
-        -0.5 * (81 * s2 - 72 * s + 9),
-        0.5 * (27 * s2 - 18 * s + 2)
-    ]]) / dz
+    s2 = s**2
+    return (
+        np.array(
+            [
+                [
+                    -0.5 * (27 * s2 - 36 * s + 11),
+                    0.5 * (81 * s2 - 90 * s + 18),
+                    -0.5 * (81 * s2 - 72 * s + 9),
+                    0.5 * (27 * s2 - 18 * s + 2),
+                ]
+            ]
+        )
+        / dz
+    )
 
 
 class Point1D:
@@ -802,8 +813,7 @@ class IntegrationPoint1D(Point1D):
     def hyd_cond_gradient(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(
-                f"value {value} for hyd_cond_gradient cannot be negative.")
+            raise ValueError(f"value {value} for hyd_cond_gradient cannot be negative.")
         self._hyd_cond_gradient = value
 
     @property
@@ -857,8 +867,7 @@ class IntegrationPoint1D(Point1D):
     def pre_consol_stress(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(
-                f"value {value} for pre_consol_stress cannot be negative.")
+            raise ValueError(f"value {value} for pre_consol_stress cannot be negative.")
         self._pre_consol_stress = value
 
     @property
@@ -887,8 +896,7 @@ class IntegrationPoint1D(Point1D):
     def eff_stress(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(
-                f"value {value} for eff_stress cannot be negative.")
+            raise ValueError(f"value {value} for eff_stress cannot be negative.")
         self._eff_stress = value
 
     @property
@@ -1012,8 +1020,7 @@ class IntegrationPoint1D(Point1D):
     def tot_stress(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(
-                f"value {value} for tot_stress cannot be negative.")
+            raise ValueError(f"value {value} for tot_stress cannot be negative.")
         self._tot_stress = value
 
     @property
@@ -1104,16 +1111,18 @@ class Element1D:
             self._gradient_matrix = gradient_matrix_linear
             self._int_pts = tuple(
                 IntegrationPoint1D(local_coord=xi, weight=wt)
-                for (xi, wt) in zip(Element1D._int_pt_coords_linear,
-                                    Element1D._int_pt_weights_linear)
+                for (xi, wt) in zip(
+                    Element1D._int_pt_coords_linear, Element1D._int_pt_weights_linear
+                )
             )
         elif self.order == 3:
             self._shape_matrix = shape_matrix_cubic
             self._gradient_matrix = gradient_matrix_cubic
             self._int_pts = tuple(
                 IntegrationPoint1D(local_coord=xi, weight=wt)
-                for (xi, wt) in zip(Element1D._int_pt_coords_cubic,
-                                    Element1D._int_pt_weights_cubic)
+                for (xi, wt) in zip(
+                    Element1D._int_pt_coords_cubic, Element1D._int_pt_weights_cubic
+                )
             )
         z_e = np.array([[self.nodes[0].z, self.nodes[-1].z]]).T
         for ip in self.int_pts:
@@ -1199,8 +1208,7 @@ class Boundary1D:
             for ip in int_pts:
                 if not isinstance(ip, IntegrationPoint1D):
                     raise TypeError(
-                        "int_pts contains invalid objects, "
-                        + "not IntegrationPoint1D"
+                        "int_pts contains invalid objects, " + "not IntegrationPoint1D"
                     )
             self._int_pts = tuple(int_pts)
 
@@ -1237,12 +1245,9 @@ class Mesh1D:
     ------
     """
 
-    def __init__(self,
-                 z_range=None,
-                 grid_size=0.0,
-                 num_elements=10,
-                 order=3,
-                 generate=False):
+    def __init__(
+        self, z_range=None, grid_size=0.0, num_elements=10, order=3, generate=False
+    ):
         self._boundaries = set()
         self.mesh_valid = False
         self._z_min = -np.inf
@@ -1456,13 +1461,11 @@ class Mesh1D:
         self.mesh_valid = False
         num_elements = int(num_elements)
         if num_elements < 1:
-            raise ValueError(
-                f"num_elements {num_elements} not strictly positive")
+            raise ValueError(f"num_elements {num_elements} not strictly positive")
         order = int(order)
         if order != 1 and order != 3:
             raise ValueError(f"order {order} not 1 or 3")
-        num_elements_out = self._generate_nodes(
-            num_elements * order + 1, order)
+        num_elements_out = self._generate_nodes(num_elements * order + 1, order)
         if num_elements_out:
             num_elements = num_elements_out
         self._generate_elements(num_elements, order)
@@ -1484,8 +1487,7 @@ class Mesh1D:
 
     def _generate_elements(self, num_elements, order):
         self._elements = tuple(
-            Element1D(tuple(
-                self.nodes[order * k + j] for j in range(order + 1)))
+            Element1D(tuple(self.nodes[order * k + j] for j in range(order + 1)))
             for k in range(num_elements)
         )
 
@@ -1497,14 +1499,12 @@ class Mesh1D:
             )
         for nd in new_boundary.nodes:
             if nd not in self.nodes:
-                raise ValueError(
-                    f"new_boundary contains node {nd} not in mesh")
+                raise ValueError(f"new_boundary contains node {nd} not in mesh")
         if new_boundary.int_pts is not None:
             int_pts = tuple(ip for e in self.elements for ip in e.int_pts)
             for ip in new_boundary.int_pts:
                 if ip not in int_pts:
-                    raise ValueError(
-                        f"new_boundary contains int_pt {ip} not in mesh")
+                    raise ValueError(f"new_boundary contains int_pt {ip} not in mesh")
         self._boundaries.add(new_boundary)
 
     def remove_boundary(self, boundary: Boundary1D) -> None:

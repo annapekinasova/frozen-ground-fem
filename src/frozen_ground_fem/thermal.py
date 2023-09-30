@@ -280,8 +280,7 @@ class ThermalBoundary1D(Boundary1D):
     @bnd_function.setter
     def bnd_function(self, value):
         if not (callable(value) or value is None):
-            raise TypeError(
-                f"type(value) {type(value)} is not callable or None")
+            raise TypeError(f"type(value) {type(value)} is not callable or None")
         self._bnd_function = value
 
     def update_nodes(self) -> None:
@@ -345,15 +344,12 @@ class ThermalAnalysis1D:
         self._temp_vector = np.zeros(self.mesh.num_nodes)
         self._heat_flux_vector_0 = np.zeros(self.mesh.num_nodes)
         self._heat_flux_vector = np.zeros(self.mesh.num_nodes)
-        self._heat_flow_matrix_0 = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
-        self._heat_flow_matrix = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
+        self._heat_flow_matrix_0 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
+        self._heat_flow_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
         self._heat_storage_matrix_0 = np.zeros(
             (self.mesh.num_nodes, self.mesh.num_nodes)
         )
-        self._heat_storage_matrix = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
+        self._heat_storage_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
         self._weighted_heat_flux_vector = np.zeros(self.mesh.num_nodes)
         self._weighted_heat_flow_matrix = np.zeros(
             (self.mesh.num_nodes, self.mesh.num_nodes)
@@ -361,10 +357,8 @@ class ThermalAnalysis1D:
         self._weighted_heat_storage_matrix = np.zeros(
             (self.mesh.num_nodes, self.mesh.num_nodes)
         )
-        self._coef_matrix_0 = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
-        self._coef_matrix_1 = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
+        self._coef_matrix_0 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
+        self._coef_matrix_1 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
         self._residual_heat_flux_vector = np.zeros(self.mesh.num_nodes)
         self._delta_temp_vector = np.zeros(self.mesh.num_nodes)
 
@@ -598,11 +592,9 @@ class ThermalAnalysis1D:
     @max_iterations.setter
     def max_iterations(self, value):
         if not isinstance(value, int):
-            raise TypeError(
-                f"type(max_iterations) {type(value)} invalid, must be int")
+            raise TypeError(f"type(max_iterations) {type(value)} invalid, must be int")
         if value <= 0:
-            raise ValueError(
-                f"max_iterations {value} invalid, must be positive")
+            raise ValueError(f"max_iterations {value} invalid, must be positive")
         self._max_iterations = value
 
     def add_boundary(self, new_boundary: ThermalBoundary1D) -> None:
@@ -874,12 +866,9 @@ class ThermalAnalysis1D:
             self._residual_heat_flux_vector[self._free_vec],
         )
         # increment temperature and iteration variables
-        self._temp_vector[self._free_vec] += (
-            self._delta_temp_vector[self._free_vec]
-        )
+        self._temp_vector[self._free_vec] += self._delta_temp_vector[self._free_vec]
         self._eps_a = float(
-            np.linalg.norm(self._delta_temp_vector) /
-            np.linalg.norm(self._temp_vector)
+            np.linalg.norm(self._delta_temp_vector) / np.linalg.norm(self._temp_vector)
         )
         self._iter += 1
         # update global system

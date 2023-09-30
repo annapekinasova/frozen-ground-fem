@@ -22,8 +22,7 @@ def plot_mesh(mesh, fname):
     # plot element boundaries and connectivity
     for k, nd in enumerate(mesh.nodes):
         if not k % order:
-            plt.plot([-0.1 * total_depth, 0.1 * total_depth],
-                     [nd.z, nd.z], "-k")
+            plt.plot([-0.1 * total_depth, 0.1 * total_depth], [nd.z, nd.z], "-k")
     ax = fig.axes[0]
     for k, e in enumerate(mesh.elements):
         plt.plot(
@@ -32,8 +31,7 @@ def plot_mesh(mesh, fname):
             "--g",
         )
     # plot node labels
-    plt.plot(np.zeros_like(z_nodes), z_nodes,
-             "ok", label="nodes", markersize=10)
+    plt.plot(np.zeros_like(z_nodes), z_nodes, "ok", label="nodes", markersize=10)
     for k, nd in enumerate(mesh.nodes):
         ax.annotate(
             f"{k}",

@@ -110,10 +110,8 @@ def main():
             plt.plot(temp_curve[:, 25], z_vec, "--r", linewidth=0.5)
 
     # generate converged temperature distribution plot
-    plt.plot(temp_curve[:, 0], z_vec, "-b", linewidth=2,
-             label="temp dist, jan 1")
-    plt.plot(temp_curve[:, 25], z_vec, "-r", linewidth=2,
-             label="temp dist, jun 1")
+    plt.plot(temp_curve[:, 0], z_vec, "-b", linewidth=2, label="temp dist, jan 1")
+    plt.plot(temp_curve[:, 25], z_vec, "-r", linewidth=2, label="temp dist, jun 1")
     plt.ylim(mesh.z_max, mesh.z_min)
     plt.legend()
     plt.xlabel("Temperature, T [deg C]")
@@ -123,14 +121,10 @@ def main():
     plt.figure(figsize=(3.7, 3.7))
     temp_min_curve = np.amin(temp_curve, axis=1)
     temp_max_curve = np.amax(temp_curve, axis=1)
-    plt.plot(temp_curve[:, 0], z_vec, "--b", linewidth=1,
-             label="temp dist, jan")
-    plt.plot(temp_curve[:, 13], z_vec, ":b", linewidth=1,
-             label="temp dist, apr")
-    plt.plot(temp_curve[:, 26], z_vec, "--r", linewidth=1,
-             label="temp dist, jul")
-    plt.plot(temp_curve[:, 39], z_vec, ":r", linewidth=1,
-             label="temp dist, oct")
+    plt.plot(temp_curve[:, 0], z_vec, "--b", linewidth=1, label="temp dist, jan")
+    plt.plot(temp_curve[:, 13], z_vec, ":b", linewidth=1, label="temp dist, apr")
+    plt.plot(temp_curve[:, 26], z_vec, "--r", linewidth=1, label="temp dist, jul")
+    plt.plot(temp_curve[:, 39], z_vec, ":r", linewidth=1, label="temp dist, oct")
     plt.plot(temp_min_curve, z_vec, "-b", linewidth=2, label="annual minimum")
     plt.plot(temp_max_curve, z_vec, "-r", linewidth=2, label="annual maximum")
     plt.ylim(mesh.z_max, mesh.z_min)
