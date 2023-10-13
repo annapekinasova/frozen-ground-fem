@@ -5,7 +5,7 @@ for finite element model geometry.
 
 import numpy as np
 
-from frozen_ground_fem.materials import (
+from .materials import (
     Material,
     NULL_MATERIAL,
     thrm_cond_ice as lam_i,
@@ -813,7 +813,8 @@ class IntegrationPoint1D(Point1D):
     def hyd_cond_gradient(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(f"value {value} for hyd_cond_gradient cannot be negative.")
+            raise ValueError(
+                f"value {value} for hyd_cond_gradient cannot be negative.")
         self._hyd_cond_gradient = value
 
     @property
@@ -867,7 +868,8 @@ class IntegrationPoint1D(Point1D):
     def pre_consol_stress(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(f"value {value} for pre_consol_stress cannot be negative.")
+            raise ValueError(
+                f"value {value} for pre_consol_stress cannot be negative.")
         self._pre_consol_stress = value
 
     @property
@@ -896,7 +898,8 @@ class IntegrationPoint1D(Point1D):
     def eff_stress(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(f"value {value} for eff_stress cannot be negative.")
+            raise ValueError(
+                f"value {value} for eff_stress cannot be negative.")
         self._eff_stress = value
 
     @property
@@ -1020,7 +1023,8 @@ class IntegrationPoint1D(Point1D):
     def tot_stress(self, value):
         value = float(value)
         if value < 0.0:
-            raise ValueError(f"value {value} for tot_stress cannot be negative.")
+            raise ValueError(
+                f"value {value} for tot_stress cannot be negative.")
         self._tot_stress = value
 
     @property
@@ -1461,11 +1465,13 @@ class Mesh1D:
         self.mesh_valid = False
         num_elements = int(num_elements)
         if num_elements < 1:
-            raise ValueError(f"num_elements {num_elements} not strictly positive")
+            raise ValueError(
+                f"num_elements {num_elements} not strictly positive")
         order = int(order)
         if order != 1 and order != 3:
             raise ValueError(f"order {order} not 1 or 3")
-        num_elements_out = self._generate_nodes(num_elements * order + 1, order)
+        num_elements_out = self._generate_nodes(
+            num_elements * order + 1, order)
         if num_elements_out:
             num_elements = num_elements_out
         self._generate_elements(num_elements, order)
@@ -1487,7 +1493,8 @@ class Mesh1D:
 
     def _generate_elements(self, num_elements, order):
         self._elements = tuple(
-            Element1D(tuple(self.nodes[order * k + j] for j in range(order + 1)))
+            Element1D(tuple(self.nodes[order * k + j]
+                      for j in range(order + 1)))
             for k in range(num_elements)
         )
 
@@ -1499,12 +1506,14 @@ class Mesh1D:
             )
         for nd in new_boundary.nodes:
             if nd not in self.nodes:
-                raise ValueError(f"new_boundary contains node {nd} not in mesh")
+                raise ValueError(f"new_boundary contains node {
+                                 nd} not in mesh")
         if new_boundary.int_pts is not None:
             int_pts = tuple(ip for e in self.elements for ip in e.int_pts)
             for ip in new_boundary.int_pts:
                 if ip not in int_pts:
-                    raise ValueError(f"new_boundary contains int_pt {ip} not in mesh")
+                    raise ValueError(f"new_boundary contains int_pt {
+                                     ip} not in mesh")
         self._boundaries.add(new_boundary)
 
     def remove_boundary(self, boundary: Boundary1D) -> None:
