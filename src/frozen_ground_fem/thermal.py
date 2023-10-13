@@ -9,7 +9,7 @@ from enum import Enum
 
 import numpy as np
 
-from frozen_ground_fem.geometry import (
+from .geometry import (
     Node1D,
     IntegrationPoint1D,
     Element1D,
@@ -598,22 +598,24 @@ class ThermalAnalysis1D:
     @max_iterations.setter
     def max_iterations(self, value):
         if not isinstance(value, int):
-            raise TypeError(f"type(max_iterations) {
-                            type(value)} invalid, must be int")
+            raise TypeError(
+                f"type(max_iterations) {type(value)} invalid, " + "must be int"
+            )
         if value <= 0:
-            raise ValueError(f"max_iterations {
-                             value} invalid, must be positive")
+            raise ValueError(f"max_iterations {value} invalid,"
+                             + " must be positive")
         self._max_iterations = value
 
     def add_boundary(self, new_boundary: ThermalBoundary1D) -> None:
         if not isinstance(new_boundary, ThermalBoundary1D):
             raise TypeError(
-                f"type(new_boundary) {type(new_boundary)
-                                      } invalid, must be ThermalBoundary1D"
+                f"type(new_boundary) {type(new_boundary)} invalid,"
+                + " must be ThermalBoundary1D"
             )
         if new_boundary._parent not in self.mesh.boundaries:
             raise ValueError(
-                "new_boundary does not have parent Boundary1D in the parent mesh"
+                "new_boundary does not have parent Boundary1D "
+                + "in the parent mesh"
             )
         self._boundaries.add(new_boundary)
 
@@ -875,7 +877,9 @@ class ThermalAnalysis1D:
             self._residual_heat_flux_vector[self._free_vec],
         )
         # increment temperature and iteration variables
-        self._temp_vector[self._free_vec] += self._delta_temp_vector[self._free_vec]
+        self._temp_vector[self._free_vec] += (
+            self._delta_temp_vector[self._free_vec]
+        )
         self._eps_a = float(
             np.linalg.norm(self._delta_temp_vector) /
             np.linalg.norm(self._temp_vector)

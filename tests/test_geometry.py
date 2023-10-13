@@ -9,8 +9,8 @@ from frozen_ground_fem.geometry import (
     Element1D,
     Boundary1D,
     Mesh1D,
-    shape_matrix,
-    gradient_matrix,
+    shape_matrix_linear,
+    gradient_matrix_linear,
 )
 from frozen_ground_fem.materials import (
     Material,
@@ -283,7 +283,9 @@ class TestIntegrationPoint1DDefaults(unittest.TestCase):
 class TestIntegrationPoint1DInitializers(unittest.TestCase):
     def setUp(self):
         self.m = Material(
-            thrm_cond_solids=7.8, spec_grav_solids=2.5, spec_heat_cap_solids=7.41e5
+            thrm_cond_solids=7.8,
+            spec_grav_solids=2.5,
+            spec_heat_cap_solids=7.41e5,
         )
         self.p = IntegrationPoint1D(
             coord=1.0,
@@ -360,7 +362,9 @@ class TestIntegrationPoint1DInitializers(unittest.TestCase):
 class TestIntegrationPoint1DSetters(unittest.TestCase):
     def setUp(self):
         self.m = Material(
-            thrm_cond_solids=7.8, spec_grav_solids=2.5, spec_heat_cap_solids=7.41e5
+            thrm_cond_solids=7.8,
+            spec_grav_solids=2.5,
+            spec_heat_cap_solids=7.41e5,
         )
         self.p = IntegrationPoint1D(
             coord=1.0,
@@ -540,7 +544,9 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
 
     def test_update_thrm_cond_material(self):
         self.p.material = Material(
-            thrm_cond_solids=6.7, spec_grav_solids=2.8, spec_heat_cap_solids=6.43e5
+            thrm_cond_solids=6.7,
+            spec_grav_solids=2.8,
+            spec_heat_cap_solids=6.43e5,
         )
         expected = 4.873817313136410
         self.assertAlmostEqual(self.p.thrm_cond, expected)
@@ -561,7 +567,9 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
 
     def test_update_vol_heat_cap_material(self):
         self.p.material = Material(
-            thrm_cond_solids=6.7, spec_grav_solids=2.8, spec_heat_cap_solids=6.43e5
+            thrm_cond_solids=6.7,
+            spec_grav_solids=2.8,
+            spec_heat_cap_solids=6.43e5,
         )
         expected = 1385464369.230770
         self.assertAlmostEqual(self.p.vol_heat_cap, expected, places=4)
@@ -570,34 +578,34 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
 class TestElement1D(unittest.TestCase):
     def setUp(self):
         self.nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(2))
-        self.e = Element1D(self.nodes)
+        self.e = Element1D(self.nodes, order=1)
 
     def test_initialize_without_nodes(self):
         with self.assertRaises(TypeError):
-            Element1D()
+            Element1D(order=1)
 
     def test_initialize_valid_nodes_value(self):
         self.assertEqual(self.e.nodes[1].z, 3.0)
 
     def test_initialize_valid_nodes_type(self):
         nodes = list(self.nodes)
-        e = Element1D(nodes)
+        e = Element1D(nodes, order=1)
         self.assertIsInstance(e.nodes, tuple)
 
     def test_initialize_too_few_nodes(self):
         with self.assertRaises(ValueError):
             nodes = (Node1D(0),)
-            Element1D(nodes)
+            Element1D(nodes, order=1)
 
     def test_initialize_too_many_nodes(self):
         with self.assertRaises(ValueError):
             nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(3))
-            Element1D(nodes)
+            Element1D(nodes, order=1)
 
     def test_initialize_invalid_nodes(self):
         with self.assertRaises(TypeError):
             nodes = tuple(k for k in range(2))
-            Element1D(nodes)
+            Element1D(nodes, order=1)
 
     def test_jacobian_value(self):
         self.assertEqual(self.e.jacobian, 2.0)
@@ -631,82 +639,83 @@ class TestElement1D(unittest.TestCase):
 
 class TestShapeMatrix(unittest.TestCase):
     def setUp(self):
-        self.N = shape_matrix(0.8)
+        self.N = shape_matrix_linear(0.8)
         self.T_1D = np.array([5.0, 10.0])
         self.T_column = np.array([[5.0], [10.0]])
 
-    def test_shape_matrix_valid_float(self):
+    def test_shape_matrix_linear_valid_float(self):
         expected = np.array([[0.2, 0.8]])
         self.assertTrue(np.allclose(self.N, expected))
 
-    def test_shape_matrix_shape(self):
+    def test_shape_matrix_linear_shape(self):
         expected = (1, 2)
         self.assertEqual(self.N.shape, expected)
 
-    def test_shape_matrix_multiply_1D(self):
+    def test_shape_matrix_linear_multiply_1D(self):
         expected = 9.0
         actual = self.N @ self.T_1D
         self.assertAlmostEqual(expected, actual, delta=1.0e-8)
 
-    def test_shape_matrix_multiply_column(self):
+    def test_shape_matrix_linear_multiply_column(self):
         expected = 9.0
         actual = self.N @ self.T_column
         self.assertAlmostEqual(expected, actual, delta=1.0e-8)
 
-    def test_shape_matrix_multiply_transpose(self):
+    def test_shape_matrix_linear_multiply_transpose(self):
         expected = np.array([[0.04, 0.16], [0.16, 0.64]])
         actual = self.N.T @ self.N
         self.assertTrue(np.allclose(expected, actual))
 
-    def test_shape_matrix_valid_str(self):
+    def test_shape_matrix_linear_valid_str(self):
         expected = np.array([[0.2, 0.8]])
-        self.assertTrue(np.allclose(shape_matrix("8.e-1"), expected))
+        self.assertTrue(np.allclose(shape_matrix_linear("8.e-1"), expected))
 
-    def test_shape_matrix_invalid_str(self):
+    def test_shape_matrix_linear_invalid_str(self):
         with self.assertRaises(ValueError):
-            shape_matrix("three")
+            shape_matrix_linear("three")
 
 
 class TestGradientMatrix(unittest.TestCase):
     def setUp(self):
-        self.B = gradient_matrix(0.8, 2.0)
+        self.B = gradient_matrix_linear(0.8, 2.0)
         self.T_1D = np.array([5.0, 10.0])
         self.T_column = np.array([[5.0], [10.0]])
 
-    def test_gradient_matrix_valid_float(self):
+    def test_gradient_matrix_linear_valid_float(self):
         expected = np.array([[-0.5, 0.5]])
         self.assertTrue(np.allclose(self.B, expected))
 
-    def test_gradient_matrix_shape(self):
+    def test_gradient_matrix_linear_shape(self):
         expected = (1, 2)
         self.assertEqual(self.B.shape, expected)
 
-    def test_gradient_matrix_multiply_1D(self):
+    def test_gradient_matrix_linear_multiply_1D(self):
         expected = 2.5
         actual = self.B @ self.T_1D
         self.assertAlmostEqual(expected, actual, delta=1.0e-8)
 
-    def test_gradient_matrix_multiply_column(self):
+    def test_gradient_matrix_linear_multiply_column(self):
         expected = 2.5
         actual = self.B @ self.T_column
         self.assertAlmostEqual(expected, actual, delta=1.0e-8)
 
-    def test_gradient_matrix_multiply_transpose(self):
+    def test_gradient_matrix_linear_multiply_transpose(self):
         expected = np.array([[0.25, -0.25], [-0.25, 0.25]])
         actual = self.B.T @ self.B
         self.assertTrue(np.allclose(expected, actual))
 
-    def test_gradient_matrix_valid_str(self):
+    def test_gradient_matrix_linear_valid_str(self):
         expected = np.array([[-0.5, 0.5]])
-        self.assertTrue(np.allclose(gradient_matrix("8.e-1", "2.e0"), expected))
+        self.assertTrue(np.allclose(
+            gradient_matrix_linear("8.e-1", "2.e0"), expected))
 
-    def test_gradient_matrix_invalid_str_arg0(self):
+    def test_gradient_matrix_linear_invalid_str_arg0(self):
         with self.assertRaises(ValueError):
-            gradient_matrix("three", 2.0)
+            gradient_matrix_linear("three", 2.0)
 
-    def test_gradient_matrix_invalid_str_arg1(self):
+    def test_gradient_matrix_linear_invalid_str_arg1(self):
         with self.assertRaises(ValueError):
-            gradient_matrix(1.0, "three")
+            gradient_matrix_linear(1.0, "three")
 
 
 class TestBoundary1D(unittest.TestCase):
@@ -742,7 +751,7 @@ class TestMesh1D(unittest.TestCase):
         pass
 
     def test_create_mesh_no_args(self):
-        msh = Mesh1D()
+        msh = Mesh1D(order=1)
         self.assertFalse(msh.mesh_valid)
         self.assertEqual(msh.num_nodes, 0)
         self.assertEqual(msh.num_elements, 0)
@@ -754,7 +763,7 @@ class TestMesh1D(unittest.TestCase):
         self.assertEqual(msh.grid_size, 0.0)
 
     def test_create_mesh_z_range_generate(self):
-        msh = Mesh1D(z_range=(100, -8), generate=True)
+        msh = Mesh1D(z_range=(100, -8), num_elements=9, generate=True, order=1)
         self.assertTrue(msh.mesh_valid)
         self.assertEqual(msh.num_nodes, 10)
         self.assertEqual(msh.num_elements, 9)
@@ -765,7 +774,7 @@ class TestMesh1D(unittest.TestCase):
         self.assertAlmostEqual(msh.nodes[1].z - msh.nodes[0].z, 12.0)
 
     def test_z_min_max_setters(self):
-        msh = Mesh1D((100, -8))
+        msh = Mesh1D((100, -8), order=1)
         self.assertAlmostEqual(msh.z_min, -8.0)
         self.assertAlmostEqual(msh.z_max, 100.0)
         with self.assertRaises(ValueError):
@@ -784,7 +793,7 @@ class TestMesh1D(unittest.TestCase):
         self.assertIsInstance(msh.z_max, float)
 
     def test_grid_size_setter(self):
-        msh = Mesh1D((100, -8))
+        msh = Mesh1D((100, -8), order=1)
         self.assertEqual(msh.grid_size, 0.0)
         msh.grid_size = 1
         self.assertAlmostEqual(msh.grid_size, 1.0)
@@ -793,26 +802,26 @@ class TestMesh1D(unittest.TestCase):
             msh.grid_size = "twelve"
         with self.assertRaises(ValueError):
             msh.grid_size = -0.5
-        msh.generate_mesh()
+        msh.generate_mesh(order=1)
         self.assertEqual(msh.num_nodes, 109)
         self.assertEqual(msh.num_elements, 108)
         self.assertEqual(msh.num_boundaries, 0)
         self.assertAlmostEqual(msh.nodes[1].z - msh.nodes[0].z, 1.0)
 
     def test_generate_mesh(self):
-        msh = Mesh1D()
+        msh = Mesh1D(order=1, num_elements=9)
         self.assertFalse(msh.mesh_valid)
         with self.assertRaises(ValueError):
-            msh.generate_mesh()
+            msh.generate_mesh(order=1)
         with self.assertRaises(ValueError):
-            Mesh1D(generate=True)
+            Mesh1D(generate=True, order=1)
         msh.grid_size = np.inf
         msh.z_min = -8
         msh.z_max = 100
         with self.assertRaises(ValueError):
-            msh.generate_mesh()
+            msh.generate_mesh(order=1)
         msh.grid_size = 0
-        msh.generate_mesh()
+        msh.generate_mesh(num_elements=9, order=1)
         self.assertTrue(msh.mesh_valid)
         self.assertEqual(msh.num_nodes, 10)
         self.assertEqual(msh.num_elements, 9)
@@ -823,7 +832,7 @@ class TestMesh1D(unittest.TestCase):
         self.assertEqual(msh.num_nodes, 0)
         self.assertEqual(msh.num_elements, 0)
         self.assertEqual(msh.num_boundaries, 0)
-        msh.generate_mesh()
+        msh.generate_mesh(order=1)
         self.assertTrue(msh.mesh_valid)
         self.assertEqual(msh.num_nodes, 109)
         self.assertEqual(msh.num_elements, 108)
