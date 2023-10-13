@@ -8,59 +8,59 @@ import numpy as np
 grav_acc : float
     The gravitational acceleration in SI units, m * s^{-2}
 """
-grav_acc = 9.81
+grav_acc: float = 9.81
 
 """
 dens_water : float
     The density of water in SI units, kg * m^{-3}
 """
-dens_water = 1e3
+dens_water: float = 1e3
 
 """
 unit_weight_water : float
     The unit weight of water in SI units, N * m^{-3}
 """
-unit_weight_water = grav_acc * dens_water
+unit_weight_water: float = grav_acc * dens_water
 
 """
 spec_grav_ice : float
     The specific gravity of ice
 """
-spec_grav_ice = 0.91
+spec_grav_ice: float = 0.91
 
 """
 vol_heat_cap_water : float
     The volumetric heat capacity of water in SI units, J.m^{-3}.K^{-1}
 """
-vol_heat_cap_water = 4.204e6
+vol_heat_cap_water: float = 4.204e6
 
 """
 vol_heat_cap_ice : float
     The volumetric heat capacity of ice in SI units, J.m^{-3}.K^{-1}
 """
-vol_heat_cap_ice = 1.881e6
+vol_heat_cap_ice: float = 1.881e6
 
 """
 thrm_cond_water : float
     The thermal conductivity of water in SI units, J.m^{-3}.K^{-1}
 """
-thrm_cond_water = 0.563
+thrm_cond_water: float = 0.563
 
 """
 thrm_cond_ice : float
     The thermal conductivity of ice in SI units, J.m^{-3}.K^{-1}
 """
-thrm_cond_ice = 2.22
+thrm_cond_ice: float = 2.22
 
 """
 latent_heat_fusion_water : float
     The specific latent heat fusion water in SI units, J.kg^{-1}
 """
-latent_heat_fusion_water = 333.55e3
+latent_heat_fusion_water: float = 333.55e3
 
 
 # private constants (for convenience / efficiency)
-_LOG_10 = np.log(10)
+_LOG_10: float = np.log(10)
 
 
 class Material:
@@ -69,38 +69,88 @@ class Material:
     Attributes
     ----------
     thrm_cond_solids
+    spec_grav_solids
     dens_solids
     spec_heat_cap_solids
     vol_heat_cap_solids
+    deg_sat_water_alpha
+    deg_sat_water_beta
+    hyd_cond_index
+    hyd_cond_mult
+    hyd_cond_0
+    void_ratio_0_hyd_cond
+    void_ratio_min
+    void_ratio_sep
+    void_ratio_lim
+    void_ratio_tr
+    water_flux_b1
+    water_flux_b2
+    water_flux_b3
+    temp_rate_ref
+    seg_pot_0
+    void_ratio_0_comp
+    comp_index_unfrozen
+    rebound_index_unfrozen
+    eff_stress_0_comp
+    comp_index_frozen_a1
+    comp_index_frozen_a2
+    comp_index_frozen_a3
     """
+
+    _thrm_cond_solids: float
+    _spec_grav_solids: float
+    _dens_solids: float
+    _spec_heat_cap_solids: float
+    _deg_sat_water_alpha: float
+    _deg_sat_water_beta: float
+    _hyd_cond_index: float
+    _hyd_cond_mult: float
+    _hyd_cond_0: float
+    _void_ratio_0_hyd_cond: float
+    _void_ratio_min: float
+    _void_ratio_sep: float
+    _void_ratio_lim: float
+    _void_ratio_tr: float
+    _water_flux_b1: float
+    _water_flux_b2: float
+    _water_flux_b3: float
+    _temp_rate_ref: float
+    _seg_pot_0: float
+    _void_ratio_0_comp: float
+    _comp_index_unfrozen: float
+    _rebound_index_unfrozen: float
+    _eff_stress_0_comp: float
+    _comp_index_frozen_a1: float
+    _comp_index_frozen_a2: float
+    _comp_index_frozen_a3: float
 
     def __init__(
         self,
-        thrm_cond_solids=0.0,
-        spec_grav_solids=0.0,
-        spec_heat_cap_solids=0.0,
-        deg_sat_water_alpha=0.0,
-        deg_sat_water_beta=0.0,
-        hyd_cond_index=0.0,
-        hyd_cond_mult=0.0,
-        hyd_cond_0=0.0,
-        void_ratio_0_hyd_cond=0.0,
-        void_ratio_min=0.0,
-        void_ratio_sep=0.0,
-        void_ratio_lim=0.0,
-        void_ratio_tr=0.0,
-        water_flux_b1=0.0,
-        water_flux_b2=0.0,
-        water_flux_b3=0.0,
-        temp_rate_ref=0.0,
-        seg_pot_0=0.0,
-        void_ratio_0_comp=0.0,
-        comp_index_unfrozen=0.0,
-        rebound_index_unfrozen=0.0,
-        eff_stress_0_comp=0.0,
-        comp_index_frozen_a1=0.0,
-        comp_index_frozen_a2=0.0,
-        comp_index_frozen_a3=0.0,
+        thrm_cond_solids: float = 0.0,
+        spec_grav_solids: float = 0.0,
+        spec_heat_cap_solids: float = 0.0,
+        deg_sat_water_alpha: float = 0.0,
+        deg_sat_water_beta: float = 0.0,
+        hyd_cond_index: float = 0.0,
+        hyd_cond_mult: float = 0.0,
+        hyd_cond_0: float = 0.0,
+        void_ratio_0_hyd_cond: float = 0.0,
+        void_ratio_min: float = 0.0,
+        void_ratio_sep: float = 0.0,
+        void_ratio_lim: float = 0.0,
+        void_ratio_tr: float = 0.0,
+        water_flux_b1: float = 0.0,
+        water_flux_b2: float = 0.0,
+        water_flux_b3: float = 0.0,
+        temp_rate_ref: float = 0.0,
+        seg_pot_0: float = 0.0,
+        void_ratio_0_comp: float = 0.0,
+        comp_index_unfrozen: float = 0.0,
+        rebound_index_unfrozen: float = 0.0,
+        eff_stress_0_comp: float = 0.0,
+        comp_index_frozen_a1: float = 0.0,
+        comp_index_frozen_a2: float = 0.0,
+        comp_index_frozen_a3: float = 0.0,
     ):
         self._thrm_cond_solids = 0.0
         self._spec_grav_solids = 0.0
@@ -155,12 +205,12 @@ class Material:
         self.comp_index_frozen_a3 = comp_index_frozen_a3
 
     @property
-    def thrm_cond_solids(self):
+    def thrm_cond_solids(self) -> float:
         """Thermal conductivity of solids.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the thermal conductivity of solids.
 
         Returns
@@ -177,14 +227,14 @@ class Material:
         return self._thrm_cond_solids
 
     @thrm_cond_solids.setter
-    def thrm_cond_solids(self, value):
+    def thrm_cond_solids(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"thrm_cond_solids {value} is not positive")
         self._thrm_cond_solids = value
 
     @property
-    def dens_solids(self):
+    def dens_solids(self) -> float:
         """Density of solids.
 
         Returns
@@ -195,12 +245,12 @@ class Material:
         return self._dens_solids
 
     @property
-    def spec_grav_solids(self):
+    def spec_grav_solids(self) -> float:
         """Specific gravity of solids.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the specific gravity of solids.
 
         Returns
@@ -217,7 +267,7 @@ class Material:
         return self._spec_grav_solids
 
     @spec_grav_solids.setter
-    def spec_grav_solids(self, value):
+    def spec_grav_solids(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"spec_grav_solids {value} is not positive")
@@ -226,12 +276,12 @@ class Material:
         self._update_vol_heat_cap_solids()
 
     @property
-    def spec_heat_cap_solids(self):
+    def spec_heat_cap_solids(self) -> float:
         """Specific heat capacity of solids.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the specific heat capacity of solids.
 
         Returns
@@ -248,7 +298,7 @@ class Material:
         return self._spec_heat_cap_solids
 
     @spec_heat_cap_solids.setter
-    def spec_heat_cap_solids(self, value):
+    def spec_heat_cap_solids(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"spec_heat_cap_solids {value} is not positive")
@@ -256,8 +306,8 @@ class Material:
         self._update_vol_heat_cap_solids()
 
     @property
-    def vol_heat_cap_solids(self):
-        """Specific heat capacity of solids.
+    def vol_heat_cap_solids(self) -> float:
+        """Volumetric heat capacity of solids.
 
         Returns
         -------
@@ -271,17 +321,19 @@ class Material:
         """
         return self._vol_heat_cap_solids
 
-    def _update_vol_heat_cap_solids(self):
-        self._vol_heat_cap_solids = self.dens_solids * self.spec_heat_cap_solids
+    def _update_vol_heat_cap_solids(self) -> None:
+        self._vol_heat_cap_solids = (
+            self.dens_solids * self.spec_heat_cap_solids
+        )
 
     @property
-    def deg_sat_water_alpha(self):
-        """Alpha material constant [kPa]
+    def deg_sat_water_alpha(self) -> float:
+        """Alpha material constant[kPa]
         for calculation of degree of saturation of water.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the alpha constant.
 
         Returns
@@ -298,20 +350,20 @@ class Material:
         return self._deg_sat_water_alpha
 
     @deg_sat_water_alpha.setter
-    def deg_sat_water_alpha(self, value):
+    def deg_sat_water_alpha(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"deg_sat_water_alpha {value} is not positive")
         self._deg_sat_water_alpha = value
 
     @property
-    def deg_sat_water_beta(self):
-        """Beta material constant []
+    def deg_sat_water_beta(self) -> float:
+        """Beta material constant[]
         for calculation of degree of saturation of water.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the beta constant.
 
         Returns
@@ -328,19 +380,19 @@ class Material:
         return self._deg_sat_water_beta
 
     @deg_sat_water_beta.setter
-    def deg_sat_water_beta(self, value):
+    def deg_sat_water_beta(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"deg_sat_water_beta {value} is not positive")
         self._deg_sat_water_beta = value
 
     @property
-    def hyd_cond_index(self):
+    def hyd_cond_index(self) -> float:
         """Hydraulic conductivity index constant of unfrozen soil.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the hydraulic conductivity index.
 
         Returns
@@ -357,21 +409,21 @@ class Material:
         return self._hyd_cond_index
 
     @hyd_cond_index.setter
-    def hyd_cond_index(self, value):
+    def hyd_cond_index(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"hyd_cond_index {value} is not positive")
         self._hyd_cond_index = value
 
     @property
-    def hyd_cond_mult(self):
-        """Hydraulic conductivity multiplier constant []
+    def hyd_cond_mult(self) -> float:
+        """Hydraulic conductivity multiplier constant[]
         for adjusting the hydraulic conductivity of
         thawed soil encoutered in freeze-thaw cycle.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the hydraulic conductivity multiplier.
 
         Returns
@@ -388,20 +440,20 @@ class Material:
         return self._hyd_cond_mult
 
     @hyd_cond_mult.setter
-    def hyd_cond_mult(self, value):
+    def hyd_cond_mult(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"hyd_cond_mult {value} is not positive")
         self._hyd_cond_mult = value
 
     @property
-    def hyd_cond_0(self):
-        """Reference hydraulic conductivity [m/s]
+    def hyd_cond_0(self) -> float:
+        """Reference hydraulic conductivity[m/s]
         with unfrozen reference void ratio.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the reference hydraulic conductivity.
 
         Returns
@@ -418,19 +470,19 @@ class Material:
         return self._hyd_cond_0
 
     @hyd_cond_0.setter
-    def hyd_cond_0(self, value):
+    def hyd_cond_0(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"hyd_cond_0 {value} is not positive")
         self._hyd_cond_0 = value
 
     @property
-    def void_ratio_0_hyd_cond(self):
+    def void_ratio_0_hyd_cond(self) -> float:
         """Reference unfrozen void ratio.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float or int or str
             Value to assign to the reference unfrozen void ratio.
 
         Returns
@@ -447,19 +499,19 @@ class Material:
         return self._void_ratio_0_hyd_cond
 
     @void_ratio_0_hyd_cond.setter
-    def void_ratio_0_hyd_cond(self, value):
+    def void_ratio_0_hyd_cond(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"void_ratio_0_hyd_cond {value} is not positive")
         self._void_ratio_0_hyd_cond = value
 
     @property
-    def void_ratio_min(self):
+    def void_ratio_min(self) -> float:
         """Minimum void ratio for consolidation curves.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the minimum void ratio.
 
         Returns
@@ -476,19 +528,19 @@ class Material:
         return self._void_ratio_min
 
     @void_ratio_min.setter
-    def void_ratio_min(self, value):
+    def void_ratio_min(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"void_ratio_min {value} is not positive")
         self._void_ratio_min = value
 
     @property
-    def void_ratio_sep(self):
+    def void_ratio_sep(self) -> float:
         """Separation void ratio for consolidation curves.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the separation void ratio.
 
         Returns
@@ -505,19 +557,19 @@ class Material:
         return self._void_ratio_sep
 
     @void_ratio_sep.setter
-    def void_ratio_sep(self, value):
+    def void_ratio_sep(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"void_ratio_sep {value} is not positive")
         self._void_ratio_sep = value
 
     @property
-    def void_ratio_lim(self):
+    def void_ratio_lim(self) -> float:
         """Limit void ratio for consolidation curves.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the limit void ratio.
 
         Returns
@@ -534,19 +586,19 @@ class Material:
         return self._void_ratio_lim
 
     @void_ratio_lim.setter
-    def void_ratio_lim(self, value):
+    def void_ratio_lim(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"void_ratio_lim {value} is not positive")
         self._void_ratio_lim = value
 
     @property
-    def void_ratio_tr(self):
+    def void_ratio_tr(self) -> float:
         """Thawed rebound void ratio for hydraulic conductivity curve.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the thawed rebound void ratio.
 
         Returns
@@ -563,20 +615,20 @@ class Material:
         return self._void_ratio_tr
 
     @void_ratio_tr.setter
-    def void_ratio_tr(self, value):
+    def void_ratio_tr(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"void_ratio_tr {value} is not positive")
         self._void_ratio_tr = value
 
     @property
-    def water_flux_b1(self):
+    def water_flux_b1(self) -> float:
         """The b1 parameter for the water flux function for frozen soil.
         This value is unitless.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the b1 parameter.
 
         Returns
@@ -593,20 +645,20 @@ class Material:
         return self._water_flux_b1
 
     @water_flux_b1.setter
-    def water_flux_b1(self, value):
+    def water_flux_b1(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"water_flux_b1 {value} is not positive")
         self._water_flux_b1 = value
 
     @property
-    def water_flux_b2(self):
+    def water_flux_b2(self) -> float:
         """The b2 parameter for the water flux function for frozen soil.
-        This value has units of (deg C)^{-1}.
+        This value has units of(deg C) ^ {-1}.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the b2 parameter.
 
         Returns
@@ -623,20 +675,20 @@ class Material:
         return self._water_flux_b2
 
     @water_flux_b2.setter
-    def water_flux_b2(self, value):
+    def water_flux_b2(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"water_flux_b2 {value} is not positive")
         self._water_flux_b2 = value
 
     @property
-    def water_flux_b3(self):
+    def water_flux_b3(self) -> float:
         """The b3 parameter for the water flux function for frozen soil.
-        This value has units of (MPa)^{-1}.
+        This value has units of(MPa) ^ {-1}.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the b3 parameter.
 
         Returns
@@ -653,19 +705,19 @@ class Material:
         return self._water_flux_b3
 
     @water_flux_b3.setter
-    def water_flux_b3(self, value):
+    def water_flux_b3(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"water_flux_b3 {value} is not positive")
         self._water_flux_b3 = value
 
     @property
-    def temp_rate_ref(self):
+    def temp_rate_ref(self) -> float:
         """The reference temperature rate for the water flux function.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the reference temperature rate.
 
         Returns
@@ -682,19 +734,19 @@ class Material:
         return self._temp_rate_ref
 
     @temp_rate_ref.setter
-    def temp_rate_ref(self, value):
+    def temp_rate_ref(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"temp_rate_ref {value} is not positive")
         self._temp_rate_ref = value
 
     @property
-    def seg_pot_0(self):
+    def seg_pot_0(self) -> float:
         """The reference segregation potential for the water flux function.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the reference segregation potential.
 
         Returns
@@ -711,21 +763,21 @@ class Material:
         return self._seg_pot_0
 
     @seg_pot_0.setter
-    def seg_pot_0(self, value):
+    def seg_pot_0(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"seg_pot_0 {value} is not positive")
         self._seg_pot_0 = value
 
     @property
-    def void_ratio_0_comp(self):
+    def void_ratio_0_comp(self) -> float:
         """Reference unfrozen void ratio
         corresponding to compression
         (normal consolidation line).
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the reference unfrozen compression void ratio.
 
         Returns
@@ -742,19 +794,19 @@ class Material:
         return self._void_ratio_0_comp
 
     @void_ratio_0_comp.setter
-    def void_ratio_0_comp(self, value):
+    def void_ratio_0_comp(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"void_ratio_0_comp {value} is not positive")
         self._void_ratio_0_comp = value
 
     @property
-    def eff_stress_0_comp(self):
+    def eff_stress_0_comp(self) -> float:
         """Effective stress for compression curve.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the compression effective stress.
 
         Returns
@@ -771,19 +823,19 @@ class Material:
         return self._eff_stress_0_comp
 
     @eff_stress_0_comp.setter
-    def eff_stress_0_comp(self, value):
+    def eff_stress_0_comp(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"eff_stress_0_comp {value} is not positive")
         self._eff_stress_0_comp = value
 
     @property
-    def comp_index_unfrozen(self):
+    def comp_index_unfrozen(self) -> float:
         """Compression index in unfrozen soil.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the compression index.
 
         Returns
@@ -800,19 +852,19 @@ class Material:
         return self._comp_index_unfrozen
 
     @comp_index_unfrozen.setter
-    def comp_index_unfrozen(self, value):
+    def comp_index_unfrozen(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
-            raise ValueError(f"comp_index_unforzen {value} is not positive")
+            raise ValueError(f"comp_index_unfrozen {value} is not positive")
         self._comp_index_unfrozen = value
 
     @property
-    def rebound_index_unfrozen(self):
+    def rebound_index_unfrozen(self) -> float:
         """Rebound index in unfrozen soil.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the rebound index.
 
         Returns
@@ -829,20 +881,20 @@ class Material:
         return self._rebound_index_unfrozen
 
     @rebound_index_unfrozen.setter
-    def rebound_index_unfrozen(self, value):
+    def rebound_index_unfrozen(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"rebound_index_unfrozen {value} is not positive")
         self._rebound_index_unfrozen = value
 
     @property
-    def comp_index_frozen_a1(self):
-        """Material parameter a1 (constant)
+    def comp_index_frozen_a1(self) -> float:
+        """Material parameter a1(constant)
            for calculation of frozen compression or rebound index.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the material parameter a1
 
         Returns
@@ -859,20 +911,20 @@ class Material:
         return self._comp_index_frozen_a1
 
     @comp_index_frozen_a1.setter
-    def comp_index_frozen_a1(self, value):
+    def comp_index_frozen_a1(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"comp_index_frozen_a1 {value} is not positive")
-        return self._comp_index_frozen_a1
+        self._comp_index_frozen_a1 = value
 
     @property
-    def comp_index_frozen_a2(self):
-        """Material parameter a2 (constant)
+    def comp_index_frozen_a2(self) -> float:
+        """Material parameter a2(constant)
            for calculation of frozen compression or rebound index.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the material parameter a2
 
         Returns
@@ -889,20 +941,20 @@ class Material:
         return self._comp_index_frozen_a2
 
     @comp_index_frozen_a2.setter
-    def comp_index_frozen_a2(self, value):
+    def comp_index_frozen_a2(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"comp_index_frozen_a2 {value} is not positive")
-        return self._comp_index_frozen_a2
+        self._comp_index_frozen_a2 = value
 
     @property
-    def comp_index_frozen_a3(self):
-        """Material parameter a3 (constant)
+    def comp_index_frozen_a3(self) -> float:
+        """Material parameter a3(constant)
            for calculation of frozen compression or rebound index.
 
         Parameters
         ----------
-        value : float or int or str
+        value: float
             Value to assign to the material parameter a3
 
         Returns
@@ -919,18 +971,18 @@ class Material:
         return self._comp_index_frozen_a3
 
     @comp_index_frozen_a3.setter
-    def comp_index_frozen_a3(self, value):
+    def comp_index_frozen_a3(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"comp_index_frozen_a3 {value} is not positive")
-        return self._comp_index_frozen_a3
+        self._comp_index_frozen_a3 = value
 
-    def deg_sat_water(self, temp):
+    def deg_sat_water(self, temp: float) -> tuple[float, float]:
         """The degree of saturation of water function.
 
         Parameters
         ----------
-        temp : float
+        temp: float
             Current temperature.
 
         Returns
@@ -960,16 +1012,19 @@ class Material:
         deg_sat_deriv *= (deg_sat_water**beta_ratio_2) * (deg_sat_base**beta)
         return deg_sat_water, deg_sat_deriv
 
-    def hyd_cond(self, e, temp, thawed):
+    def hyd_cond(self,
+                 e: float,
+                 temp: float,
+                 thawed: bool) -> tuple[float, float]:
         """The hydraulic conductivity for unfrozen and thawed soil.
 
         Parameters
         ----------
-        e : float
+        e: float
             Current void ratio.
-        temp : float
+        temp: float
             Current temperature.
-        thawed : logical
+        thawed: bool
             Flag for whether soil is thawed or unfrozen.
 
         Returns
@@ -999,23 +1054,31 @@ class Material:
         dk_de = k * _LOG_10 / C_ku
         return k, dk_de
 
-    def water_flux(self, e, e0, temp, temp_rate, temp_grad, sigma_1):
+    def water_flux(
+        self,
+        e: float,
+        e0: float,
+        temp: float,
+        temp_rate: float,
+        temp_grad: float,
+        sigma_1: float,
+    ) -> float:
         """The water flux function for frozen soil.
 
         Parameters
         ----------
-        e : float
+        e: float
             Current void ratio.
-        e0 : float
+        e0: float
             Initial void ratio.
-        temp : float
+        temp: float
             Current temperature.
-        temp_rate : float
+        temp_rate: float
             Current temperature time derivative.
-        temp_grad : float
-            Current temperature gradient (in Lagrangian coordinates).
-        sigma_1 : float
-            Current local stress (overburden and void ratio correction).
+        temp_grad: float
+            Current temperature gradient ( in Lagrangian coordinates).
+        sigma_1: float
+            Current local stress(overburden and void ratio correction).
 
         Returns
         -------
@@ -1048,15 +1111,15 @@ class Material:
         )
         return water_flux
 
-    def eff_stress(self, e, ppc):
+    def eff_stress(self, e: float, ppc: float) -> tuple[float, float]:
         """Calculate effective stress and
         gradient with respect to void ratio.
 
         Parameters
         ----------
-        e : float
+        e: float
             Current void ratio.
-        ppc : float
+        ppc: float
             Preconsolidation stress.
 
         Returns
@@ -1085,13 +1148,13 @@ class Material:
         dsig_de = -sig_p * _LOG_10 / Cru
         return sig_p, dsig_de
 
-    def comp_index_frozen(self, temp):
+    def comp_index_frozen(self, temp: float) -> float:
         """Compression and rebound index
         for frozen soil.
 
         Parameters
         ----------
-        temp : float
+        temp: float
             The current temperature.
 
         Returns
@@ -1101,21 +1164,24 @@ class Material:
         """
         return (
             self.comp_index_frozen_a1
-            - self.comp_index_frozen_a2 * np.abs(temp) ** self.comp_index_frozen_a3
+            - self.comp_index_frozen_a2 *
+            np.abs(temp) ** self.comp_index_frozen_a3
         )
 
-    def tot_stress(self, temp, e, e_f0, sig_f0):
+    def tot_stress(
+        self, temp: float, e: float, e_f0: float, sig_f0: float
+    ) -> tuple[float, float]:
         """Calculate the total stress in frozen soil.
 
         Parameters
         ----------
-        temp : float
+        temp: float
             Current temperature.
-        e : float
+        e: float
             Current void ratio.
-        e_f0 : float
+        e_f0: float
             Reference void ratio for frozen soil.
-        sig_f0 : float
+        sig_f0: float
             Reference total stress for frozen soil.
 
         Returns
