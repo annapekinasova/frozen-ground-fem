@@ -8,7 +8,7 @@ from frozen_ground_fem.coupled import (
 
 
 def main():
-    e = Element1D([Node1D(k, 2*k) for k in range(4)])
+    e = Element1D([Node1D(k, 2 * k) for k in range(4)])
     print(f"Element1D, id={id(e)}")
     for nd in e.nodes:
         print(f"index={nd.index}, z={nd.z}, id={id(nd)}")
