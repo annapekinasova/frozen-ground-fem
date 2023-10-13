@@ -27,4 +27,5 @@ class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
         If parent initializer is not a
         :c:`frozen_ground_fem.geometry.Element1D`.
     """
+
     pass

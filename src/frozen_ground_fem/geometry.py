@@ -501,7 +501,8 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            Value to assign to the initial void ratio of the :c:`IntegrationPoint1D`.
+            Value to assign to the initial void ratio
+            of the :c:`IntegrationPoint1D`.
 
         Returns
         -------
@@ -553,7 +554,8 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            Value to assign to the temperature rate of the :c:`IntegrationPoint1D`.
+            Value to assign to the temperature rate
+            of the :c:`IntegrationPoint1D`.
 
         Returns
         -------
@@ -577,7 +579,8 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            Value to assign to the temperature gradient of the :c:`IntegrationPoint1D`.
+            Value to assign to the temperature gradient
+            of the :c:`IntegrationPoint1D`.
 
         Returns
         -------
@@ -656,7 +659,7 @@ class IntegrationPoint1D(Point1D):
         value = float(value)
         if value < 0.0 or value > 1.0:
             raise ValueError(
-                f"deg_sat_water value {value} " + f"not between 0.0 and 1.0"
+                f"deg_sat_water value {value} " + "not between 0.0 and 1.0"
             )
         self._deg_sat_water = value
         self._deg_sat_ice = 1.0 - value
@@ -962,7 +965,8 @@ class IntegrationPoint1D(Point1D):
         value = float(value)
         if value < 0.0:
             raise ValueError(
-                f"value {value} for void_ratio_0_ref_frozen cannot be negative."
+                f"value {value} for void_ratio_0_ref_frozen" +
+                " cannot be negative."
             )
         self._void_ratio_0_ref_frozen = value
 
@@ -993,7 +997,8 @@ class IntegrationPoint1D(Point1D):
         value = float(value)
         if value < 0.0:
             raise ValueError(
-                f"value {value} for tot_stress_0_ref_frozen cannot be negative."
+                f"value {value} for tot_stress_0_ref_frozen" +
+                " cannot be negative."
             )
         self._tot_stress_0_ref_frozen = value
 
@@ -1116,7 +1121,8 @@ class Element1D:
             self._int_pts = tuple(
                 IntegrationPoint1D(local_coord=xi, weight=wt)
                 for (xi, wt) in zip(
-                    Element1D._int_pt_coords_linear, Element1D._int_pt_weights_linear
+                    Element1D._int_pt_coords_linear,
+                    Element1D._int_pt_weights_linear,
                 )
             )
         elif self.order == 3:
@@ -1125,7 +1131,8 @@ class Element1D:
             self._int_pts = tuple(
                 IntegrationPoint1D(local_coord=xi, weight=wt)
                 for (xi, wt) in zip(
-                    Element1D._int_pt_coords_cubic, Element1D._int_pt_weights_cubic
+                    Element1D._int_pt_coords_cubic,
+                    Element1D._int_pt_weights_cubic,
                 )
             )
         z_e = np.array([[self.nodes[0].z, self.nodes[-1].z]]).T
@@ -1212,7 +1219,8 @@ class Boundary1D:
             for ip in int_pts:
                 if not isinstance(ip, IntegrationPoint1D):
                     raise TypeError(
-                        "int_pts contains invalid objects, " + "not IntegrationPoint1D"
+                        "int_pts contains invalid objects, "
+                        + "not IntegrationPoint1D"
                     )
             self._int_pts = tuple(int_pts)
 
@@ -1250,7 +1258,12 @@ class Mesh1D:
     """
 
     def __init__(
-        self, z_range=None, grid_size=0.0, num_elements=10, order=3, generate=False
+        self,
+        z_range=None,
+        grid_size=0.0,
+        num_elements=10,
+        order=3,
+        generate=False,
     ):
         self._boundaries = set()
         self.mesh_valid = False
@@ -1494,7 +1507,8 @@ class Mesh1D:
     def _generate_elements(self, num_elements, order):
         self._elements = tuple(
             Element1D(tuple(self.nodes[order * k + j]
-                      for j in range(order + 1)))
+                      for j in range(order + 1)),
+                      order)
             for k in range(num_elements)
         )
 
@@ -1506,14 +1520,15 @@ class Mesh1D:
             )
         for nd in new_boundary.nodes:
             if nd not in self.nodes:
-                raise ValueError(f"new_boundary contains node {
-                                 nd} not in mesh")
+                raise ValueError(f"new_boundary contains node {nd}"
+                                 + " not in mesh")
         if new_boundary.int_pts is not None:
             int_pts = tuple(ip for e in self.elements for ip in e.int_pts)
             for ip in new_boundary.int_pts:
                 if ip not in int_pts:
-                    raise ValueError(f"new_boundary contains int_pt {
-                                     ip} not in mesh")
+                    raise ValueError(
+                        f"new_boundary contains int_pt {ip}" + " not in mesh"
+                    )
         self._boundaries.add(new_boundary)
 
     def remove_boundary(self, boundary: Boundary1D) -> None:
