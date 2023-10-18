@@ -2,8 +2,12 @@
 for finite element model geometry.
 
 """
+from typing import (
+    ClassVar,
+)
 
 import numpy as np
+import numpy.typing as npt
 
 from .materials import (
     Material,
@@ -15,7 +19,7 @@ from .materials import (
 )
 
 
-def shape_matrix_linear(s):
+def shape_matrix_linear(s: float) -> npt.NDArray[float]:
     """Calculates the shape (interpolation) function matrix
     for linear interpolation.
 
@@ -45,7 +49,7 @@ def shape_matrix_linear(s):
     return np.array([[(1.0 - s), s]])
 
 
-def shape_matrix_cubic(s):
+def shape_matrix_cubic(s: float) -> npt.NDArray[float]:
     """Calculates the shape (interpolation) function matrix
     for cubic interpolation.
 
@@ -89,7 +93,7 @@ def shape_matrix_cubic(s):
     )
 
 
-def gradient_matrix_linear(s, dz):
+def gradient_matrix_linear(s: float, dz: float) -> npt.NDArray[float]:
     """Calculates the gradient of the shape (interpolation) function matrix
     for linear interpolation.
 
@@ -181,13 +185,13 @@ class Point1D:
     coords
     z
     """
+    _coords: npt.NDArray[float] = np.zeros((1,))
 
-    def __init__(self, value=0.0)->float:
-        self._coords = np.zeros((1,))
+    def __init__(self, value: float = 0.0):
         self.z = value
 
     @property
-    def coords(self) -> float:
+    def coords(self) -> npt.NDArray[float]:
         """Coordinates of the point as an array.
 
         Returns
@@ -197,12 +201,12 @@ class Point1D:
         return self._coords
 
     @property
-    def z(self):
+    def z(self) -> float:
         """Coordinate of the point.
 
         Parameters
         ----------
-        float or int or str
+        float
             The value to assign to the coordinate.
 
         Returns
@@ -233,22 +237,25 @@ class Node1D(Point1D):
     temp
     void_ratio
     """
+    _temp: npt.NDArray[float] = np.zeros((1,))
+    _index: int | None = None
 
-    def __init__(self, 
-    index: int,
-    coord=0.0: float,
-    temp=0.0: float,
-    void_ratio=0.0: float)-> None:
+    def __init__(
+            self,
+            index: int,
+            coord: float = 0.0,  # this is the correct syntax
+            temp=0.0: float,
+            void_ratio=0.0: float) -> None:
         super().__init__(coord)
-        self._temp = np.zeros((1,))
+        # self._temp = np.zeros((1,))
         self.temp = temp
-        self._index = None
+        # self._index = None
         self.index = index
         self._void_ratio = 0.0
         self.void_ratio = void_ratio
 
     @property
-    def temp(self)-> float:
+    def temp(self) -> float:
         """Temperature of the node.
 
         Parameters
@@ -268,11 +275,11 @@ class Node1D(Point1D):
         return self._temp[0]
 
     @temp.setter
-    def temp(self, value)float) -> None:
+    def temp(self, value: float) -> None:
         self._temp[0] = value
 
     @property
-    def index(self)-> int:
+    def index(self) -> int:
         """Index of the node.
 
         Parameters
@@ -295,16 +302,16 @@ class Node1D(Point1D):
         return self._index
 
     @index.setter
-    def index(self, value:int) -> None:
+    def index(self, value: int) -> None:
         if isinstance(value, float):
             raise TypeError(f"{value} is a float, must be int")
-        _value = int(value)
-        if _value < 0:
-            raise ValueError(f"{_value} is negative")
-        self._index = _value
+        value = int(value)
+        if value < 0:
+            raise ValueError(f"{value} is negative")
+        self._index = value
 
     @property
-    def void_ratio(self)-> float:
+    def void_ratio(self) -> float:
         """Void ratio of the node.
 
         Parameters
@@ -324,7 +331,7 @@ class Node1D(Point1D):
         return self._void_ratio
 
     @void_ratio.setter
-    def void_ratio(self, value:float) -> None:
+    def void_ratio(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"void_ratio {value} is not positive")
@@ -347,32 +354,33 @@ class IntegrationPoint1D(Point1D):
     thrm_cond
     vol_heat_cap
     """
+    _local_coord: float = 0.0
 
     def __init__(
         self,
-        coord: float =0.0,
-        local_coord: float =0.0,
-        weight: float =0.0,
-        void_ratio=0.0,
-        void_ratio_0: float =0.0,
-        temp: float =0.0,
-        temp_rate: float =0.0,
-        temp_gradient: float =0.0,
-        deg_sat_water: float =1.0,
-        material=NULL_MATERIAL,
-        hyd_cond: float =0.0,
-        hyd_cond_gradient: float =0.0,
-        water_flux_rate: float =0.0,
-        pre_consol_stress: float =0.0,
-        eff_stress: float =0.0,
-        eff_stress_gradient: float =0.0,
-        void_ratio_0_ref_frozen: float =0.0,
-        tot_stress_0_ref_frozen: float =0.0,
-        tot_stress: float =0.0,
-        tot_stress_gradient: float =0.0,
+        coord: float = 0.0,
+        local_coord: float = 0.0,
+        weight: float = 0.0,
+        void_ratio: float = 0.0,
+        void_ratio_0: float = 0.0,
+        temp: float = 0.0,
+        temp_rate: float = 0.0,
+        temp_gradient: float = 0.0,
+        deg_sat_water: float = 1.0,
+        material: Material = NULL_MATERIAL,
+        hyd_cond: float = 0.0,
+        hyd_cond_gradient: float = 0.0,
+        water_flux_rate: float = 0.0,
+        pre_consol_stress: float = 0.0,
+        eff_stress: float = 0.0,
+        eff_stress_gradient: float = 0.0,
+        void_ratio_0_ref_frozen: float = 0.0,
+        tot_stress_0_ref_frozen: float = 0.0,
+        tot_stress: float = 0.0,
+        tot_stress_gradient: float = 0.0,
     ):
         super().__init__(coord)
-        self._local_coord = 0.0
+        # self._local_coord = 0.0
         self._weight = 0.0
         self._void_ratio = 0.0
         self._porosity = 0.0
@@ -435,12 +443,12 @@ class IntegrationPoint1D(Point1D):
         return self._local_coord
 
     @local_coord.setter
-    def local_coord(self, value float) -> None:
+    def local_coord(self, value: float) -> None:
         value = float(value)
         self._local_coord = value
 
     @property
-    def weight(self)-> float:
+    def weight(self) -> float:
         """Quadrature weight of the integration point.
 
         Parameters
@@ -460,12 +468,12 @@ class IntegrationPoint1D(Point1D):
         return self._weight
 
     @weight.setter
-    def weight(self, value float) -> None:
+    def weight(self, value: float) -> None:
         value = float(value)
         self._weight = value
 
     @property
-    def void_ratio(self)-> float:
+    def void_ratio(self) -> float:
         """Void ratio of the integration point.
 
         Parameters
@@ -490,7 +498,7 @@ class IntegrationPoint1D(Point1D):
         return self._void_ratio
 
     @void_ratio.setter
-    def void_ratio(self, value:float) -> None:
+    def void_ratio(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(f"void_ratio {value} is not positive")
@@ -528,7 +536,7 @@ class IntegrationPoint1D(Point1D):
         self._void_ratio_0 = value
 
     @property
-    def temp(self)-> float:
+    def temp(self) -> float:
         """Temperature at the integration point.
 
         Parameters
@@ -577,7 +585,7 @@ class IntegrationPoint1D(Point1D):
         self._temp_rate = float(value)
 
     @property
-    def temp_gradient(self)-> float:
+    def temp_gradient(self) -> float:
         """Temperature gradient at the integration point.
 
         Parameters
@@ -602,7 +610,7 @@ class IntegrationPoint1D(Point1D):
         self._temp_gradient = float(value)
 
     @property
-    def porosity(self)-> float:
+    def porosity(self) -> float:
         """Porosity of the integration point.
 
         Returns
@@ -617,7 +625,7 @@ class IntegrationPoint1D(Point1D):
         return self._porosity
 
     @property
-    def vol_ice_cont(self)-> float:
+    def vol_ice_cont(self) -> float:
         """Volumetric ice content of the integration point.
 
         Returns
@@ -632,7 +640,7 @@ class IntegrationPoint1D(Point1D):
         return self._vol_ice_cont
 
     @property
-    def deg_sat_water(self)-> float:
+    def deg_sat_water(self) -> float:
         """Degree of saturation of water of the integration point.
 
         Parameters
@@ -663,14 +671,15 @@ class IntegrationPoint1D(Point1D):
         value = float(value)
         if value < 0.0 or value > 1.0:
             raise ValueError(
-                f"deg_sat_water value {value} " + "not between 0.0 and 1.0"
+                f"deg_sat_water value {value} "
+                + "not between 0.0 and 1.0"
             )
         self._deg_sat_water = value
         self._deg_sat_ice = 1.0 - value
         self._vol_ice_cont = self.porosity * self._deg_sat_ice
 
     @property
-    def deg_sat_ice(self)-> float:
+    def deg_sat_ice(self) -> float:
         """Degree of saturation of ice of the integration point.
 
         Returns
@@ -687,7 +696,7 @@ class IntegrationPoint1D(Point1D):
         return self._deg_sat_ice
 
     @property
-    def material(self)-> None:
+    def material(self) -> Material:
         """Contains the properties of the solids.
 
         Parameters
@@ -707,13 +716,13 @@ class IntegrationPoint1D(Point1D):
         return self._material
 
     @material.setter
-    def material(self, value: float) -> None:
+    def material(self, value: Material) -> None:
         if not isinstance(value, Material):
             raise TypeError(f"{value} is not a Material object")
         self._material = value
 
     @property
-    def thrm_cond(self)-> float:
+    def thrm_cond(self) -> float:
         """Contains the bulk thermal conductivity of the integration point.
 
         Returns
@@ -739,7 +748,7 @@ class IntegrationPoint1D(Point1D):
         return (lam_s ** (1 - por)) * (lam_i**th_i) * (lam_w**th_w)
 
     @property
-    def vol_heat_cap(self)-> float:
+    def vol_heat_cap(self) -> float:
         """Contains the volumetric heat capacity of the integration point.
 
         Returns
@@ -764,7 +773,7 @@ class IntegrationPoint1D(Point1D):
         return ((1 - por) * C_s) + (th_i * C_i) + (th_w * C_w)
 
     @property
-    def hyd_cond(self)-> float:
+    def hyd_cond(self) -> float:
         """Hydraulic conductivity of the integration point.
 
         Parameters
@@ -793,7 +802,7 @@ class IntegrationPoint1D(Point1D):
         self._hyd_cond = value
 
     @property
-    def hyd_cond_gradient(self)-> float:
+    def hyd_cond_gradient(self) -> float:
         """Hydraulic conductivity gradient
         (with respect to void ratio)
         of the integration point.
@@ -821,11 +830,12 @@ class IntegrationPoint1D(Point1D):
         value = float(value)
         if value < 0.0:
             raise ValueError(
-                f"value {value} for hyd_cond_gradient cannot be negative.")
+                f"value {value} for hyd_cond_gradient cannot be negative."
+            )
         self._hyd_cond_gradient = value
 
     @property
-    def water_flux_rate(self)-> float:
+    def water_flux_rate(self) -> float:
         """Water flux rate of the integration point.
 
         Parameters
@@ -850,7 +860,7 @@ class IntegrationPoint1D(Point1D):
         self._water_flux_rate = float(value)
 
     @property
-    def pre_consol_stress(self)-> float:
+    def pre_consol_stress(self) -> float:
         """Preconsolidation stress of the integration point.
 
         Parameters
@@ -876,11 +886,12 @@ class IntegrationPoint1D(Point1D):
         value = float(value)
         if value < 0.0:
             raise ValueError(
-                f"value {value} for pre_consol_stress cannot be negative.")
+                f"value {value} for pre_consol_stress cannot be negative."
+            )
         self._pre_consol_stress = value
 
     @property
-    def eff_stress(self)-> float:
+    def eff_stress(self) -> float:
         """Effective stress of the integration point.
 
         Parameters
@@ -906,11 +917,12 @@ class IntegrationPoint1D(Point1D):
         value = float(value)
         if value < 0.0:
             raise ValueError(
-                f"value {value} for eff_stress cannot be negative.")
+                f"value {value} for eff_stress cannot be negative."
+            )
         self._eff_stress = value
 
     @property
-    def eff_stress_gradient(self)-> float:
+    def eff_stress_gradient(self) -> float:
         """Effective stress gradient
         (with respect to void ratio)
         of the integration point.
@@ -943,7 +955,7 @@ class IntegrationPoint1D(Point1D):
         self._eff_stress_gradient = value
 
     @property
-    def void_ratio_0_ref_frozen(self)-> float:
+    def void_ratio_0_ref_frozen(self) -> float:
         """Reference void ratio for frozen void ratio - total stress curve.
 
         Parameters
@@ -969,13 +981,13 @@ class IntegrationPoint1D(Point1D):
         value = float(value)
         if value < 0.0:
             raise ValueError(
-                f"value {value} for void_ratio_0_ref_frozen" +
-                " cannot be negative."
+                f"value {value} for void_ratio_0_ref_frozen"
+                + " cannot be negative."
             )
         self._void_ratio_0_ref_frozen = value
 
     @property
-    def tot_stress_0_ref_frozen(self)-> float:
+    def tot_stress_0_ref_frozen(self) -> float:
         """Reference total stress for frozen void ratio - total stress curve.
 
         Parameters
@@ -1001,13 +1013,13 @@ class IntegrationPoint1D(Point1D):
         value = float(value)
         if value < 0.0:
             raise ValueError(
-                f"value {value} for tot_stress_0_ref_frozen" +
-                " cannot be negative."
+                f"value {value} for tot_stress_0_ref_frozen"
+                + " cannot be negative."
             )
         self._tot_stress_0_ref_frozen = value
 
     @property
-    def tot_stress(self)-> float:
+    def tot_stress(self) -> float:
         """Total stress of the integration point.
 
         Parameters
@@ -1033,11 +1045,12 @@ class IntegrationPoint1D(Point1D):
         value = float(value)
         if value < 0.0:
             raise ValueError(
-                f"value {value} for tot_stress cannot be negative.")
+                f"value {value} for tot_stress cannot be negative."
+            )
         self._tot_stress = value
 
     @property
-    def tot_stress_gradient(self)-> float:
+    def tot_stress_gradient(self) -> float:
         """Total stress gradient
         (with respect to void ratio)
         of the integration point.
@@ -1088,8 +1101,14 @@ class Element1D:
         If len(nodes) != (order + 1).
     """
 
-    _int_pt_coords_linear = (0.211324865405187, 0.788675134594813)
-    _int_pt_weights_linear = (0.5, 0.5)
+    _int_pt_coords_linear: ClassVar[tuple[float]] = (
+        0.211324865405187,
+        0.788675134594813,
+    )
+    _int_pt_weights_linear: ClassVar[tuple[float]] = (
+        0.5,
+        0.5,
+    )
 
     _int_pt_coords_cubic = (
         0.04691007703066802,
@@ -1106,7 +1125,14 @@ class Element1D:
         0.11846344252809454,
     )
 
-    def __init__(self, nodes: int, order=3: int):
+    _nodes: tuple[Node1D]
+    _order: int = 3
+
+    def __init__(
+        self,
+        nodes: tuple[Node1D] | list[Node1D],
+        order: int = 3,
+    ):
         # assign order parameter
         self.order = order
         # check for valid node list and assign to self
@@ -1145,12 +1171,12 @@ class Element1D:
             ip.z = float(N @ z_e)
 
     @property
-    def order(self)-> float:
+    def order(self) -> int:
         """The order of interpolation used in the element.
 
         Returns
         ------
-        float
+        int
         """
         return self._order
 
@@ -1162,17 +1188,17 @@ class Element1D:
         self._order = value
 
     @property
-    def nodes(self)-> tuple[int, int]:
+    def nodes(self) -> tuple[Node1D]:
         """The tuple of :c:`Node1D` contained in the element.
 
         Returns
         ------
-        tuple of :c:`Node1D`
+        tuple[:c:`Node1D`]
         """
         return self._nodes
 
     @property
-    def jacobian(self)-> float:
+    def jacobian(self) -> float:
         """The length scale of the element (in Lagrangian coordinates).
 
         Returns
@@ -1182,12 +1208,12 @@ class Element1D:
         return self.nodes[-1].z - self.nodes[0].z
 
     @property
-    def int_pts(self)-> tuple[int, int]:
+    def int_pts(self) -> tuple[IntegrationPoint1D]:
         """The tuple of :c:`IntegrationPoint1D` contained in the element.
 
         Returns
         ------
-        tuple of :c:`IntegrationPoint1D`
+        tuple[:c:`IntegrationPoint1D`]
         """
         return self._int_pts
 
@@ -1206,8 +1232,15 @@ class Boundary1D:
     ValueError
         If len(nodes) != 1.
     """
+    _nodes: tuple[Node1D]
+    _int_pts: tuple[IntegrationPoint1D] | None = None
 
-    def __init__(self, nodes: int, int_pts: int) ->None:
+    def __init__(
+        self,
+        nodes: tuple[Node1D] | list[Node1D],
+        int_pts: tuple[IntegrationPoint1D] | list[IntegrationPoint1D] | None
+            = None,
+    ):
         # check for valid node list and assign to self
         if (nnod := len(nodes)) != 1:
             raise ValueError(f"len(nodes) is {nnod} not equal to 1")
@@ -1215,9 +1248,7 @@ class Boundary1D:
             if not isinstance(nd, Node1D):
                 raise TypeError("nodes contains invalid objects, not Node1D")
         self._nodes = tuple(nodes)
-        if int_pts is None:
-            self._int_pts = None
-        else:
+        if int_pts is not None:
             if len(int_pts) != 1:
                 raise ValueError(f"len(int_pts) {len(int_pts)} not equal to 1")
             for ip in int_pts:
@@ -1229,7 +1260,7 @@ class Boundary1D:
             self._int_pts = tuple(int_pts)
 
     @property
-    def nodes(self)-> tuple[int, int]:
+    def nodes(self) -> tuple[Node1D]:
         """The tuple of :c:`Node1D` contained in the element.
 
         Returns
@@ -1239,12 +1270,12 @@ class Boundary1D:
         return self._nodes
 
     @property
-    def int_pts(self)-> tuple[int, int]:
+    def int_pts(self) -> tuple[IntegrationPoint1D] | None:
         """The tuple of :c:`IntegrationPoint1D` contained in the element.
 
         Returns
         ------
-        tuple of :c:`IntegrationPoint1D`
+        tuple[:c:`IntegrationPoint1D`] | None
         """
         return self._int_pts
 
@@ -1260,16 +1291,17 @@ class Mesh1D:
     Raises
     ------
     """
+    _boundaries: set[Boundary1D] = set()
 
     def __init__(
         self,
-        z_range:float =None,
-        grid_size: float=0.0,
-        num_elements: int=10,
-        order: int=3,
-        generate: bool=False,
+        z_range: npt.ArrayLike[float] = None,
+        grid_size: float = 0.0,
+        num_elements: int = 10,
+        order: int = 3,
+        generate: bool = False,
     ):
-        self._boundaries = set()
+        # self._boundaries = set()
         self.mesh_valid = False
         self._z_min = -np.inf
         self._z_max = np.inf
@@ -1281,7 +1313,7 @@ class Mesh1D:
             self.generate_mesh(num_elements, order)
 
     @property
-    def z_min(self)-> float:
+    def z_min(self) -> float:
         """The minimum z value of the mesh.
 
         Parameters
@@ -1310,7 +1342,7 @@ class Mesh1D:
         self.mesh_valid = False
 
     @property
-    def z_max(self)-> float:
+    def z_max(self) -> float:
         """The maximum z value of the mesh.
 
         Parameters
@@ -1339,7 +1371,7 @@ class Mesh1D:
         self.mesh_valid = False
 
     @property
-    def grid_size(self)-> float:
+    def grid_size(self) -> float:
         """The specified grid size of the mesh.
 
         Parameters
@@ -1378,25 +1410,25 @@ class Mesh1D:
         self.mesh_valid = False
 
     @property
-    def num_nodes(self)-> None:
+    def num_nodes(self) -> int:
         return len(self.nodes)
 
     @property
-    def nodes(self)-> tuple:
+    def nodes(self) -> tuple[Node1D]:
         """The tuple of :c:`Node1D` contained in the mesh.
 
         Returns
         ------
-        tuple of :c:`Node1D`
+        tuple[:c:`Node1D`]
         """
         return self._nodes
 
     @property
-    def num_elements(self)-> None:
+    def num_elements(self) -> int:
         return len(self.elements)
 
     @property
-    def elements(self)-> tuple[float, float]:
+    def elements(self) -> tuple[Element1D]:
         """The tuple of :c:`Element1D` contained in the mesh.
 
         Returns
@@ -1406,11 +1438,11 @@ class Mesh1D:
         return self._elements
 
     @property
-    def num_boundaries(self)-> None:
+    def num_boundaries(self) -> int:
         return len(self.boundaries)
 
     @property
-    def boundaries(self)-> tuple[float, float]:
+    def boundaries(self) -> tuple[Boundary1D]:
         """The tuple of :c:`Boundary1D` contained in the mesh.
 
         Returns
@@ -1420,7 +1452,7 @@ class Mesh1D:
         return self._boundaries
 
     @property
-    def mesh_valid(self)-> bool:
+    def mesh_valid(self) -> bool:
         """Flag for valid mesh.
 
         Parameters
@@ -1455,7 +1487,11 @@ class Mesh1D:
             self.clear_boundaries()
             self._mesh_valid = False
 
-    def generate_mesh(self, num_elements=10, order=3):
+    def generate_mesh(
+        self,
+        num_elements: int = 10,
+        order: int = 3
+    ):
         """Generates a mesh using assigned mesh properties.
 
         Parameters
@@ -1473,7 +1509,7 @@ class Mesh1D:
 
         Notes
         -----
-        If the grid_size paramater is set,
+        If the grid_size parameter is set,
         the argument num_elements will be ignored
         and the number of elements will be calculated
         as the nearest integer number of elements:
@@ -1488,13 +1524,15 @@ class Mesh1D:
         if order != 1 and order != 3:
             raise ValueError(f"order {order} not 1 or 3")
         num_elements_out = self._generate_nodes(
-            num_elements * order + 1, order)
+            num_elements * order + 1,
+            order
+        )
         if num_elements_out:
             num_elements = num_elements_out
         self._generate_elements(num_elements, order)
         self.mesh_valid = True
 
-    def _generate_nodes(self, num_nodes, order):
+    def _generate_nodes(self, num_nodes: int, order: int) -> int:
         if np.isinf(self.z_min) or np.isinf(self.z_max):
             raise ValueError("cannot generate mesh, non-finite limits")
         if np.isinf(self.grid_size):
@@ -1508,10 +1546,10 @@ class Mesh1D:
         self._nodes = tuple(Node1D(k, zk) for k, zk in enumerate(z_nodes))
         return num_elements
 
-    def _generate_elements(self, num_elements, order):
+    def _generate_elements(self, num_elements: int, order: int):
         self._elements = tuple(
             Element1D(tuple(self.nodes[order * k + j]
-                      for j in range(order + 1)),
+                            for j in range(order + 1)),
                       order)
             for k in range(num_elements)
         )
@@ -1531,12 +1569,12 @@ class Mesh1D:
             for ip in new_boundary.int_pts:
                 if ip not in int_pts:
                     raise ValueError(
-                        f"new_boundary contains int_pt {ip}" + " not in mesh"
+                        f"new_boundary contains int_pt {ip} not in mesh"
                     )
         self._boundaries.add(new_boundary)
 
     def remove_boundary(self, boundary: Boundary1D) -> None:
         self._boundaries.remove(boundary)
 
-    def clear_boundaries(self)-> None:
+    def clear_boundaries(self) -> None:
         self._boundaries.clear()
