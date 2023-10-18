@@ -1106,7 +1106,7 @@ class Element1D:
         0.11846344252809454,
     )
 
-    def __init__(self, nodes, order=3):
+    def __init__(self, nodes: int, order=3: int):
         # assign order parameter
         self.order = order
         # check for valid node list and assign to self
@@ -1162,7 +1162,7 @@ class Element1D:
         self._order = value
 
     @property
-    def nodes(self)-> tuple:
+    def nodes(self)-> tuple[int, int]:
         """The tuple of :c:`Node1D` contained in the element.
 
         Returns
@@ -1182,7 +1182,7 @@ class Element1D:
         return self.nodes[-1].z - self.nodes[0].z
 
     @property
-    def int_pts(self)-> tuple:
+    def int_pts(self)-> tuple[int, int]:
         """The tuple of :c:`IntegrationPoint1D` contained in the element.
 
         Returns
@@ -1207,7 +1207,7 @@ class Boundary1D:
         If len(nodes) != 1.
     """
 
-    def __init__(self, nodes, int_pts=None):
+    def __init__(self, nodes: int, int_pts: int) ->None:
         # check for valid node list and assign to self
         if (nnod := len(nodes)) != 1:
             raise ValueError(f"len(nodes) is {nnod} not equal to 1")
@@ -1229,7 +1229,7 @@ class Boundary1D:
             self._int_pts = tuple(int_pts)
 
     @property
-    def nodes(self)-> tuple:
+    def nodes(self)-> tuple[int, int]:
         """The tuple of :c:`Node1D` contained in the element.
 
         Returns
@@ -1239,7 +1239,7 @@ class Boundary1D:
         return self._nodes
 
     @property
-    def int_pts(self)-> tuple:
+    def int_pts(self)-> tuple[int, int]:
         """The tuple of :c:`IntegrationPoint1D` contained in the element.
 
         Returns
@@ -1263,11 +1263,11 @@ class Mesh1D:
 
     def __init__(
         self,
-        z_range=None,
-        grid_size=0.0,
-        num_elements=10,
-        order=3,
-        generate=False,
+        z_range:float =None,
+        grid_size: float=0.0,
+        num_elements: int=10,
+        order: int=3,
+        generate: bool=False,
     ):
         self._boundaries = set()
         self.mesh_valid = False
@@ -1396,7 +1396,7 @@ class Mesh1D:
         return len(self.elements)
 
     @property
-    def elements(self)-> tuple:
+    def elements(self)-> tuple[float, float]:
         """The tuple of :c:`Element1D` contained in the mesh.
 
         Returns
@@ -1410,7 +1410,7 @@ class Mesh1D:
         return len(self.boundaries)
 
     @property
-    def boundaries(self)-> tuple:
+    def boundaries(self)-> tuple[float, float]:
         """The tuple of :c:`Boundary1D` contained in the mesh.
 
         Returns
