@@ -184,6 +184,20 @@ class Point1D:
     ----------
     coords
     z
+
+    Parameters
+    ----------
+    #### THIS SECTION DOCUMENTS ARGUMENTS TO THE __init__() METHOD
+    value : float
+        The coordinate of the point
+
+    Raises
+    ------
+    ### ANY ERRORS THAT __init__() COULD RAISE
+    ### FOR EXAMPLE, THIS IS HERE BECAUSE __init__()
+    ### CALLS THE z() SETTER, AND THIS ERROR COULD BE RAISED
+    ValueError
+        If the value to assign cannot be converted to float.
     """
     _coords: npt.NDArray[float] = np.zeros((1,))
 
