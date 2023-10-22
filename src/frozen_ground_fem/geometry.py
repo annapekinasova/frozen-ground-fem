@@ -240,14 +240,13 @@ class Node1D(Point1D):
     _temp: npt.NDArray[float] = np.zeros((1,))
     _index: int | None = None
     _void_ratio: float = 0.0
-    _coord: float = 0.0
 
     def __init__(
             self,
             index: int,
             coord: float = 0.0,
-            temp=: float = 0.0,
-            void_ratio: float = 0.0) -> None:
+            temp: float = 0.0,
+            void_ratio: float = 0.0):
         super().__init__(coord)
         self.temp = temp
         self.index = index
@@ -1090,6 +1089,10 @@ class Element1D:
     int_pts
     jacobian
     order
+    Parameters
+    ----------
+    ##################################33
+
 
     Raises
     ------
@@ -1286,16 +1289,26 @@ class Mesh1D:
     ----------
     nodes
 
+    Parameters
+    -----------
+    i###########################33
+    z_range: npt.ArrayLike[float] = None,
+        grid_size: float = 0.0,
+        num_elements: int = 10,
+        order: int = 3,
+        generate: bool = False,
+
     Raises
     ------
     """
     _boundaries: set[Boundary1D] = set()
     _z_min: float = -np.inf
     _z_max: float = np.inf
+    _mesh_valid: bool = False
+    _grid_size: float = 0.0
 
     def __init__(
         self,
-        self.mesh_valid=False
         z_range: npt.ArrayLike[float] = None,
         grid_size: float = 0.0,
         num_elements: int = 10,
@@ -1408,11 +1421,11 @@ class Mesh1D:
 
     @property
     def num_nodes(self) -> int:
-        """The lenght of :c:`Node1D` contained in the mesh.
+        """The number of :c:`Node1D` contained in the mesh.
 
         Returns
         ------
-        int[:c:`Node1D`]
+        int
         """
         return len(self.nodes)
 
@@ -1428,11 +1441,11 @@ class Mesh1D:
 
     @property
     def num_elements(self) -> int:
-        """The lenght of :c:`Element1D` contained in the mesh.
+        """The number of :c:`Element1D` contained in the mesh.
 
         Returns
         ------
-        int[:c:`Element1D`]
+        int
         """
         return len(self.elements)
 
@@ -1448,11 +1461,11 @@ class Mesh1D:
 
     @property
     def num_boundaries(self) -> int:
-        """The lenght of :c:`Boundary1D` contained in the mesh.
+        """The number of :c:`Boundary1D` contained in the mesh.
 
         Returns
         ------
-        int[:c:`Boundary1D`]
+        int
         """
         return len(self.boundaries)
 
