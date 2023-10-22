@@ -97,32 +97,32 @@ class Material:
     comp_index_frozen_a3
     """
 
-    _thrm_cond_solids: float
-    _spec_grav_solids: float
-    _dens_solids: float
-    _spec_heat_cap_solids: float
-    _deg_sat_water_alpha: float
-    _deg_sat_water_beta: float
-    _hyd_cond_index: float
-    _hyd_cond_mult: float
-    _hyd_cond_0: float
-    _void_ratio_0_hyd_cond: float
-    _void_ratio_min: float
-    _void_ratio_sep: float
-    _void_ratio_lim: float
-    _void_ratio_tr: float
-    _water_flux_b1: float
-    _water_flux_b2: float
-    _water_flux_b3: float
-    _temp_rate_ref: float
-    _seg_pot_0: float
-    _void_ratio_0_comp: float
-    _comp_index_unfrozen: float
-    _rebound_index_unfrozen: float
-    _eff_stress_0_comp: float
-    _comp_index_frozen_a1: float
-    _comp_index_frozen_a2: float
-    _comp_index_frozen_a3: float
+    _thrm_cond_solids: float = 0.0
+    _spec_grav_solids: float = 0.0
+    _dens_solids: float = 0.0
+    _spec_heat_cap_solids: float = 0.0
+    _deg_sat_water_alpha: float = 0.0
+    _deg_sat_water_beta: float = 0.0
+    _hyd_cond_index: float = 0.0
+    _hyd_cond_mult: float = 0.0
+    _hyd_cond_0: float = 0.0
+    _void_ratio_0_hyd_cond: float = 0.0
+    _void_ratio_min: float = 0.0
+    _void_ratio_sep: float = 0.0
+    _void_ratio_lim: float = 0.0
+    _void_ratio_tr: float = 0.0
+    _water_flux_b1: float = 0.0
+    _water_flux_b2: float = 0.0
+    _water_flux_b3: float = 0.0
+    _temp_rate_ref: float = 0.0
+    _seg_pot_0: float = 0.0
+    _void_ratio_0_comp: float = 0.0
+    _comp_index_unfrozen: float = 0.0
+    _rebound_index_unfrozen: float = 0.0
+    _eff_stress_0_comp: float = 0.0
+    _comp_index_frozen_a1: float = 0.0
+    _comp_index_frozen_a2: float = 0.0
+    _comp_index_frozen_a3: float = 0.0
 
     def __init__(
         self,
@@ -152,32 +152,7 @@ class Material:
         comp_index_frozen_a2: float = 0.0,
         comp_index_frozen_a3: float = 0.0,
     ):
-        self._thrm_cond_solids = 0.0
-        self._spec_grav_solids = 0.0
-        self._dens_solids = 0.0
-        self._spec_heat_cap_solids = 0.0
-        self._deg_sat_water_alpha = 0.0
-        self._deg_sat_water_beta = 0.0
-        self._hyd_cond_index = 0.0
-        self._hyd_cond_mult = 0.0
-        self._hyd_cond_0 = 0.0
-        self._void_ratio_0_hyd_cond = 0.0
-        self._void_ratio_min = 0.0
-        self._void_ratio_sep = 0.0
-        self._void_ratio_lim = 0.0
-        self._void_ratio_tr = 0.0
-        self._water_flux_b1 = 0.0
-        self._water_flux_b2 = 0.0
-        self._water_flux_b3 = 0.0
-        self._temp_rate_ref = 0.0
-        self._seg_pot_0 = 0.0
-        self._void_ratio_0_comp = 0.0
-        self._comp_index_unfrozen = 0.0
-        self._rebound_index_unfrozen = 0.0
-        self._eff_stress_0_comp = 0.0
-        self._comp_index_frozen_a1 = 0.0
-        self._comp_index_frozen_a2 = 0.0
-        self._comp_index_frozen_a3 = 0.0
+
         self.thrm_cond_solids = thrm_cond_solids
         self.spec_grav_solids = spec_grav_solids
         self.spec_heat_cap_solids = spec_heat_cap_solids

@@ -239,19 +239,18 @@ class Node1D(Point1D):
     """
     _temp: npt.NDArray[float] = np.zeros((1,))
     _index: int | None = None
+    _void_ratio: float = 0.0
+    _coord: float = 0.0
 
     def __init__(
             self,
             index: int,
-            coord: float = 0.0,  # this is the correct syntax
-            temp=0.0: float,
-            void_ratio=0.0: float) -> None:
+            coord: float = 0.0,
+            temp=: float = 0.0,
+            void_ratio: float = 0.0) -> None:
         super().__init__(coord)
-        # self._temp = np.zeros((1,))
         self.temp = temp
-        # self._index = None
         self.index = index
-        self._void_ratio = 0.0
         self.void_ratio = void_ratio
 
     @property
@@ -355,6 +354,26 @@ class IntegrationPoint1D(Point1D):
     vol_heat_cap
     """
     _local_coord: float = 0.0
+    _weight: float = 0.0
+    _void_ratio: float = 0.0
+    _porosity: float = 0.0
+    _void_ratio_0: float = 0.0
+    _temp: float = 0.0
+    _temp_rate: float = 0.0
+    _temp_gradient: float = 0.0
+    _deg_sat_water: float = 0.0
+    _deg_sat_ice: float = 0.0
+    _vol_ice_cont: float = 0.0
+    _hyd_cond: float = 0.0
+    _hyd_cond_gradient: float = 0.0
+    _water_flux_rate: float = 0.0
+    _pre_consol_stress: float = 0.0
+    _eff_stress: float = 0.0
+    _eff_stress_gradient: float = 0.0
+    _void_ratio_0_ref_frozen: float = 0.0
+    _tot_stress_0_ref_frozen: float = 0.0
+    _tot_stress: float = 0.0
+    _tot_stress_gradient: float = 0.0
 
     def __init__(
         self,
@@ -380,27 +399,6 @@ class IntegrationPoint1D(Point1D):
         tot_stress_gradient: float = 0.0,
     ):
         super().__init__(coord)
-        # self._local_coord = 0.0
-        self._weight = 0.0
-        self._void_ratio = 0.0
-        self._porosity = 0.0
-        self._void_ratio_0 = 0.0
-        self._temp = 0.0
-        self._temp_rate = 0.0
-        self._temp_gradient = 0.0
-        self._deg_sat_water = 1.0
-        self._deg_sat_ice = 0.0
-        self._vol_ice_cont = 0.0
-        self._hyd_cond = 0.0
-        self._hyd_cond_gradient = 0.0
-        self._water_flux_rate = 0.0
-        self._pre_consol_stress = 0.0
-        self._eff_stress = 0.0
-        self._eff_stress_gradient = 0.0
-        self._void_ratio_0_ref_frozen = 0.0
-        self._tot_stress_0_ref_frozen = 0.0
-        self._tot_stress = 0.0
-        self._tot_stress_gradient = 0.0
         self.local_coord = local_coord
         self.weight = weight
         self.void_ratio = void_ratio
@@ -1292,19 +1290,18 @@ class Mesh1D:
     ------
     """
     _boundaries: set[Boundary1D] = set()
+    _z_min: float = -np.inf
+    _z_max: float = np.inf
 
     def __init__(
         self,
+        self.mesh_valid=False
         z_range: npt.ArrayLike[float] = None,
         grid_size: float = 0.0,
         num_elements: int = 10,
         order: int = 3,
         generate: bool = False,
     ):
-        # self._boundaries = set()
-        self.mesh_valid = False
-        self._z_min = -np.inf
-        self._z_max = np.inf
         if z_range is not None:
             self.z_min = np.min(z_range)
             self.z_max = np.max(z_range)
@@ -1411,6 +1408,12 @@ class Mesh1D:
 
     @property
     def num_nodes(self) -> int:
+        """The lenght of :c:`Node1D` contained in the mesh.
+
+        Returns
+        ------
+        int[:c:`Node1D`]
+        """
         return len(self.nodes)
 
     @property
@@ -1425,6 +1428,12 @@ class Mesh1D:
 
     @property
     def num_elements(self) -> int:
+        """The lenght of :c:`Element1D` contained in the mesh.
+
+        Returns
+        ------
+        int[:c:`Element1D`]
+        """
         return len(self.elements)
 
     @property
@@ -1433,12 +1442,18 @@ class Mesh1D:
 
         Returns
         ------
-        tuple of :c:`Element1D`
+        tuple[:c:`Element1D`]
         """
         return self._elements
 
     @property
     def num_boundaries(self) -> int:
+        """The lenght of :c:`Boundary1D` contained in the mesh.
+
+        Returns
+        ------
+        int[:c:`Boundary1D`]
+        """
         return len(self.boundaries)
 
     @property
