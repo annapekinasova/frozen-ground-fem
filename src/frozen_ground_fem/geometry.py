@@ -4,6 +4,7 @@ for finite element model geometry.
 """
 from typing import (
     ClassVar,
+    Sequence,
 )
 
 import numpy as np
@@ -19,7 +20,7 @@ from .materials import (
 )
 
 
-def shape_matrix_linear(s: float) -> npt.NDArray[float]:
+def shape_matrix_linear(s: float) -> npt.NDArray[np.floating]:
     """Calculates the shape (interpolation) function matrix
     for linear interpolation.
 
@@ -49,7 +50,7 @@ def shape_matrix_linear(s: float) -> npt.NDArray[float]:
     return np.array([[(1.0 - s), s]])
 
 
-def shape_matrix_cubic(s: float) -> npt.NDArray[float]:
+def shape_matrix_cubic(s: float) -> npt.NDArray[np.floating]:
     """Calculates the shape (interpolation) function matrix
     for cubic interpolation.
 
@@ -93,7 +94,9 @@ def shape_matrix_cubic(s: float) -> npt.NDArray[float]:
     )
 
 
-def gradient_matrix_linear(s: float, dz: float) -> npt.NDArray[float]:
+def gradient_matrix_linear(
+        s: float,
+        dz: float) -> npt.NDArray[np.floating]:
     """Calculates the gradient of the shape (interpolation) function matrix
     for linear interpolation.
 
@@ -199,13 +202,13 @@ class Point1D:
     ValueError
         If the value to assign cannot be converted to float.
     """
-    _coords: npt.NDArray[float] = np.zeros((1,))
+    _coords: npt.NDArray[np.floating] = np.zeros((1,))
 
     def __init__(self, value: float = 0.0):
         self.z = value
 
     @property
-    def coords(self) -> npt.NDArray[float]:
+    def coords(self) -> npt.NDArray[np.floating]:
         """Coordinates of the point as an array.
 
         Returns
@@ -251,7 +254,7 @@ class Node1D(Point1D):
     temp
     void_ratio
     """
-    _temp: npt.NDArray[float] = np.zeros((1,))
+    _temp: npt.NDArray[np.floating] = np.zeros((1,))
     _index: int | None = None
     _void_ratio: float = 0.0
 
@@ -291,7 +294,7 @@ class Node1D(Point1D):
         self._temp[0] = value
 
     @property
-    def index(self) -> int:
+    def index(self) -> int | None:
         """Index of the node.
 
         Parameters
@@ -1116,11 +1119,11 @@ class Element1D:
         If len(nodes) != (order + 1).
     """
 
-    _int_pt_coords_linear: ClassVar[tuple[float]] = (
+    _int_pt_coords_linear: ClassVar[tuple[float, float]] = (
         0.211324865405187,
         0.788675134594813,
     )
-    _int_pt_weights_linear: ClassVar[tuple[float]] = (
+    _int_pt_weights_linear: ClassVar[tuple[float, float]] = (
         0.5,
         0.5,
     )
@@ -1140,12 +1143,12 @@ class Element1D:
         0.11846344252809454,
     )
 
-    _nodes: tuple[Node1D]
+    _nodes: tuple[Node1D, ...]
     _order: int = 3
 
     def __init__(
         self,
-        nodes: tuple[Node1D] | list[Node1D],
+        nodes: Sequence[Node1D],
         order: int = 3,
     ):
         # assign order parameter
@@ -1203,7 +1206,7 @@ class Element1D:
         self._order = value
 
     @property
-    def nodes(self) -> tuple[Node1D]:
+    def nodes(self) -> tuple[Node1D, ...]:
         """The tuple of :c:`Node1D` contained in the element.
 
         Returns
@@ -1223,7 +1226,7 @@ class Element1D:
         return self.nodes[-1].z - self.nodes[0].z
 
     @property
-    def int_pts(self) -> tuple[IntegrationPoint1D]:
+    def int_pts(self) -> tuple[IntegrationPoint1D, ...]:
         """The tuple of :c:`IntegrationPoint1D` contained in the element.
 
         Returns
@@ -1247,14 +1250,13 @@ class Boundary1D:
     ValueError
         If len(nodes) != 1.
     """
-    _nodes: tuple[Node1D]
-    _int_pts: tuple[IntegrationPoint1D] | None = None
+    _nodes: tuple[Node1D, ...]
+    _int_pts: tuple[IntegrationPoint1D, ...] | None = None
 
     def __init__(
         self,
-        nodes: tuple[Node1D] | list[Node1D],
-        int_pts: tuple[IntegrationPoint1D] | list[IntegrationPoint1D] | None
-            = None,
+        nodes: Sequence[Node1D],
+        int_pts: Sequence[IntegrationPoint1D] | None = None,
     ):
         # check for valid node list and assign to self
         if (nnod := len(nodes)) != 1:
@@ -1275,7 +1277,7 @@ class Boundary1D:
             self._int_pts = tuple(int_pts)
 
     @property
-    def nodes(self) -> tuple[Node1D]:
+    def nodes(self) -> tuple[Node1D, ...]:
         """The tuple of :c:`Node1D` contained in the element.
 
         Returns
@@ -1285,7 +1287,7 @@ class Boundary1D:
         return self._nodes
 
     @property
-    def int_pts(self) -> tuple[IntegrationPoint1D] | None:
+    def int_pts(self) -> tuple[IntegrationPoint1D, ...] | None:
         """The tuple of :c:`IntegrationPoint1D` contained in the element.
 
         Returns
@@ -1320,10 +1322,12 @@ class Mesh1D:
     _z_max: float = np.inf
     _mesh_valid: bool = False
     _grid_size: float = 0.0
+    _nodes: tuple[Node1D, ...] = ()
+    _elements: tuple[Element1D, ...] = ()
 
     def __init__(
         self,
-        z_range: npt.ArrayLike[float] = None,
+        z_range: npt.ArrayLike | None = None,
         grid_size: float = 0.0,
         num_elements: int = 10,
         order: int = 3,
@@ -1444,7 +1448,7 @@ class Mesh1D:
         return len(self.nodes)
 
     @property
-    def nodes(self) -> tuple[Node1D]:
+    def nodes(self) -> tuple[Node1D, ...]:
         """The tuple of :c:`Node1D` contained in the mesh.
 
         Returns
@@ -1464,7 +1468,7 @@ class Mesh1D:
         return len(self.elements)
 
     @property
-    def elements(self) -> tuple[Element1D]:
+    def elements(self) -> tuple[Element1D, ...]:
         """The tuple of :c:`Element1D` contained in the mesh.
 
         Returns
@@ -1484,7 +1488,7 @@ class Mesh1D:
         return len(self.boundaries)
 
     @property
-    def boundaries(self) -> tuple[Boundary1D]:
+    def boundaries(self) -> set[Boundary1D]:
         """The tuple of :c:`Boundary1D` contained in the mesh.
 
         Returns

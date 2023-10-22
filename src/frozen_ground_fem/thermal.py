@@ -8,6 +8,7 @@ from typing import (
 from enum import Enum
 
 import numpy as np
+import numpy.typing as npt
 
 from .geometry import (
     Node1D,
@@ -687,7 +688,7 @@ class ThermalAnalysis1D:
         """
         self._heat_flow_matrix[:, :] = 0.0
         for e in self.elements:
-            ind = [nd.index for nd in e.nodes]
+            ind = np.array([nd.index for nd in e.nodes], dtype=int)
             He = e.heat_flow_matrix()
             self._heat_flow_matrix[np.ix_(ind, ind)] += He
 
@@ -704,7 +705,7 @@ class ThermalAnalysis1D:
         """
         self._heat_storage_matrix[:, :] = 0.0
         for e in self.elements:
-            ind = [nd.index for nd in e.nodes]
+            ind = np.array([nd.index for nd in e.nodes], dtype=int)
             Ce = e.heat_storage_matrix()
             self._heat_storage_matrix[np.ix_(ind, ind)] += Ce
 
@@ -719,7 +720,7 @@ class ThermalAnalysis1D:
         in the ThermalAnalysis1D.
         """
         for nd in self.mesh.nodes:
-            nd.temp = self._temp_vector[nd.index]
+            nd.temp = float(self._temp_vector[nd.index])
 
     def update_integration_points(self) -> None:
         """Updates the properties of integration points
@@ -785,8 +786,11 @@ class ThermalAnalysis1D:
         for tb in self.boundaries:
             if tb.bnd_type == ThermalBoundary1D.BoundaryType.temp:
                 free_ind.remove(tb.nodes[0].index)
-        self._free_vec = np.ix_(free_ind)
-        self._free_arr = np.ix_(free_ind, free_ind)
+        free_ind = np.array(free_ind, dtype=int)
+        self._free_vec: tuple[npt.NDArray[np.integer]] = np.ix_(free_ind)
+        self._free_arr: tuple[npt.NDArray[np.integer],
+                              npt.NDArray[np.integer]] = np.ix_(free_ind,
+                                                                free_ind)
 
     def initialize_time_step(self) -> None:
         """Sets up the system at the beginning of a time step.
