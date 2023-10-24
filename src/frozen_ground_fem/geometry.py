@@ -190,17 +190,13 @@ class Point1D:
 
     Parameters
     ----------
-    #### THIS SECTION DOCUMENTS ARGUMENTS TO THE __init__() METHOD
     value : float
         The coordinate of the point
 
     Raises
     ------
-    ### ANY ERRORS THAT __init__() COULD RAISE
-    ### FOR EXAMPLE, THIS IS HERE BECAUSE __init__()
-    ### CALLS THE z() SETTER, AND THIS ERROR COULD BE RAISED
     ValueError
-        If the value to assign cannot be converted to float.
+        If z to assign cannot be converted to float.
     """
     _coords: npt.NDArray[np.floating] = np.zeros((1,))
 
@@ -253,6 +249,16 @@ class Node1D(Point1D):
     z
     temp
     void_ratio
+
+    Parameters
+    ----------
+    value : float
+        The coordinate of the point
+
+    Raises
+    ------
+    ValueError
+        If z to assign cannot be converted to float.
     """
     _temp: npt.NDArray[np.floating] = np.zeros((1,))
     _index: int | None = None
@@ -1106,11 +1112,12 @@ class Element1D:
     int_pts
     jacobian
     order
+    
     Parameters
     ----------
-    ##################################33
-
-
+    value : float
+        The coordinate of the point
+    
     Raises
     ------
     TypeError
@@ -1307,15 +1314,28 @@ class Mesh1D:
 
     Parameters
     -----------
-    i###########################33
-    z_range: npt.ArrayLike[float] = None,
-        grid_size: float = 0.0,
-        num_elements: int = 10,
-        order: int = 3,
-        generate: bool = False,
-
+    z_range: npt.ArrayLike[float]
+    	Range of z values from z_min to z_max
+    grid_size: float
+    	Size of the grid in mesh
+    num_elements: int
+    	Number of elements to be created in the generated mesh
+    order: int
+        The order of interpolation to be used
+    generate: bool
+	Generates a mesh using assigned mesh properties
     Raises
     ------
+    ValueError
+            If the value of z_min to assign cannot be cast to float.
+            If the value of z_min to assign is >= z_max.
+            If the value of z_max to assign cannot be cast to float.
+            If the value of z_max to assign is <= z_min.
+            If the value of grid_size to assign cannot be cast to float.
+            If the value of grid_size to assign is < 0.0.
+            If z_min or z_max are invalid (e.g. left as default +/-inf)
+            If grid_size is invalid (e.g. set to inf)
+            
     """
     _boundaries: set[Boundary1D] = set()
     _z_min: float = -np.inf

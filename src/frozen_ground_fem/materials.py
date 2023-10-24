@@ -95,6 +95,139 @@ class Material:
     comp_index_frozen_a1
     comp_index_frozen_a2
     comp_index_frozen_a3
+
+    Parameters
+    ----------
+    thrm_cond_solids : float
+        Thermal conductivity of solids. Should be a positive value.
+    spec_grav_solids: : float
+        Specific gravity of solids. Should be a positive value.
+    spec_heat_cap_solids: float
+        Specific heat capacity of solids. Should be a positive value.
+    deg_sat_water_alpha: float
+        Alpha material constant[kPa]
+        for calculation of degree of saturation of water.
+        Should be a positive value.
+    deg_sat_water_beta: float
+        Beta material constant[]
+        for calculation of degree of saturation of water.
+        Should be a positive value.
+    hyd_cond_index: float
+        Hydraulic conductivity index constant of unfrozen soil.
+        Should be a positive value.
+    hyd_cond_mult: float
+        Hydraulic conductivity multiplier constant[]
+        for adjusting the hydraulic conductivity of
+        thawed soil encoutered in freeze-thaw cycle.
+        Should be a positive value.
+    hyd_cond_0: float
+        Reference hydraulic conductivity[m/s]
+        with unfrozen reference void ratio.
+        Should be a positive value.
+    void_ratio_0_hyd_cond: float
+        Reference unfrozen void ratio. Should be a positive value.
+    void_ratio_min: float
+        Minimum void ratio for consolidation curves.
+        Should be a positive value.
+    void_ratio_sep: float
+        Separation void ratio for consolidation curves.
+        Should be a positive value.
+    void_ratio_lim: float
+        Limit void ratio for consolidation curves.
+        Should be a positive value.
+    void_ratio_tr: float
+        Thawed rebound void ratio for hydraulic conductivity curve.
+        Should be a positive value.
+    water_flux_b1: float
+        The b1 parameter for the water flux function for frozen soil.
+        This value is unitless. Should be a positive value.
+    water_flux_b2: float
+        The b2 parameter for the water flux function for frozen soil.
+        This value has units of(deg C) ^ {-1}. Should be a positive value.
+    water_flux_b3: float
+        he b3 parameter for the water flux function for frozen soil.
+        This value has units of(MPa) ^ {-1}. Should be a positive value.
+    temp_rate_ref: float
+        The reference temperature rate for the water flux function.
+        Should be a positive value.
+    seg_pot_0: float
+        The reference segregation potential for the water flux function.
+        Should be a positive value.
+    void_ratio_0_comp: float
+        Reference unfrozen void ratio corresponding to compression
+        (normal consolidation line). Should be a positive value.
+    comp_index_unfrozen: float
+        Compression index in unfrozen soil. Should be a positive value.
+    rebound_index_unfrozen: float
+        Rebound index in unfrozen soil. Should be a positive value.
+    eff_stress_0_comp: float
+        Effective stress for compression curve.
+        Should be a positive value.
+    comp_index_frozen_a1: float
+        Material parameter a1(constant)
+        for calculation of frozen compression or rebound index.
+        Should be a positive value.
+    comp_index_frozen_a2: float
+        Material parameter a2(constant)
+        for calculation of frozen compression or rebound index.
+        Should be a positive value.
+    comp_index_frozen_a3: float
+        Material parameter a3(constant)
+        for calculation of frozen compression or rebound index.
+        Should be a positive value.
+
+    Raises
+    ------
+    ValueError
+        If thrm_cond_solids value to assign is not convertible to float.
+        If thrm_cond_solids value < 0.
+        If spec_grav_solids value to assign is not convertible to float.
+        If spec_grav_solids value < 0.
+        If spec_heat_cap_solids value to assign is not convertible to float.
+        If spec_heat_cap_solids value < 0.
+        If deg_sat_water_alpha vvalue to assign is not convertible to float.
+        If deg_sat_water_alpha value < 0.
+        If deg_sat_water_beta value to assign is not convertible to float.
+        If deg_sat_water_beta value < 0.
+        If hyd_cond_index value to assign is not convertible to float.
+        If hyd_cond_index value < 0.
+        If hyd_cond_mult value to assign is not convertible to float.
+        If hyd_cond_mult value < 0.
+        If hyd_cond_0 value to assign is not convertible to float.
+        If hyd_cond_0 value < 0.
+        If void_ratio_0_hyd_cond value to assign is not convertible to float.
+        If void_ratio_0_hyd_cond value < 0.
+        If void_ratio_min value to assign is not convertible to float.
+        If void_ratio_min value < 0.
+        If void_ratio_sep value to assign is not convertible to float.
+        If void_ratio_sep value < 0.
+        If void_ratio_lim value to assign is not convertible to float.
+        If void_ratio_lim value < 0.
+        If void_ratio_tr value to assign is not convertible to float.
+        If void_ratio_tr value < 0.
+        If water_flux_b1 value to assign is not convertible to float.
+        If water_flux_b1 value < 0.
+        If water_flux_b2 value to assign is not convertible to float.
+        If water_flux_b2 value < 0.
+        If water_flux_b3 value to assign is not convertible to float.
+        If water_flux_b3 value < 0.
+        If temp_rate_ref value to assign is not convertible to float.
+        If temp_rate_ref value < 0.
+        If seg_pot_0 value to assign is not convertible to float.
+        If seg_pot_0 value < 0.
+        If void_ratio_0_comp value to assign is not convertible to float.
+        If void_ratio_0_compvalue < 0.
+        If comp_index_unfrozen value to assign is not convertible to float.
+        If comp_index_unfrozen value < 0.
+        If rebound_index_unfrozen value to assign is not convertible to float.
+        If rebound_index_unfrozen value < 0.
+        If comp_index_frozen_a1 value to assign is not convertible to float.
+        If comp_index_frozen_a1 value < 0.
+        If comp_index_frozen_a2 value to assign is not convertible to float.
+        If comp_index_frozen_a2 value < 0.
+        If comp_index_frozen_a3 value to assign is not convertible to float.
+        If comp_index_frozen_a3 value < 0.
+
     """
 
     _thrm_cond_solids: float = 0.0
