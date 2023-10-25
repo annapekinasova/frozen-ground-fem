@@ -422,7 +422,7 @@ class IntegrationPoint1D(Point1D):
     material: Material
         Contains the properties of the solids.
     hyd_cond: float
-        Hydraulic conductivity of the integration point. 
+        Hydraulic conductivity of the integration point.
         Should be not negative.
     hyd_cond_gradient: float
         Hydraulic conductivity gradient (with respect to void ratio)
@@ -1222,21 +1222,22 @@ class Element1D:
     Attributes
     ----------
     nodes
-    int_pts
-    jacobian
     order
 
     Parameters
     ----------
-    value : float
-        The coordinate of the point
+    nodes : tuple[:c:`Node1D`]
+        The tuple of :c:`Node1D` contained in the element.
+    order : int
+        The order of interpolation used in the element.
 
     Raises
     ------
-    TypeError
+    TypeError:
         If nodes initializer contains non-:c:`Node1D` objects.
     ValueError
-        If len(nodes) != (order + 1).
+        If len(nodes) != 1.
+        If order {value} != 1 or 3.
     """
 
     _int_pt_coords_linear: ClassVar[tuple[float, float]] = (
@@ -1361,14 +1362,24 @@ class Boundary1D:
 
     Attributes
     ----------
-    nodes
+    int_pts
+
+
+    Parameters
+    ----------
+    nodes : tuple[:c:`Node1D`]
+        The tuple of :c:`Node1D` contained in the element.
+    int_pts : tuple[:c:`IntegrationPoint1D`] | None
+        The tuple of :c:`IntegrationPoint1D` contained in the element.
 
     Raises
     ------
     TypeError:
         If nodes initializer contains non-:c:`Node1D` objects.
+        If int_pts contains invalid objects and not IntegrationPoint1D.
     ValueError
         If len(nodes) != 1.
+
     """
     _nodes: tuple[Node1D, ...]
     _int_pts: tuple[IntegrationPoint1D, ...] | None = None
@@ -1402,7 +1413,7 @@ class Boundary1D:
 
         Returns
         ------
-        tuple of :c:`Node1D`
+        tuple[:c:`Node1D`]
         """
         return self._nodes
 
@@ -1423,20 +1434,21 @@ class Mesh1D:
 
     Attributes
     ----------
-    nodes
+    grid_size
 
     Parameters
     -----------
     z_range: npt.ArrayLike[float]
-        Range of z values from z_min to z_max
+        Range of z values from z_min to z_max.
     grid_size: float
-        Size of the grid in mesh
+        The specified grid size of the mesh. Cannot be negative.
     num_elements: int
-        Number of elements to be created in the generated mesh
+        The number of :c:`Element1D` contained in the mesh.
     order: int
-        The order of interpolation to be used
+        The order of interpolation to be used.
     generate: bool
-        Generates a mesh using assigned mesh properties
+        Generates a mesh using assigned mesh properties.
+
     Raises
     ------
     ValueError
@@ -1447,8 +1459,7 @@ class Mesh1D:
             If the value of grid_size to assign cannot be cast to float.
             If the value of grid_size to assign is < 0.0.
             If z_min or z_max are invalid (e.g. left as default +/-inf)
-            If grid_size is invalid (e.g. set to inf)
-
+            If grid_size is invalid (e.g. set to inf).
     """
     _boundaries: set[Boundary1D] = set()
     _z_min: float = -np.inf
