@@ -96,85 +96,103 @@ class Material:
     comp_index_frozen_a2
     comp_index_frozen_a3
 
+    Methods
+    -------
+    deg_sat_water
+    hyd_cond
+    water_flux
+    eff_stress
+    comp_index_frozen
+    tot_stress
+
     Parameters
     ----------
-    thrm_cond_solids : float
-        Thermal conductivity of solids. Should be a positive value.
-    spec_grav_solids: : float
-        Specific gravity of solids. Should be a positive value.
-    spec_heat_cap_solids: float
-        Specific heat capacity of solids. Should be a positive value.
-    deg_sat_water_alpha: float
-        Alpha material constant[kPa]
+    thrm_cond_solids : float, optional, default=0.0
+        The value to assign to thermal conductivity of solids.
+        Cannot be negative.
+    spec_grav_solids: float, optional, default=0.0
+        The value to assign to specific gravity of solids.
+        Cannot be negative.
+    spec_heat_cap_solids: float, optional, default=0.0
+        The value to assign to specific heat capacity of solids.
+        Cannot be negative.
+    deg_sat_water_alpha: float, optional, default=0.0
+        The value to assign to alpha material constant[kPa]
         for calculation of degree of saturation of water.
-        Should be a positive value.
-    deg_sat_water_beta: float
-        Beta material constant[]
+        Cannot be negative.
+    deg_sat_water_beta: float, optional, default=0.0
+        The value to assign to beta material constant[]
         for calculation of degree of saturation of water.
-        Should be a positive value.
-    hyd_cond_index: float
-        Hydraulic conductivity index constant of unfrozen soil.
-        Should be a positive value.
-    hyd_cond_mult: float
-        Hydraulic conductivity multiplier constant[]
+        Cannot be negative.
+    hyd_cond_index: float, optional, default=0.0
+        The value to assign to hydraulic conductivity index constant
+        of unfrozen soil. Cannot be negative.
+    hyd_cond_mult: float, optional, default=0.0
+        The value to assign to hydraulic conductivity multiplier constant[]
         for adjusting the hydraulic conductivity of
         thawed soil encoutered in freeze-thaw cycle.
-        Should be a positive value.
-    hyd_cond_0: float
-        Reference hydraulic conductivity[m/s]
+        Cannot be negative.
+    hyd_cond_0: float, optional, default=0.0
+        The value to assign to reference hydraulic conductivity[m/s]
         with unfrozen reference void ratio.
-        Should be a positive value.
-    void_ratio_0_hyd_cond: float
-        Reference unfrozen void ratio. Should be a positive value.
-    void_ratio_min: float
-        Minimum void ratio for consolidation curves.
-        Should be a positive value.
-    void_ratio_sep: float
-        Separation void ratio for consolidation curves.
-        Should be a positive value.
-    void_ratio_lim: float
-        Limit void ratio for consolidation curves.
-        Should be a positive value.
-    void_ratio_tr: float
-        Thawed rebound void ratio for hydraulic conductivity curve.
-        Should be a positive value.
-    water_flux_b1: float
-        The b1 parameter for the water flux function for frozen soil.
-        This value is unitless. Should be a positive value.
-    water_flux_b2: float
-        The b2 parameter for the water flux function for frozen soil.
-        This value has units of(deg C) ^ {-1}. Should be a positive value.
-    water_flux_b3: float
-        he b3 parameter for the water flux function for frozen soil.
-        This value has units of(MPa) ^ {-1}. Should be a positive value.
-    temp_rate_ref: float
-        The reference temperature rate for the water flux function.
-        Should be a positive value.
-    seg_pot_0: float
-        The reference segregation potential for the water flux function.
-        Should be a positive value.
-    void_ratio_0_comp: float
-        Reference unfrozen void ratio corresponding to compression
-        (normal consolidation line). Should be a positive value.
-    comp_index_unfrozen: float
-        Compression index in unfrozen soil. Should be a positive value.
-    rebound_index_unfrozen: float
-        Rebound index in unfrozen soil. Should be a positive value.
-    eff_stress_0_comp: float
-        Effective stress for compression curve.
-        Should be a positive value.
-    comp_index_frozen_a1: float
-        Material parameter a1(constant)
+        Cannot be negative.
+    void_ratio_0_hyd_cond: float, optional, default=0.0
+        The value to assign to reference unfrozen void ratio.
+        Cannot be negative.
+    void_ratio_min: float, optional, default=0.0
+        The value to assign to minimum void ratio for consolidation curves.
+        Cannot be negative.
+    void_ratio_sep: float, optional, default=0.0
+        The value to assign to separation void ratio for consolidation curves.
+        Cannot be negative.
+    void_ratio_lim: float, optional, default=0.0
+        The value to assign to limit void ratio for consolidation curves.
+        Cannot be negative.
+    void_ratio_tr: float, optional, default=0.0
+        The value to assign to thawed rebound void ratio for
+        hydraulic conductivity curve. Cannot be negative.
+    water_flux_b1: float, optional, default=0.0
+        The value to assign to the b1 parameter for the water flux function
+        for frozen soil. This value is unitless. Cannot be negative.
+    water_flux_b2: float, optional, default=0.0
+        The value to assign to the b2 parameter for the water flux function
+        for frozen soil. This value has units of(deg C) ^ {-1}.
+        Cannot be negative.
+    water_flux_b3: float, optional, default=0.0
+        The value to assign to the b3 parameter for the water flux function
+        for frozen soil. This value has units of(MPa) ^ {-1}.
+        Cannot be negative.
+    temp_rate_ref: float, optional, default=0.0
+        The value to assign to the reference temperature rate
+         for the water flux function. Cannot be negative.
+    seg_pot_0: float, optional, default=0.0
+        The value to assign to the reference segregation potential
+        for the water flux function. Cannot be negative.
+    void_ratio_0_comp: float, optional, default=0.0
+        The value to assign to reference unfrozen void ratio
+        corresponding to compression (normal consolidation line).
+        Cannot be negative.
+    comp_index_unfrozen: float, optional, default=0.0
+        The value to assign to compression index in unfrozen soil.
+        Cannot be negative.
+    rebound_index_unfrozen: float, optional, default=0.0
+        The value to assign to rebound index in unfrozen soil.
+        Cannot be negative.
+    eff_stress_0_comp: float, optional, default=0.0
+        The value to assign to effective stress for compression curve.
+        Cannot be negative.
+    comp_index_frozen_a1: float, optional, default=0.0
+        The value to assign to material parameter a1(constant)
         for calculation of frozen compression or rebound index.
-        Should be a positive value.
-    comp_index_frozen_a2: float
-        Material parameter a2(constant)
+        Cannot be negative.
+    comp_index_frozen_a2: float, optional, default=0.0
+        The value to assign to material parameter a2(constant)
         for calculation of frozen compression or rebound index.
-        Should be a positive value.
-    comp_index_frozen_a3: float
-        Material parameter a3(constant)
+        Cannot be negative.
+    comp_index_frozen_a3: float, optional, default=0.0
+        The value to assign to material parameter a3(constant)
         for calculation of frozen compression or rebound index.
-        Should be a positive value.
+        SCannot be negative.
 
     Raises
     ------
