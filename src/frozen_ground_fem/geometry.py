@@ -185,18 +185,19 @@ class Point1D:
 
     Attributes
     ----------
-    coords
+    coords : (1, ) numpy.ndarray
+        Coordinates of the point as an array.
     z
 
     Parameters
     ----------
-    value : float
-        The coordinate of the point
+    value : float, optional, default=0.0
+        The value to assign to the coordinate of the point.
 
     Raises
     ------
     ValueError
-        If z to assign cannot be converted to float.
+        If value to assign to z cannot be converted to float.
     """
     _coords: npt.NDArray[np.floating] = np.zeros((1,))
 
@@ -244,31 +245,39 @@ class Node1D(Point1D):
 
     Attributes
     ----------
+    coords : (1, ) numpy.ndarray
+        Coordinates of the point as an array.
+    z
     temp
     index
     void_ratio
 
     Parameters
     ----------
+    value : float, optional, default=0.0
+        The value to assign to the coordinate of the point.
+        From Point1D Class.
     index: int
-        Index of the node. Should be positive.
-    coord: float????
-        Coordinate of the nodes????
-    temp: float
+        The value to assign to of the node.
+        Cannot be negative.
+    coord: float, optional, default=0.0
+        The value to assign to coordinate of the nodes.
+    temp: float, optional, default=0.0
         Temperature of the node.
-    void_ratio:
-        Void ratio of the node. Should be positive.
+    void_ratio: float, optional, default=0.0
+        Void ratio of the node. Cannot be negative.
 
     Raises
     ------
     TypeError
         If index value to assign is a float.
     ValueError
-        If index value to assign is a str not convertible to int.
-        If index value to assign is negative.
-        If temp value to assign is not convertible to float.
-        If void_ratio value to assign is not convertible to float.
-        If void_ratio value to assign is negative.
+        If value to assign to z cannot be converted to float.
+        If value to assign to index is a str not convertible to int.
+        If value to assign to index is negative.
+        If value to assign to temp is not convertible to float.
+        If value to assign to void_ratio is not convertible to float.
+        If value to assign to void_ratio is negative.
     """
     _temp: npt.NDArray[np.floating] = np.zeros((1,))
     _index: int | None = None
@@ -376,6 +385,9 @@ class IntegrationPoint1D(Point1D):
 
     Attributes
     ----------
+    coords : (1, ) numpy.ndarray
+        Coordinates of the point as an array.
+    z
     local_coord
     weight
     void_ratio
@@ -383,8 +395,13 @@ class IntegrationPoint1D(Point1D):
     temp
     temp_rate
     temp_gradient
+    porosity
+    vol_ice_cont
     deg_sat_water
+    deg_sat_ice
     material
+    thrm_cond
+    vol_heat_cap
     hyd_cond
     hyd_cond_gradient
     water_flux_rate
@@ -398,56 +415,59 @@ class IntegrationPoint1D(Point1D):
 
     Parameters
     ----------
-    local_coord: float
+    value : float, optional, default=0.0
+        The value to assign to the coordinate of the point.
+        From Point1D Class.
+    local_coord: float, optional, default=0.0
         Local coordinate of the integration point.
-    weight: float
+    weight: float, optional, default=0.0
         Quadrature weight of the integration point.
-    void_ratio: float
+    void_ratio: float, optional, default=0.0
         Void ratio of the integration point.
         Should be not negative.
-    void_ratio_0: float
+    void_ratio_0: float, optional, default=0.0
         Initial void ratio of the integration point.
         Should be not negative.
-    temp: float
+    temp: float, optional, default=0.0
         Temperature at the integration point.
-    temp_rate: float
+    temp_rate: float, optional, default=0.0
         Temperature rate at the integration point.
-    temp_gradient: float
+    temp_gradient: float, optional, default=0.0
         Temperature gradient at the integration point.
-    deg_sat_water: float
+    deg_sat_water: float, optional, default=0.0
         Degree of saturation of water of the integration point.
         Also updates degree of saturation of ice (assuming full saturation)
         and volumetric ice content.
         Value should be between 0.0 and 1.0.
-    material: Material
+    material: Material, optional, default=NULL_MATERIAL
         Contains the properties of the solids.
-    hyd_cond: float
+    hyd_cond: float, optional, default=0.0
         Hydraulic conductivity of the integration point.
         Should be not negative.
-    hyd_cond_gradient: float
+    hyd_cond_gradient: float, optional, default=0.0
         Hydraulic conductivity gradient (with respect to void ratio)
         of the integration point. Should be not negative.
-    water_flux_rate: float
+    water_flux_rate: float, optional, default=0.0
         Water flux rate of the integration point.
-    pre_consol_stress: float
+    pre_consol_stress: float, optional, default=0.0
         Preconsolidation stress of the integration point.
         Should be not negative.
-    eff_stress: float
+    eff_stress: float, optional, default=0.0
         Effective stress of the integration point.
         Should be not negative.
-    eff_stress_gradient: float
+    eff_stress_gradient: float, optional, default=0.0
         Effective stress gradient (with respect to void ratio)
         of the integration point. Should be not negative.
-    void_ratio_0_ref_frozen: float
+    void_ratio_0_ref_frozen: float, optional, default=0.0
         Reference void ratio for frozen void ratio - total stress curve.
         Should be not negative.
-    tot_stress_0_ref_frozen: float
+    tot_stress_0_ref_frozen: float, optional, default=0.0
         Reference total stress for frozen void ratio - total stress curve.
         Should be not negative.
-    tot_stress: float
+    tot_stress: float, optional, default=0.0
         Total stress of the integration point.
         Should be not negative.
-    tot_stress_gradient: float
+    tot_stress_gradient: float, optional, default=0.0
         Total stress gradient (with respect to void ratio)
         of the integration point. Should be not negative.
 
@@ -457,36 +477,38 @@ class IntegrationPoint1D(Point1D):
             If material value to assign is not an instance of
             :c:`frozen_ground_fem.materials.Material`.
     ValueError
-        If local_coord value to assign is not convertible to float.
-        If weight value to assign is not convertible to float.
-        If void_ratio value to assign is not convertible to float.
-        If void_ratio value to assign is negative.
-        If void_ratio_0 value to assign is not convertible to float.
-        If void_ratio_0 value to assign is negative.
-        If temp to assign is not convertible to float.
-        If temp_rate to assign is not convertible to float.
-        If temp_gradient to assign is not convertible to float.
-        If deg_sat_water value to assign is not convertible to float.
-        If deg_sat_water value < 0.0 or value > 1.0.
-        If hyd_cond value to assign is not convertible to float.
-        If hyd_cond value to assign is negative.
-        If hyd_cond_gradient value to assign is not convertible to float.
-        If hyd_cond_gradient value < 0.0 or value > 1.0.
-        If water_flux_rate value to assign is not convertible to float.
-        If pre_consol_stress value to assign is not convertible to float.
-        If pre_consol_stress value < 0.0 or value > 1.0.
-        If eff_stress value to assign is not convertible to float.
-        If eff_stress value < 0.0 or value > 1.0.
-        If eff_stress_gradient value to assign is not convertible to float.
-        If eff_stress_gradient value < 0.0 or value > 1.0.
-        If void_ratio_0_ref_frozen value to assign is not convertible to float.
-        If void_ratio_0_ref_frozen value < 0.0 or value > 1.0.
-        If tot_stress_0_ref_frozen value to assign is not convertible to float.
-        If tot_stress_0_ref_frozen value < 0.0 or value > 1.0.
-        If tot_stress value to assign is not convertible to float.
-        If tot_stress value < 0.0 or value > 1.0.
-        If tot_stress_gradient value to assign is not convertible to float.
-        If tot_stress_gradient value < 0.0 or value > 1.0.
+        If value to assign to z cannot be converted to float.
+        If value to assign to value is not convertible to float.
+        If value to assign to local_coord is not convertible to float.
+        If value to assign to weight is not convertible to float.
+        If value to assign to void_ratio is not convertible to float.
+        If value to assign to void_ratio is negative.
+        If value to assign to void_ratio_0 is not convertible to float.
+        If value to assign to void_ratio_0 is negative.
+        If value to assign to temp is not convertible to float.
+        If value to assign to temp_rate is not convertible to float.
+        If value to assign to temp_gradient is not convertible to float.
+        If value to assign to deg_sat_water is not convertible to float.
+        If value to assign to deg_sat_water < 0.0 or value > 1.0.
+        If value to assign to hyd_cond is not convertible to float.
+        If value to assign to hyd_cond is negative.
+        If value to assign to hyd_cond_gradient is not convertible to float.
+        If value to assign tohyd_cond_gradient < 0.0 or value > 1.0.
+        If value to assign to water_flux_rate is not convertible to float.
+        If value to assign to pre_consol_stress is not convertible to float.
+        If value to assign to pre_consol_stress < 0.0 or value > 1.0.
+        If value to assign to eff_stress is not convertible to float.
+        If value to assign to eff_stress < 0.0 or value > 1.0.
+        If value to assign to eff_stress_gradient is not convertible to float.
+        If value to assign to eff_stress_gradient < 0.0 or value > 1.0.
+        If value to assign to void_ratio_0_ref_frozen is not convertible to float.
+        If value to assign to void_ratio_0_ref_frozen  < 0.0 or value > 1.0.
+        If value to assign to tot_stress_0_ref_frozen is not convertible to float.
+        If value to assign to tot_stress_0_ref_frozen < 0.0 or value > 1.0.
+        If value to assign to tot_stress is not convertible to float.
+        If value to assign to tot_stress  < 0.0 or value > 1.0.
+        If value to assign to tot_stress_gradient is not convertible to float.
+        If value to assign to tot_stress_gradient < 0.0 or value > 1.0.
     """
     _local_coord: float = 0.0
     _weight: float = 0.0
