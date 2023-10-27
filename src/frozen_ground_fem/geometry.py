@@ -501,9 +501,11 @@ class IntegrationPoint1D(Point1D):
         If value to assign to eff_stress < 0.0 or value > 1.0.
         If value to assign to eff_stress_gradient is not convertible to float.
         If value to assign to eff_stress_gradient < 0.0 or value > 1.0.
-        If value to assign to void_ratio_0_ref_frozen is not convertible to float.
+        If value to assign to void_ratio_0_ref_frozen
+        is not convertible to float.
         If value to assign to void_ratio_0_ref_frozen  < 0.0 or value > 1.0.
-        If value to assign to tot_stress_0_ref_frozen is not convertible to float.
+        If value to assign to tot_stress_0_ref_frozen
+        is not convertible to float.
         If value to assign to tot_stress_0_ref_frozen < 0.0 or value > 1.0.
         If value to assign to tot_stress is not convertible to float.
         If value to assign to tot_stress  < 0.0 or value > 1.0.
@@ -1243,23 +1245,26 @@ class Element1D:
 
     Attributes
     ----------
-    nodes
     order
+    nodes
+    jacobian
+    int_pts
 
     Parameters
     ----------
-    nodes : tuple[:c:`Node1D`]
-        The tuple of :c:`Node1D` contained in the element.
-    order : int
+    order : int, optional, default=3
         The order of interpolation used in the element.
+    nodes : Sequence[Node1D], optional, default=tuple[:c:`Node1D`]
+        The tuple of :c:`Node1D` contained in the element.
 
     Raises
     ------
     TypeError:
-        If nodes initializer contains non-:c:`Node1D` objects.
+        If the value to assign to nodes initializer contains
+        non-:c:`Node1D` objects.
     ValueError
-        If len(nodes) != 1.
-        If order {value} != 1 or 3.
+        If the value to assign to len(nodes) != 1.
+        If the value to assign to order {value} != 1 or 3.
     """
 
     _int_pt_coords_linear: ClassVar[tuple[float, float]] = (
@@ -1384,23 +1389,27 @@ class Boundary1D:
 
     Attributes
     ----------
+    nodes
     int_pts
 
 
     Parameters
     ----------
-    nodes : tuple[:c:`Node1D`]
+    nodes : Sequence[Node1D], optional, default=tuple[:c:`Node1D`]
         The tuple of :c:`Node1D` contained in the element.
-    int_pts : tuple[:c:`IntegrationPoint1D`] | None
+    int_pts : Sequence[Node1D], optional, 
+        default=tuple[:c:`IntegrationPoint1D`] | None
         The tuple of :c:`IntegrationPoint1D` contained in the element.
 
     Raises
     ------
     TypeError:
-        If nodes initializer contains non-:c:`Node1D` objects.
-        If int_pts contains invalid objects and not IntegrationPoint1D.
+        If the value to assign to nodes initializer contains
+        non-:c:`Node1D` objects.
+        If the value to assign to int_pts contains
+        invalid objects and not IntegrationPoint1D.
     ValueError
-        If len(nodes) != 1.
+        If the value to assign to len(nodes) != 1.
 
     """
     _nodes: tuple[Node1D, ...]
@@ -1456,32 +1465,54 @@ class Mesh1D:
 
     Attributes
     ----------
+    z_min
+    z_max
     grid_size
+    num_nodes
+    nodes
+    num_elements
+    elements
+    num_boundaries
+    boundaries
+    mesh_valid
+
+    Methods
+    -------
+    generate_mesh
+    _generate_nodes
+    _generate_elements
+    add_boundary
+    remove_boundary
+    clear_boundaries
 
     Parameters
     -----------
-    z_range: npt.ArrayLike[float]
-        Range of z values from z_min to z_max.
-    grid_size: float
-        The specified grid size of the mesh. Cannot be negative.
-    num_elements: int
-        The number of :c:`Element1D` contained in the mesh.
-    order: int
-        The order of interpolation to be used.
-    generate: bool
-        Generates a mesh using assigned mesh properties.
+    z_range: array, optional, default=npt.ArrayLike | None = None
+        The value to assign to range of z values from z_min to z_max.
+    grid_size: float, optional, default=0.0
+        The value to assign to specified grid size of the mesh.
+        Cannot be negative.
+    num_elements: int, optional, default=10
+        The value to assign to number of :c:`Element1D`
+        contained in the mesh.
+    order: int, optional, default=3
+        The value to assign to order of interpolation to be used.
+    generate: bool, optional, default=False
+        Flag for whether to generates a mesh using assigned mesh properties.
 
     Raises
     ------
     ValueError
-            If the value of z_min to assign cannot be cast to float.
-            If the value of z_min to assign is >= z_max.
-            If the value of z_max to assign cannot be cast to float.
-            If the value of z_max to assign is <= z_min.
-            If the value of grid_size to assign cannot be cast to float.
-            If the value of grid_size to assign is < 0.0.
-            If z_min or z_max are invalid (e.g. left as default +/-inf)
-            If grid_size is invalid (e.g. set to inf).
+            If the value to assign to z_min to assign cannot be cast to float.
+            If the value to assign to z_min to assign is >= z_max.
+            If the value to assign to z_max to assign cannot be cast to float.
+            If the value to assign to z_max to assign is <= z_min.
+            If the value to assign to grid_size to assign cannot be cast to float.
+            If the value to assign to grid_size to assign is < 0.0.
+            If the value to assign to assign to z_min or z_max are invalid
+            (e.g. left as default +/-inf)
+            If the value to assign to assign to grid_size is invalid
+            (e.g. set to inf).
     """
     _boundaries: set[Boundary1D] = set()
     _z_min: float = -np.inf
