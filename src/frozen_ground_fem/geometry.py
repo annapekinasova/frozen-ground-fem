@@ -1,6 +1,21 @@
 """frozen_ground_fem.geometry.py - A module for classes
 for finite element model geometry.
 
+Functions
+---------
+shape_matrix_linear
+shape_matrix_cubic
+gradient_matrix_linear
+gradient_matrix_cubic
+
+Classes
+-------
+Point1D
+Node1D
+IntegrationPoint1D
+Element1D
+Boundary1D
+Mesh1D
 """
 from typing import (
     ClassVar,
@@ -130,7 +145,10 @@ def gradient_matrix_linear(
     return np.array([[-1.0, 1.0]]) / dz
 
 
-def gradient_matrix_cubic(s, dz):
+def gradient_matrix_cubic(
+    s: float,
+    dz: float
+) -> npt.NDArray[np.floating]:
     """Calculates the gradient of the shape (interpolation) function matrix
     for cubic interpolation.
 
@@ -185,8 +203,7 @@ class Point1D:
 
     Attributes
     ----------
-    coords : (1, ) numpy.ndarray
-        Coordinates of the point as an array.
+    coords
     z
 
     Parameters
@@ -197,7 +214,7 @@ class Point1D:
     Raises
     ------
     ValueError
-        If value to assign to z cannot be converted to float.
+        If value cannot be converted to float.
     """
     _coords: npt.NDArray[np.floating] = np.zeros((1,))
 
@@ -210,7 +227,7 @@ class Point1D:
 
         Returns
         -------
-        (1, ) numpy.ndarray
+        numpy.ndarray, shape=(1,)
         """
         return self._coords
 
@@ -245,8 +262,7 @@ class Node1D(Point1D):
 
     Attributes
     ----------
-    coords : (1, ) numpy.ndarray
-        Coordinates of the point as an array.
+    coords
     z
     temp
     index
@@ -254,33 +270,31 @@ class Node1D(Point1D):
 
     Parameters
     ----------
-    value : float, optional, default=0.0
-        The value to assign to the coordinate of the point.
-        From Point1D Class.
     index: int
-        The value to assign to of the node.
+        The value to assign to the index of the node.
         Cannot be negative.
     coord: float, optional, default=0.0
-        The value to assign to coordinate of the nodes.
+        The value to assign to the coordinate of the node.
     temp: float, optional, default=0.0
-        Temperature of the node.
+        The value to assign to the temperature of the node.
     void_ratio: float, optional, default=0.0
-        Void ratio of the node. Cannot be negative.
+        The value to assign to the void ratio of the node.
+        Cannot be negative.
 
     Raises
     ------
     TypeError
-        If index value to assign is a float.
+        If index is a float.
     ValueError
-        If value to assign to z cannot be converted to float.
-        If value to assign to index is a str not convertible to int.
-        If value to assign to index is negative.
-        If value to assign to temp is not convertible to float.
-        If value to assign to void_ratio is not convertible to float.
-        If value to assign to void_ratio is negative.
+        If index is a str not convertible to int.
+        If index is negative.
+        If z cannot be converted to float.
+        If temp is not convertible to float.
+        If void_ratio is not convertible to float.
+        If void_ratio is negative.
     """
+    _index: int
     _temp: npt.NDArray[np.floating] = np.zeros((1,))
-    _index: int | None = None
     _void_ratio: float = 0.0
 
     def __init__(
@@ -289,9 +303,9 @@ class Node1D(Point1D):
             coord: float = 0.0,
             temp: float = 0.0,
             void_ratio: float = 0.0):
+        self.index = index
         super().__init__(coord)
         self.temp = temp
-        self.index = index
         self.void_ratio = void_ratio
 
     @property
@@ -319,7 +333,7 @@ class Node1D(Point1D):
         self._temp[0] = value
 
     @property
-    def index(self) -> int | None:
+    def index(self) -> int:
         """Index of the node.
 
         Parameters
@@ -385,8 +399,7 @@ class IntegrationPoint1D(Point1D):
 
     Attributes
     ----------
-    coords : (1, ) numpy.ndarray
-        Coordinates of the point as an array.
+    coords
     z
     local_coord
     weight
@@ -415,7 +428,7 @@ class IntegrationPoint1D(Point1D):
 
     Parameters
     ----------
-    value : float, optional, default=0.0
+    coord : float, optional, default=0.0
         The value to assign to the coordinate of the point.
         From Point1D Class.
     local_coord: float, optional, default=0.0
@@ -434,12 +447,12 @@ class IntegrationPoint1D(Point1D):
         Temperature rate at the integration point.
     temp_gradient: float, optional, default=0.0
         Temperature gradient at the integration point.
-    deg_sat_water: float, optional, default=0.0
+    deg_sat_water: float, optional, default=1.0
         Degree of saturation of water of the integration point.
-        Also updates degree of saturation of ice (assuming full saturation)
+        Also sets degree of saturation of ice (assuming full saturation)
         and volumetric ice content.
         Value should be between 0.0 and 1.0.
-    material: Material, optional, default=NULL_MATERIAL
+    material: Material, optional, default=materials.NULL_MATERIAL
         Contains the properties of the solids.
     hyd_cond: float, optional, default=0.0
         Hydraulic conductivity of the integration point.
@@ -451,66 +464,55 @@ class IntegrationPoint1D(Point1D):
         Water flux rate of the integration point.
     pre_consol_stress: float, optional, default=0.0
         Preconsolidation stress of the integration point.
-        Should be not negative.
     eff_stress: float, optional, default=0.0
         Effective stress of the integration point.
-        Should be not negative.
     eff_stress_gradient: float, optional, default=0.0
         Effective stress gradient (with respect to void ratio)
-        of the integration point. Should be not negative.
+        of the integration point.
+        Should not be positive.
     void_ratio_0_ref_frozen: float, optional, default=0.0
         Reference void ratio for frozen void ratio - total stress curve.
         Should be not negative.
     tot_stress_0_ref_frozen: float, optional, default=0.0
         Reference total stress for frozen void ratio - total stress curve.
-        Should be not negative.
     tot_stress: float, optional, default=0.0
         Total stress of the integration point.
-        Should be not negative.
     tot_stress_gradient: float, optional, default=0.0
         Total stress gradient (with respect to void ratio)
-        of the integration point. Should be not negative.
+        of the integration point. Should be not positive.
 
     Raises
     ------
     TypeError
-            If material value to assign is not an instance of
-            :c:`frozen_ground_fem.materials.Material`.
+        If material is not an instance of
+        :c:`frozen_ground_fem.materials.Material`.
     ValueError
-        If value to assign to z cannot be converted to float.
-        If value to assign to value is not convertible to float.
-        If value to assign to local_coord is not convertible to float.
-        If value to assign to weight is not convertible to float.
-        If value to assign to void_ratio is not convertible to float.
-        If value to assign to void_ratio is negative.
-        If value to assign to void_ratio_0 is not convertible to float.
-        If value to assign to void_ratio_0 is negative.
-        If value to assign to temp is not convertible to float.
-        If value to assign to temp_rate is not convertible to float.
-        If value to assign to temp_gradient is not convertible to float.
-        If value to assign to deg_sat_water is not convertible to float.
-        If value to assign to deg_sat_water < 0.0 or value > 1.0.
-        If value to assign to hyd_cond is not convertible to float.
-        If value to assign to hyd_cond is negative.
-        If value to assign to hyd_cond_gradient is not convertible to float.
-        If value to assign tohyd_cond_gradient < 0.0 or value > 1.0.
-        If value to assign to water_flux_rate is not convertible to float.
-        If value to assign to pre_consol_stress is not convertible to float.
-        If value to assign to pre_consol_stress < 0.0 or value > 1.0.
-        If value to assign to eff_stress is not convertible to float.
-        If value to assign to eff_stress < 0.0 or value > 1.0.
-        If value to assign to eff_stress_gradient is not convertible to float.
-        If value to assign to eff_stress_gradient < 0.0 or value > 1.0.
-        If value to assign to void_ratio_0_ref_frozen
-        is not convertible to float.
-        If value to assign to void_ratio_0_ref_frozen  < 0.0 or value > 1.0.
-        If value to assign to tot_stress_0_ref_frozen
-        is not convertible to float.
-        If value to assign to tot_stress_0_ref_frozen < 0.0 or value > 1.0.
-        If value to assign to tot_stress is not convertible to float.
-        If value to assign to tot_stress  < 0.0 or value > 1.0.
-        If value to assign to tot_stress_gradient is not convertible to float.
-        If value to assign to tot_stress_gradient < 0.0 or value > 1.0.
+        If coord is not convertible to float.
+        If local_coord is not convertible to float.
+        If weight is not convertible to float.
+        If void_ratio is not convertible to float.
+        If void_ratio is negative.
+        If void_ratio_0 is not convertible to float.
+        If void_ratio_0 is negative.
+        If temp is not convertible to float.
+        If temp_rate is not convertible to float.
+        If temp_gradient is not convertible to float.
+        If deg_sat_water is not convertible to float.
+        If deg_sat_water <0.0 or >1.0.
+        If hyd_cond is not convertible to float.
+        If hyd_cond is negative.
+        If hyd_cond_gradient is not convertible to float.
+        If water_flux_rate is not convertible to float.
+        If pre_consol_stress is not convertible to float.
+        If eff_stress is not convertible to float.
+        If eff_stress_gradient is not convertible to float.
+        If eff_stress_gradient is positive.
+        If void_ratio_0_ref_frozen is not convertible to float.
+        If void_ratio_0_ref_frozen is negative.
+        If tot_stress_0_ref_frozen is not convertible to float.
+        If tot_stress is not convertible to float.
+        If tot_stress_gradient is not convertible to float.
+        If tot_stress_gradient is positive.
     """
     _local_coord: float = 0.0
     _weight: float = 0.0
@@ -520,7 +522,7 @@ class IntegrationPoint1D(Point1D):
     _temp: float = 0.0
     _temp_rate: float = 0.0
     _temp_gradient: float = 0.0
-    _deg_sat_water: float = 0.0
+    _deg_sat_water: float = 1.0
     _deg_sat_ice: float = 0.0
     _vol_ice_cont: float = 0.0
     _hyd_cond: float = 0.0
@@ -585,8 +587,6 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            Value to assign to the local coordinate of the
-            :c:`IntegrationPoint1D`.
 
         Returns
         -------
@@ -611,7 +611,6 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            Value to assign to the weight of the :c:`IntegrationPoint1D`.
 
         Returns
         -------
@@ -636,7 +635,6 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            Value to assign to the void ratio of the :c:`IntegrationPoint1D`.
 
         Returns
         -------
@@ -650,7 +648,7 @@ class IntegrationPoint1D(Point1D):
 
         Notes
         -----
-        Also updates porosity.
+        Also updates porosity and volumetric ice content.
         """
         return self._void_ratio
 
@@ -670,8 +668,6 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            Value to assign to the initial void ratio
-            of the :c:`IntegrationPoint1D`.
 
         Returns
         -------
@@ -699,7 +695,6 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            Value to assign to the temperature of the :c:`IntegrationPoint1D`.
 
         Returns
         -------
@@ -723,8 +718,6 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            Value to assign to the temperature rate
-            of the :c:`IntegrationPoint1D`.
 
         Returns
         -------
@@ -748,8 +741,6 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            Value to assign to the temperature gradient
-            of the :c:`IntegrationPoint1D`.
 
         Returns
         -------
@@ -792,7 +783,8 @@ class IntegrationPoint1D(Point1D):
         Notes
         ------
         Volumetric ice content is not intended to be set directly.
-        It is updated when degree of saturation of water is updated.
+        It is updated when void ratio or
+        degree of saturation of water are updated.
         """
         return self._vol_ice_cont
 
@@ -803,8 +795,6 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            Value to assign to the degree of saturation of water of the
-            :c:`IntegrationPoint1D`.
 
         Returns
         -------
@@ -936,12 +926,10 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            The value to assign to hydraulic conductivity.
 
         Returns
         -------
         float
-            The current value of hydraulic conductivity.
 
         Raises
         ------
@@ -967,12 +955,10 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            The value to assign to hydraulic conductivity gradient.
 
         Returns
         -------
         float
-            The current value of hydraulic conductivity gradient.
 
         Raises
         ------
@@ -998,12 +984,10 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            The value to assign to the water flux rate.
 
         Returns
         -------
         float
-            The current value of the water flux rate.
 
         Raises
         ------
@@ -1023,29 +1007,21 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            The value to assign to preconsolidation stress.
 
         Returns
         -------
         float
-            The current value of preconsolidation stress.
 
         Raises
         ------
         ValueError
             If the value to assign is not convertible to float.
-            If the value to assign is negative.
         """
         return self._pre_consol_stress
 
     @pre_consol_stress.setter
     def pre_consol_stress(self, value: float) -> None:
-        value = float(value)
-        if value < 0.0:
-            raise ValueError(
-                f"value {value} for pre_consol_stress cannot be negative."
-            )
-        self._pre_consol_stress = value
+        self._pre_consol_stress = float(value)
 
     @property
     def eff_stress(self) -> float:
@@ -1054,29 +1030,21 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            The value to assign to effective stress.
 
         Returns
         -------
         float
-            The current value of effective stress.
 
         Raises
         ------
         ValueError
             If the value to assign is not convertible to float.
-            If the value to assign is negative.
         """
         return self._eff_stress
 
     @eff_stress.setter
     def eff_stress(self, value: float) -> None:
-        value = float(value)
-        if value < 0.0:
-            raise ValueError(
-                f"value {value} for eff_stress cannot be negative."
-            )
-        self._eff_stress = value
+        self._eff_stress = float(value)
 
     @property
     def eff_stress_gradient(self) -> float:
@@ -1087,12 +1055,10 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            The value to assign to effective stress gradient.
 
         Returns
         -------
         float
-            The current value of effective stress gradient.
 
         Raises
         ------
@@ -1118,12 +1084,10 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            The value to assign to the reference void ratio.
 
         Returns
         -------
         float
-            The current value of the reference void ratio.
 
         Raises
         ------
@@ -1150,30 +1114,21 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            The value to assign to the reference total stress.
 
         Returns
         -------
         float
-            The current value of the reference total stress.
 
         Raises
         ------
         ValueError
             If the value to assign is not convertible to float.
-            If the value to assign is negative.
         """
         return self._tot_stress_0_ref_frozen
 
     @tot_stress_0_ref_frozen.setter
     def tot_stress_0_ref_frozen(self, value: float) -> None:
-        value = float(value)
-        if value < 0.0:
-            raise ValueError(
-                f"value {value} for tot_stress_0_ref_frozen"
-                + " cannot be negative."
-            )
-        self._tot_stress_0_ref_frozen = value
+        self._tot_stress_0_ref_frozen = float(value)
 
     @property
     def tot_stress(self) -> float:
@@ -1182,29 +1137,21 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            The value to assign to total stress.
 
         Returns
         -------
         float
-            The current value of total stress.
 
         Raises
         ------
         ValueError
             If the value to assign is not convertible to float.
-            If the value to assign is negative.
         """
         return self._tot_stress
 
     @tot_stress.setter
     def tot_stress(self, value: float) -> None:
-        value = float(value)
-        if value < 0.0:
-            raise ValueError(
-                f"value {value} for tot_stress cannot be negative."
-            )
-        self._tot_stress = value
+        self._tot_stress = float(value)
 
     @property
     def tot_stress_gradient(self) -> float:
@@ -1215,12 +1162,10 @@ class IntegrationPoint1D(Point1D):
         Parameters
         ----------
         float
-            The value to assign to total stress gradient.
 
         Returns
         -------
         float
-            The current value of total stress gradient.
 
         Raises
         ------
@@ -1245,26 +1190,25 @@ class Element1D:
 
     Attributes
     ----------
-    order
     nodes
+    order
     jacobian
     int_pts
 
     Parameters
     ----------
+    nodes : Sequence[Node1D]
+        The tuple of :c:`Node1D` contained in the element.
     order : int, optional, default=3
         The order of interpolation used in the element.
-    nodes : Sequence[Node1D], optional, default=tuple[:c:`Node1D`]
-        The tuple of :c:`Node1D` contained in the element.
 
     Raises
     ------
     TypeError:
-        If the value to assign to nodes initializer contains
-        non-:c:`Node1D` objects.
+        If nodes contains non-:c:`Node1D` objects.
     ValueError
-        If the value to assign to len(nodes) != 1.
-        If the value to assign to order {value} != 1 or 3.
+        If len(nodes) is invalid for the order of interpolation.
+        If order is not 1 or 3.
     """
 
     _int_pt_coords_linear: ClassVar[tuple[float, float]] = (
@@ -1276,14 +1220,14 @@ class Element1D:
         0.5,
     )
 
-    _int_pt_coords_cubic = (
+    _int_pt_coords_cubic: ClassVar[tuple[float, ...]] = (
         0.04691007703066802,
         0.2307653449471585,
         0.5,
         0.7692346550528415,
         0.9530899229693319,
     )
-    _int_pt_weights_cubic = (
+    _int_pt_weights_cubic: ClassVar[tuple[float, ...]] = (
         0.11846344252809454,
         0.23931433524968324,
         0.28444444444444444,
@@ -1340,16 +1284,26 @@ class Element1D:
     def order(self) -> int:
         """The order of interpolation used in the element.
 
+        Parameters
+        ----------
+        int
+
         Returns
         ------
         int
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to int.
+            If the value to assign is not 1 or 3.
         """
         return self._order
 
     @order.setter
     def order(self, value: int) -> None:
         value = int(value)
-        if value != 1 and value != 3:
+        if value not in [1, 3]:
             raise ValueError(f"order {value} not 1 or 3")
         self._order = value
 
@@ -1392,51 +1346,45 @@ class Boundary1D:
     nodes
     int_pts
 
-
     Parameters
     ----------
-    nodes : Sequence[Node1D], optional, default=tuple[:c:`Node1D`]
+    nodes : Sequence[Node1D]
         The tuple of :c:`Node1D` contained in the element.
-    int_pts : Sequence[Node1D], optional, 
-        default=tuple[:c:`IntegrationPoint1D`] | None
+    int_pts : Sequence[IntegrationPoint1D], optional, default=()
         The tuple of :c:`IntegrationPoint1D` contained in the element.
 
     Raises
     ------
     TypeError:
-        If the value to assign to nodes initializer contains
-        non-:c:`Node1D` objects.
-        If the value to assign to int_pts contains
-        invalid objects and not IntegrationPoint1D.
+        If nodes contains non-:c:`Node1D` objects.
+        If int_pts contains non-:c:`IntegrationPoint1D` objects.
     ValueError
-        If the value to assign to len(nodes) != 1.
-
+        If len(nodes) != 1.
+        If len(int_pts) > 1.
     """
     _nodes: tuple[Node1D, ...]
-    _int_pts: tuple[IntegrationPoint1D, ...] | None = None
+    _int_pts: tuple[IntegrationPoint1D, ...] = ()
 
     def __init__(
         self,
         nodes: Sequence[Node1D],
-        int_pts: Sequence[IntegrationPoint1D] | None = None,
+        int_pts: Sequence[IntegrationPoint1D] = (),
     ):
         # check for valid node list and assign to self
         if (nnod := len(nodes)) != 1:
             raise ValueError(f"len(nodes) is {nnod} not equal to 1")
-        for nd in nodes:
-            if not isinstance(nd, Node1D):
-                raise TypeError("nodes contains invalid objects, not Node1D")
+        if not isinstance(nodes[0], Node1D):
+            raise TypeError("nodes contains invalid objects, not Node1D")
         self._nodes = tuple(nodes)
-        if int_pts is not None:
-            if len(int_pts) != 1:
-                raise ValueError(f"len(int_pts) {len(int_pts)} not equal to 1")
-            for ip in int_pts:
-                if not isinstance(ip, IntegrationPoint1D):
-                    raise TypeError(
-                        "int_pts contains invalid objects, "
-                        + "not IntegrationPoint1D"
-                    )
-            self._int_pts = tuple(int_pts)
+        if len(int_pts) > 1:
+            raise ValueError(f"len(int_pts) {len(int_pts)} > 1")
+        for ip in int_pts:
+            if not isinstance(ip, IntegrationPoint1D):
+                raise TypeError(
+                    "int_pts contains invalid objects, "
+                    + "not IntegrationPoint1D"
+                )
+        self._int_pts = tuple(int_pts)
 
     @property
     def nodes(self) -> tuple[Node1D, ...]:
@@ -1449,12 +1397,12 @@ class Boundary1D:
         return self._nodes
 
     @property
-    def int_pts(self) -> tuple[IntegrationPoint1D, ...] | None:
+    def int_pts(self) -> tuple[IntegrationPoint1D, ...]:
         """The tuple of :c:`IntegrationPoint1D` contained in the element.
 
         Returns
         ------
-        tuple[:c:`IntegrationPoint1D`] | None
+        tuple[:c:`IntegrationPoint1D`]
         """
         return self._int_pts
 
@@ -1479,40 +1427,30 @@ class Mesh1D:
     Methods
     -------
     generate_mesh
-    _generate_nodes
-    _generate_elements
     add_boundary
     remove_boundary
     clear_boundaries
 
     Parameters
     -----------
-    z_range: array, optional, default=npt.ArrayLike | None = None
+    z_range: array_like, optional, default=()
         The value to assign to range of z values from z_min to z_max.
     grid_size: float, optional, default=0.0
         The value to assign to specified grid size of the mesh.
         Cannot be negative.
     num_elements: int, optional, default=10
-        The value to assign to number of :c:`Element1D`
-        contained in the mesh.
+        The specified number of :c:`Element1D` in the mesh.
     order: int, optional, default=3
-        The value to assign to order of interpolation to be used.
+        The order of interpolation to be used.
     generate: bool, optional, default=False
-        Flag for whether to generates a mesh using assigned mesh properties.
+        Flag for whether to generate a mesh using assigned properties.
 
     Raises
     ------
     ValueError
-            If the value to assign to z_min to assign cannot be cast to float.
-            If the value to assign to z_min to assign is >= z_max.
-            If the value to assign to z_max to assign cannot be cast to float.
-            If the value to assign to z_max to assign is <= z_min.
-            If the value to assign to grid_size to assign cannot be cast to float.
-            If the value to assign to grid_size to assign is < 0.0.
-            If the value to assign to assign to z_min or z_max are invalid
-            (e.g. left as default +/-inf)
-            If the value to assign to assign to grid_size is invalid
-            (e.g. set to inf).
+        If z_range values cannot be cast to float.
+        If grid_size cannot be cast to float.
+        If grid_size < 0.0.
     """
     _boundaries: set[Boundary1D] = set()
     _z_min: float = -np.inf
@@ -1524,13 +1462,13 @@ class Mesh1D:
 
     def __init__(
         self,
-        z_range: npt.ArrayLike | None = None,
+        z_range: npt.ArrayLike = (),
         grid_size: float = 0.0,
         num_elements: int = 10,
         order: int = 3,
         generate: bool = False,
     ):
-        if z_range is not None:
+        if z_range:
             self.z_min = np.min(z_range)
             self.z_max = np.max(z_range)
         self.grid_size = grid_size
@@ -1544,7 +1482,6 @@ class Mesh1D:
         Parameters
         ----------
         float
-            Value to assign to z_min.
 
         Returns
         -------
@@ -1573,7 +1510,6 @@ class Mesh1D:
         Parameters
         ----------
         float
-            Value to assign to z_max.
 
         Returns
         -------
@@ -1602,7 +1538,6 @@ class Mesh1D:
         Parameters
         ----------
         float
-            Value to assign to grid size.
 
         Returns
         -------
@@ -1622,7 +1557,7 @@ class Mesh1D:
         The actual element size will typically be smaller.
         If grid_size is set to 0.0, its value is ignored
         and the element size is calculated based on a specified (or default)
-        number of nodes.
+        number of elements.
         """
         return self._grid_size
 
@@ -1764,7 +1699,7 @@ class Mesh1D:
             raise ValueError(
                 f"num_elements {num_elements} not strictly positive")
         order = int(order)
-        if order != 1 and order != 3:
+        if order not in [1, 3]:
             raise ValueError(f"order {order} not 1 or 3")
         num_elements_out = self._generate_nodes(
             num_elements * order + 1,
@@ -1798,6 +1733,8 @@ class Mesh1D:
         )
 
     def add_boundary(self, new_boundary: Boundary1D) -> None:
+        """ADD A DOCSTRING
+        """
         if not isinstance(new_boundary, Boundary1D):
             raise TypeError(
                 f"type(new_boundary) {type(new_boundary)} invalid, "
@@ -1807,7 +1744,7 @@ class Mesh1D:
             if nd not in self.nodes:
                 raise ValueError(f"new_boundary contains node {nd}"
                                  + " not in mesh")
-        if new_boundary.int_pts is not None:
+        if new_boundary.int_pts:
             int_pts = tuple(ip for e in self.elements for ip in e.int_pts)
             for ip in new_boundary.int_pts:
                 if ip not in int_pts:
@@ -1817,7 +1754,11 @@ class Mesh1D:
         self._boundaries.add(new_boundary)
 
     def remove_boundary(self, boundary: Boundary1D) -> None:
+        """ADD A DOCSTRING
+        """
         self._boundaries.remove(boundary)
 
     def clear_boundaries(self) -> None:
+        """ADD A DOCSTRING
+        """
         self._boundaries.clear()

@@ -183,13 +183,13 @@ class ThermalBoundary1D(Boundary1D):
         return self._parent.nodes
 
     @property
-    def int_pts(self) -> Optional[tuple[IntegrationPoint1D, ...]]:
+    def int_pts(self) -> tuple[IntegrationPoint1D, ...]:
         """The tuple of :c:`IntegrationPoint1D` contained in the boundary
         element.
 
         Returns
         ------
-        tuple of :c:`IntegrationPoint1D`
+        tuple[:c:`IntegrationPoint1D`]
 
         Notes
         -----
@@ -325,6 +325,9 @@ class ThermalBoundary1D(Boundary1D):
 
 
 class ThermalAnalysis1D:
+    _free_vec: tuple[npt.NDArray, ...]
+    _free_arr: tuple[npt.NDArray, ...]
+
     def __init__(self, mesh: Mesh1D) -> None:
         # validate mesh on which the analysis is to be performed
         if not isinstance(mesh, Mesh1D):
@@ -782,15 +785,13 @@ class ThermalAnalysis1D:
         # create list of free node indices
         # that will be updated at each iteration
         # (i.e. are not fixed/Dirichlet boundary conditions)
-        free_ind = [nd.index for nd in self.mesh.nodes]
+        free_ind_list = [nd.index for nd in self.mesh.nodes]
         for tb in self.boundaries:
             if tb.bnd_type == ThermalBoundary1D.BoundaryType.temp:
-                free_ind.remove(tb.nodes[0].index)
-        free_ind = np.array(free_ind, dtype=int)
-        self._free_vec: tuple[npt.NDArray[np.integer]] = np.ix_(free_ind)
-        self._free_arr: tuple[npt.NDArray[np.integer],
-                              npt.NDArray[np.integer]] = np.ix_(free_ind,
-                                                                free_ind)
+                free_ind_list.remove(tb.nodes[0].index)
+        free_ind = np.array(free_ind_list, dtype=int)
+        self._free_vec = np.ix_(free_ind)
+        self._free_arr = np.ix_(free_ind, free_ind)
 
     def initialize_time_step(self) -> None:
         """Sets up the system at the beginning of a time step.

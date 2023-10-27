@@ -119,7 +119,8 @@ class ConsolidationElement1D(Element1D):
             Gs = ip.material.spec_grav_solids
             k = ip.hyd_cond
             dk_de = ip.hyd_cond_gradient
-            k_coef = dk_de * (Gs - 1.0) / (1.0 + e) - k * (Gs - 1.0) / (1.0 + e) ** 2
+            k_coef = dk_de * (Gs - 1.0) / (1.0 + e) - k * \
+                (Gs - 1.0) / (1.0 + e) ** 2
             B = self._parent._gradient_matrix(ip.local_coord, jac)
             N = self._parent._shape_matrix(ip.local_coord)
             K += (
@@ -204,7 +205,8 @@ class ConsolidationBoundary1D(Boundary1D):
         :c:`frozen_ground_fem.geometry.Boundary1D`.
     """
 
-    BoundaryType = Enum("BoundaryType", ["void_ratio", "fixed_flux", "water_flux"])
+    BoundaryType = Enum(
+        "BoundaryType", ["void_ratio", "fixed_flux", "water_flux"])
 
     def __init__(
         self,
@@ -236,7 +238,7 @@ class ConsolidationBoundary1D(Boundary1D):
         return self._parent.nodes
 
     @property
-    def int_pts(self) -> Optional[tuple[IntegrationPoint1D, ...]]:
+    def int_pts(self) -> tuple[IntegrationPoint1D, ...]:
         """The tuple of :c:`IntegrationPoint1D` contained in
         the boundary element.
 
@@ -275,7 +277,8 @@ class ConsolidationBoundary1D(Boundary1D):
     @bnd_type.setter
     def bnd_type(self, value):
         if not isinstance(value, ConsolidationBoundary1D.BoundaryType):
-            raise TypeError(f"{value} is not a ConsolidationBoundary1D.BoundaryType")
+            raise TypeError(
+                f"{value} is not a ConsolidationBoundary1D.BoundaryType")
         self._bnd_type = value
 
     @property
@@ -335,7 +338,8 @@ class ConsolidationBoundary1D(Boundary1D):
     @bnd_function.setter
     def bnd_function(self, value):
         if not (callable(value) or value is None):
-            raise TypeError(f"type(value) {type(value)} is not callable or None")
+            raise TypeError(
+                f"type(value) {type(value)} is not callable or None")
         self._bnd_function = value
 
     def update_nodes(self) -> None:
@@ -392,7 +396,8 @@ class ConsolidationAnalysis1D:
             )
         # assign the mesh and create thermal elements
         self._mesh = mesh
-        self._elements = tuple(ConsolidationElement1D(e) for e in self.mesh.elements)
+        self._elements = tuple(ConsolidationElement1D(e)
+                               for e in self.mesh.elements)
         self._boundaries: set[ConsolidationBoundary1D] = set()
         # set default values for time stepping algorithm
         self.implicit_factor = 0.5  # (Crank-Nicolson)
@@ -403,10 +408,14 @@ class ConsolidationAnalysis1D:
         self._void_ratio_vector = np.zeros(self.mesh.num_nodes)
         self._water_flux_vector_0 = np.zeros(self.mesh.num_nodes)
         self._water_flux_vector = np.zeros(self.mesh.num_nodes)
-        self._stiffness_matrix_0 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
-        self._stiffness_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
-        self._mass_matrix_0 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
-        self._mass_matrix = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
+        self._stiffness_matrix_0 = np.zeros(
+            (self.mesh.num_nodes, self.mesh.num_nodes))
+        self._stiffness_matrix = np.zeros(
+            (self.mesh.num_nodes, self.mesh.num_nodes))
+        self._mass_matrix_0 = np.zeros(
+            (self.mesh.num_nodes, self.mesh.num_nodes))
+        self._mass_matrix = np.zeros(
+            (self.mesh.num_nodes, self.mesh.num_nodes))
         self._weighted_water_flux_vector = np.zeros(self.mesh.num_nodes)
         self._weighted_stiffness_matrix = np.zeros(
             (self.mesh.num_nodes, self.mesh.num_nodes)
@@ -414,8 +423,10 @@ class ConsolidationAnalysis1D:
         self._weighted_mass_matrix = np.zeros(
             (self.mesh.num_nodes, self.mesh.num_nodes)
         )
-        self._coef_matrix_0 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
-        self._coef_matrix_1 = np.zeros((self.mesh.num_nodes, self.mesh.num_nodes))
+        self._coef_matrix_0 = np.zeros(
+            (self.mesh.num_nodes, self.mesh.num_nodes))
+        self._coef_matrix_1 = np.zeros(
+            (self.mesh.num_nodes, self.mesh.num_nodes))
         self._residual_water_flux_vector = np.zeros(self.mesh.num_nodes)
         self._delta_void_ratio_vector = np.zeros(self.mesh.num_nodes)
 
@@ -649,9 +660,11 @@ class ConsolidationAnalysis1D:
     @max_iterations.setter
     def max_iterations(self, value):
         if not isinstance(value, int):
-            raise TypeError(f"type(max_iterations) {type(value)} invalid, must be int")
+            raise TypeError(f"type(max_iterations) {
+                            type(value)} invalid, must be int")
         if value <= 0:
-            raise ValueError(f"max_iterations {value} invalid, must be positive")
+            raise ValueError(f"max_iterations {
+                             value} invalid, must be positive")
         self._max_iterations = value
 
     def add_boundary(self, new_boundary: ConsolidationBoundary1D) -> None:
@@ -662,7 +675,8 @@ class ConsolidationAnalysis1D:
             )
         if new_boundary._parent not in self.mesh.boundaries:
             raise ValueError(
-                "new_boundary does not have parent Boundary1D " + "in the parent mesh"
+                "new_boundary does not have parent Boundary1D "
+                + "in the parent mesh"
             )
         self._boundaries.add(new_boundary)
 
@@ -714,7 +728,8 @@ class ConsolidationAnalysis1D:
         """
         self._water_flux_vector[:] = 0.0
         for be in self.boundaries:
-            if not (be.bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio):
+            if not (be.bnd_type
+                    == ConsolidationBoundary1D.BoundaryType.void_ratio):
                 self._water_flux_vector[be.nodes[0].index] += be.bnd_value
 
     def update_stiffness_matrix(self) -> None:
@@ -902,7 +917,8 @@ class ConsolidationAnalysis1D:
             + self.alpha * self._stiffness_matrix
         )
         self._weighted_mass_matrix[:, :] = (
-            self.one_minus_alpha * self._mass_matrix_0 + self.alpha * self._mass_matrix
+            self.one_minus_alpha * self._mass_matrix_0
+            + self.alpha * self._mass_matrix
         )
         self._coef_matrix_0[:, :] = (
             self._weighted_mass_matrix * self.over_dt
@@ -939,9 +955,9 @@ class ConsolidationAnalysis1D:
             self._residual_water_flux_vector[self._free_vec],
         )
         # increment void ratio and iteration variables
-        self._void_ratio_vector[self._free_vec] += self._delta_void_ratio_vector[
-            self._free_vec
-        ]
+        self._void_ratio_vector[self._free_vec] += (
+            self._delta_void_ratio_vector[self._free_vec]
+        )
         self._eps_a = float(
             np.linalg.norm(self._delta_void_ratio_vector)
             / np.linalg.norm(self._void_ratio_vector)
