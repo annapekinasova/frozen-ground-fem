@@ -197,54 +197,54 @@ class Material:
     Raises
     ------
     ValueError
-        If thrm_cond_solids value to assign is not convertible to float.
-        If thrm_cond_solids value < 0.
-        If spec_grav_solids value to assign is not convertible to float.
-        If spec_grav_solids value < 0.
-        If spec_heat_cap_solids value to assign is not convertible to float.
-        If spec_heat_cap_solids value < 0.
-        If deg_sat_water_alpha vvalue to assign is not convertible to float.
-        If deg_sat_water_alpha value < 0.
-        If deg_sat_water_beta value to assign is not convertible to float.
-        If deg_sat_water_beta value < 0.
-        If hyd_cond_index value to assign is not convertible to float.
-        If hyd_cond_index value < 0.
-        If hyd_cond_mult value to assign is not convertible to float.
-        If hyd_cond_mult value < 0.
-        If hyd_cond_0 value to assign is not convertible to float.
-        If hyd_cond_0 value < 0.
-        If void_ratio_0_hyd_cond value to assign is not convertible to float.
-        If void_ratio_0_hyd_cond value < 0.
-        If void_ratio_min value to assign is not convertible to float.
-        If void_ratio_min value < 0.
-        If void_ratio_sep value to assign is not convertible to float.
-        If void_ratio_sep value < 0.
-        If void_ratio_lim value to assign is not convertible to float.
-        If void_ratio_lim value < 0.
-        If void_ratio_tr value to assign is not convertible to float.
-        If void_ratio_tr value < 0.
-        If water_flux_b1 value to assign is not convertible to float.
-        If water_flux_b1 value < 0.
-        If water_flux_b2 value to assign is not convertible to float.
-        If water_flux_b2 value < 0.
-        If water_flux_b3 value to assign is not convertible to float.
-        If water_flux_b3 value < 0.
-        If temp_rate_ref value to assign is not convertible to float.
-        If temp_rate_ref value < 0.
-        If seg_pot_0 value to assign is not convertible to float.
-        If seg_pot_0 value < 0.
-        If void_ratio_0_comp value to assign is not convertible to float.
-        If void_ratio_0_compvalue < 0.
-        If comp_index_unfrozen value to assign is not convertible to float.
-        If comp_index_unfrozen value < 0.
-        If rebound_index_unfrozen value to assign is not convertible to float.
-        If rebound_index_unfrozen value < 0.
-        If comp_index_frozen_a1 value to assign is not convertible to float.
-        If comp_index_frozen_a1 value < 0.
-        If comp_index_frozen_a2 value to assign is not convertible to float.
-        If comp_index_frozen_a2 value < 0.
-        If comp_index_frozen_a3 value to assign is not convertible to float.
-        If comp_index_frozen_a3 value < 0.
+        If thrm_cond_solids is not convertible to float.
+        If thrm_cond_solids < 0.
+        If spec_grav_solids is not convertible to float.
+        If spec_grav_solids < 0.
+        If spec_heat_cap_solids is not convertible to float.
+        If spec_heat_cap_solids < 0.
+        If deg_sat_water_alpha is not convertible to float.
+        If deg_sat_water_alpha < 0.
+        If deg_sat_water_beta is not convertible to float.
+        If deg_sat_water_beta < 0.
+        If hyd_cond_index is not convertible to float.
+        If hyd_cond_index < 0.
+        If hyd_cond_mult is not convertible to float.
+        If hyd_cond_mult < 0.
+        If hyd_cond_0 is not convertible to float.
+        If hyd_cond_0 < 0.
+        If void_ratio_0_hyd_cond is not convertible to float.
+        If void_ratio_0_hyd_cond < 0.
+        If void_ratio_min is not convertible to float.
+        If void_ratio_min < 0.
+        If void_ratio_sep is not convertible to float.
+        If void_ratio_sep < 0.
+        If void_ratio_lim is not convertible to float.
+        If void_ratio_lim < 0.
+        If void_ratio_tr is not convertible to float.
+        If void_ratio_tr < 0.
+        If water_flux_b1 is not convertible to float.
+        If water_flux_b1 < 0.
+        If water_flux_b2 is not convertible to float.
+        If water_flux_b2 < 0.
+        If water_flux_b3 is not convertible to float.
+        If water_flux_b3 < 0.
+        If temp_rate_ref is not convertible to float.
+        If temp_rate_ref < 0.
+        If seg_pot_0 is not convertible to float.
+        If seg_pot_0 < 0.
+        If void_ratio_0_comp is not convertible to float.
+        If void_ratio_0_comp < 0.
+        If comp_index_unfrozen not convertible to float.
+        If comp_index_unfrozen < 0.
+        If rebound_index_unfrozen is not convertible to float.
+        If rebound_index_unfrozen < 0.
+        If comp_index_frozen_a1 is not convertible to float.
+        If comp_index_frozen_a1 < 0.
+        If comp_index_frozen_a2 is not convertible to float.
+        If comp_index_frozen_a2 < 0.
+        If comp_index_frozen_a3 is not convertible to float.
+        If comp_index_frozen_a3 < 0.
 
     """
 
