@@ -1711,6 +1711,7 @@ class Mesh1D:
         self.mesh_valid = True
 
     def _generate_nodes(self, num_nodes: int, order: int) -> int:
+
         if np.isinf(self.z_min) or np.isinf(self.z_max):
             raise ValueError("cannot generate mesh, non-finite limits")
         if np.isinf(self.grid_size):
@@ -1733,8 +1734,27 @@ class Mesh1D:
         )
 
     def add_boundary(self, new_boundary: Boundary1D) -> None:
-        """ADD A DOCSTRING
         """
+        Generates boundary using assigned boundary properties.
+
+        Parameters
+        ----------
+        new_boundary : Boundary1D
+            Generats boundary nodes and integration points
+
+        Raises
+        ------
+        TypeError
+            If new_boundary is not instance Boundary1D Class
+        ValueError
+                If new_boundary contains node not in mesh
+                If new_boundary contains integer points not in mesh
+
+        Notes
+        -----
+
+        """
+
         if not isinstance(new_boundary, Boundary1D):
             raise TypeError(
                 f"type(new_boundary) {type(new_boundary)} invalid, "
