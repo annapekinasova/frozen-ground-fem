@@ -1691,7 +1691,7 @@ class Mesh1D:
         the argument num_elements will be ignored
         and the number of elements will be calculated
         as the nearest integer number of elements:
-            (z_max - z_min) // grid_size.
+            (z_max - z_min) // grid_size
         """
         self.mesh_valid = False
         num_elements = int(num_elements)
@@ -1734,23 +1734,22 @@ class Mesh1D:
         )
 
     def add_boundary(self, new_boundary: Boundary1D) -> None:
-        """
-        Generates boundary using assigned boundary properties.
+        """Adds a boundary to the mesh.
 
         Parameters
         ----------
-        new_boundary : Boundary1D
-            New boundary nodes and integration points.
+        new_boundary : :c:`Boundary1D`
+            The boundary to add to the mesh.
 
         Raises
         ------
         TypeError
-            If new_boundary is not instance Boundary1D Class.
+            If new_boundary is not an instance of :c:`Boundary1D`.
         ValueError
-                If new_boundary contains node not in mesh.
-                If new_boundary contains integer points not in mesh.
+            If new_boundary contains a :c:`Node1D` not in the mesh.
+            If new_boundary contains an :c:`IntegrationPoint1D`
+                not in the mesh.
         """
-
         if not isinstance(new_boundary, Boundary1D):
             raise TypeError(
                 f"type(new_boundary) {type(new_boundary)} invalid, "
@@ -1770,21 +1769,22 @@ class Mesh1D:
         self._boundaries.add(new_boundary)
 
     def remove_boundary(self, boundary: Boundary1D) -> None:
-        """
-        Remove exiting boundary information.
+        """Remove an existing boundary from the mesh.
 
         Parameters
         ----------
-        boundary : Boundary1D
-            Boundary infomration containing
-            nodes and integration points.
+        boundary : :c:`Boundary1D`
+            The boundary to remove from the mesh.
+
+        Raises
+        ------
+        ValueError
+            If boundary is not in the mesh.
         """
         self._boundaries.remove(boundary)
 
     def clear_boundaries(self) -> None:
-        """
-        Clears exiting boundary nodes and
-        integration points.
-
+        """ Clears existing :c:`Boundary1D` objects
+        from the mesh.
         """
         self._boundaries.clear()
