@@ -1675,15 +1675,15 @@ class Mesh1D:
         Parameters
         ----------
         num_elements : int, optional, default=10
-            Number of elements to be created in the generated mesh
+            Number of elements to be created in the generated mesh.
         order : int, optional, default=3
-            The order of interpolation to be used
+            The order of interpolation to be used.
 
         Raises
         ------
         ValueError
-            If z_min or z_max are invalid (e.g. left as default +/-inf)
-            If grid_size is invalid (e.g. set to inf)
+            If z_min or z_max are invalid (e.g. left as default +/-inf).
+            If grid_size is invalid (e.g. set to inf).
 
         Notes
         -----
@@ -1691,7 +1691,7 @@ class Mesh1D:
         the argument num_elements will be ignored
         and the number of elements will be calculated
         as the nearest integer number of elements:
-            (z_max - z_min) // grid_size
+            (z_max - z_min) // grid_size.
         """
         self.mesh_valid = False
         num_elements = int(num_elements)
@@ -1740,19 +1740,15 @@ class Mesh1D:
         Parameters
         ----------
         new_boundary : Boundary1D
-            Generats boundary nodes and integration points
+            New boundary nodes and integration points.
 
         Raises
         ------
         TypeError
-            If new_boundary is not instance Boundary1D Class
+            If new_boundary is not instance Boundary1D Class.
         ValueError
-                If new_boundary contains node not in mesh
-                If new_boundary contains integer points not in mesh
-
-        Notes
-        -----
-
+                If new_boundary contains node not in mesh.
+                If new_boundary contains integer points not in mesh.
         """
 
         if not isinstance(new_boundary, Boundary1D):
@@ -1774,11 +1770,21 @@ class Mesh1D:
         self._boundaries.add(new_boundary)
 
     def remove_boundary(self, boundary: Boundary1D) -> None:
-        """ADD A DOCSTRING
+        """
+        Remove exiting boundary information.
+
+        Parameters
+        ----------
+        boundary : Boundary1D
+            Boundary infomration containing
+            nodes and integration points.
         """
         self._boundaries.remove(boundary)
 
     def clear_boundaries(self) -> None:
-        """ADD A DOCSTRING
+        """
+        Clears exiting boundary nodes and
+        integration points.
+
         """
         self._boundaries.clear()
