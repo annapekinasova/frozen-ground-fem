@@ -216,9 +216,10 @@ class Point1D:
     ValueError
         If value cannot be converted to float.
     """
-    _coords: npt.NDArray[np.floating] = np.zeros((1,))
+    _coords: npt.NDArray[np.floating]
 
     def __init__(self, value: float = 0.0):
+        self._coords = np.zeros((1,))
         self.z = value
 
     @property
@@ -294,7 +295,7 @@ class Node1D(Point1D):
         If void_ratio is negative.
     """
     _index: int
-    _temp: npt.NDArray[np.floating] = np.zeros((1,))
+    _temp: npt.NDArray[np.floating]
     _void_ratio: float = 0.0
 
     def __init__(
@@ -305,6 +306,7 @@ class Node1D(Point1D):
             void_ratio: float = 0.0):
         self.index = index
         super().__init__(coord)
+        self._temp = np.zeros((1,))
         self.temp = temp
         self.void_ratio = void_ratio
 
@@ -535,6 +537,7 @@ class IntegrationPoint1D(Point1D):
     _tot_stress_0_ref_frozen: float = 0.0
     _tot_stress: float = 0.0
     _tot_stress_gradient: float = 0.0
+    _material: Material
 
     def __init__(
         self,
@@ -1363,7 +1366,7 @@ class Boundary1D:
         If len(int_pts) > 1.
     """
     _nodes: tuple[Node1D, ...]
-    _int_pts: tuple[IntegrationPoint1D, ...] = ()
+    _int_pts: tuple[IntegrationPoint1D, ...]
 
     def __init__(
         self,
@@ -1452,13 +1455,13 @@ class Mesh1D:
         If grid_size cannot be cast to float.
         If grid_size < 0.0.
     """
-    _boundaries: set[Boundary1D] = set()
+    _boundaries: set[Boundary1D]
     _z_min: float = -np.inf
     _z_max: float = np.inf
     _mesh_valid: bool = False
     _grid_size: float = 0.0
-    _nodes: tuple[Node1D, ...] = ()
-    _elements: tuple[Element1D, ...] = ()
+    _nodes: tuple[Node1D, ...]
+    _elements: tuple[Element1D, ...]
 
     def __init__(
         self,
@@ -1468,6 +1471,9 @@ class Mesh1D:
         order: int = 3,
         generate: bool = False,
     ):
+        self._boundaries = set()
+        self._nodes = ()
+        self._elements = ()
         if z_range:
             self.z_min = np.min(z_range)
             self.z_max = np.max(z_range)

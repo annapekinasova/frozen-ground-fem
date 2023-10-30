@@ -247,7 +247,6 @@ class Material:
         If comp_index_frozen_a3 < 0.
 
     """
-
     _thrm_cond_solids: float = 0.0
     _spec_grav_solids: float = 0.0
     _dens_solids: float = 0.0
