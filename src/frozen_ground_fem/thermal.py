@@ -1,5 +1,11 @@
 """thermal.py
 Module for implementing thermal physics using the finite element method.
+
+Classes
+-------
+ThermalElement1D
+ThermalBoundary1D
+ThermalAnalysis1D
 """
 from typing import (
     Callable,
@@ -22,16 +28,36 @@ from .geometry import (
 class ThermalElement1D(Element1D):
     """Class for computing element matrices for thermal physics.
 
+    Attributes
+    ----------
+    nodes
+    order
+    jacobian
+    int_pts
+
+    Methods
+    -------
+    heat_flow_matrix
+    heat_storage_matrix
+
     Parameters
     ----------
     parent : frozen_ground_fem.geometry.Element1D
-        The parent element from the mesh
+        The parent element from the mesh.
+    nodes : Sequence[Node1D]
+        The tuple of :c:`Node1D` contained in the element.
+    order : int, optional, default=3
+        The order of interpolation used in the element.
 
     Raises
     ------
     TypeError
         If parent initializer is not a
         :c:`frozen_ground_fem.geometry.Element1D`.
+        If nodes contains non-:c:`Node1D` objects.
+    ValueError
+        If len(nodes) is invalid for the order of interpolation.
+        If order is not 1 or 3.
     """
 
     def __init__(self, parent: Element1D) -> None:
@@ -129,26 +155,47 @@ class ThermalElement1D(Element1D):
 
 class ThermalBoundary1D(Boundary1D):
     """Class for storing and updating boundary conditions for thermal physics.
-
-    Parameters
-    ----------
-    parent : frozen_ground_fem.geometry.Boundary1D
-        The parent boundary element from the mesh
-    bnd_type : ThermalBoundary1D.BoundaryType, optional
-        The type of boundary condition
-    bnd_value : float, optional
-        The value of the boundary condition
-
     Attributes
     ----------
     BoundaryType : enum.Enum
         The set of possible boundary condition types
+    nodes
+    int_pts
+
+    Methods
+    -------
+    update_nodes
+    update_value
+
+    Parameters
+    ----------
+    parent : frozen_ground_fem.geometry.Boundary1D
+        The parent boundary element from the mesh.
+    bnd_type : ThermalBoundary1D.BoundaryType, optional, default=BoundaryType.temp
+        The type of boundary condition.
+    bnd_value : float, optional, default=0.0
+        The value of the boundary condition.
+    bnd_function : callable or None, optional, default=None
+        The function for the updates the boundary condition.
+    nodes : Sequence[Node1D]
+        The tuple of :c:`Node1D` contained in the element.
+    int_pts : Sequence[IntegrationPoint1D], optional, default=()
+        The tuple of :c:`IntegrationPoint1D` contained in the element.
 
     Raises
     ------
     TypeError
         If parent initializer is not a
         :c:`frozen_ground_fem.geometry.Boundary1D`.
+        If bnd_type is not a ThermalBoundary1D.BoundaryType.
+        If nodes contains non-:c:`Node1D` objects.
+        If int_pts contains non-:c:`IntegrationPoint1D` objects.
+        If bnd_function is not callable or None.
+    ValueError
+        If len(nodes) != 1.
+        If len(int_pts) > 1.
+        If bnd_value is not convertible to float.
+        If time for update_value is not convertible to float.
     """
 
     BoundaryType = Enum("BoundaryType", ["temp", "heat_flux", "temp_grad"])
@@ -209,12 +256,12 @@ class ThermalBoundary1D(Boundary1D):
 
         Returns
         -------
-        ThermalBoundary1D.BoundaryType
+        ThermalBoundary1D.BoundaryType.
 
         Raises
         ------
         TypeError
-            If the value to be assigned is not a ThermalBoundary1D.BoundaryType
+            If the value to be assigned is not a ThermalBoundary1D.BoundaryType.
         """
         return self._bnd_type
 
@@ -231,7 +278,7 @@ class ThermalBoundary1D(Boundary1D):
         Parameters
         ----------
         value : float
-            The value to set for the boundary condition
+            The value to set for the boundary condition.
 
         Returns
         -------
@@ -240,7 +287,7 @@ class ThermalBoundary1D(Boundary1D):
         Raises
         ------
         ValueError
-            If the value to be assigned is not convertible to float
+            If the value to be assigned is not convertible to float.
         """
         return self._bnd_value
 
@@ -257,7 +304,7 @@ class ThermalBoundary1D(Boundary1D):
         Parameters
         ----------
         value : callable or None
-            The value to set for the boundary function
+            The value to set for the boundary function.
 
         Returns
         -------
@@ -266,13 +313,12 @@ class ThermalBoundary1D(Boundary1D):
         Raises
         ------
         TypeError
-            If the value to be assigned is not callable or None
+            If the value to be assigned is not callable or None.
 
         Notes
         -----
         If a callable (i.e. function or class that implements __call__)
-        reference is provided
-        it should take one argument
+        reference is provided it should take one argument
         which is a time (in seconds).
         This function is called by the method update_value().
         """
@@ -305,17 +351,17 @@ class ThermalBoundary1D(Boundary1D):
         Parameters
         ----------
         time: float
-            The time in seconds
+            The time in seconds.
 
         Raises
         ------
         ValueError
-            It time is not convertible to float
+            If time is not convertible to float.
 
         Notes
         -----
         This method uses the bnd_function callable property
-        to update the bnd_value property
+        to update the bnd_value property.
         If bnd_function is None
         the time argument is ignored and nothing happens.
         """
@@ -324,7 +370,50 @@ class ThermalBoundary1D(Boundary1D):
             self.bnd_value = self.bnd_function(time)
 
 
-class ThermalAnalysis1D:
+class ThermalAnalysis1D():
+    """Class for computing thermal analysis 1D.
+
+    Attributes
+    ----------
+    z_min
+    z_max
+    grid_size
+    num_nodes
+    nodes
+    num_elements
+    elements
+    num_boundaries
+    boundaries
+    mesh_valid
+
+    Methods
+    -------
+    generate_mesh
+    add_boundary
+    remove_boundary
+    clear_boundaries
+
+    Parameters
+    -----------
+    z_range: array_like, optional, default=()
+        The value to assign to range of z values from z_min to z_max.
+    grid_size: float, optional, default=0.0
+        The value to assign to specified grid size of the mesh.
+        Cannot be negative.
+    num_elements: int, optional, default=10
+        The specified number of :c:`Element1D` in the mesh.
+    order: int, optional, default=3
+        The order of interpolation to be used.
+    generate: bool, optional, default=False
+        Flag for whether to generate a mesh using assigned properties.
+
+    Raises
+    ------
+    ValueError
+        If z_range values cannot be cast to float.
+        If grid_size cannot be cast to float.
+        If grid_size < 0.0.
+    """
     _free_vec: tuple[npt.NDArray, ...]
     _free_arr: tuple[npt.NDArray, ...]
 
