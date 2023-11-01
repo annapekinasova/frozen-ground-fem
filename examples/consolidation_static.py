@@ -52,7 +52,7 @@ def main():
     # generate the mesh
     mesh = geom.Mesh1D(
         z_range=[0.0, H_layer],
-        num_nodes=num_elements + 1,
+        num_elements=num_elements,
         generate=True,
     )
 
@@ -120,7 +120,8 @@ def main():
     kt = np.average(hyd_cond_0_exp)
     cv = kt / mv / gam_w
     sig_p_1_trz = sig_p_1_exp[0] + gam_b * z_nod
-    s_tot_trz = 1e3 * (mesh.nodes[-1].z - mesh.nodes[0].z) / (1.0 + e0t) * (e0t - e1t)
+    s_tot_trz = 1e3 * (mesh.nodes[-1].z -
+                       mesh.nodes[0].z) / (1.0 + e0t) * (e0t - e1t)
 
     # create void ratio boundary conditions
     void_ratio_boundary_0 = consol.ConsolidationBoundary1D(upper_boundary)
@@ -223,7 +224,8 @@ def main():
     hyd_cond_int[:, k_plot] = np.array(
         [ip.hyd_cond for e in mesh.elements for ip in e.int_pts]
     )
-    ue, U_avg, Uz = terzaghi_consolidation(z_nod, con_static._t1 - dt_plot, cv, H, ui)
+    ue, U_avg, Uz = terzaghi_consolidation(
+        z_nod, con_static._t1 - dt_plot, cv, H, ui)
     sig_p_trz[:, k_plot] = sig_p_1_trz[:] - ue
     e_trz[:, k_plot] = e0[:] - de_trz[:] * Uz[:]
     s_trz[k_plot] = s_tot_trz * U_avg
@@ -271,7 +273,8 @@ def main():
     s0 = s_con[k_50 - 1]
     t1 = t_con[k_50]
     t0 = t_con[k_50 - 1]
-    t_50_05 = np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0)) * (s_50 - s0) / (s1 - s0))
+    t_50_05 = np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0))
+                             * (s_50 - s0) / (s1 - s0))
 
     print(f"Run time = {toc - tic: 0.4f} s")
     print(f"Total settlement = {s_con[-1]} m")
@@ -450,7 +453,8 @@ def calculate_static_profile(m, qs, z):
             e1[k] = e_cu0 - Ccu * np.log10(sig_p[k] / sig_cu0)
         eps_a = np.linalg.norm(e1 - e0) / np.linalg.norm(e1)
         e0[:] = e1[:]
-    hyd_cond = m.hyd_cond_0 * 10 ** ((e1 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index)
+    hyd_cond = m.hyd_cond_0 * \
+        10 ** ((e1 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index)
     return e1, sig_p, hyd_cond
 
 
