@@ -34,26 +34,33 @@ class ThermalElement1D(Element1D):
     order
     jacobian
     int_pts
-
+    
     Methods
     -------
     heat_flow_matrix
     heat_storage_matrix
-
+        
     Parameters
     ----------
     parent : frozen_ground_fem.geometry.Element1D
         The parent element from the mesh.
+    nodes : Sequence[Node1D]
+        The tuple of :c:`Node1D` contained in the element.
+    order : int, optional, default=3
+        The order of interpolation used in the element.
 
     Raises
     ------
     TypeError
         If parent initializer is not a
         :c:`frozen_ground_fem.geometry.Element1D`.
+        If nodes contains non-:c:`Node1D` objects.
+    ValueError
+        If len(nodes) is invalid for the order of interpolation.
+        If order is not 1 or 3.
     """
-    _parent: Element1D
 
-    def __init__(self, parent: Element1D):
+    def __init__(self, parent: Element1D) -> None:
         if not isinstance(parent, Element1D):
             raise TypeError(f"type(parent): {type(parent)} is not Element1D")
         self._parent = parent
@@ -65,6 +72,11 @@ class ThermalElement1D(Element1D):
         Returns
         ------
         tuple of :c:`Node1D`
+
+        Notes
+        -----
+        This is a wrapper that references the nodes property
+        of the parent Element1D.
         """
         return self._parent.nodes
 
@@ -75,6 +87,11 @@ class ThermalElement1D(Element1D):
         Returns
         -------
         float
+
+        Notes
+        -----
+        This is a wrapper that references the jacobian property
+        of the parent Element1D.
         """
         return self._parent.jacobian
 
@@ -84,19 +101,21 @@ class ThermalElement1D(Element1D):
 
         Returns
         ------
-        tuple[:c:`IntegrationPoint1D`]
+        tuple of :c:`IntegrationPoint1D`
+
+        Notes
+        -----
+        This is a wrapper that references the int_pts property
+        of the parent Element1D.
         """
         return self._parent.int_pts
 
-    def heat_flow_matrix(self) -> npt.NDArray[np.floating]:
+    def heat_flow_matrix(self) -> np.ndarray:
         """The element heat flow (conduction) matrix.
 
         Returns
         -------
-        numpy.ndarray
-            Shape depends on order of interpolation.
-            For order=1, shape=(2, 2).
-            For order=3, shape=(4, 4).
+        numpy.ndarray, shape=(2, 2)
 
         Notes
         -----
@@ -112,15 +131,12 @@ class ThermalElement1D(Element1D):
         H *= jac
         return H
 
-    def heat_storage_matrix(self) -> npt.NDArray[np.floating]:
+    def heat_storage_matrix(self) -> np.ndarray:
         """The element heat storage matrix.
 
         Returns
         -------
-        numpy.ndarray
-            Shape depends on order of interpolation.
-            For order=1, shape=(2, 2).
-            For order=3, shape=(4, 4).
+        numpy.ndarray, shape=(2, 2)
 
         Notes
         -----
@@ -139,7 +155,6 @@ class ThermalElement1D(Element1D):
 
 class ThermalBoundary1D(Boundary1D):
     """Class for storing and updating boundary conditions for thermal physics.
-
     Attributes
     ----------
     BoundaryType : enum.Enum
@@ -147,47 +162,40 @@ class ThermalBoundary1D(Boundary1D):
     nodes
     int_pts
 
-    Methods
-    -------
-    update_nodes
-    update_value
-
     Parameters
     ----------
     parent : frozen_ground_fem.geometry.Boundary1D
         The parent boundary element from the mesh.
-    bnd_type : ThermalBoundary1D.BoundaryType, optional,
-    default=BoundaryType.temp
+    bnd_type : ThermalBoundary1D.BoundaryType, optional, default=BoundaryType.temp
         The type of boundary condition.
     bnd_value : float, optional, default=0.0
         The value of the boundary condition.
-    bnd_function : callable or None, optional, default=None
-        The function for the updates the boundary condition.
+    nodes : Sequence[Node1D]
+        The tuple of :c:`Node1D` contained in the element.
+    int_pts : Sequence[IntegrationPoint1D], optional, default=()
+        The tuple of :c:`IntegrationPoint1D` contained in the element.
 
     Raises
     ------
     TypeError
         If parent initializer is not a
         :c:`frozen_ground_fem.geometry.Boundary1D`.
-        If bnd_type is not a ThermalBoundary1D.BoundaryType.
-        If bnd_function is not callable or None.
+        If nodes contains non-:c:`Node1D` objects.
+        If int_pts contains non-:c:`IntegrationPoint1D` objects.
     ValueError
-        If bnd_value is not convertible to float.
+        If len(nodes) != 1.
+        If len(int_pts) > 1.
     """
-    BoundaryType = Enum("BoundaryType", ["temp", "heat_flux", "temp_grad"])
 
-    _parent: Boundary1D
-    _bnd_type: BoundaryType
-    _bnd_value: float = 0.0
-    _bnd_function: Callable | None
+    BoundaryType = Enum("BoundaryType", ["temp", "heat_flux", "temp_grad"])
 
     def __init__(
         self,
         parent: Boundary1D,
         bnd_type=BoundaryType.temp,
         bnd_value: float = 0.0,
-        bnd_function: Callable | None = None,
-    ):
+        bnd_function=None,
+    ) -> None:
         if not isinstance(parent, Boundary1D):
             raise TypeError(f"type(parent): {type(parent)} is not Boundary1D")
         self._parent = parent
@@ -201,7 +209,12 @@ class ThermalBoundary1D(Boundary1D):
 
         Returns
         ------
-        tuple[:c:`Node1D`]
+        tuple of :c:`Node1D`
+
+        Notes
+        -----
+        This is a wrapper that references the nodes property
+        of the parent Boundary1D.
         """
         return self._parent.nodes
 
@@ -213,6 +226,11 @@ class ThermalBoundary1D(Boundary1D):
         Returns
         ------
         tuple[:c:`IntegrationPoint1D`]
+
+        Notes
+        -----
+        This is a wrapper that references the int_pts property
+        of the parent Boundary1D.
         """
         return self._parent.int_pts
 
@@ -222,7 +240,8 @@ class ThermalBoundary1D(Boundary1D):
 
         Parameters
         ----------
-        ThermalBoundary1D.BoundaryType
+        value : ThermalBoundary1D.BoundaryType
+            The value to set the type of boundary condition.
 
         Returns
         -------
@@ -231,13 +250,12 @@ class ThermalBoundary1D(Boundary1D):
         Raises
         ------
         TypeError
-            If the value to be assigned
-            is not a ThermalBoundary1D.BoundaryType.
+            If the value to be assigned is not a ThermalBoundary1D.BoundaryType
         """
         return self._bnd_type
 
     @bnd_type.setter
-    def bnd_type(self, value: BoundaryType):
+    def bnd_type(self, value):
         if not isinstance(value, ThermalBoundary1D.BoundaryType):
             raise TypeError(f"{value} is not a ThermalBoundary1D.BoundaryType")
         self._bnd_type = value
@@ -248,7 +266,8 @@ class ThermalBoundary1D(Boundary1D):
 
         Parameters
         ----------
-        float
+        value : float
+            The value to set for the boundary condition
 
         Returns
         -------
@@ -257,37 +276,39 @@ class ThermalBoundary1D(Boundary1D):
         Raises
         ------
         ValueError
-            If the value to be assigned is not convertible to float.
+            If the value to be assigned is not convertible to float
         """
         return self._bnd_value
 
     @bnd_value.setter
-    def bnd_value(self, value: float) -> None:
+    def bnd_value(self, value):
         value = float(value)
         self._bnd_value = value
 
     @property
     def bnd_function(self) -> Optional[Callable]:
         """The reference to the function
-        that updates the boundary condition.
+        the updates the boundary condition.
 
         Parameters
         ----------
-        Callable or None
+        value : callable or None
+            The value to set for the boundary function
 
         Returns
         -------
-        Callable or None
+        callable or None
 
         Raises
         ------
         TypeError
-            If the value to be assigned is not Callable or None.
+            If the value to be assigned is not callable or None
 
         Notes
         -----
         If a callable (i.e. function or class that implements __call__)
-        reference is provided it should take one argument
+        reference is provided
+        it should take one argument
         which is a time (in seconds).
         This function is called by the method update_value().
         """
@@ -314,23 +335,23 @@ class ThermalBoundary1D(Boundary1D):
             for nd in self.nodes:
                 nd.temp = self.bnd_value
 
-    def update_value(self, time: float) -> None:
+    def update_value(self, time):
         """Update the value of the boundary conditions.
 
         Parameters
         ----------
-        time : float
-            The time to pass to the boundary function.
+        time: float
+            The time in seconds
 
         Raises
         ------
         ValueError
-            If time is not convertible to float.
+            It time is not convertible to float
 
         Notes
         -----
         This method uses the bnd_function callable property
-        to update the bnd_value property.
+        to update the bnd_value property
         If bnd_function is None
         the time argument is ignored and nothing happens.
         """
@@ -339,98 +360,9 @@ class ThermalBoundary1D(Boundary1D):
             self.bnd_value = self.bnd_function(time)
 
 
-class ThermalAnalysis1D():
-    """Class for simulating thermal physics
-    on a mesh of :c:`ThermalElement1D`.
-
-    Attributes
-    ----------
-    mesh
-    elements
-    boundaries
-    time_step
-    dt
-    over_dt
-    implicit_factor
-    alpha
-    one_minus_alpha
-    implicit_error_tolerance
-    eps_s
-    max_iterations
-
-    Methods
-    -------
-    add_boundary
-    remove_boundary
-    clear_boundaries
-    update_thermal_boundary_conditions
-    update_heat_flux_vector
-    update_heat_flow_matrix
-    update_heat_storage_matrix
-    update_nodes
-    update_integration_points
-    initialize_global_system
-    initialize_time_step
-    update_weighted_matrices
-    calculate_temperature_correction
-    iterative_correction_step
-
-    Parameters
-    -----------
-    mesh : :c:`frozen_ground_fem.geometry.Mesh1D`
-        The parent mesh referenced by the analysis object.
-
-    Raises
-    ------
-    TypeError
-        If mesh is not a :c:`frozen_ground_fem.geometry.Mesh1D`.
-        If time_step is not convertible to float.
-        If time_step is negative.
-        If max_iterations is not an int.
-    ValueError
-        If mesh.mesh_valid is False.
-        If implicit_factor is not convertible to float.
-        If implicit_factor is < 0.0 or > 1.0.
-        If implicit_error_tolerance is not convertible to float.
-        If implicit_error_tolerance is negative.
-        If max_iterations is negative.
-    """
+class ThermalAnalysis1D:
     _free_vec: tuple[npt.NDArray, ...]
     _free_arr: tuple[npt.NDArray, ...]
-    _mesh: Mesh1D
-    _elements: tuple[ThermalElement1D, ...]
-    _boundaries: set[ThermalBoundary1D]
-    _implicit_factor: float = 0.5
-    _implicit_error_tolerance: float = 1e-3
-    _max_iterations: int = 100
-    # ???????????????????????
-    _temp_vector_0: np.zeros()
-    _temp_vector: np.zeros(self.mesh.num_nodes)
-    _heat_flux_vector_0: np.zeros(self.mesh.num_nodes)
-    _heat_flux_vector: np.zeros(self.mesh.num_nodes)
-    _heat_flow_matrix_0: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes))
-    _heat_flow_matrix: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes))
-    _heat_storage_matrix_0: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes)
-    )
-    _heat_storage_matrix: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes))
-    _weighted_heat_flux_vector: np.zeros(self.mesh.num_nodes)
-    _weighted_heat_flow_matrix: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes)
-    )
-    _weighted_heat_storage_matrix: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes)
-    )
-    _coef_matrix_0: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes))
-    _coef_matrix_1: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes))
-    _residual_heat_flux_vector: np.zeros(self.mesh.num_nodes)
-    _delta_temp_vector: np.zeros(self.mesh.num_nodes)
-    # ???????????????????????
 
     def __init__(self, mesh: Mesh1D) -> None:
         # validate mesh on which the analysis is to be performed
@@ -730,7 +662,7 @@ class ThermalAnalysis1D():
     def remove_boundary(self, boundary: ThermalBoundary1D) -> None:
         self._boundaries.remove(boundary)
 
-    def clear_boundaries(self) -> None:
+    def clear_boundaries(self):
         self._boundaries.clear()
 
     def update_thermal_boundary_conditions(self, time) -> None:
