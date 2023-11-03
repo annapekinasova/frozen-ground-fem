@@ -404,7 +404,7 @@ class ThermalAnalysis1D():
     _implicit_error_tolerance: float = 1e-3
     _max_iterations: int = 100
     # ???????????????????????
-    _temp_vector_0: np.zeros()
+    _temp_vector_0: npt.NDArray[np.floating]
     _temp_vector: np.zeros(self.mesh.num_nodes)
     _heat_flux_vector_0: np.zeros(self.mesh.num_nodes)
     _heat_flux_vector: np.zeros(self.mesh.num_nodes)
