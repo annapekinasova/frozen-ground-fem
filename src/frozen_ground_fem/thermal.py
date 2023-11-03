@@ -444,10 +444,6 @@ class ThermalAnalysis1D():
         self._mesh = mesh
         self._elements = tuple(ThermalElement1D(e) for e in self.mesh.elements)
         self._boundaries: set[ThermalBoundary1D] = set()
-        # set default values for time stepping algorithm
-        self.implicit_factor = 0.5  # (Crank-Nicolson)
-        self.implicit_error_tolerance = 1e-3
-        self.max_iterations = 100
         # initialize global vectors and matrices
         self._temp_vector_0 = np.zeros(self.mesh.num_nodes)
         self._temp_vector = np.zeros(self.mesh.num_nodes)
