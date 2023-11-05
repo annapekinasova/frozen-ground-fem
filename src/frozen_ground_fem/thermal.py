@@ -403,36 +403,23 @@ class ThermalAnalysis1D():
     _implicit_factor: float = 0.5
     _implicit_error_tolerance: float = 1e-3
     _max_iterations: int = 100
-    # ???????????????????????
     _temp_vector_0: npt.NDArray[np.floating]
-    _temp_vector: np.zeros(self.mesh.num_nodes)
-    _heat_flux_vector_0: np.zeros(self.mesh.num_nodes)
-    _heat_flux_vector: np.zeros(self.mesh.num_nodes)
-    _heat_flow_matrix_0: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes))
-    _heat_flow_matrix: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes))
-    _heat_storage_matrix_0: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes)
-    )
-    _heat_storage_matrix: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes))
-    _weighted_heat_flux_vector: np.zeros(self.mesh.num_nodes)
-    _weighted_heat_flow_matrix: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes)
-    )
-    _weighted_heat_storage_matrix: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes)
-    )
-    _coef_matrix_0: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes))
-    _coef_matrix_1: np.zeros(
-        (self.mesh.num_nodes, self.mesh.num_nodes))
-    _residual_heat_flux_vector: np.zeros(self.mesh.num_nodes)
-    _delta_temp_vector: np.zeros(self.mesh.num_nodes)
-    # ???????????????????????
+    _temp_vector: npt.NDArray[np.floating]
+    _heat_flux_vector_0: npt.NDArray[np.floating]
+    _heat_flux_vector: npt.NDArray[np.floating]
+    _heat_flow_matrix_0: npt.NDArray[np.floating]
+    _heat_flow_matrix: npt.NDArray[np.floating]
+    _heat_storage_matrix_0: npt.NDArray[np.floating]
+    _heat_storage_matrix: npt.NDArray[np.floating]
+    _weighted_heat_flux_vector: npt.NDArray[np.floating]
+    _weighted_heat_flow_matrix: npt.NDArray[np.floating]
+    _weighted_heat_storage_matrix: npt.NDArray[np.floating]
+    _coef_matrix_0: npt.NDArray[np.floating]
+    _coef_matrix_1: npt.NDArray[np.floating]
+    _residual_heat_flux_vector: npt.NDArray[np.floating]
+    _delta_temp_vector: npt.NDArray[np.floating]
 
-    def __init__(self, mesh: Mesh1D) -> None:
+    def __init__(self, mesh: Mesh1D):
         # validate mesh on which the analysis is to be performed
         if not isinstance(mesh, Mesh1D):
             raise TypeError(f"mesh has type {type(mesh)}, not Mesh1D")
