@@ -64,7 +64,7 @@ class ThermalElement1D(Element1D):
 
         Returns
         ------
-        tuple of :c:`Node1D`
+        tuple [:c:`Node1D`]
         """
         return self._parent.nodes
 
@@ -400,7 +400,7 @@ class ThermalAnalysis1D():
     _mesh: Mesh1D
     _elements: tuple[ThermalElement1D, ...]
     _boundaries: set[ThermalBoundary1D]
-    _implicit_factor: float = 0.5
+    _implicit_factor: float = 0.5  # (Crank-Nicolson)
     _implicit_error_tolerance: float = 1e-3
     _max_iterations: int = 100
     _temp_vector_0: npt.NDArray[np.floating]
