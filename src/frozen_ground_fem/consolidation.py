@@ -1,6 +1,12 @@
 """consolidation.py
 Module for implementing large strain consolidation physics
 using the finite element method.
+
+Classes
+-------
+ConsolidationElement1D
+ConsolidationBoundary1D
+ConsolidationAnalysis1D
 """
 from typing import (
     Callable,
@@ -10,6 +16,7 @@ from typing import (
 from enum import Enum
 
 import numpy as np
+import numpy.typing as npt
 
 from frozen_ground_fem.materials import (
     unit_weight_water as gam_w,
@@ -29,10 +36,23 @@ class ConsolidationElement1D(Element1D):
     """Class for computing element matrices
     for large strain consolidation physics.
 
+    Attributes
+    ----------
+    nodes
+    order
+    jacobian
+    int_pts
+
+    Methods
+    -------
+    stiffness_matrix
+    mass_matrix
+    deformed_length
+
     Parameters
     ----------
     parent : frozen_ground_fem.geometry.Element1D
-        The parent element from the mesh
+        The parent element from the mesh.
 
     Raises
     ------
@@ -40,8 +60,9 @@ class ConsolidationElement1D(Element1D):
         If parent initializer is not a
         :c:`frozen_ground_fem.geometry.Element1D`.
     """
+    _parent: Element1D
 
-    def __init__(self, parent: Element1D) -> None:
+    def __init__(self, parent: Element1D):
         if not isinstance(parent, Element1D):
             raise TypeError(f"type(parent): {type(parent)} is not Element1D")
         self._parent = parent
@@ -53,7 +74,7 @@ class ConsolidationElement1D(Element1D):
 
         Returns
         ------
-        tuple of :c:`Node1D`
+        tuple [:c:`Node1D`]
 
         Notes
         -----
@@ -65,10 +86,6 @@ class ConsolidationElement1D(Element1D):
     @property
     def jacobian(self) -> float:
         """The length scale of the element (in Lagrangian coordinates).
-
-        Returns
-        -------
-        float
 
         Notes
         -----
@@ -83,7 +100,7 @@ class ConsolidationElement1D(Element1D):
 
         Returns
         ------
-        tuple of :c:`IntegrationPoint1D`
+        tuple[:c:`IntegrationPoint1D`]
 
         Notes
         -----
@@ -92,13 +109,15 @@ class ConsolidationElement1D(Element1D):
         """
         return self._parent.int_pts
 
-    @property
-    def stiffness_matrix(self) -> np.ndarray:
+    def stiffness_matrix(self) -> npt.NDArray[np.floating]:
         """The element stiffness matrix.
 
         Returns
         -------
-        numpy.ndarray, shape=(2, 2)
+        numpy.ndarray
+            Shape depends on order of interpolation.
+            For order=1, shape=(2, 2).
+            For order=3, shape=(4, 4).
 
         Notes
         -----
@@ -129,13 +148,15 @@ class ConsolidationElement1D(Element1D):
         K *= jac
         return K
 
-    @property
-    def mass_matrix(self) -> np.ndarray:
+    def mass_matrix(self) -> npt.NDArray[np.floating]:
         """The element mass matrix.
 
         Returns
         -------
-        numpy.ndarray, shape=(2, 2)
+        numpy.ndarray
+            Shape depends on order of interpolation.
+            For order=1, shape=(2, 2).
+            For order=3, shape=(4, 4).
 
         Notes
         -----
@@ -164,13 +185,8 @@ class ConsolidationElement1D(Element1D):
         M *= jac
         return M
 
-    @property
     def deformed_length(self) -> float:
         """The deformed length of the element.
-
-        Returns
-        -------
-        float
         """
         L = 0.0
         for ip in self.int_pts:
@@ -184,29 +200,48 @@ class ConsolidationBoundary1D(Boundary1D):
     """Class for storing and updating boundary conditions
     for consolidation physics.
 
-    Parameters
-    ----------
-    parent : frozen_ground_fem.geometry.Boundary1D
-        The parent boundary element from the mesh
-    bnd_type : ConsolidationBoundary1D.BoundaryType, optional
-        The type of boundary condition
-    bnd_value : float, optional
-        The value of the boundary condition
-
     Attributes
     ----------
     BoundaryType : enum.Enum
         The set of possible boundary condition types
+    nodes
+    int_pts
+
+    Methods
+    -------
+    update_nodes
+    update_value
+
+    Parameters
+    ----------
+    parent : frozen_ground_fem.geometry.Boundary1D
+        The parent boundary element from the mesh.
+    bnd_type : ConsolidationBoundary1D.BoundaryType, optional,
+    default=BoundaryType.fixed_flux
+        The type of boundary condition.
+    bnd_value : float, optional, default=0.0
+        The value of the boundary condition.
+    bnd_function : callable or None, optional, default=None
+        The function for the updates the boundary condition.
 
     Raises
     ------
     TypeError
         If parent initializer is not a
         :c:`frozen_ground_fem.geometry.Boundary1D`.
+        If bnd_type is not a ConsolidationBoundary1D.BoundaryType.
+        If bnd_function is not callable or None.
+    ValueError
+        If bnd_value is not convertible to float.
     """
 
     BoundaryType = Enum(
         "BoundaryType", ["void_ratio", "fixed_flux", "water_flux"])
+
+    _parent: Boundary1D
+    _bnd_type: BoundaryType
+    _bnd_value: float = 0.0
+    _bnd_function: Callable | None
 
     def __init__(
         self,
@@ -214,7 +249,7 @@ class ConsolidationBoundary1D(Boundary1D):
         bnd_type=BoundaryType.fixed_flux,
         bnd_value: float = 0.0,
         bnd_function=None,
-    ) -> None:
+    ):
         if not isinstance(parent, Boundary1D):
             raise TypeError(f"type(parent): {type(parent)} is not Boundary1D")
         self._parent = parent
@@ -228,7 +263,7 @@ class ConsolidationBoundary1D(Boundary1D):
 
         Returns
         ------
-        tuple of :c:`Node1D`
+        tuple[:c:`Node1D`]
 
         Notes
         -----
@@ -244,7 +279,7 @@ class ConsolidationBoundary1D(Boundary1D):
 
         Returns
         ------
-        tuple of :c:`IntegrationPoint1D`
+        tuple[:c:`IntegrationPoint1D`]
 
         Notes
         -----
@@ -270,7 +305,7 @@ class ConsolidationBoundary1D(Boundary1D):
         ------
         TypeError
             If the value to be assigned is not a
-            ConsolidationBoundary1D.BoundaryType
+            ConsolidationBoundary1D.BoundaryType.
         """
         return self._bnd_type
 
@@ -302,7 +337,7 @@ class ConsolidationBoundary1D(Boundary1D):
         return self._bnd_value
 
     @bnd_value.setter
-    def bnd_value(self, value):
+    def bnd_value(self, value: float) -> None:
         value = float(value)
         self._bnd_value = value
 
@@ -313,17 +348,16 @@ class ConsolidationBoundary1D(Boundary1D):
 
         Parameters
         ----------
-        value : callable or None
-            The value to set for the boundary function
+        Callable or None
 
         Returns
         -------
-        callable or None
+        Callable or None
 
         Raises
         ------
         TypeError
-            If the value to be assigned is not callable or None
+            If the value to be assigned is not callable or None.
 
         Notes
         -----
@@ -357,7 +391,7 @@ class ConsolidationBoundary1D(Boundary1D):
             for nd in self.nodes:
                 nd.void_ratio = self.bnd_value
 
-    def update_value(self, time):
+    def update_value(self, time: float) -> None:
         """Update the value of the boundary conditions.
 
         Parameters
@@ -386,7 +420,91 @@ class ConsolidationBoundary1D(Boundary1D):
 
 
 class ConsolidationAnalysis1D:
-    def __init__(self, mesh: Mesh1D) -> None:
+    """Class for simulating consolidation physics
+    on a mesh of :c:`ConsolidationElement1D`.
+
+    Attributes
+    ----------
+    mesh
+    elements
+    boundaries
+    time_step
+    dt
+    over_dt
+    implicit_factor
+    alpha
+    one_minus_alpha
+    implicit_error_tolerance
+    eps_s
+    max_iterations
+
+    Methods
+    -------
+    add_boundary
+    remove_boundary
+    clear_boundaries
+    update_consolidation_boundary_conditions
+    update_water_flux_vector
+    update_stiffness_matrix
+    update_mass_matrix
+    update_nodes
+    update_integration_points
+    initialize_global_system
+    initialize_time_step
+    update_weighted_matrices
+    calculate_void_ratio_correction
+    iterative_correction_step
+    calculate_total_settlement
+    calculate_deformed_coords
+
+    Parameters
+    -----------
+    mesh : :c:`frozen_ground_fem.geometry.Mesh1D`
+        The parent mesh referenced by the analysis object.
+
+    Raises
+    ------
+    TypeError
+        If mesh is not a :c:`frozen_ground_fem.geometry.Mesh1D`.
+        If time_step is not convertible to float.
+        If time_step is negative.
+        If max_iterations is not an int.
+    ValueError
+        If mesh.mesh_valid is False.
+        If implicit_factor is not convertible to float.
+        If implicit_factor is < 0.0 or > 1.0.
+        If implicit_error_tolerance is not convertible to float.
+        If implicit_error_tolerance is negative.
+        If max_iterations is negative.
+    """
+    _free_vec: tuple[npt.NDArray, ...]
+    _free_arr: tuple[npt.NDArray, ...]
+    _mesh: Mesh1D
+    _elements: tuple[ConsolidationElement1D, ...]
+    _boundaries: set[ConsolidationBoundary1D]
+    _implicit_factor: float = 0.5   # (Crank-Nicolson)
+    _implicit_error_tolerance: float = 1e-3
+    _max_iterations: int = 100
+    _void_ratio_vector_0: npt.NDArray[np.floating]
+    _void_ratio_vector: npt.NDArray[np.floating]
+    _heat_flux_vector_0: npt.NDArray[np.floating]
+    _heat_flux_vector: npt.NDArray[np.floating]
+    _water_flux_vector_0: npt.NDArray[np.floating]
+    _water_flux_vector: npt.NDArray[np.floating]
+    _stiffness_matrix_0: npt.NDArray[np.floating]
+    _stiffness_matrix: npt.NDArray[np.floating]
+    _mass_matrix_0: npt.NDArray[np.floating]
+    _mass_matrix: npt.NDArray[np.floating]
+    _weighted_water_flux_vector: npt.NDArray[np.floating]
+    _weighted_stiffness_matrix: npt.NDArray[np.floating]
+    _weighted_stiffness_matrix: npt.NDArray[np.floating]
+    _weighted_mass_matrix: npt.NDArray[np.floating]
+    _coef_matrix_0: npt.NDArray[np.floating]
+    _coef_matrix_1: npt.NDArray[np.floating]
+    _residual_water_flux_vector: npt.NDArray[np.floating]
+    _delta_void_ratio_vector: npt.NDArray[np.floating]
+
+    def __init__(self, mesh: Mesh1D):
         # validate mesh on which the analysis is to be performed
         if not isinstance(mesh, Mesh1D):
             raise TypeError(f"mesh has type {type(mesh)}, not Mesh1D")
@@ -399,10 +517,6 @@ class ConsolidationAnalysis1D:
         self._elements = tuple(ConsolidationElement1D(e)
                                for e in self.mesh.elements)
         self._boundaries: set[ConsolidationBoundary1D] = set()
-        # set default values for time stepping algorithm
-        self.implicit_factor = 0.5  # (Crank-Nicolson)
-        self.implicit_error_tolerance = 1e-3
-        self.max_iterations = 100
         # initialize global vectors and matrices
         self._void_ratio_vector_0 = np.zeros(self.mesh.num_nodes)
         self._void_ratio_vector = np.zeros(self.mesh.num_nodes)
@@ -686,7 +800,7 @@ class ConsolidationAnalysis1D:
     def clear_boundaries(self):
         self._boundaries.clear()
 
-    def update_boundary_conditions(self, time) -> None:
+    def update_consolidation_boundary_conditions(self, time) -> None:
         """Update the boundary conditions in the ConsolidationAnalysis1D
         and in the parent Mesh1D.
 
@@ -985,7 +1099,7 @@ class ConsolidationAnalysis1D:
             self.update_weighted_matrices()
             self.calculate_void_ratio_correction()
 
-    def calculate_total_settlement(self):
+    def calculate_total_settlement(self) -> float:
         """Integrates volume change ratio
         to calculate total settlement.
 
@@ -1004,7 +1118,7 @@ class ConsolidationAnalysis1D:
             s += e.jacobian - e.deformed_length
         return s
 
-    def calculate_deformed_coords(self):
+    def calculate_deformed_coords(self) -> float:
         """Integrates volume change ratio
         to calculate deformed coordinates of the nodes.
 
