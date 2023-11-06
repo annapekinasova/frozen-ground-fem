@@ -10,7 +10,6 @@ ConsolidationAnalysis1D
 """
 from typing import (
     Callable,
-    Optional,
     override,
 )
 from enum import Enum
