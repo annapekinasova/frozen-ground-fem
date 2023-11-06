@@ -34,9 +34,6 @@ class ThermalElement1D(Element1D):
     order
     jacobian
     int_pts
-
-    Methods
-    -------
     heat_flow_matrix
     heat_storage_matrix
 
@@ -88,6 +85,7 @@ class ThermalElement1D(Element1D):
         """
         return self._parent.int_pts
 
+    @property
     def heat_flow_matrix(self) -> npt.NDArray[np.floating]:
         """The element heat flow (conduction) matrix.
 
@@ -112,6 +110,7 @@ class ThermalElement1D(Element1D):
         H *= jac
         return H
 
+    @property
     def heat_storage_matrix(self) -> npt.NDArray[np.floating]:
         """The element heat storage matrix.
 
@@ -384,25 +383,17 @@ class ThermalAnalysis1D():
     ------
     TypeError
         If mesh is not a :c:`frozen_ground_fem.geometry.Mesh1D`.
-        If time_step is not convertible to float.
-        If time_step is negative.
-        If max_iterations is not an int.
     ValueError
         If mesh.mesh_valid is False.
-        If implicit_factor is not convertible to float.
-        If implicit_factor is < 0.0 or > 1.0.
-        If implicit_error_tolerance is not convertible to float.
-        If implicit_error_tolerance is negative.
-        If max_iterations is negative.
     """
-    _free_vec: tuple[npt.NDArray, ...]
-    _free_arr: tuple[npt.NDArray, ...]
     _mesh: Mesh1D
     _elements: tuple[ThermalElement1D, ...]
     _boundaries: set[ThermalBoundary1D]
     _implicit_factor: float = 0.5  # (Crank-Nicolson)
     _implicit_error_tolerance: float = 1e-3
     _max_iterations: int = 100
+    _free_vec: tuple[npt.NDArray, ...]
+    _free_arr: tuple[npt.NDArray, ...]
     _temp_vector_0: npt.NDArray[np.floating]
     _temp_vector: npt.NDArray[np.floating]
     _heat_flux_vector_0: npt.NDArray[np.floating]
@@ -779,7 +770,7 @@ class ThermalAnalysis1D():
         self._heat_flow_matrix[:, :] = 0.0
         for e in self.elements:
             ind = np.array([nd.index for nd in e.nodes], dtype=int)
-            He = e.heat_flow_matrix()
+            He = e.heat_flow_matrix
             self._heat_flow_matrix[np.ix_(ind, ind)] += He
 
     def update_heat_storage_matrix(self) -> None:
@@ -796,7 +787,7 @@ class ThermalAnalysis1D():
         self._heat_storage_matrix[:, :] = 0.0
         for e in self.elements:
             ind = np.array([nd.index for nd in e.nodes], dtype=int)
-            Ce = e.heat_storage_matrix()
+            Ce = e.heat_storage_matrix
             self._heat_storage_matrix[np.ix_(ind, ind)] += Ce
 
     def update_nodes(self) -> None:
