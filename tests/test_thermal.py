@@ -43,7 +43,7 @@ class TestThermalElement1D(unittest.TestCase):
 
     def test_heat_flow_matrix_uninitialized(self):
         self.assertTrue(np.allclose(
-            self.thrm_e.heat_flow_matrix(), np.zeros((2, 2))))
+            self.thrm_e.heat_flow_matrix, np.zeros((2, 2))))
 
     def test_heat_flow_matrix(self):
         m = Material(thrm_cond_solids=1e-5)
@@ -54,11 +54,11 @@ class TestThermalElement1D(unittest.TestCase):
         lam = self.thrm_e.int_pts[0].thrm_cond
         jac = self.thrm_e.jacobian
         expected = lam / jac * np.array([[1.0, -1.0], [-1.0, 1.0]])
-        self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix(), expected))
+        self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix, expected))
 
     def test_heat_storage_matrix_uninitialized(self):
         self.assertTrue(
-            np.allclose(self.thrm_e.heat_storage_matrix(), np.zeros((2, 2)))
+            np.allclose(self.thrm_e.heat_storage_matrix, np.zeros((2, 2)))
         )
 
     def test_heat_storage_matrix(self):
@@ -71,7 +71,7 @@ class TestThermalElement1D(unittest.TestCase):
         jac = self.thrm_e.jacobian
         expected = heat_cap * jac / 6 * np.array([[2.0, 1.0], [1.0, 2.0]])
         self.assertTrue(np.allclose(
-            self.thrm_e.heat_storage_matrix(), expected))
+            self.thrm_e.heat_storage_matrix, expected))
 
 
 class TestThermalBoundary1D(unittest.TestCase):
