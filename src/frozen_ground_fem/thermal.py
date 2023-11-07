@@ -9,7 +9,7 @@ ThermalAnalysis1D
 """
 from typing import (
     Callable,
-    Optional,
+    override,
 )
 from enum import Enum
 
@@ -55,6 +55,7 @@ class ThermalElement1D(Element1D):
             raise TypeError(f"type(parent): {type(parent)} is not Element1D")
         self._parent = parent
 
+    @override
     @property
     def nodes(self) -> tuple[Node1D, ...]:
         """The tuple of :c:`Node1D` contained in the element.
@@ -65,6 +66,7 @@ class ThermalElement1D(Element1D):
         """
         return self._parent.nodes
 
+    @override
     @property
     def jacobian(self) -> float:
         """The length scale of the element (in Lagrangian coordinates).
@@ -75,6 +77,7 @@ class ThermalElement1D(Element1D):
         """
         return self._parent.jacobian
 
+    @override
     @property
     def int_pts(self) -> tuple[IntegrationPoint1D, ...]:
         """The tuple of :c:`IntegrationPoint1D` contained in the element.
@@ -194,6 +197,7 @@ class ThermalBoundary1D(Boundary1D):
         self.bnd_value = bnd_value
         self.bnd_function = bnd_function
 
+    @override
     @property
     def nodes(self) -> tuple[Node1D, ...]:
         """The tuple of :c:`Node1D` contained in the boundary element.
@@ -201,9 +205,15 @@ class ThermalBoundary1D(Boundary1D):
         Returns
         ------
         tuple[:c:`Node1D`]
+
+        Notes
+        -----
+        This is a wrapper that references the nodes property
+        of the parent Boundary1D.
         """
         return self._parent.nodes
 
+    @override
     @property
     def int_pts(self) -> tuple[IntegrationPoint1D, ...]:
         """The tuple of :c:`IntegrationPoint1D` contained in the boundary
@@ -212,6 +222,11 @@ class ThermalBoundary1D(Boundary1D):
         Returns
         ------
         tuple[:c:`IntegrationPoint1D`]
+
+        Notes
+        -----
+        This is a wrapper that references the nodes property
+        of the parent Boundary1D.
         """
         return self._parent.int_pts
 
@@ -266,7 +281,7 @@ class ThermalBoundary1D(Boundary1D):
         self._bnd_value = value
 
     @property
-    def bnd_function(self) -> Optional[Callable]:
+    def bnd_function(self) -> Callable[[float], float] | None:
         """The reference to the function
         that updates the boundary condition.
 
@@ -281,7 +296,7 @@ class ThermalBoundary1D(Boundary1D):
         Raises
         ------
         TypeError
-            If the value to be assigned is not Callable or None.
+            If the value to be assigned is not callable or None.
 
         Notes
         -----
@@ -293,7 +308,9 @@ class ThermalBoundary1D(Boundary1D):
         return self._bnd_function
 
     @bnd_function.setter
-    def bnd_function(self, value):
+    def bnd_function(
+            self,
+            value: Callable[[float], float] | None) -> None:
         if not (callable(value) or value is None):
             raise TypeError(
                 f"type(value) {type(value)} is not callable or None")
@@ -318,8 +335,7 @@ class ThermalBoundary1D(Boundary1D):
 
         Parameters
         ----------
-        time : float
-            The time to pass to the boundary function.
+        float
 
         Raises
         ------
@@ -494,6 +510,12 @@ class ThermalAnalysis1D():
 
     @property
     def boundaries(self) -> set[ThermalBoundary1D]:
+        """The set of boundary conditions contained in the analysis.
+
+        Returns
+        -------
+        set[:c:`ThermalBoundary1D`]
+        """
         return self._boundaries
 
     @property
@@ -512,8 +534,8 @@ class ThermalAnalysis1D():
         Raises
         ------
         ValueError
-            If the value to assign is not convertible to float
-            If the value to assign is negative
+            If the value to assign is not convertible to float.
+            If the value to assign is negative.
 
         Notes
         -----
@@ -641,7 +663,7 @@ class ThermalAnalysis1D():
         return self._implicit_error_tolerance
 
     @implicit_error_tolerance.setter
-    def implicit_error_tolerance(self, value):
+    def implicit_error_tolerance(self, value: float) -> None:
         value = float(value)
         if value <= 0.0:
             raise ValueError(
@@ -661,8 +683,7 @@ class ThermalAnalysis1D():
 
         Parameters
         ----------
-        value : int
-            The value to be assigned to the maximum number of iterations
+        int
 
         Returns
         -------
@@ -671,14 +692,14 @@ class ThermalAnalysis1D():
         Raises
         ------
         TypeError
-            If the value to be assigned is not an int
+            If the value to be assigned is not an int.
         ValueError
-            If the value to be assigned is negative
+            If the value to be assigned is negative.
         """
         return self._max_iterations
 
     @max_iterations.setter
-    def max_iterations(self, value):
+    def max_iterations(self, value: int) -> None:
         if not isinstance(value, int):
             raise TypeError(
                 f"type(max_iterations) {type(value)} invalid, " + "must be int"
@@ -689,6 +710,21 @@ class ThermalAnalysis1D():
         self._max_iterations = value
 
     def add_boundary(self, new_boundary: ThermalBoundary1D) -> None:
+        """Adds a boundary to the mesh.
+
+        Parameters
+        ----------
+        new_boundary : :c:`ThermalBoundary1D`
+            The boundary to add to the mesh.
+
+        Raises
+        ------
+        TypeError
+            If new_boundary is not an instance of :c:`ThermalBoundary1D`.
+        ValueError
+            If new_boundary does not have parent Boundary1D
+            in the parent mesh.
+        """
         if not isinstance(new_boundary, ThermalBoundary1D):
             raise TypeError(
                 f"type(new_boundary) {type(new_boundary)} invalid,"
@@ -702,12 +738,29 @@ class ThermalAnalysis1D():
         self._boundaries.add(new_boundary)
 
     def remove_boundary(self, boundary: ThermalBoundary1D) -> None:
+        """Remove an existing boundary from the mesh.
+
+        Parameters
+        ----------
+        boundary : :c:`ThermalBoundary1D`
+            The boundary to remove from the mesh.
+
+        Raises
+        ------
+        ValueError
+            If boundary is not in the mesh.
+        """
         self._boundaries.remove(boundary)
 
     def clear_boundaries(self) -> None:
+        """ Clears existing :c:`ThermalBoundary1D` objects
+        from the mesh.
+        """
         self._boundaries.clear()
 
-    def update_thermal_boundary_conditions(self, time) -> None:
+    def update_thermal_boundary_conditions(
+            self,
+            time: float) -> None:
         """Update the thermal boundary conditions in the ThermalAnalysis1D
         and in the parent Mesh1D.
 
@@ -823,7 +876,7 @@ class ThermalAnalysis1D():
                 else:
                     ip.deg_sat_water = 1.0
 
-    def initialize_global_system(self, t0) -> None:
+    def initialize_global_system(self, t0: float) -> None:
         """Sets up the global system before the first time step.
 
         Parameters
