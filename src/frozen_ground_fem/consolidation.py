@@ -322,7 +322,7 @@ class ConsolidationBoundary1D(Boundary1D):
         return self._bnd_type
 
     @bnd_type.setter
-    def bnd_type(self, value):
+    def bnd_type(self, value: BoundaryType):
         if not isinstance(value, ConsolidationBoundary1D.BoundaryType):
             raise TypeError(
                 f"{value} is not a ConsolidationBoundary1D.BoundaryType")
@@ -517,7 +517,7 @@ class ConsolidationAnalysis1D:
             raise ValueError(
                 f"mesh.mesh_valid is {mesh.mesh_valid}, need to generate mesh"
             )
-        # assign the mesh and create thermal elements
+        # assign the mesh and create consolidation elements
         self._mesh = mesh
         self._elements = tuple(ConsolidationElement1D(e)
                                for e in self.mesh.elements)
@@ -616,8 +616,8 @@ class ConsolidationAnalysis1D:
         Raises
         ------
         ValueError
-            If the value to assign is not convertible to float
-            If the value to assign is negative
+            If the value to assign is not convertible to float.
+            If the value to assign is negative.
 
         Notes
         -----
@@ -773,9 +773,9 @@ class ConsolidationAnalysis1D:
         Raises
         ------
         TypeError
-            If the value to be assigned is not an int
+            If the value to be assigned is not an int.
         ValueError
-            If the value to be assigned is negative
+            If the value to be assigned is negative.
         """
         return self._max_iterations
 
@@ -790,6 +790,21 @@ class ConsolidationAnalysis1D:
         self._max_iterations = value
 
     def add_boundary(self, new_boundary: ConsolidationBoundary1D) -> None:
+        """Adds a boundary to the mesh.
+
+        Parameters
+        ----------
+        new_boundary : :c:`ConsolidationBoundary1D`
+            The boundary to add to the mesh.
+
+        Raises
+        ------
+        TypeError
+            If new_boundary is not an instance of :c:`ConsolidationBoundary1D`.
+        ValueError
+            If new_boundary does not have parent Boundary1D
+            in the parent mesh.
+        """
         if not isinstance(new_boundary, ConsolidationBoundary1D):
             raise TypeError(
                 f"type(new_boundary) {type(new_boundary)} invalid, "
@@ -803,9 +818,24 @@ class ConsolidationAnalysis1D:
         self._boundaries.add(new_boundary)
 
     def remove_boundary(self, boundary: ConsolidationBoundary1D) -> None:
+        """Remove an existing boundary from the mesh.
+
+        Parameters
+        ----------
+        boundary : :c:`ConsolidationBoundary1D`
+            The boundary to remove from the mesh.
+
+        Raises
+        ------
+        ValueError
+            If boundary is not in the mesh.
+        """
         self._boundaries.remove(boundary)
 
-    def clear_boundaries(self):
+    def clear_boundaries(self) -> None:
+        """ Clears existing :c:`ConsolidationBoundary1D` objects
+        from the mesh.
+        """
         self._boundaries.clear()
 
     def update_consolidation_boundary_conditions(
