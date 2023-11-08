@@ -481,7 +481,10 @@ class ConsolidationAnalysis1D:
     _mesh: Mesh1D
     _elements: tuple[ConsolidationElement1D, ...]
     _boundaries: set[ConsolidationBoundary1D]
-    _implicit_factor: float = 0.5   # (Crank-Nicolson)
+    _time_step: float = 0.0
+    _inv_time_step: float = 0.0
+    _implicit_factor: float = 0.5   # Crank-Nicolson
+    _inv_implicit_factor: float = 0.5
     _implicit_error_tolerance: float = 1e-3
     _max_iterations: int = 100
     _free_vec: tuple[npt.NDArray, ...]
