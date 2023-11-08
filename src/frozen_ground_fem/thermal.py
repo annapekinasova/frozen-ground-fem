@@ -9,7 +9,6 @@ ThermalAnalysis1D
 """
 from typing import (
     Callable,
-    override,
 )
 from enum import Enum
 
@@ -55,7 +54,6 @@ class ThermalElement1D(Element1D):
             raise TypeError(f"type(parent): {type(parent)} is not Element1D")
         self._parent = parent
 
-    @override
     @property
     def nodes(self) -> tuple[Node1D, ...]:
         """The tuple of :c:`Node1D` contained in the element.
@@ -66,7 +64,6 @@ class ThermalElement1D(Element1D):
         """
         return self._parent.nodes
 
-    @override
     @property
     def jacobian(self) -> float:
         """The length scale of the element (in Lagrangian coordinates).
@@ -77,7 +74,6 @@ class ThermalElement1D(Element1D):
         """
         return self._parent.jacobian
 
-    @override
     @property
     def int_pts(self) -> tuple[IntegrationPoint1D, ...]:
         """The tuple of :c:`IntegrationPoint1D` contained in the element.
@@ -197,7 +193,6 @@ class ThermalBoundary1D(Boundary1D):
         self.bnd_value = bnd_value
         self.bnd_function = bnd_function
 
-    @override
     @property
     def nodes(self) -> tuple[Node1D, ...]:
         """The tuple of :c:`Node1D` contained in the boundary element.
@@ -213,7 +208,6 @@ class ThermalBoundary1D(Boundary1D):
         """
         return self._parent.nodes
 
-    @override
     @property
     def int_pts(self) -> tuple[IntegrationPoint1D, ...]:
         """The tuple of :c:`IntegrationPoint1D` contained in the boundary
