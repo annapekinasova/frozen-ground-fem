@@ -1281,7 +1281,7 @@ class Element1D:
         z_e = np.array([[self.nodes[0].z, self.nodes[-1].z]]).T
         for ip in self.int_pts:
             N = shape_matrix_linear(ip.local_coord)
-            ip.z = (N @ z_e)[0]
+            ip.z = (N @ z_e)[0][0]
 
     @property
     def order(self) -> int:
