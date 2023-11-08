@@ -777,11 +777,11 @@ class ConsolidationAnalysis1D:
     @max_iterations.setter
     def max_iterations(self, value: int) -> None:
         if not isinstance(value, int):
-            raise TypeError(f"type(max_iterations) {
-                            type(value)} invalid, must be int")
+            raise TypeError(f"type(max_iterations) {type(value)}"
+                            + " invalid, must be int")
         if value <= 0:
-            raise ValueError(f"max_iterations {
-                             value} invalid, must be positive")
+            raise ValueError(f"max_iterations {value}"
+                             + " invalid, must be positive")
         self._max_iterations = value
 
     def add_boundary(self, new_boundary: ConsolidationBoundary1D) -> None:
