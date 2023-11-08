@@ -24,11 +24,11 @@ class TestConsolidationElement1D(unittest.TestCase):
 
     def test_invalid_no_parent(self):
         with self.assertRaises(TypeError):
-            ThermalElement1D()
+            ConsolidationElement1D()
 
     def test_invalid_parent(self):
         with self.assertRaises(TypeError):
-            ThermalElement1D(self.nodes)
+            ConsolidationElement1D(self.nodes)
 
     def test_jacobian_equal(self):
         self.assertAlmostEqual(self.e.jacobian, self.thrm_e.jacobian)
@@ -74,7 +74,7 @@ class TestConsolidationElement1D(unittest.TestCase):
             self.thrm_e.heat_storage_matrix, expected))
 
 
-class TestThermalBoundary1D(unittest.TestCase):
+class TestConsolidationBoundary1D(unittest.TestCase):
     def setUp(self):
         self.nodes = (Node1D(0, 2.0),)
         self.bnd_el = Boundary1D(self.nodes)
