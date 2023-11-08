@@ -58,7 +58,9 @@ class TestNullMaterial(unittest.TestCase):
 class TestMaterialInitializers(unittest.TestCase):
     def setUp(self):
         self.m = Material(
-            thrm_cond_solids=7.8, spec_grav_solids=2.5, spec_heat_cap_solids=7.41e5
+            thrm_cond_solids=7.8,
+            spec_grav_solids=2.5,
+            spec_heat_cap_solids=7.41e5
         )
 
     def test_thrm_cond_solids(self):
@@ -190,7 +192,9 @@ class TestMaterialSpecHeatCapSolidsSetter(unittest.TestCase):
 class TestMaterialVolHeatCapSolidsSetter(unittest.TestCase):
     def setUp(self):
         self.m = Material(
-            thrm_cond_solids=7.8, spec_grav_solids=2.5, spec_heat_cap_solids=7.41e5
+            thrm_cond_solids=7.8,
+            spec_grav_solids=2.5,
+            spec_heat_cap_solids=7.41e5
         )
 
     def test_set_spec_heat_cap_solids(self):
