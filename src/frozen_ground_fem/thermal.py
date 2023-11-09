@@ -61,6 +61,11 @@ class ThermalElement1D(Element1D):
         Returns
         ------
         tuple [:c:`Node1D`]
+        
+        Notes
+        -----
+        This is a wrapper that references the nodes property
+        of the parent Element1D.
         """
         return self._parent.nodes
 
@@ -71,6 +76,11 @@ class ThermalElement1D(Element1D):
         Returns
         -------
         float
+        
+        Notes
+        -----
+        This is a wrapper that references the jacobian property
+        of the parent Element1D.
         """
         return self._parent.jacobian
 
@@ -81,6 +91,11 @@ class ThermalElement1D(Element1D):
         Returns
         ------
         tuple[:c:`IntegrationPoint1D`]
+        
+        Notes
+        -----
+        This is a wrapper that references the int_pts property
+        of the parent Element1D.
         """
         return self._parent.int_pts
 

@@ -81,6 +81,10 @@ class ConsolidationElement1D(Element1D):
     def jacobian(self) -> float:
         """The length scale of the element (in Lagrangian coordinates).
 
+        Returns
+        -------
+        float
+        
         Notes
         -----
         This is a wrapper that references the jacobian property
