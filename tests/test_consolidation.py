@@ -41,10 +41,14 @@ class TestConsolidationElement1D(unittest.TestCase):
     def test_int_pts_equal(self):
         for e_ip, te_ip in zip(self.e.int_pts, self.cond_e.int_pts):
             self.assertIs(e_ip, te_ip)
-            
-    def test_stiffness_matrix_uninitialized(self):
+
+    def test_stiffness_matrix_uninitialized_linear(self):
         self.assertTrue(np.allclose(
             self.cond_e.stiffness_matrix, np.zeros((2, 2))))
+            
+    def test_stiffness_matrix_uninitialized_cubic(self):
+        self.assertTrue(np.allclose(
+            self.cond_e.stiffness_matrix, np.zeros((4, 4))))
 
     def test_stiffness_matrix(self):
         m = Material(thrm_cond_solids=1e-5)

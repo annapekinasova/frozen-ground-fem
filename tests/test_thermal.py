@@ -42,9 +42,13 @@ class TestThermalElement1D(unittest.TestCase):
             self.assertIs(e_ip, te_ip)
             
 ############# order=1 and order=3 tests
-    def test_heat_flow_matrix_uninitialized(self):
+    def test_heat_flow_matrix_uninitialized_linear(self):
         self.assertTrue(np.allclose(
             self.thrm_e.heat_flow_matrix, np.zeros((2, 2))))
+    
+    def test_heat_flow_matrix_uninitialized_cubic(self):
+        self.assertTrue(np.allclose(
+            self.cond_e.stiffness_matrix, np.zeros((4, 4))))
 
     def test_heat_flow_matrix(self):
         m = Material(thrm_cond_solids=1e-5)
