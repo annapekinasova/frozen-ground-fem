@@ -84,7 +84,7 @@ class ConsolidationElement1D(Element1D):
         Returns
         -------
         float
-        
+
         Notes
         -----
         This is a wrapper that references the jacobian property
