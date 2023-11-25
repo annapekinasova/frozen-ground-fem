@@ -44,6 +44,10 @@ class ConsolidationElement1D(Element1D):
     stiffness_matrix
     mass_matrix
 
+    Methods
+    -------
+    update_integration_points
+
     Parameters
     ----------
     parent : frozen_ground_fem.geometry.Element1D
@@ -204,6 +208,43 @@ class ConsolidationElement1D(Element1D):
             e0 = ip.void_ratio_0
             L += (1.0 + e) / (1.0 + e0) * ip.weight
         return L * self.jacobian
+
+    def update_integration_points(self) -> None:
+        """Updates the properties of integration points
+        in the element according to changes in void ratio.
+
+        Notes
+        -----
+        This convenience method loops over integration points
+        in the parent mesh,
+        interpolates void ratio from corresponding nodes
+        and updates void ratio dependent parameters accordingly.
+        """
+        ee = np.array([nd.void_ratio for nd in self.nodes])
+        for ip in self.int_pts:
+            N = self._shape_matrix(ip.local_coord)
+            ep = N @ ee
+            ip.void_ratio = ep
+            k, dk_de = ip.material.hyd_cond(ep, 1.0, False)
+            ip.hyd_cond = k
+            ip.hyd_cond_gradient = dk_de
+            ppc = ip.pre_consol_stress
+            sig, dsig_de = ip.material.eff_stress(ep, ppc)
+            if sig > ppc:
+                ip.pre_consol_stress = sig
+            ip.eff_stress = sig
+            ip.eff_stress_gradient = dsig_de
+            B = self._gradient_matrix(ip.local_coord, self.jacobian)
+            de_dZ = B @ ee
+            e0 = ip.void_ratio_0
+            Gs = ip.material.spec_grav_solids
+            e_ratio = (1.0 + e0) / (1.0 + ep)
+            ip.water_flux_rate = (
+                -k
+                / gam_w
+                * e_ratio
+                * ((Gs - 1.0) * gam_w / (1.0 + e0) - dsig_de * de_dZ)
+            )
 
 
 class ConsolidationBoundary1D(Boundary1D):
@@ -941,37 +982,11 @@ class ConsolidationAnalysis1D:
 
         Notes
         -----
-        This convenience method loops over integration points
-        in the parent mesh,
-        interpolates void ratio from corresponding nodes
-        and updates void ratio dependent parameters accordingly.
+        This convenience method updates void ratio
+        values at the nodes in the parent mesh.
         """
-        for e in self.mesh.elements:
-            ee = np.array([nd.void_ratio for nd in e.nodes])
-            for ip in e.int_pts:
-                N = e._shape_matrix(ip.local_coord)
-                ep = N @ ee
-                ip.void_ratio = ep
-                k, dk_de = ip.material.hyd_cond(ep, 1.0, False)
-                ip.hyd_cond = k
-                ip.hyd_cond_gradient = dk_de
-                ppc = ip.pre_consol_stress
-                sig, dsig_de = ip.material.eff_stress(ep, ppc)
-                if sig > ppc:
-                    ip.pre_consol_stress = sig
-                ip.eff_stress = sig
-                ip.eff_stress_gradient = dsig_de
-                B = e._gradient_matrix(ip.local_coord, e.jacobian)
-                de_dZ = B @ ee
-                e0 = ip.void_ratio_0
-                Gs = ip.material.spec_grav_solids
-                e_ratio = (1.0 + e0) / (1.0 + ep)
-                ip.water_flux_rate = (
-                    -k
-                    / gam_w
-                    * e_ratio
-                    * ((Gs - 1.0) * gam_w / (1.0 + e0) - dsig_de * de_dZ)
-                )
+        for e in self.elements:
+            e.update_integration_points()
 
     def initialize_global_system(self, t0: float) -> None:
         """Sets up the global system before the first time step.

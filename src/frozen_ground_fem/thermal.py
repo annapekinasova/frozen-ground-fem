@@ -36,6 +36,10 @@ class ThermalElement1D(Element1D):
     heat_flow_matrix
     heat_storage_matrix
 
+    Methods
+    -------
+    update_integration_points
+
     Parameters
     ----------
     parent : frozen_ground_fem.geometry.Element1D
@@ -61,7 +65,7 @@ class ThermalElement1D(Element1D):
         Returns
         ------
         tuple [:c:`Node1D`]
-        
+
         Notes
         -----
         This is a wrapper that references the nodes property
@@ -76,7 +80,7 @@ class ThermalElement1D(Element1D):
         Returns
         -------
         float
-        
+
         Notes
         -----
         This is a wrapper that references the jacobian property
@@ -91,7 +95,7 @@ class ThermalElement1D(Element1D):
         Returns
         ------
         tuple[:c:`IntegrationPoint1D`]
-        
+
         Notes
         -----
         This is a wrapper that references the int_pts property
@@ -148,6 +152,25 @@ class ThermalElement1D(Element1D):
             C += N.T @ (ip.vol_heat_cap * N) * ip.weight
         C *= jac
         return C
+
+    def update_integration_points(self) -> None:
+        """Updates the properties of integration points
+        in the element according to changes in temperature.
+
+        Notes
+        -----
+        This convenience method loops over integration points
+        in the parent mesh,
+        interpolates temperatures from corresponding nodes
+        and updates degree of saturation of water accordingly."""
+        Te = np.array([nd.temp for nd in self.nodes])
+        for ip in self.int_pts:
+            N = self._shape_matrix(ip.local_coord)
+            T = N @ Te
+            if T <= 0.0:
+                ip.deg_sat_water = 0.0
+            else:
+                ip.deg_sat_water = 1.0
 
 
 class ThermalBoundary1D(Boundary1D):
@@ -878,15 +901,8 @@ class ThermalAnalysis1D():
         in the parent mesh,
         interpolates temperatures from corresponding nodes
         and updates degree of saturation of water accordingly."""
-        for e in self.mesh.elements:
-            Te = np.array([nd.temp for nd in e.nodes])
-            for ip in e.int_pts:
-                N = e._shape_matrix(ip.local_coord)
-                T = N @ Te
-                if T <= 0.0:
-                    ip.deg_sat_water = 0.0
-                else:
-                    ip.deg_sat_water = 1.0
+        for e in self.elements:
+            e.update_integration_points()
 
     def initialize_global_system(self, t0: float) -> None:
         """Sets up the global system before the first time step.
