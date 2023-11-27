@@ -731,20 +731,12 @@ class ThermalAnalysis1D():
         ------
         TypeError
             If new_boundary is not an instance of :c:`ThermalBoundary1D`.
-        # ValueError
-        #     If new_boundary does not have parent Boundary1D
-        #     in the parent mesh.
         """
         if not isinstance(new_boundary, ThermalBoundary1D):
             raise TypeError(
                 f"type(new_boundary) {type(new_boundary)} invalid,"
                 + " must be ThermalBoundary1D"
             )
-        # if new_boundary._parent not in self.mesh.boundaries:
-        #     raise ValueError(
-        #         "new_boundary does not have parent Boundary1D "
-        #         + "in the parent mesh"
-        #     )
         self._boundaries.add(new_boundary)
 
     def remove_boundary(self, boundary: ThermalBoundary1D) -> None:
