@@ -8,7 +8,6 @@ from frozen_ground_fem.materials import (
 from frozen_ground_fem.geometry import (
     Node1D,
     IntegrationPoint1D,
-    Element1D,
 )
 from frozen_ground_fem.thermal import (
     ThermalElement1D,
@@ -16,35 +15,18 @@ from frozen_ground_fem.thermal import (
 )
 
 
-class TestThermalElement1DInvalid(unittest.TestCase):
-    def setUp(self):
-        self.nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(2))
-
-    def test_no_parent(self):
-        with self.assertRaises(TypeError):
-            ThermalElement1D()
-
-    def test_invalid_parent(self):
-        with self.assertRaises(TypeError):
-            ThermalElement1D(self.nodes)
-
-
 class TestThermalElement1DLinear(unittest.TestCase):
     def setUp(self):
         self.nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(2))
-        self.e = Element1D(self.nodes, order=1)
-        self.thrm_e = ThermalElement1D(self.e)
+        self.thrm_e = ThermalElement1D(self.nodes, order=1)
 
-    def test_jacobian_equal(self):
-        self.assertAlmostEqual(self.e.jacobian, self.thrm_e.jacobian)
+    def test_jacobian_value(self):
+        expected = self.nodes[-1].z - self.nodes[0].z
+        self.assertAlmostEqual(self.thrm_e.jacobian, expected)
 
     def test_nodes_equal(self):
         for nd, e_nd in zip(self.nodes, self.thrm_e.nodes):
             self.assertIs(nd, e_nd)
-
-    def test_int_pts_equal(self):
-        for e_ip, te_ip in zip(self.e.int_pts, self.thrm_e.int_pts):
-            self.assertIs(e_ip, te_ip)
 
     def test_heat_flow_matrix_uninitialized(self):
         self.assertTrue(np.allclose(
@@ -82,19 +64,15 @@ class TestThermalElement1DLinear(unittest.TestCase):
 class TestThermalElement1DCubic(unittest.TestCase):
     def setUp(self):
         self.nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(4))
-        self.e = Element1D(self.nodes, order=3)
-        self.thrm_e = ThermalElement1D(self.e)
+        self.thrm_e = ThermalElement1D(self.nodes, order=3)
 
-    def test_jacobian_equal(self):
-        self.assertAlmostEqual(self.e.jacobian, self.thrm_e.jacobian)
+    def test_jacobian_value(self):
+        expected = self.nodes[-1].z - self.nodes[0].z
+        self.assertAlmostEqual(self.thrm_e.jacobian, expected)
 
     def test_nodes_equal(self):
         for nd, e_nd in zip(self.nodes, self.thrm_e.nodes):
             self.assertIs(nd, e_nd)
-
-    def test_int_pts_equal(self):
-        for e_ip, te_ip in zip(self.e.int_pts, self.thrm_e.int_pts):
-            self.assertIs(e_ip, te_ip)
 
     def test_heat_flow_matrix_uninitialized(self):
         self.assertTrue(np.allclose(

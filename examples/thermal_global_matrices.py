@@ -19,6 +19,9 @@ def main():
     mesh.z_max = 100.0
     mesh.generate_mesh(num_elements=10)
 
+    # creating thermal analysis object
+    thermal_analysis = ThermalAnalysis1D(mesh)
+
     # define material properties
     # and initialize integration points
     mtl = Material(
@@ -26,28 +29,26 @@ def main():
     )
     void_ratio = 0.3
     deg_sat_water = 0.8
-    for e in mesh.elements:
+    for e in thermal_analysis.elements:
         for ip in e.int_pts:
             ip.material = mtl
             ip.void_ratio = void_ratio
             ip.deg_sat_water = deg_sat_water
 
-    # creating thermal analysis object
-    # and initialize global matrices
-    thermal_analysis = ThermalAnalysis1D(mesh)
+    # initialize global matrices
     thermal_analysis.update_heat_flow_matrix()
     thermal_analysis.update_heat_storage_matrix()
 
     # create thermal boundary conditions
     temp_boundary = ThermalBoundary1D(
         (mesh.nodes[0],),
-        (mesh.elements[0].int_pts[0],),
+        (thermal_analysis.elements[0].int_pts[0],),
     )
     temp_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp
     temp_boundary.bnd_value = -10.0
     grad_boundary = ThermalBoundary1D(
         (mesh.nodes[-1],),
-        (mesh.elements[-1].int_pts[-1],),
+        (thermal_analysis.elements[-1].int_pts[-1],),
     )
     grad_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
     grad_boundary.bnd_value = 25.0 / 1e3

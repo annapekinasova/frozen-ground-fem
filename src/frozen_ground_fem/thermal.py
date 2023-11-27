@@ -43,66 +43,19 @@ class ThermalElement1D(Element1D):
 
     Parameters
     ----------
-    parent : frozen_ground_fem.geometry.Element1D
-        The parent element from the mesh.
+    nodes : Sequence[Node1D]
+        The tuple of :c:`Node1D` contained in the element.
+    order : int, optional, default=3
+        The order of interpolation used in the element.
 
     Raises
     ------
-    TypeError
-        If parent initializer is not a
-        :c:`frozen_ground_fem.geometry.Element1D`.
+    TypeError:
+        If nodes contains non-:c:`Node1D` objects.
+    ValueError
+        If len(nodes) is invalid for the order of interpolation.
+        If order is not 1 or 3.
     """
-    _parent: Element1D
-
-    def __init__(self, parent: Element1D):
-        if not isinstance(parent, Element1D):
-            raise TypeError(f"type(parent): {type(parent)} is not Element1D")
-        self._parent = parent
-
-    @property
-    def nodes(self) -> tuple[Node1D, ...]:
-        """The tuple of :c:`Node1D` contained in the element.
-
-        Returns
-        ------
-        tuple [:c:`Node1D`]
-
-        Notes
-        -----
-        This is a wrapper that references the nodes property
-        of the parent Element1D.
-        """
-        return self._parent.nodes
-
-    @property
-    def jacobian(self) -> float:
-        """The length scale of the element (in Lagrangian coordinates).
-
-        Returns
-        -------
-        float
-
-        Notes
-        -----
-        This is a wrapper that references the jacobian property
-        of the parent Element1D.
-        """
-        return self._parent.jacobian
-
-    @property
-    def int_pts(self) -> tuple[IntegrationPoint1D, ...]:
-        """The tuple of :c:`IntegrationPoint1D` contained in the element.
-
-        Returns
-        ------
-        tuple[:c:`IntegrationPoint1D`]
-
-        Notes
-        -----
-        This is a wrapper that references the int_pts property
-        of the parent Element1D.
-        """
-        return self._parent.int_pts
 
     @property
     def heat_flow_matrix(self) -> npt.NDArray[np.floating]:
@@ -120,11 +73,11 @@ class ThermalElement1D(Element1D):
         Integrates B^T * lambda * B over the element
         where lambda is the thermal conductivity.
         """
-        B = self._parent._gradient_matrix(0, 1)
+        B = self._gradient_matrix(0, 1)
         H = np.zeros_like(B.T @ B)
         jac = self.jacobian
         for ip in self.int_pts:
-            B = self._parent._gradient_matrix(ip.local_coord, jac)
+            B = self._gradient_matrix(ip.local_coord, jac)
             H += B.T @ (ip.thrm_cond * B) * ip.weight
         H *= jac
         return H
@@ -145,11 +98,11 @@ class ThermalElement1D(Element1D):
         Integrates N^T * C * N over the element
         where C is the volumetric heat capacity.
         """
-        N = self._parent._shape_matrix(0)
+        N = self._shape_matrix(0)
         C = np.zeros_like(N.T @ N)
         jac = self.jacobian
         for ip in self.int_pts:
-            N = self._parent._shape_matrix(ip.local_coord)
+            N = self._shape_matrix(ip.local_coord)
             C += N.T @ (ip.vol_heat_cap * N) * ip.weight
         C *= jac
         return C
@@ -160,13 +113,13 @@ class ThermalElement1D(Element1D):
 
         Notes
         -----
-        This convenience method loops over integration points
-        in the parent mesh,
-        interpolates temperatures from corresponding nodes
-        and updates degree of saturation of water accordingly."""
+        This convenience method loops over the integration points
+        and interpolates temperatures from corresponding nodes
+        and updates degree of saturation of water accordingly.
+        """
         Te = np.array([nd.temp for nd in self.nodes])
         for ip in self.int_pts:
-            N = self._parent._shape_matrix(ip.local_coord)
+            N = self._shape_matrix(ip.local_coord)
             T = N @ Te
             if T <= 0.0:
                 ip.deg_sat_water = 0.0
@@ -446,7 +399,10 @@ class ThermalAnalysis1D():
             )
         # assign the mesh and create thermal elements
         self._mesh = mesh
-        self._elements = tuple(ThermalElement1D(e) for e in self.mesh.elements)
+        self._elements = tuple(
+            ThermalElement1D(e.nodes, e.order)
+            for e in self.mesh.elements
+        )
         self._boundaries: set[ThermalBoundary1D] = set()
         # initialize global vectors and matrices
         self._temp_vector_0 = np.zeros(self.mesh.num_nodes)
@@ -864,10 +820,10 @@ class ThermalAnalysis1D():
 
         Notes
         -----
-        This convenience method loops over integration points
+        This convenience method loops over elements
         in the parent mesh,
-        interpolates temperatures from corresponding nodes
-        and updates degree of saturation of water accordingly."""
+        and calls their update_integration_points() method.
+        """
         for e in self.elements:
             e.update_integration_points()
 
