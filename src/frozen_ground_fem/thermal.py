@@ -314,15 +314,22 @@ class ThermalBoundary1D(Boundary1D):
             self.bnd_value = self.bnd_function(time)
 
 
-class ThermalAnalysis1D():
+class ThermalAnalysis1D(Mesh1D):
     """Class for simulating thermal physics
     on a mesh of :c:`ThermalElement1D`.
 
     Attributes
     ----------
-    mesh
+    z_min
+    z_max
+    grid_size
+    num_nodes
+    nodes
+    num_elements
     elements
+    num_boundaries
     boundaries
+    mesh_valid
     time_step
     dt
     over_dt
@@ -335,6 +342,7 @@ class ThermalAnalysis1D():
 
     Methods
     -------
+    generate_mesh
     add_boundary
     remove_boundary
     clear_boundaries
@@ -352,17 +360,25 @@ class ThermalAnalysis1D():
 
     Parameters
     -----------
-    mesh : :c:`frozen_ground_fem.geometry.Mesh1D`
-        The parent mesh referenced by the analysis object.
+    z_range: array_like, optional, default=()
+        The value to assign to range of z values from z_min to z_max.
+    grid_size: float, optional, default=0.0
+        The value to assign to specified grid size of the mesh.
+        Cannot be negative.
+    num_elements: int, optional, default=10
+        The specified number of :c:`Element1D` in the mesh.
+    order: int, optional, default=3
+        The order of interpolation to be used.
+    generate: bool, optional, default=False
+        Flag for whether to generate a mesh using assigned properties.
 
     Raises
     ------
-    TypeError
-        If mesh is not a :c:`frozen_ground_fem.geometry.Mesh1D`.
     ValueError
-        If mesh.mesh_valid is False.
+        If z_range values cannot be cast to float.
+        If grid_size cannot be cast to float.
+        If grid_size < 0.0.
     """
-    _mesh: Mesh1D
     _elements: tuple[ThermalElement1D, ...]
     _boundaries: set[ThermalBoundary1D]
     _time_step: float = 0.0
@@ -389,100 +405,83 @@ class ThermalAnalysis1D():
     _residual_heat_flux_vector: npt.NDArray[np.floating]
     _delta_temp_vector: npt.NDArray[np.floating]
 
-    def __init__(self, mesh: Mesh1D):
-        # validate mesh on which the analysis is to be performed
-        if not isinstance(mesh, Mesh1D):
-            raise TypeError(f"mesh has type {type(mesh)}, not Mesh1D")
-        if not mesh.mesh_valid:
-            raise ValueError(
-                f"mesh.mesh_valid is {mesh.mesh_valid}, need to generate mesh"
-            )
-        # assign the mesh and create thermal elements
-        self._mesh = mesh
+    def _generate_elements(self, num_elements: int, order: int):
+        """Generate the elements in the mesh.
+
+        Notes
+        -----
+        Overrides Mesh1D._generate_elements()
+        to generate ThermalElement1D objects.
+        """
         self._elements = tuple(
-            ThermalElement1D(e.nodes, e.order)
-            for e in self.mesh.elements
+            ThermalElement1D(tuple(self.nodes[order * k + j]
+                                   for j in range(order + 1)),
+                             order)
+            for k in range(num_elements)
         )
-        self._boundaries: set[ThermalBoundary1D] = set()
-        # initialize global vectors and matrices
-        self._temp_vector_0 = np.zeros(self.mesh.num_nodes)
-        self._temp_vector = np.zeros(self.mesh.num_nodes)
-        self._heat_flux_vector_0 = np.zeros(self.mesh.num_nodes)
-        self._heat_flux_vector = np.zeros(self.mesh.num_nodes)
-        self._heat_flow_matrix_0 = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
-        self._heat_flow_matrix = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
-        self._heat_storage_matrix_0 = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes)
-        )
-        self._heat_storage_matrix = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
-        self._weighted_heat_flux_vector = np.zeros(self.mesh.num_nodes)
-        self._weighted_heat_flow_matrix = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes)
-        )
-        self._weighted_heat_storage_matrix = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes)
-        )
-        self._coef_matrix_0 = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
-        self._coef_matrix_1 = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
-        self._residual_heat_flux_vector = np.zeros(self.mesh.num_nodes)
-        self._delta_temp_vector = np.zeros(self.mesh.num_nodes)
 
     @property
-    def mesh(self) -> Mesh1D:
-        """A reference to the parent mesh object.
+    def mesh_valid(self) -> bool:
+        """Flag for valid mesh.
+
+        Parameters
+        ----------
+        bool
 
         Returns
         -------
-        frozen_ground_fem.geometry.Mesh1D
+        bool
+
+        Raises
+        ------
+        ValueError
+            If the value to assign cannot be cast to bool.
 
         Notes
         -----
-        This property is not intended to be set
-        after creation of the ThermalAnalysis1D object.
-        It is assigned during the __init__() method.
-        Other methods and properties of ThermalAnalysis1D
-        assume that the mesh object does not change
-        (i.e. mesh is not regenerated,
-        number of nodes and elements is fixed).
-        Use caution with modifying mesh after creation of
-        ThermalAnalysis1D,
-        otherwise unexpected behaviour could occur.
+        When assigning to False also clears mesh information
+        (e.g. nodes, elements).
         """
-        return self._mesh
+        return super().mesh_valid
 
-    @property
-    def elements(self) -> tuple[ThermalElement1D, ...]:
-        """A tuple of thermal elements contained in the mesh.
-
-        Returns
-        -------
-        tuple[ThermalElement1D]
-
-        Notes
-        -----
-        The tuple of ThermalElement1D is created
-        during the __init__() method.
-        It is assumed that the parent Element1D
-        objects in the parent Mesh1D do not change.
-        Therefore, the set of ThermalElement1D
-        is immutable.
-        """
-        return self._elements
-
-    @property
-    def boundaries(self) -> set[ThermalBoundary1D]:
-        """The set of boundary conditions contained in the analysis.
-
-        Returns
-        -------
-        set[:c:`ThermalBoundary1D`]
-        """
-        return self._boundaries
+    @mesh_valid.setter
+    def mesh_valid(self, value: bool) -> None:
+        value = bool(value)
+        if value:
+            # TODO: check for mesh validity
+            self._mesh_valid = True
+            # initialize global vectors and matrices
+            self._temp_vector_0 = np.zeros(self.num_nodes)
+            self._temp_vector = np.zeros(self.num_nodes)
+            self._heat_flux_vector_0 = np.zeros(self.num_nodes)
+            self._heat_flux_vector = np.zeros(self.num_nodes)
+            self._heat_flow_matrix_0 = np.zeros(
+                (self.num_nodes, self.num_nodes))
+            self._heat_flow_matrix = np.zeros(
+                (self.num_nodes, self.num_nodes))
+            self._heat_storage_matrix_0 = np.zeros(
+                (self.num_nodes, self.num_nodes)
+            )
+            self._heat_storage_matrix = np.zeros(
+                (self.num_nodes, self.num_nodes))
+            self._weighted_heat_flux_vector = np.zeros(self.num_nodes)
+            self._weighted_heat_flow_matrix = np.zeros(
+                (self.num_nodes, self.num_nodes)
+            )
+            self._weighted_heat_storage_matrix = np.zeros(
+                (self.num_nodes, self.num_nodes)
+            )
+            self._coef_matrix_0 = np.zeros(
+                (self.num_nodes, self.num_nodes))
+            self._coef_matrix_1 = np.zeros(
+                (self.num_nodes, self.num_nodes))
+            self._residual_heat_flux_vector = np.zeros(self.num_nodes)
+            self._delta_temp_vector = np.zeros(self.num_nodes)
+        else:
+            self._nodes = ()
+            self._elements = ()
+            self.clear_boundaries()
+            self._mesh_valid = False
 
     @property
     def time_step(self) -> float:
@@ -687,34 +686,28 @@ class ThermalAnalysis1D():
         ------
         TypeError
             If new_boundary is not an instance of :c:`ThermalBoundary1D`.
+        ValueError
+            If new_boundary contains a :c:`Node1D` not in the mesh.
+            If new_boundary contains an :c:`IntegrationPoint1D`
+                not in the mesh.
         """
         if not isinstance(new_boundary, ThermalBoundary1D):
             raise TypeError(
-                f"type(new_boundary) {type(new_boundary)} invalid,"
-                + " must be ThermalBoundary1D"
+                f"type(new_boundary) {type(new_boundary)} invalid, "
+                + "must be ThermalBoundary1D"
             )
+        for nd in new_boundary.nodes:
+            if nd not in self.nodes:
+                raise ValueError(f"new_boundary contains node {nd}"
+                                 + " not in mesh")
+        if new_boundary.int_pts:
+            int_pts = tuple(ip for e in self.elements for ip in e.int_pts)
+            for ip in new_boundary.int_pts:
+                if ip not in int_pts:
+                    raise ValueError(
+                        f"new_boundary contains int_pt {ip} not in mesh"
+                    )
         self._boundaries.add(new_boundary)
-
-    def remove_boundary(self, boundary: ThermalBoundary1D) -> None:
-        """Remove an existing boundary from the mesh.
-
-        Parameters
-        ----------
-        boundary : :c:`ThermalBoundary1D`
-            The boundary to remove from the mesh.
-
-        Raises
-        ------
-        ValueError
-            If boundary is not in the mesh.
-        """
-        self._boundaries.remove(boundary)
-
-    def clear_boundaries(self) -> None:
-        """ Clears existing :c:`ThermalBoundary1D` objects
-        from the mesh.
-        """
-        self._boundaries.clear()
 
     def update_thermal_boundary_conditions(
             self,
@@ -803,26 +796,26 @@ class ThermalAnalysis1D():
 
     def update_nodes(self) -> None:
         """Updates the temperature values at the nodes
-        in the parent mesh.
-
-        Notes
-        -----
-        This convenience method loops over nodes in the parent mesh
-        and assigns the temperature from the global temperature vector
-        in the ThermalAnalysis1D.
+        in the mesh.
+        #
+        # Notes
+        # -----
+        # This convenience method loops over nodes in the mesh
+        # and assigns the temperature from the global temperature vector
+        # in the ThermalAnalysis1D.
         """
-        for nd in self.mesh.nodes:
+        for nd in self.nodes:
             nd.temp = float(self._temp_vector[nd.index])
 
     def update_integration_points(self) -> None:
         """Updates the properties of integration points
-        in the parent mesh according to changes in temperature.
-
-        Notes
-        -----
-        This convenience method loops over elements
-        in the parent mesh,
-        and calls their update_integration_points() method.
+        in the mesh according to changes in temperature.
+        #
+        # Notes
+        # -----
+        # This convenience method loops over elements
+        # in the parent mesh,
+        # and calls their update_integration_points() method.
         """
         for e in self.elements:
             e.update_integration_points()
@@ -841,12 +834,12 @@ class ThermalAnalysis1D():
         This convenience method is meant to be called once
         at the beginning of the analysis.
         It assumes that initial conditions have already been assigned
-        to the nodes in the parent mesh.
+        to the nodes in the mesh.
         It initializes variables tracking the time coordinate,
         updates the thermal boundary conditions at the initial time,
         assigns initial temperature values from the nodes to the global time
         vector,
-        updates the integration points in the parent mesh,
+        updates the integration points in the mesh,
         then updates all global vectors and matrices.
         """
         # initialize global time
@@ -857,7 +850,7 @@ class ThermalAnalysis1D():
         self.update_thermal_boundary_conditions(self._t0)
         # now get the temperatures from the nodes
         # (we assume that initial conditions have already been applied)
-        for nd in self.mesh.nodes:
+        for nd in self.nodes:
             self._temp_vector[nd.index] = nd.temp
         # now build the global matrices and vectors
         self.update_integration_points()
@@ -867,7 +860,7 @@ class ThermalAnalysis1D():
         # create list of free node indices
         # that will be updated at each iteration
         # (i.e. are not fixed/Dirichlet boundary conditions)
-        free_ind_list = [nd.index for nd in self.mesh.nodes]
+        free_ind_list = [nd.index for nd in self.nodes]
         for tb in self.boundaries:
             if tb.bnd_type == ThermalBoundary1D.BoundaryType.temp:
                 free_ind_list.remove(tb.nodes[0].index)

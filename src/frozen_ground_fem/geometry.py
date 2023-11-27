@@ -1455,13 +1455,13 @@ class Mesh1D:
         If grid_size cannot be cast to float.
         If grid_size < 0.0.
     """
-    _boundaries: set[Boundary1D]
     _z_min: float = -np.inf
     _z_max: float = np.inf
     _mesh_valid: bool = False
     _grid_size: float = 0.0
     _nodes: tuple[Node1D, ...]
     _elements: tuple[Element1D, ...]
+    _boundaries: set[Boundary1D]
 
     def __init__(
         self,
@@ -1759,7 +1759,7 @@ class Mesh1D:
         if not isinstance(new_boundary, Boundary1D):
             raise TypeError(
                 f"type(new_boundary) {type(new_boundary)} invalid, "
-                + "must be Boundary1D"
+                + "must be Boundary1D (or a subclass)"
             )
         for nd in new_boundary.nodes:
             if nd not in self.nodes:

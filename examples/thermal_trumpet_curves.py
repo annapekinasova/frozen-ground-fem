@@ -3,10 +3,6 @@ import matplotlib.pyplot as plt
 
 from frozen_ground_fem.materials import Material
 
-from frozen_ground_fem.geometry import (
-    Mesh1D,
-)
-
 from frozen_ground_fem.thermal import (
     ThermalAnalysis1D,
     ThermalBoundary1D,
@@ -14,15 +10,13 @@ from frozen_ground_fem.thermal import (
 
 
 def main():
-    # define mesh
-    mesh = Mesh1D()
-    mesh.z_min = 0.0
-    mesh.z_max = 50.0
-    mesh.generate_mesh(num_elements=20)
-
     # create thermal analysis object
-    thermal_analysis = ThermalAnalysis1D(mesh)
-    ta = thermal_analysis
+    # define mesh with 20 elements
+    # and cubic interpolation
+    ta = ThermalAnalysis1D()
+    ta.z_min = 0.0
+    ta.z_max = 50.0
+    ta.generate_mesh(num_elements=20)
 
     # define material properties
     # and initialize integration points
@@ -37,7 +31,7 @@ def main():
 
     # set initial temperature conditions
     T0 = -5.0
-    for nd in mesh.nodes:
+    for nd in ta.nodes:
         nd.temp = T0
 
     # define temperature boundary curve
@@ -59,21 +53,21 @@ def main():
 
     # create thermal boundary conditions
     temp_boundary = ThermalBoundary1D(
-        (mesh.nodes[0],),
+        (ta.nodes[0],),
         (ta.elements[0].int_pts[0],),
     )
     temp_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp
     temp_boundary.bnd_function = air_temp
     grad_boundary = ThermalBoundary1D(
-        (mesh.nodes[-1],),
+        (ta.nodes[-1],),
         (ta.elements[-1].int_pts[-1],),
     )
     grad_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
     grad_boundary.bnd_value = 0.03
 
     # assign thermal boundaries to the analysis
-    thermal_analysis.add_boundary(temp_boundary)
-    thermal_analysis.add_boundary(grad_boundary)
+    ta.add_boundary(temp_boundary)
+    ta.add_boundary(grad_boundary)
 
     # **********************************************
     # TIME STEPPING ALGORITHM
@@ -82,14 +76,14 @@ def main():
     plt.rc("font", size=8)
 
     # initialize plot
-    z_vec = np.array([nd.z for nd in mesh.nodes])
+    z_vec = np.array([nd.z for nd in ta.nodes])
     plt.figure(figsize=(3.7, 3.7))
 
     # initialize global matrices and vectors
     ta.time_step = 365 * 8.64e4 / 52  # ~one week, in seconds
-    thermal_analysis.initialize_global_system(t0=0.0)
+    ta.initialize_global_system(t0=0.0)
 
-    temp_curve = np.zeros((mesh.num_nodes, 52))
+    temp_curve = np.zeros((ta.num_nodes, 52))
     for k in range(1500):
         ta.initialize_time_step()
         ta.iterative_correction_step()
@@ -106,7 +100,7 @@ def main():
              linewidth=2, label="temp dist, jan 1")
     plt.plot(temp_curve[:, 25], z_vec, "-r",
              linewidth=2, label="temp dist, jun 1")
-    plt.ylim(mesh.z_max, mesh.z_min)
+    plt.ylim(ta.z_max, ta.z_min)
     plt.legend()
     plt.xlabel("Temperature, T [deg C]")
     plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
@@ -125,7 +119,7 @@ def main():
              linewidth=1, label="temp dist, oct")
     plt.plot(temp_min_curve, z_vec, "-b", linewidth=2, label="annual minimum")
     plt.plot(temp_max_curve, z_vec, "-r", linewidth=2, label="annual maximum")
-    plt.ylim(mesh.z_max, mesh.z_min)
+    plt.ylim(ta.z_max, ta.z_min)
     plt.legend()
     plt.xlabel("Temperature, T [deg C]")
     plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
