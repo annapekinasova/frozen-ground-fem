@@ -9,7 +9,6 @@ from frozen_ground_fem.geometry import (
     Node1D,
     IntegrationPoint1D,
     Element1D,
-    Boundary1D,
 )
 from frozen_ground_fem.thermal import (
     ThermalElement1D,
@@ -148,16 +147,7 @@ class TestThermalBoundary1D(unittest.TestCase):
     def setUp(self):
         self.nodes = (Node1D(0, 2.0),)
         self.int_pts = (IntegrationPoint1D(),)
-        self.bnd_el = Boundary1D(self.nodes, self.int_pts)
-        self.thrm_bnd = ThermalBoundary1D(self.bnd_el)
-
-    def test_invalid_no_parent(self):
-        with self.assertRaises(TypeError):
-            ThermalElement1D()
-
-    def test_invalid_parent(self):
-        with self.assertRaises(TypeError):
-            ThermalBoundary1D(self.nodes)
+        self.thrm_bnd = ThermalBoundary1D(self.nodes, self.int_pts)
 
     def test_defaults(self):
         self.assertEqual(self.thrm_bnd.bnd_type,

@@ -9,6 +9,7 @@ ThermalAnalysis1D
 """
 from typing import (
     Callable,
+    Sequence,
 )
 from enum import Enum
 
@@ -165,7 +166,7 @@ class ThermalElement1D(Element1D):
         and updates degree of saturation of water accordingly."""
         Te = np.array([nd.temp for nd in self.nodes])
         for ip in self.int_pts:
-            N = self._shape_matrix(ip.local_coord)
+            N = self._parent._shape_matrix(ip.local_coord)
             T = N @ Te
             if T <= 0.0:
                 ip.deg_sat_water = 0.0
@@ -182,6 +183,9 @@ class ThermalBoundary1D(Boundary1D):
         The set of possible boundary condition types
     nodes
     int_pts
+    bnd_type
+    bnd_value
+    bnd_function
 
     Methods
     -------
@@ -190,10 +194,12 @@ class ThermalBoundary1D(Boundary1D):
 
     Parameters
     ----------
-    parent : frozen_ground_fem.geometry.Boundary1D
-        The parent boundary element from the mesh.
+    nodes : Sequence[Node1D]
+        The tuple of :c:`Node1D` contained in the element.
+    int_pts : Sequence[IntegrationPoint1D], optional, default=()
+        The tuple of :c:`IntegrationPoint1D` contained in the element.
     bnd_type : ThermalBoundary1D.BoundaryType, optional,
-    default=BoundaryType.temp
+                default=BoundaryType.temp
         The type of boundary condition.
     bnd_value : float, optional, default=0.0
         The value of the boundary condition.
@@ -203,64 +209,33 @@ class ThermalBoundary1D(Boundary1D):
     Raises
     ------
     TypeError
-        If parent initializer is not a
-        :c:`frozen_ground_fem.geometry.Boundary1D`.
+        If nodes contains non-:c:`Node1D` objects.
+        If int_pts contains non-:c:`IntegrationPoint1D` objects.
         If bnd_type is not a ThermalBoundary1D.BoundaryType.
         If bnd_function is not callable or None.
     ValueError
+        If len(nodes) != 1.
+        If len(int_pts) > 1.
         If bnd_value is not convertible to float.
     """
     BoundaryType = Enum("BoundaryType", ["temp", "heat_flux", "temp_grad"])
 
-    _parent: Boundary1D
     _bnd_type: BoundaryType
     _bnd_value: float = 0.0
     _bnd_function: Callable | None
 
     def __init__(
         self,
-        parent: Boundary1D,
+        nodes: Sequence[Node1D],
+        int_pts: Sequence[IntegrationPoint1D] = (),
         bnd_type=BoundaryType.temp,
         bnd_value: float = 0.0,
         bnd_function: Callable | None = None,
     ):
-        if not isinstance(parent, Boundary1D):
-            raise TypeError(f"type(parent): {type(parent)} is not Boundary1D")
-        self._parent = parent
+        super().__init__(nodes, int_pts)
         self.bnd_type = bnd_type
         self.bnd_value = bnd_value
         self.bnd_function = bnd_function
-
-    @property
-    def nodes(self) -> tuple[Node1D, ...]:
-        """The tuple of :c:`Node1D` contained in the boundary element.
-
-        Returns
-        ------
-        tuple[:c:`Node1D`]
-
-        Notes
-        -----
-        This is a wrapper that references the nodes property
-        of the parent Boundary1D.
-        """
-        return self._parent.nodes
-
-    @property
-    def int_pts(self) -> tuple[IntegrationPoint1D, ...]:
-        """The tuple of :c:`IntegrationPoint1D` contained in the boundary
-        element.
-
-        Returns
-        ------
-        tuple[:c:`IntegrationPoint1D`]
-
-        Notes
-        -----
-        This is a wrapper that references the nodes property
-        of the parent Boundary1D.
-        """
-        return self._parent.int_pts
 
     @property
     def bnd_type(self) -> BoundaryType:
@@ -756,20 +731,20 @@ class ThermalAnalysis1D():
         ------
         TypeError
             If new_boundary is not an instance of :c:`ThermalBoundary1D`.
-        ValueError
-            If new_boundary does not have parent Boundary1D
-            in the parent mesh.
+        # ValueError
+        #     If new_boundary does not have parent Boundary1D
+        #     in the parent mesh.
         """
         if not isinstance(new_boundary, ThermalBoundary1D):
             raise TypeError(
                 f"type(new_boundary) {type(new_boundary)} invalid,"
                 + " must be ThermalBoundary1D"
             )
-        if new_boundary._parent not in self.mesh.boundaries:
-            raise ValueError(
-                "new_boundary does not have parent Boundary1D "
-                + "in the parent mesh"
-            )
+        # if new_boundary._parent not in self.mesh.boundaries:
+        #     raise ValueError(
+        #         "new_boundary does not have parent Boundary1D "
+        #         + "in the parent mesh"
+        #     )
         self._boundaries.add(new_boundary)
 
     def remove_boundary(self, boundary: ThermalBoundary1D) -> None:

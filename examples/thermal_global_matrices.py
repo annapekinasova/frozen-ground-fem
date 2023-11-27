@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from frozen_ground_fem.materials import Material
 
 from frozen_ground_fem.geometry import (
-    Boundary1D,
     Mesh1D,
 )
 
@@ -33,19 +32,6 @@ def main():
             ip.void_ratio = void_ratio
             ip.deg_sat_water = deg_sat_water
 
-    # create geometric boundaries
-    # and assign them to the mesh
-    upper_boundary = Boundary1D(
-        (mesh.nodes[0],),
-        (mesh.elements[0].int_pts[0],),
-    )
-    lower_boundary = Boundary1D(
-        (mesh.nodes[-1],),
-        (mesh.elements[-1].int_pts[-1],),
-    )
-    mesh.add_boundary(upper_boundary)
-    mesh.add_boundary(lower_boundary)
-
     # creating thermal analysis object
     # and initialize global matrices
     thermal_analysis = ThermalAnalysis1D(mesh)
@@ -53,10 +39,16 @@ def main():
     thermal_analysis.update_heat_storage_matrix()
 
     # create thermal boundary conditions
-    temp_boundary = ThermalBoundary1D(upper_boundary)
+    temp_boundary = ThermalBoundary1D(
+        (mesh.nodes[0],),
+        (mesh.elements[0].int_pts[0],),
+    )
     temp_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp
     temp_boundary.bnd_value = -10.0
-    grad_boundary = ThermalBoundary1D(lower_boundary)
+    grad_boundary = ThermalBoundary1D(
+        (mesh.nodes[-1],),
+        (mesh.elements[-1].int_pts[-1],),
+    )
     grad_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
     grad_boundary.bnd_value = 25.0 / 1e3
 
