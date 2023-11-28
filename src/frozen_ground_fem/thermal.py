@@ -489,8 +489,7 @@ class ThermalAnalysis1D(Mesh1D):
 
         Parameters
         ----------
-        value : float
-            The value to assign to the time step.
+        float
 
         Returns
         -------
@@ -545,8 +544,7 @@ class ThermalAnalysis1D(Mesh1D):
 
         Parameters
         ----------
-        value : float
-            The value to assign to the implicit factor
+        float
 
         Returns
         -------
@@ -575,7 +573,7 @@ class ThermalAnalysis1D(Mesh1D):
         return self._implicit_factor
 
     @implicit_factor.setter
-    def implicit_factor(self, value):
+    def implicit_factor(self, value: float) -> None:
         value = float(value)
         if value < 0.0 or value > 1.0:
             raise ValueError(
@@ -592,6 +590,10 @@ class ThermalAnalysis1D(Mesh1D):
     @property
     def one_minus_alpha(self) -> float:
         """The value (1 - implicit_factor).
+
+        Parameters
+        ----------
+        float
 
         Returns
         -------
@@ -612,8 +614,7 @@ class ThermalAnalysis1D(Mesh1D):
 
         Parameters
         ----------
-        value : float
-            The value to assign for the error tolerance
+        float
 
         Returns
         -------
@@ -810,12 +811,6 @@ class ThermalAnalysis1D(Mesh1D):
     def update_integration_points(self) -> None:
         """Updates the properties of integration points
         in the mesh according to changes in temperature.
-        #
-        # Notes
-        # -----
-        # This convenience method loops over elements
-        # in the parent mesh,
-        # and calls their update_integration_points() method.
         """
         for e in self.elements:
             e.update_integration_points()
