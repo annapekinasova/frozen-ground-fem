@@ -10,6 +10,7 @@ ConsolidationAnalysis1D
 """
 from typing import (
     Callable,
+    Sequence,
 )
 from enum import Enum
 
@@ -50,66 +51,19 @@ class ConsolidationElement1D(Element1D):
 
     Parameters
     ----------
-    parent : frozen_ground_fem.geometry.Element1D
-        The parent element from the mesh.
+    nodes : Sequence[Node1D]
+        The tuple of :c:`Node1D` contained in the element.
+    order : int, optional, default=3
+        The order of interpolation used in the element.
 
     Raises
     ------
-    TypeError
-        If parent initializer is not a
-        :c:`frozen_ground_fem.geometry.Element1D`.
+    TypeError:
+        If nodes contains non-:c:`Node1D` objects.
+    ValueError
+        If len(nodes) is invalid for the order of interpolation.
+        If order is not 1 or 3.
     """
-    _parent: Element1D
-
-    def __init__(self, parent: Element1D):
-        if not isinstance(parent, Element1D):
-            raise TypeError(f"type(parent): {type(parent)} is not Element1D")
-        self._parent = parent
-
-    @property
-    def nodes(self) -> tuple[Node1D, ...]:
-        """The tuple of :c:`Node1D` contained in the element.
-
-        Returns
-        ------
-        tuple [:c:`Node1D`]
-
-        Notes
-        -----
-        This is a wrapper that references the nodes property
-        of the parent Element1D.
-        """
-        return self._parent.nodes
-
-    @property
-    def jacobian(self) -> float:
-        """The length scale of the element (in Lagrangian coordinates).
-
-        Returns
-        -------
-        float
-
-        Notes
-        -----
-        This is a wrapper that references the jacobian property
-        of the parent Element1D.
-        """
-        return self._parent.jacobian
-
-    @property
-    def int_pts(self) -> tuple[IntegrationPoint1D, ...]:
-        """The tuple of :c:`IntegrationPoint1D` contained in the element.
-
-        Returns
-        ------
-        tuple[:c:`IntegrationPoint1D`]
-
-        Notes
-        -----
-        This is a wrapper that references the int_pts property
-        of the parent Element1D.
-        """
-        return self._parent.int_pts
 
     @property
     def stiffness_matrix(self) -> npt.NDArray[np.floating]:
@@ -130,7 +84,7 @@ class ConsolidationElement1D(Element1D):
         dsig'/de is the stress-strain coefficient from the consolidation curve,
         gam_w is the unit weight of water.
         """
-        B = self._parent._gradient_matrix(0, 1)
+        B = self._gradient_matrix(0, 1)
         K = np.zeros_like(B.T @ B)
         jac = self.jacobian
         for ip in self.int_pts:
@@ -143,8 +97,8 @@ class ConsolidationElement1D(Element1D):
             dk_de = ip.hyd_cond_gradient
             k_coef = dk_de * (Gs - 1.0) / (1.0 + e) - k * \
                 (Gs - 1.0) / (1.0 + e) ** 2
-            B = self._parent._gradient_matrix(ip.local_coord, jac)
-            N = self._parent._shape_matrix(ip.local_coord)
+            B = self._gradient_matrix(ip.local_coord, jac)
+            N = self._shape_matrix(ip.local_coord)
             K += (
                 B.T @ (k * e_ratio * dsig_de / gam_w * B) + N.T @ (k_coef * B)
             ) * ip.weight
@@ -172,11 +126,11 @@ class ConsolidationElement1D(Element1D):
         Gi is the specific gravity of ice,
         and e0 is the initial void ratio.
         """
-        N = self._parent._shape_matrix(0)
+        N = self._shape_matrix(0)
         M = np.zeros_like(N.T @ N)
         jac = self.jacobian
         for ip in self.int_pts:
-            N = self._parent._shape_matrix(ip.local_coord)
+            N = self._shape_matrix(ip.local_coord)
             M += (
                 N.T
                 @ (
@@ -216,13 +170,12 @@ class ConsolidationElement1D(Element1D):
         Notes
         -----
         This convenience method loops over integration points
-        in the parent mesh,
-        interpolates void ratio from corresponding nodes
+        and interpolates void ratio from corresponding nodes
         and updates void ratio dependent parameters accordingly.
         """
         ee = np.array([nd.void_ratio for nd in self.nodes])
         for ip in self.int_pts:
-            N = self._parent._shape_matrix(ip.local_coord)
+            N = self._shape_matrix(ip.local_coord)
             ep = N @ ee
             ip.void_ratio = ep
             k, dk_de = ip.material.hyd_cond(ep, 1.0, False)
@@ -234,7 +187,7 @@ class ConsolidationElement1D(Element1D):
                 ip.pre_consol_stress = sig
             ip.eff_stress = sig
             ip.eff_stress_gradient = dsig_de
-            B = self._parent._gradient_matrix(ip.local_coord, self.jacobian)
+            B = self._gradient_matrix(ip.local_coord, self.jacobian)
             de_dZ = B @ ee
             e0 = ip.void_ratio_0
             Gs = ip.material.spec_grav_solids
@@ -257,6 +210,9 @@ class ConsolidationBoundary1D(Boundary1D):
         The set of possible boundary condition types
     nodes
     int_pts
+    bnd_type
+    bnd_value
+    bnd_function
 
     Methods
     -------
@@ -265,24 +221,28 @@ class ConsolidationBoundary1D(Boundary1D):
 
     Parameters
     ----------
-    parent : frozen_ground_fem.geometry.Boundary1D
-        The parent boundary element from the mesh.
+    nodes : Sequence[Node1D]
+        The tuple of :c:`Node1D` contained in the element.
+    int_pts : Sequence[IntegrationPoint1D], optional, default=()
+        The tuple of :c:`IntegrationPoint1D` contained in the element.
     bnd_type : ConsolidationBoundary1D.BoundaryType, optional,
-    default=BoundaryType.fixed_flux
-        The type of the boundary condition.
+                default=BoundaryType.temp
+        The type of boundary condition.
     bnd_value : float, optional, default=0.0
         The value of the boundary condition.
     bnd_function : callable or None, optional, default=None
-        The function that updates the boundary condition.
+        The function for the updates the boundary condition.
 
     Raises
     ------
     TypeError
-        If parent initializer is not a
-        :c:`frozen_ground_fem.geometry.Boundary1D`.
+        If nodes contains non-:c:`Node1D` objects.
+        If int_pts contains non-:c:`IntegrationPoint1D` objects.
         If bnd_type is not a ConsolidationBoundary1D.BoundaryType.
         If bnd_function is not callable or None.
     ValueError
+        If len(nodes) != 1.
+        If len(int_pts) > 1.
         If bnd_value is not convertible to float.
     """
 
@@ -290,55 +250,22 @@ class ConsolidationBoundary1D(Boundary1D):
         "BoundaryType", ["void_ratio", "fixed_flux", "water_flux"]
     )
 
-    _parent: Boundary1D
     _bnd_type: BoundaryType
     _bnd_value: float = 0.0
     _bnd_function: Callable | None
 
     def __init__(
         self,
-        parent: Boundary1D,
+        nodes: Sequence[Node1D],
+        int_pts: Sequence[IntegrationPoint1D] = (),
         bnd_type=BoundaryType.fixed_flux,
         bnd_value: float = 0.0,
-        bnd_function=None,
+        bnd_function: Callable | None = None,
     ):
-        if not isinstance(parent, Boundary1D):
-            raise TypeError(f"type(parent): {type(parent)} is not Boundary1D")
-        self._parent = parent
+        super().__init__(nodes, int_pts)
         self.bnd_type = bnd_type
         self.bnd_value = bnd_value
         self.bnd_function = bnd_function
-
-    @property
-    def nodes(self) -> tuple[Node1D, ...]:
-        """The tuple of :c:`Node1D` contained in the boundary element.
-
-        Returns
-        ------
-        tuple[:c:`Node1D`]
-
-        Notes
-        -----
-        This is a wrapper that references the nodes property
-        of the parent Boundary1D.
-        """
-        return self._parent.nodes
-
-    @property
-    def int_pts(self) -> tuple[IntegrationPoint1D, ...]:
-        """The tuple of :c:`IntegrationPoint1D` contained in
-        the boundary element.
-
-        Returns
-        ------
-        tuple[:c:`IntegrationPoint1D`]
-
-        Notes
-        -----
-        This is a wrapper that references the int_pts property
-        of the parent Boundary1D.
-        """
-        return self._parent.int_pts
 
     @property
     def bnd_type(self) -> BoundaryType:
@@ -346,8 +273,7 @@ class ConsolidationBoundary1D(Boundary1D):
 
         Parameters
         ----------
-        value : ConsolidationBoundary1D.BoundaryType
-            The value to set the type of boundary condition.
+        ConsolidationBoundary1D.BoundaryType
 
         Returns
         -------
@@ -374,8 +300,7 @@ class ConsolidationBoundary1D(Boundary1D):
 
         Parameters
         ----------
-        value : float
-            The value to set for the boundary condition
+        float
 
         Returns
         -------
@@ -414,8 +339,7 @@ class ConsolidationBoundary1D(Boundary1D):
         Notes
         -----
         If a callable (i.e. function or class that implements __call__)
-        reference is provided
-        it should take one argument
+        reference is provided it should take one argument
         which is a time (in seconds).
         This function is called by the method update_value().
         """
@@ -437,8 +361,7 @@ class ConsolidationBoundary1D(Boundary1D):
         -----
         This method updates the void_ratio at each of the nodes
         in the ConsolidationBoundary1D
-        only in the case that
-        bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio.
+        only in the case that bnd_type == BoundaryType.temp.
         Otherwise, it does nothing.
         """
         if self.bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio:
@@ -450,8 +373,7 @@ class ConsolidationBoundary1D(Boundary1D):
 
         Parameters
         ----------
-        time: float
-            The time in seconds
+        float
 
         Raises
         ------
@@ -465,23 +387,27 @@ class ConsolidationBoundary1D(Boundary1D):
         If bnd_function is None
         the time argument is ignored and nothing happens.
         """
-        if self.bnd_type == ConsolidationBoundary1D.BoundaryType.water_flux:
-            self.bnd_value = self.int_pts[0].water_flux_rate
-            return
         time = float(time)
         if self.bnd_function is not None:
             self.bnd_value = self.bnd_function(time)
 
 
-class ConsolidationAnalysis1D:
+class ConsolidationAnalysis1D(Mesh1D):
     """Class for simulating consolidation physics
     on a mesh of :c:`ConsolidationElement1D`.
 
     Attributes
     ----------
-    mesh
+    z_min
+    z_max
+    grid_size
+    num_nodes
+    nodes
+    num_elements
     elements
+    num_boundaries
     boundaries
+    mesh_valid
     time_step
     dt
     over_dt
@@ -494,6 +420,7 @@ class ConsolidationAnalysis1D:
 
     Methods
     -------
+    generate_mesh
     add_boundary
     remove_boundary
     clear_boundaries
@@ -513,17 +440,25 @@ class ConsolidationAnalysis1D:
 
     Parameters
     -----------
-    mesh : :c:`frozen_ground_fem.geometry.Mesh1D`
-        The parent mesh referenced by the analysis object.
+    z_range: array_like, optional, default=()
+        The value to assign to range of z values from z_min to z_max.
+    grid_size: float, optional, default=0.0
+        The value to assign to specified grid size of the mesh.
+        Cannot be negative.
+    num_elements: int, optional, default=10
+        The specified number of :c:`Element1D` in the mesh.
+    order: int, optional, default=3
+        The order of interpolation to be used.
+    generate: bool, optional, default=False
+        Flag for whether to generate a mesh using assigned properties.
 
     Raises
     ------
-    TypeError
-        If mesh is not a :c:`frozen_ground_fem.geometry.Mesh1D`.
     ValueError
-        If mesh.mesh_valid is False.
+        If z_range values cannot be cast to float.
+        If grid_size cannot be cast to float.
+        If grid_size < 0.0.
     """
-    _mesh: Mesh1D
     _elements: tuple[ConsolidationElement1D, ...]
     _boundaries: set[ConsolidationBoundary1D]
     _time_step: float = 0.0
@@ -552,97 +487,82 @@ class ConsolidationAnalysis1D:
     _residual_water_flux_vector: npt.NDArray[np.floating]
     _delta_void_ratio_vector: npt.NDArray[np.floating]
 
-    def __init__(self, mesh: Mesh1D):
-        # validate mesh on which the analysis is to be performed
-        if not isinstance(mesh, Mesh1D):
-            raise TypeError(f"mesh has type {type(mesh)}, not Mesh1D")
-        if not mesh.mesh_valid:
-            raise ValueError(
-                f"mesh.mesh_valid is {mesh.mesh_valid}, need to generate mesh"
+    def _generate_elements(self, num_elements: int, order: int):
+        """Generate the elements in the mesh.
+
+        Notes
+        -----
+        Overrides Mesh1D._generate_elements()
+        to generate ConsolidationElement1D objects.
+        """
+        self._elements = tuple(
+            ConsolidationElement1D(tuple(self.nodes[order * k + j]
+                                   for j in range(order + 1)),
+                                   order)
+            for k in range(num_elements)
+        )
+
+    @property
+    def mesh_valid(self) -> bool:
+        """Flag for valid mesh.
+
+        Parameters
+        ----------
+        bool
+
+        Returns
+        -------
+        bool
+
+        Raises
+        ------
+        ValueError
+            If the value to assign cannot be cast to bool.
+
+        Notes
+        -----
+        When assigning to False also clears mesh information
+        (e.g. nodes, elements).
+        """
+        return super().mesh_valid
+
+    @mesh_valid.setter
+    def mesh_valid(self, value: bool) -> None:
+        value = bool(value)
+        if value:
+            # TODO: check for mesh validity
+            self._mesh_valid = True
+            # initialize global vectors and matrices
+            self._void_ratio_vector_0 = np.zeros(self.num_nodes)
+            self._void_ratio_vector = np.zeros(self.num_nodes)
+            self._water_flux_vector_0 = np.zeros(self.num_nodes)
+            self._water_flux_vector = np.zeros(self.num_nodes)
+            self._stiffness_matrix_0 = np.zeros(
+                (self.num_nodes, self.num_nodes))
+            self._stiffness_matrix = np.zeros(
+                (self.num_nodes, self.num_nodes))
+            self._mass_matrix_0 = np.zeros(
+                (self.num_nodes, self.num_nodes))
+            self._mass_matrix = np.zeros(
+                (self.num_nodes, self.num_nodes))
+            self._weighted_water_flux_vector = np.zeros(self.num_nodes)
+            self._weighted_stiffness_matrix = np.zeros(
+                (self.num_nodes, self.num_nodes)
             )
-        # assign the mesh and create consolidation elements
-        self._mesh = mesh
-        self._elements = tuple(ConsolidationElement1D(e)
-                               for e in self.mesh.elements)
-        self._boundaries: set[ConsolidationBoundary1D] = set()
-        # initialize global vectors and matrices
-        self._void_ratio_vector_0 = np.zeros(self.mesh.num_nodes)
-        self._void_ratio_vector = np.zeros(self.mesh.num_nodes)
-        self._water_flux_vector_0 = np.zeros(self.mesh.num_nodes)
-        self._water_flux_vector = np.zeros(self.mesh.num_nodes)
-        self._stiffness_matrix_0 = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
-        self._stiffness_matrix = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
-        self._mass_matrix_0 = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
-        self._mass_matrix = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
-        self._weighted_water_flux_vector = np.zeros(self.mesh.num_nodes)
-        self._weighted_stiffness_matrix = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes)
-        )
-        self._weighted_mass_matrix = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes)
-        )
-        self._coef_matrix_0 = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
-        self._coef_matrix_1 = np.zeros(
-            (self.mesh.num_nodes, self.mesh.num_nodes))
-        self._residual_water_flux_vector = np.zeros(self.mesh.num_nodes)
-        self._delta_void_ratio_vector = np.zeros(self.mesh.num_nodes)
-
-    @property
-    def mesh(self) -> Mesh1D:
-        """A reference to the parent mesh object.
-
-        Returns
-        -------
-        frozen_ground_fem.geometry.Mesh1D
-
-        Notes
-        -----
-        This property is not intended to be set
-        after creation of the ConsolidationAnalysis1D object.
-        It is assigned during the __init__() method.
-        Other methods and properties of ConsolidationAnalysis1D
-        assume that the mesh object does not change
-        (i.e. mesh is not regenerated,
-        number of nodes and elements is fixed).
-        Use caution with modifying mesh after creation of
-        ConsolidationAnalysis1D,
-        otherwise unexpected behaviour could occur.
-        """
-        return self._mesh
-
-    @property
-    def elements(self) -> tuple[ConsolidationElement1D, ...]:
-        """A tuple of consolidation elements contained in the mesh.
-
-        Returns
-        -------
-        tuple[:c:`ConsolidationElement1D`]
-
-        Notes
-        -----
-        The tuple of :c:`ConsolidationElement1D` is created
-        during the __init__() method.
-        It is assumed that the parent Element1D
-        objects in the parent Mesh1D do not change.
-        Therefore, the set of ConsolidationElement1D
-        is immutable.
-        """
-        return self._elements
-
-    @property
-    def boundaries(self) -> set[ConsolidationBoundary1D]:
-        """The set of boundary conditions contained in the analysis.
-
-        Returns
-        -------
-        set[:c:`ConsolidationBoundary1D`]
-        """
-        return self._boundaries
+            self._weighted_mass_matrix = np.zeros(
+                (self.num_nodes, self.num_nodes)
+            )
+            self._coef_matrix_0 = np.zeros(
+                (self.num_nodes, self.num_nodes))
+            self._coef_matrix_1 = np.zeros(
+                (self.num_nodes, self.num_nodes))
+            self._residual_water_flux_vector = np.zeros(self.num_nodes)
+            self._delta_void_ratio_vector = np.zeros(self.num_nodes)
+        else:
+            self._nodes = ()
+            self._elements = ()
+            self.clear_boundaries()
+            self._mesh_valid = False
 
     @property
     def time_step(self) -> float:
@@ -753,6 +673,10 @@ class ConsolidationAnalysis1D:
     def one_minus_alpha(self) -> float:
         """The value (1 - implicit_factor).
 
+        Parameters
+        ----------
+        float
+
         Returns
         -------
         float
@@ -853,33 +777,18 @@ class ConsolidationAnalysis1D:
                 f"type(new_boundary) {type(new_boundary)} invalid, "
                 + "must be ConsolidationBoundary1D"
             )
-        if new_boundary._parent not in self.mesh.boundaries:
-            raise ValueError(
-                "new_boundary does not have parent Boundary1D "
-                + "in the parent mesh"
-            )
+        for nd in new_boundary.nodes:
+            if nd not in self.nodes:
+                raise ValueError(f"new_boundary contains node {nd}"
+                                 + " not in mesh")
+        if new_boundary.int_pts:
+            int_pts = tuple(ip for e in self.elements for ip in e.int_pts)
+            for ip in new_boundary.int_pts:
+                if ip not in int_pts:
+                    raise ValueError(
+                        f"new_boundary contains int_pt {ip} not in mesh"
+                    )
         self._boundaries.add(new_boundary)
-
-    def remove_boundary(self, boundary: ConsolidationBoundary1D) -> None:
-        """Remove an existing boundary from the mesh.
-
-        Parameters
-        ----------
-        boundary : :c:`ConsolidationBoundary1D`
-            The boundary to remove from the mesh.
-
-        Raises
-        ------
-        ValueError
-            If boundary is not in the mesh.
-        """
-        self._boundaries.remove(boundary)
-
-    def clear_boundaries(self) -> None:
-        """ Clears existing :c:`ConsolidationBoundary1D` objects
-        from the mesh.
-        """
-        self._boundaries.clear()
 
     def update_consolidation_boundary_conditions(
             self,
@@ -965,7 +874,7 @@ class ConsolidationAnalysis1D:
 
     def update_nodes(self) -> None:
         """Updates the void ratio values at the nodes
-        in the parent mesh.
+        in the mesh.
 
         Notes
         -----
@@ -973,17 +882,12 @@ class ConsolidationAnalysis1D:
         and assigns the void ratio from the global void ratio vector
         in the ConsolidationAnalysis1D.
         """
-        for nd in self.mesh.nodes:
+        for nd in self.nodes:
             nd.void_ratio = self._void_ratio_vector[nd.index]
 
     def update_integration_points(self) -> None:
         """Updates the properties of integration points
         in the parent mesh according to changes in void ratio.
-
-        Notes
-        -----
-        This convenience method updates void ratio
-        values at the nodes in the parent mesh.
         """
         for e in self.elements:
             e.update_integration_points()
@@ -1002,7 +906,7 @@ class ConsolidationAnalysis1D:
         This convenience method is meant to be called once
         at the beginning of the analysis.
         It assumes that initial conditions have already been assigned
-        to the nodes in the parent mesh.
+        to the nodes in the mesh.
         It initializes variables tracking the time coordinate,
         updates the boundary conditions at the initial time,
         assigns initial void ratio values from the nodes to the global vector,
@@ -1017,7 +921,7 @@ class ConsolidationAnalysis1D:
         self.update_consolidation_boundary_conditions(self._t0)
         # now get the void ratio from the nodes
         # (we assume that initial conditions have already been applied)
-        for nd in self.mesh.nodes:
+        for nd in self.nodes:
             self._void_ratio_vector[nd.index] = nd.void_ratio
         # now build the global matrices and vectors
         self.update_integration_points()
@@ -1028,10 +932,11 @@ class ConsolidationAnalysis1D:
         # create list of free node indices
         # that will be updated at each iteration
         # (i.e. are not fixed/Dirichlet boundary conditions)
-        free_ind = [nd.index for nd in self.mesh.nodes]
+        free_ind_list = [nd.index for nd in self.nodes]
         for tb in self.boundaries:
             if tb.bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio:
-                free_ind.remove(tb.nodes[0].index)
+                free_ind_list.remove(tb.nodes[0].index)
+        free_ind = np.array(free_ind_list, dtype=int)
         self._free_vec = np.ix_(free_ind)
         self._free_arr = np.ix_(free_ind, free_ind)
 
