@@ -52,9 +52,9 @@ class ConsolidationElement1D(Element1D):
     Parameters
     ----------
     nodes : Sequence[Node1D]
-        The tuple of :c:`Node1D` contained in the element.
+        The ordered :c:`Node1D` that define the element.
     order : int, optional, default=3
-        The order of interpolation used in the element.
+        The order of interpolation to be used in the element.
 
     Raises
     ------
@@ -78,11 +78,17 @@ class ConsolidationElement1D(Element1D):
 
         Notes
         -----
-        Integrates B^T * (k * dsig'/de / gam_w) * B over the element
-        where
+        Integrates
+            B^T * (1+e0)/(1+e) * (k * (dsig'/de) / gam_w) * B
+            + N^T * (d/de)(k * (Gs - 1) / (1+e)) * B
+        over the element where
+        e is the void ratio,
+        e0 is the initial void ratio,
         k is the hydraulic conductivity,
+        sig' is the effective stress,
         dsig'/de is the stress-strain coefficient from the consolidation curve,
-        gam_w is the unit weight of water.
+        gam_w is the unit weight of water,
+        Gs is the specific gravity of the solids.
         """
         B = self._gradient_matrix(0, 1)
         K = np.zeros_like(B.T @ B)
@@ -119,12 +125,11 @@ class ConsolidationElement1D(Element1D):
         Notes
         -----
         Integrates
-        N^T * ((Sw + Gi * (1 - Sw)) / (1 + e0)) * N
-        over the element
-        where
+            N^T * ((Sw + Gi * (1 - Sw)) / (1 + e0)) * N
+        over the element where
         Sw is the degree of saturation of water,
         Gi is the specific gravity of ice,
-        and e0 is the initial void ratio.
+        e0 is the initial void ratio.
         """
         N = self._shape_matrix(0)
         M = np.zeros_like(N.T @ N)
@@ -166,12 +171,6 @@ class ConsolidationElement1D(Element1D):
     def update_integration_points(self) -> None:
         """Updates the properties of integration points
         in the element according to changes in void ratio.
-
-        Notes
-        -----
-        This convenience method loops over integration points
-        and interpolates void ratio from corresponding nodes
-        and updates void ratio dependent parameters accordingly.
         """
         ee = np.array([nd.void_ratio for nd in self.nodes])
         for ip in self.int_pts:
@@ -222,11 +221,11 @@ class ConsolidationBoundary1D(Boundary1D):
     Parameters
     ----------
     nodes : Sequence[Node1D]
-        The tuple of :c:`Node1D` contained in the element.
+        The :c:`Node1D` to assign to the boundary condition.
     int_pts : Sequence[IntegrationPoint1D], optional, default=()
-        The tuple of :c:`IntegrationPoint1D` contained in the element.
+        The :c:`IntegrationPoint1D` to assign to the boundary condition.
     bnd_type : ConsolidationBoundary1D.BoundaryType, optional,
-                default=BoundaryType.temp
+                default=BoundaryType.fixed_flux
         The type of boundary condition.
     bnd_value : float, optional, default=0.0
         The value of the boundary condition.
@@ -309,7 +308,7 @@ class ConsolidationBoundary1D(Boundary1D):
         Raises
         ------
         ValueError
-            If the value to be assigned is not convertible to float
+            If the value to be assigned is not convertible to float.
         """
         return self._bnd_value
 
@@ -486,6 +485,38 @@ class ConsolidationAnalysis1D(Mesh1D):
     _coef_matrix_1: npt.NDArray[np.floating]
     _residual_water_flux_vector: npt.NDArray[np.floating]
     _delta_void_ratio_vector: npt.NDArray[np.floating]
+
+    @property
+    def elements(self) -> tuple[ConsolidationElement1D, ...]:
+        """The tuple of :c:`ConsolidationElement1D` contained in the mesh.
+
+        Returns
+        ------
+        tuple[:c:`ConsolidationElement1D`]
+
+        Notes
+        -----
+        Overrides :c:`frozen_ground_fem.geometry.Mesh1D`
+        property method for more specific return value
+        type hint.
+        """
+        return self._elements
+
+    @property
+    def boundaries(self) -> set[ConsolidationBoundary1D]:
+        """The tuple of :c:`ConsolidationBoundary1D` contained in the mesh.
+
+        Returns
+        ------
+        set[:c:`ConsolidationBoundary1D`]
+
+        Notes
+        -----
+        Overrides :c:`frozen_ground_fem.geometry.Mesh1D`
+        property method for more specific return value
+        type hint.
+        """
+        return self._boundaries
 
     def _generate_elements(self, num_elements: int, order: int):
         """Generate the elements in the mesh.
@@ -1090,8 +1121,8 @@ class ConsolidationAnalysis1D(Mesh1D):
             Vector of deformed coordinates
         """
         s = self.calculate_total_settlement()
-        def_coords = np.array(self.mesh.num_nodes)
-        def_coords[0] = self.mesh.nodes[0].z + s
+        def_coords = np.array(self.num_nodes)
+        def_coords[0] = self.nodes[0].z + s
         for k, e in enumerate(self.elements):
             dz = e.deformed_length
             def_coords[k + 1] = def_coords[k] + dz

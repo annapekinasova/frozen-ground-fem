@@ -20,6 +20,7 @@ Mesh1D
 from typing import (
     ClassVar,
     Sequence,
+    Any,
 )
 
 import numpy as np
@@ -1460,8 +1461,8 @@ class Mesh1D:
     _mesh_valid: bool = False
     _grid_size: float = 0.0
     _nodes: tuple[Node1D, ...]
-    _elements: tuple[Element1D, ...]
-    _boundaries: set[Boundary1D]
+    _elements: tuple[Any, ...]
+    _boundaries: set[Any]
 
     def __init__(
         self,
@@ -1606,7 +1607,7 @@ class Mesh1D:
         return len(self.elements)
 
     @property
-    def elements(self) -> tuple[Element1D, ...]:
+    def elements(self) -> tuple[Any, ...]:
         """The tuple of :c:`Element1D` contained in the mesh.
 
         Returns
@@ -1626,12 +1627,12 @@ class Mesh1D:
         return len(self.boundaries)
 
     @property
-    def boundaries(self) -> set[Boundary1D]:
+    def boundaries(self) -> set[Any]:
         """The tuple of :c:`Boundary1D` contained in the mesh.
 
         Returns
         ------
-        tuple of :c:`Boundary1D`
+        set[:c:`Boundary1D`]
         """
         return self._boundaries
 
@@ -1739,7 +1740,7 @@ class Mesh1D:
             for k in range(num_elements)
         )
 
-    def add_boundary(self, new_boundary: Boundary1D) -> None:
+    def add_boundary(self, new_boundary: Any) -> None:
         """Adds a boundary to the mesh.
 
         Parameters

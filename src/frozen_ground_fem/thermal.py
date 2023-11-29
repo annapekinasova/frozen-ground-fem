@@ -44,9 +44,9 @@ class ThermalElement1D(Element1D):
     Parameters
     ----------
     nodes : Sequence[Node1D]
-        The tuple of :c:`Node1D` contained in the element.
+        The ordered :c:`Node1D` that define the element.
     order : int, optional, default=3
-        The order of interpolation used in the element.
+        The order of interpolation to be used in the element.
 
     Raises
     ------
@@ -148,9 +148,9 @@ class ThermalBoundary1D(Boundary1D):
     Parameters
     ----------
     nodes : Sequence[Node1D]
-        The tuple of :c:`Node1D` contained in the element.
+        The :c:`Node1D` to assign to the boundary condition.
     int_pts : Sequence[IntegrationPoint1D], optional, default=()
-        The tuple of :c:`IntegrationPoint1D` contained in the element.
+        The :c:`IntegrationPoint1D` to assign to the boundary condition.
     bnd_type : ThermalBoundary1D.BoundaryType, optional,
                 default=BoundaryType.temp
         The type of boundary condition.
@@ -404,6 +404,38 @@ class ThermalAnalysis1D(Mesh1D):
     _coef_matrix_1: npt.NDArray[np.floating]
     _residual_heat_flux_vector: npt.NDArray[np.floating]
     _delta_temp_vector: npt.NDArray[np.floating]
+
+    @property
+    def elements(self) -> tuple[ThermalElement1D, ...]:
+        """The tuple of :c:`ThermalElement1D` contained in the mesh.
+
+        Returns
+        ------
+        tuple[:c:`ThermalElement1D`]
+
+        Notes
+        -----
+        Overrides :c:`frozen_ground_fem.geometry.Mesh1D`
+        property method for more specific return value
+        type hint.
+        """
+        return self._elements
+
+    @property
+    def boundaries(self) -> set[ThermalBoundary1D]:
+        """The tuple of :c:`ThermalBoundary1D` contained in the mesh.
+
+        Returns
+        ------
+        set[:c:`ThermalBoundary1D`]
+
+        Notes
+        -----
+        Overrides :c:`frozen_ground_fem.geometry.Mesh1D`
+        property method for more specific return value
+        type hint.
+        """
+        return self._boundaries
 
     def _generate_elements(self, num_elements: int, order: int):
         """Generate the elements in the mesh.
