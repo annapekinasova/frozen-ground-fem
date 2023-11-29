@@ -220,21 +220,24 @@ class TestConsolidationBoundary1D(unittest.TestCase):
     def setUp(self):
         self.nodes = (Node1D(0, 2.0),)
         self.int_pts = (IntegrationPoint1D(),)
-        self.bnd_el = Boundary1D(self.nodes, self.int_pts)
-        self.consol_bnd = ConsolidationBoundary1D(self.bnd_el)
+        # self.bnd_el = Boundary1D(self.nodes, self.int_pts)
+        self.consol_bnd = ConsolidationBoundary1D(
+            self.nodes, self.int_pts
+        )
 
-    def test_invalid_no_parent(self):
-        with self.assertRaises(TypeError):
-            ConsolidationElement1D()
+    # def test_invalid_no_parent(self):
+    #     with self.assertRaises(TypeError):
+    #         ConsolidationElement1D()
 
-    def test_invalid_parent(self):
-        with self.assertRaises(TypeError):
-            ConsolidationBoundary1D(self.nodes)
+    # def test_invalid_parent(self):
+    #     with self.assertRaises(TypeError):
+    #         ConsolidationBoundary1D(self.nodes)
 
     def test_defaults(self):
         self.assertEqual(self.consol_bnd.bnd_type,
                          ConsolidationBoundary1D.BoundaryType.fixed_flux)
         self.assertAlmostEqual(self.consol_bnd.bnd_value, 0.0)
+        self.assertIsNone(self.consol_bnd.bnd_function)
 
     def test_assign_bnd_type_invalid(self):
         cb1d = ConsolidationBoundary1D
@@ -272,6 +275,8 @@ class TestConsolidationBoundary1D(unittest.TestCase):
         self.assertAlmostEqual(self.consol_bnd.bnd_value, -2.0)
         self.consol_bnd.bnd_value = "1e-5"
         self.assertAlmostEqual(self.consol_bnd.bnd_value, 1e-5)
+
+    # TODO: test assign boundary function
 
     def test_update_nodes_bnd_type_void_ratio(self):
         cb1d = ConsolidationBoundary1D
