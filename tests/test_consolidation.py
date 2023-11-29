@@ -10,8 +10,6 @@ from frozen_ground_fem.materials import (
 from frozen_ground_fem.geometry import (
     Node1D,
     IntegrationPoint1D,
-    Element1D,
-    Boundary1D,
 )
 from frozen_ground_fem.consolidation import (
     ConsolidationElement1D,
@@ -19,35 +17,20 @@ from frozen_ground_fem.consolidation import (
 )
 
 
-class TestConsolidationElement1DInvalid(unittest.TestCase):
-    def setUp(self):
-        self.nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(2))
-
-    def test_no_parent(self):
-        with self.assertRaises(TypeError):
-            ConsolidationElement1D()
-
-    def test_invalid_parent(self):
-        with self.assertRaises(TypeError):
-            ConsolidationElement1D(self.nodes)
-
-
 class TestConsolidationElement1DLinear(unittest.TestCase):
     def setUp(self):
         self.nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(2))
-        self.e = Element1D(self.nodes, order=1)
-        self.consol_e = ConsolidationElement1D(self.e)
+        self.consol_e = ConsolidationElement1D(
+            self.nodes, order=1
+        )
 
     def test_jacobian_equal(self):
-        self.assertAlmostEqual(self.e.jacobian, self.consol_e.jacobian)
+        expected = self.nodes[-1].z - self.nodes[0].z
+        self.assertAlmostEqual(self.consol_e.jacobian, expected)
 
     def test_nodes_equal(self):
         for nd, e_nd in zip(self.nodes, self.consol_e.nodes):
             self.assertIs(nd, e_nd)
-
-    def test_int_pts_equal(self):
-        for e_ip, te_ip in zip(self.e.int_pts, self.consol_e.int_pts):
-            self.assertIs(e_ip, te_ip)
 
     def test_stiffness_matrix_uninitialized(self):
         self.assertTrue(np.allclose(
@@ -117,19 +100,17 @@ class TestConsolidationElement1DLinear(unittest.TestCase):
 class TestConsolidationElement1DCubic(unittest.TestCase):
     def setUp(self):
         self.nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(4))
-        self.e = Element1D(self.nodes, order=3)
-        self.consol_e = ConsolidationElement1D(self.e)
+        self.consol_e = ConsolidationElement1D(
+            self.nodes, order=3
+        )
 
     def test_jacobian_equal(self):
-        self.assertAlmostEqual(self.e.jacobian, self.consol_e.jacobian)
+        expected = self.nodes[-1].z - self.nodes[0].z
+        self.assertAlmostEqual(self.consol_e.jacobian, expected)
 
     def test_nodes_equal(self):
         for nd, e_nd in zip(self.nodes, self.consol_e.nodes):
             self.assertIs(nd, e_nd)
-
-    def test_int_pts_equal(self):
-        for e_ip, te_ip in zip(self.e.int_pts, self.consol_e.int_pts):
-            self.assertIs(e_ip, te_ip)
 
     def test_stiffness_matrix_uninitialized(self):
         self.assertTrue(np.allclose(
@@ -224,14 +205,6 @@ class TestConsolidationBoundary1D(unittest.TestCase):
         self.consol_bnd = ConsolidationBoundary1D(
             self.nodes, self.int_pts
         )
-
-    # def test_invalid_no_parent(self):
-    #     with self.assertRaises(TypeError):
-    #         ConsolidationElement1D()
-
-    # def test_invalid_parent(self):
-    #     with self.assertRaises(TypeError):
-    #         ConsolidationBoundary1D(self.nodes)
 
     def test_defaults(self):
         self.assertEqual(self.consol_bnd.bnd_type,
