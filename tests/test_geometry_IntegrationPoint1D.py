@@ -66,50 +66,42 @@ class TestIntegrationPoint1DDefaults(unittest.TestCase):
     def test_material_type(self):
         self.assertIsInstance(self.p.material, Material)
 
-    # AP Tests
-    # void_ratio_0
     def test_void_ratio_0_value(self):
         self.assertAlmostEqual(self.p.void_ratio_0, 0.0)
 
     def test_void_ratio_0_type(self):
         self.assertIsInstance(self.p.void_ratio_0, float)
 
-    # temp
     def test_temp_value(self):
         self.assertAlmostEqual(self.p.temp, 0.0)
 
     def test_temp_type(self):
         self.assertIsInstance(self.p.temp, float)
 
-    # temp_rate
     def test_temp_rate_value(self):
         self.assertAlmostEqual(self.p.temp_rate, 0.0)
 
     def test_temp_rate_type(self):
         self.assertIsInstance(self.p.temp_rate, float)
 
-    # temp_gradient
     def test_temp_gradient_value(self):
         self.assertAlmostEqual(self.p.temp_gradient, 0.0)
 
     def test_temp_gradient_type(self):
         self.assertIsInstance(self.p.temp_gradient, float)
 
-    # hyd_cond
     def test_hyd_cond_value(self):
         self.assertAlmostEqual(self.p.hyd_cond, 0.0)
 
     def test_hyd_cond_type(self):
         self.assertIsInstance(self.p.hyd_cond, float)
 
-    # hyd_cond_gradient
     def test_hyd_cond_gradient_value(self):
         self.assertAlmostEqual(self.p.hyd_cond_gradient, 0.0)
 
     def test_hyd_cond_gradient_type(self):
         self.assertIsInstance(self.p.hyd_cond_gradient, float)
 
-    # BK Tests
     def test_water_flux_rate_value(self):
         self.assertEqual(self.p.water_flux_rate, 0.0)
 
@@ -171,14 +163,14 @@ class TestIntegrationPoint1DInitializers(unittest.TestCase):
             local_coord=-0.33,
             weight=1.0,
             void_ratio=0.5,
-            void_ratio_0=0.5,
+            void_ratio_0=0.3,
             deg_sat_water=0.2,
             material=self.m,
-            temp=0.0,
-            temp_rate=0.0,
-            temp_gradient=0.0,
-            hyd_cond=0.0,
-            hyd_cond_gradient=0.0,
+            temp=0.5,
+            temp_rate=0.25,
+            temp_gradient=0.2,
+            hyd_cond=0.1,
+            hyd_cond_gradient=0.4,
             water_flux_rate=0.1,
             pre_consol_stress=120.0,
             eff_stress=100.0,
@@ -251,50 +243,42 @@ class TestIntegrationPoint1DInitializers(unittest.TestCase):
         expected = 1235781866.66667
         self.assertAlmostEqual(self.p.vol_heat_cap, expected, places=4)
 
-    # AP Tests
-    # void_ratio_0
     def test_void_ratio_0_value(self):
-        self.assertEqual(self.p.void_ratio_0, 0.5)
+        self.assertEqual(self.p.void_ratio_0, 0.3)
 
     def test_void_ratio_0_type(self):
         self.assertIsInstance(self.p.void_ratio, float)
 
-    # temp
     def test_temp_value(self):
-        self.assertEqual(self.p.temp, 0.0)
+        self.assertEqual(self.p.temp, 0.5)
 
     def test_temp_type(self):
         self.assertIsInstance(self.p.temp, float)
 
-    # temp_rate
     def test_temp_rate_value(self):
-        self.assertEqual(self.p.temp_rate, 0.0)
+        self.assertEqual(self.p.temp_rate, 0.25)
 
     def test_temp_rate_type(self):
         self.assertIsInstance(self.p.temp_rate, float)
 
-    # temp_gradient
     def test_temp_gradient_value(self):
-        self.assertEqual(self.p.temp_gradient, 0.0)
+        self.assertEqual(self.p.temp_gradient, 0.2)
 
     def test_temp_gradient_type(self):
         self.assertIsInstance(self.p.temp_gradient, float)
 
-    # hyd_cond
     def test_hyd_cond_value(self):
-        self.assertEqual(self.p.hyd_cond, 0.0)
+        self.assertEqual(self.p.hyd_cond, 0.1)
 
     def test_hyd_cond_type(self):
         self.assertIsInstance(self.p.hyd_cond, float)
 
-    # hyd_cond_gradient
     def test_hyd_cond_gradient_value(self):
-        self.assertEqual(self.p.hyd_cond_gradient, 0.0)
+        self.assertEqual(self.p.hyd_cond_gradient, 0.4)
 
     def test_hyd_cond_gradient_type(self):
         self.assertIsInstance(self.p.hyd_cond_gradient, float)
 
-    # BK Tests
     def test_water_flux_rate_value(self):
         self.assertAlmostEqual(self.p.water_flux_rate, 0.1)
 
@@ -356,14 +340,14 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
             local_coord=-0.33,
             weight=1.0,
             void_ratio=0.3,
-            void_ratio_0=0.3,
+            void_ratio_0=0.4,
             deg_sat_water=0.2,
             material=self.m,
-            temp=0.5,
+            temp=1.5,
             temp_rate=0.5,
-            temp_gradient=0.5,
-            hyd_cond=0.5,
-            hyd_cond_gradient=0.5,
+            temp_gradient=-0.2,
+            hyd_cond=2.5,
+            hyd_cond_gradient=0.7,
             water_flux_rate=0.1,
             pre_consol_stress=120.0,
             eff_stress=100.0,
@@ -573,23 +557,17 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         expected = 1385464369.230770
         self.assertAlmostEqual(self.p.vol_heat_cap, expected, places=4)
 
-    # AP Tests
-    # void_ratio_0
     def test_set_void_ratio_0_valid_float(self):
         self.p.void_ratio_0 = 0.3
         self.assertAlmostEqual(self.p.void_ratio_0, 0.3)
-
-    def test_set_void_ratio_0_valid_float_edge_0(self):
-        self.p.void_ratio_0 = 0.3
-        self.assertEqual(self.p.void_ratio_0, 0.3)
 
     def test_set_void_ratio_0_invalid_float_negative(self):
         with self.assertRaises(ValueError):
             self.p.void_ratio_0 = -0.2
 
     def test_set_void_ratio_0_valid_int(self):
-        self.p.void_ratio_0 = 0.3
-        self.assertEqual(self.p.void_ratio_0, 0.3)
+        self.p.void_ratio_0 = 1
+        self.assertEqual(self.p.void_ratio_0, 1.0)
 
     def test_set_void_ratio_0_valid_int_type(self):
         self.p.void_ratio_0 = 1
@@ -603,7 +581,6 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.p.void_ratio_0 = "five"
 
-    # temp
     def test_set_temp_valid_float(self):
         self.p.temp = 0.5
         self.assertAlmostEqual(self.p.temp, 0.5)
@@ -624,10 +601,9 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.p.temp = "five"
 
-    # temp_rate
     def test_set_temp_rate_valid_float(self):
-        self.p.temp_rate = 0.5
-        self.assertAlmostEqual(self.p.temp_rate, 0.5)
+        self.p.temp_rate = 0.2
+        self.assertAlmostEqual(self.p.temp_rate, 0.2)
 
     def test_set_temp_rate_valid_int(self):
         self.p.temp_rate = 1
@@ -645,7 +621,6 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.p.temp_rate = "five"
 
-    # temp_gradient
     def test_set_temp_gradient_valid_float(self):
         self.p.temp_gradient = 0.5
         self.assertAlmostEqual(self.p.temp_gradient, 0.5)
@@ -666,10 +641,13 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.p.temp_gradient = "five"
 
-    # hyd_cond
     def test_set_hyd_cond_valid_float(self):
         self.p.hyd_cond = 0.5
         self.assertAlmostEqual(self.p.hyd_cond, 0.5)
+
+    def test_set_hyd_cond_invalid_float(self):
+        with self.assertRaises(ValueError):
+            self.p.hyd_cond = -0.5
 
     def test_set_hyd_cond_valid_int(self):
         self.p.hyd_cond = 1
@@ -687,10 +665,13 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.p.hyd_cond = "five"
 
-    # hyd_cond_gradient
     def test_set_hyd_cond_gradient_valid_float(self):
         self.p.hyd_cond_gradient = 0.5
         self.assertAlmostEqual(self.p.hyd_cond_gradient, 0.5)
+
+    def test_set_hyd_cond_gradient_invalid_float(self):
+        with self.assertRaises(ValueError):
+            self.p.hyd_cond_gradient = -0.5
 
     def test_set_hyd_cond_gradient_valid_int(self):
         self.p.hyd_cond_gradient = 1
@@ -708,7 +689,6 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.p.hyd_cond_gradient = "five"
 
-    # BK Tests
     def test_set_water_flux_rate_valid_float(self):
         self.p.water_flux_rate = 1.0
         self.assertEqual(self.p.water_flux_rate, 1.0)
