@@ -75,13 +75,53 @@ class TestIntegrationPoint1DDefaults(unittest.TestCase):
     # hyd_cond_grad
 
     # BK Tests
-    # water_flux_rate
-    # eff_stress
-    # eff_stress_grad
-    # void_ratio_0_ref_frozen
-    # tot_stress_0_ref_frozen
-    # tot_stress
-    # tot_stress_grad
+    def test_water_flux_rate_value(self):
+        self.assertEqual(self.p.water_flux_rate, 0.0)
+
+    def test_water_flux_rate_type(self):
+        self.assertIsInstance(self.p.water_flux_rate, float)
+
+    def test_pre_consol_stress_value(self):
+        self.assertEqual(self.p.pre_consol_stress, 0.0)
+
+    def test_pre_consol_stress_type(self):
+        self.assertIsInstance(self.p.pre_consol_stress, float)
+
+    def test_eff_stress_value(self):
+        self.assertEqual(self.p.eff_stress, 0.0)
+
+    def test_eff_stress_type(self):
+        self.assertIsInstance(self.p.eff_stress, float)
+
+    def test_eff_stress_grad_value(self):
+        self.assertEqual(self.p.eff_stress_gradient, 0.0)
+
+    def test_eff_stress_grad_type(self):
+        self.assertIsInstance(self.p.eff_stress_gradient, float)
+
+    def test_void_ratio_0_ref_frozen_value(self):
+        self.assertEqual(self.p.void_ratio_0_ref_frozen, 0.0)
+
+    def test_void_ratio_0_ref_frozen_type(self):
+        self.assertIsInstance(self.p.void_ratio_0_ref_frozen, float)
+
+    def test_tot_stress_0_ref_frozen_value(self):
+        self.assertEqual(self.p.tot_stress_0_ref_frozen, 0.0)
+
+    def test_tot_stress_0_ref_frozen_type(self):
+        self.assertIsInstance(self.p.tot_stress_0_ref_frozen, float)
+
+    def test_tot_stress_value(self):
+        self.assertEqual(self.p.tot_stress_0_ref_frozen, 0.0)
+
+    def test_tot_stress_type(self):
+        self.assertIsInstance(self.p.tot_stress_0_ref_frozen, float)
+
+    def test_tot_stress_grad_value(self):
+        self.assertEqual(self.p.tot_stress_gradient, 0.0)
+
+    def test_tot_stress_grad_type(self):
+        self.assertIsInstance(self.p.tot_stress_gradient, float)
 
 
 class TestIntegrationPoint1DInitializers(unittest.TestCase):
@@ -98,6 +138,14 @@ class TestIntegrationPoint1DInitializers(unittest.TestCase):
             void_ratio=0.5,
             deg_sat_water=0.2,
             material=self.m,
+            water_flux_rate=0.1,
+            pre_consol_stress=120.0,
+            eff_stress=100.0,
+            eff_stress_gradient=-0.8,
+            void_ratio_0_ref_frozen=0.1,
+            tot_stress_0_ref_frozen=10.0,
+            tot_stress=150.0,
+            tot_stress_gradient=-0.5,
         )
 
     def test_z_value(self):
@@ -165,6 +213,53 @@ class TestIntegrationPoint1DInitializers(unittest.TestCase):
     # AP Tests
 
     # BK Tests
+    def test_water_flux_rate_value(self):
+        self.assertAlmostEqual(self.p.water_flux_rate, 0.1)
+
+    def test_water_flux_rate_type(self):
+        self.assertIsInstance(self.p.water_flux_rate, float)
+
+    def test_pre_consol_stress_value(self):
+        self.assertAlmostEqual(self.p.pre_consol_stress, 120.0)
+
+    def test_pre_consol_stress_type(self):
+        self.assertIsInstance(self.p.pre_consol_stress, float)
+
+    def test_eff_stress_value(self):
+        self.assertAlmostEqual(self.p.eff_stress, 100.0)
+
+    def test_eff_stress_type(self):
+        self.assertIsInstance(self.p.eff_stress, float)
+
+    def test_eff_stress_grad_value(self):
+        self.assertAlmostEqual(self.p.eff_stress_gradient, -0.8)
+
+    def test_eff_stress_grad_type(self):
+        self.assertIsInstance(self.p.eff_stress_gradient, float)
+
+    def test_void_ratio_0_ref_frozen_value(self):
+        self.assertAlmostEqual(self.p.void_ratio_0_ref_frozen, 0.1)
+
+    def test_void_ratio_0_ref_frozen_type(self):
+        self.assertIsInstance(self.p.void_ratio_0_ref_frozen, float)
+
+    def test_tot_stress_0_ref_frozen_value(self):
+        self.assertAlmostEqual(self.p.tot_stress_0_ref_frozen, 10.0)
+
+    def test_tot_stress_0_ref_frozen_type(self):
+        self.assertIsInstance(self.p.tot_stress_0_ref_frozen, float)
+
+    def test_tot_stress_value(self):
+        self.assertAlmostEqual(self.p.tot_stress, 150.0)
+
+    def test_tot_stress_type(self):
+        self.assertIsInstance(self.p.tot_stress, float)
+
+    def test_tot_stress_grad_value(self):
+        self.assertAlmostEqual(self.p.tot_stress_gradient, -0.5)
+
+    def test_tot_stress_grad_type(self):
+        self.assertIsInstance(self.p.tot_stress_gradient, float)
 
 
 class TestIntegrationPoint1DSetters(unittest.TestCase):
@@ -181,6 +276,14 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
             void_ratio=0.3,
             deg_sat_water=0.2,
             material=self.m,
+            water_flux_rate=0.1,
+            pre_consol_stress=120.0,
+            eff_stress=100.0,
+            eff_stress_gradient=-0.8,
+            void_ratio_0_ref_frozen=0.1,
+            tot_stress_0_ref_frozen=10.0,
+            tot_stress=150.0,
+            tot_stress_gradient=-0.5,
         )
 
     def test_set_z_valid_float(self):
@@ -385,6 +488,177 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
     # AP Tests
 
     # BK Tests
+    def test_set_water_flux_rate_valid_float(self):
+        self.p.water_flux_rate = 1.0
+        self.assertEqual(self.p.water_flux_rate, 1.0)
+
+    def test_set_water_flux_rate_valid_int(self):
+        self.p.water_flux_rate = 1
+        self.assertEqual(self.p.water_flux_rate, 1.0)
+
+    def test_set_water_flux_rate_valid_int_type(self):
+        self.p.water_flux_rate = 1
+        self.assertIsInstance(self.p.water_flux_rate, float)
+
+    def test_set_water_flux_rate_valid_str(self):
+        self.p.water_flux_rate = "1.e5"
+        self.assertEqual(self.p.water_flux_rate, 1.0e5)
+
+    def test_set_water_flux_rate_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.p.water_flux_rate = "five"
+
+    def test_set_pre_consol_stress_valid_float(self):
+        self.p.pre_consol_stress = 1.0
+        self.assertEqual(self.p.pre_consol_stress, 1.0)
+
+    def test_set_pre_consol_stress_valid_int(self):
+        self.p.pre_consol_stress = 1
+        self.assertEqual(self.p.pre_consol_stress, 1.0)
+
+    def test_set_pre_consol_stress_valid_int_type(self):
+        self.p.pre_consol_stress = 1
+        self.assertIsInstance(self.p.pre_consol_stress, float)
+
+    def test_set_pre_consol_stress_valid_str(self):
+        self.p.pre_consol_stress = "1.e5"
+        self.assertEqual(self.p.pre_consol_stress, 1.0e5)
+
+    def test_set_pre_consol_stress_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.p.pre_consol_stress = "five"
+
+    def test_set_eff_stress_valid_float(self):
+        self.p.eff_stress = 1.0
+        self.assertEqual(self.p.eff_stress, 1.0)
+
+    def test_set_eff_stress_valid_int(self):
+        self.p.eff_stress = 1
+        self.assertEqual(self.p.eff_stress, 1.0)
+
+    def test_set_eff_stress_valid_int_type(self):
+        self.p.eff_stress = 1
+        self.assertIsInstance(self.p.eff_stress, float)
+
+    def test_set_eff_stress_valid_str(self):
+        self.p.eff_stress = "1.e5"
+        self.assertEqual(self.p.eff_stress, 1.0e5)
+
+    def test_set_eff_stress_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.p.eff_stress = "five"
+
+    def test_set_eff_stress_gradient_valid_float(self):
+        self.p.eff_stress_gradient = -1.0
+        self.assertEqual(self.p.eff_stress_gradient, -1.0)
+
+    def test_set_eff_stress_gradient_invalid_float(self):
+        with self.assertRaises(ValueError):
+            self.p.eff_stress_gradient = 1.0
+
+    def test_set_eff_stress_gradient_valid_int(self):
+        self.p.eff_stress_gradient = -1
+        self.assertEqual(self.p.eff_stress_gradient, -1.0)
+
+    def test_set_eff_stress_gradient_valid_int_type(self):
+        self.p.eff_stress_gradient = -1
+        self.assertIsInstance(self.p.eff_stress_gradient, float)
+
+    def test_set_eff_stress_gradient_valid_str(self):
+        self.p.eff_stress_gradient = "-1.e5"
+        self.assertEqual(self.p.eff_stress_gradient, -1.0e5)
+
+    def test_set_eff_stress_gradient_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.p.eff_stress_gradient = "five"
+
+    def test_set_void_ratio_0_ref_frozen_valid_float(self):
+        self.p.void_ratio_0_ref_frozen = 1.0
+        self.assertEqual(self.p.void_ratio_0_ref_frozen, 1.0)
+
+    def test_set_void_ratio_0_ref_frozen_invalid_float(self):
+        with self.assertRaises(ValueError):
+            self.p.void_ratio_0_ref_frozen = -1.0
+
+    def test_set_void_ratio_0_ref_frozen_valid_int(self):
+        self.p.void_ratio_0_ref_frozen = 1
+        self.assertEqual(self.p.void_ratio_0_ref_frozen, 1.0)
+
+    def test_set_void_ratio_0_ref_frozen_valid_int_type(self):
+        self.p.void_ratio_0_ref_frozen = 1
+        self.assertIsInstance(self.p.void_ratio_0_ref_frozen, float)
+
+    def test_set_void_ratio_0_ref_frozen_valid_str(self):
+        self.p.void_ratio_0_ref_frozen = "2.e-1"
+        self.assertEqual(self.p.void_ratio_0_ref_frozen, 0.2)
+
+    def test_set_void_ratio_0_ref_frozen_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.p.void_ratio_0_ref_frozen = "five"
+
+    def test_set_tot_stress_0_ref_frozen_valid_float(self):
+        self.p.tot_stress_0_ref_frozen = 1.0
+        self.assertEqual(self.p.tot_stress_0_ref_frozen, 1.0)
+
+    def test_set_tot_stress_0_ref_frozen_valid_int(self):
+        self.p.tot_stress_0_ref_frozen = 1
+        self.assertEqual(self.p.tot_stress_0_ref_frozen, 1.0)
+
+    def test_set_tot_stress_0_ref_frozen_valid_int_type(self):
+        self.p.tot_stress_0_ref_frozen = 1
+        self.assertIsInstance(self.p.tot_stress_0_ref_frozen, float)
+
+    def test_set_tot_stress_0_ref_frozen_valid_str(self):
+        self.p.tot_stress_0_ref_frozen = "2.e-1"
+        self.assertEqual(self.p.tot_stress_0_ref_frozen, 0.2)
+
+    def test_set_tot_stress_0_ref_frozen_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.p.tot_stress_0_ref_frozen = "five"
+
+    def test_set_tot_stress_valid_float(self):
+        self.p.tot_stress = 1.0
+        self.assertEqual(self.p.tot_stress, 1.0)
+
+    def test_set_tot_stress_valid_int(self):
+        self.p.tot_stress = 1
+        self.assertEqual(self.p.tot_stress, 1.0)
+
+    def test_set_tot_stress_valid_int_type(self):
+        self.p.tot_stress = 1
+        self.assertIsInstance(self.p.tot_stress, float)
+
+    def test_set_tot_stress_valid_str(self):
+        self.p.tot_stress = "1.e5"
+        self.assertEqual(self.p.tot_stress, 1.0e5)
+
+    def test_set_tot_stress_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.p.tot_stress = "five"
+
+    def test_set_tot_stress_gradient_valid_float(self):
+        self.p.tot_stress_gradient = -1.0
+        self.assertEqual(self.p.tot_stress_gradient, -1.0)
+
+    def test_set_tot_stress_gradient_invalid_float(self):
+        with self.assertRaises(ValueError):
+            self.p.tot_stress_gradient = 1.0
+
+    def test_set_tot_stress_gradient_valid_int(self):
+        self.p.tot_stress_gradient = -1
+        self.assertEqual(self.p.tot_stress_gradient, -1.0)
+
+    def test_set_tot_stress_gradient_valid_int_type(self):
+        self.p.tot_stress_gradient = -1
+        self.assertIsInstance(self.p.tot_stress_gradient, float)
+
+    def test_set_tot_stress_gradient_valid_str(self):
+        self.p.tot_stress_gradient = "-1.e5"
+        self.assertEqual(self.p.tot_stress_gradient, -1.0e5)
+
+    def test_set_tot_stress_gradient_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.p.tot_stress_gradient = "five"
 
 
 if __name__ == "__main__":
