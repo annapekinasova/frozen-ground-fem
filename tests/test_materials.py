@@ -23,6 +23,36 @@ class TestConstants(unittest.TestCase):
     def test_thrm_cond_ice(self):
         self.assertEqual(thrm_cond_ice, 2.22e0)
 
+# TODO: Default tests
+# deg_sat_water_alpha
+# deg_sat_water_beta
+# hyd_cond_index
+# hyd_cond_mult
+# hyd_cond_0
+# void_ratio_0_hyd_cond
+# void_ratio_min
+# void_ratio_sep
+# void_ratio_lim
+# void_ratio_tr
+# water_flux_b1
+# water_flux_b2
+# water_flux_b3
+# temp_rate_ref
+# seg_pot_0
+# void_ratio_0_comp
+# eff_stress_0_comp
+# comp_index_unfrozen
+# rebound_index_unfrozen
+# comp_index_frozen_a1
+# comp_index_frozen_a2
+# comp_index_frozen_a3
+# deg_sat_water()
+# hyd_cond()
+# water_flux()
+# eff_stress()
+# comp_index_frozen()
+# tot_stress()
+
 
 class TestMaterialDefaults(unittest.TestCase):
     def setUp(self):
@@ -41,6 +71,37 @@ class TestMaterialDefaults(unittest.TestCase):
         self.assertEqual(self.m.vol_heat_cap_solids, 0.0)
 
 
+# TODO: Null Material tests
+# deg_sat_water_alpha
+# deg_sat_water_beta
+# hyd_cond_index
+# hyd_cond_mult
+# hyd_cond_0
+# void_ratio_0_hyd_cond
+# void_ratio_min
+# void_ratio_sep
+# void_ratio_lim
+# void_ratio_tr
+# water_flux_b1
+# water_flux_b2
+# water_flux_b3
+# temp_rate_ref
+# seg_pot_0
+# void_ratio_0_comp
+# eff_stress_0_comp
+# comp_index_unfrozen
+# rebound_index_unfrozen
+# comp_index_frozen_a1
+# comp_index_frozen_a2
+# comp_index_frozen_a3
+# deg_sat_water()
+# hyd_cond()
+# water_flux()
+# eff_stress()
+# comp_index_frozen()
+# tot_stress()
+
+
 class TestNullMaterial(unittest.TestCase):
     def test_thrm_cond_solids(self):
         self.assertEqual(NULL_MATERIAL.thrm_cond_solids, 0.0)
@@ -53,6 +114,37 @@ class TestNullMaterial(unittest.TestCase):
 
     def test_vol_heat_cap_solids(self):
         self.assertEqual(NULL_MATERIAL.vol_heat_cap_solids, 0.0)
+
+
+# TODO: Initializer tests
+# deg_sat_water_alpha
+# deg_sat_water_beta
+# hyd_cond_index
+# hyd_cond_mult
+# hyd_cond_0
+# void_ratio_0_hyd_cond
+# void_ratio_min
+# void_ratio_sep
+# void_ratio_lim
+# void_ratio_tr
+# water_flux_b1
+# water_flux_b2
+# water_flux_b3
+# temp_rate_ref
+# seg_pot_0
+# void_ratio_0_comp
+# eff_stress_0_comp
+# comp_index_unfrozen
+# rebound_index_unfrozen
+# comp_index_frozen_a1
+# comp_index_frozen_a2
+# comp_index_frozen_a3
+# deg_sat_water()
+# hyd_cond()
+# water_flux()
+# eff_stress()
+# comp_index_frozen()
+# tot_stress()
 
 
 class TestMaterialInitializers(unittest.TestCase):
@@ -210,6 +302,37 @@ class TestMaterialVolHeatCapSolidsSetter(unittest.TestCase):
     def test_vol_heat_cap_solids(self):
         with self.assertRaises(AttributeError):
             self.m.vol_heat_cap_solids = 5.0
+
+
+# TODO: Setter tests
+# deg_sat_water_alpha
+# deg_sat_water_beta
+# hyd_cond_index
+# hyd_cond_mult
+# hyd_cond_0
+# void_ratio_0_hyd_cond
+# void_ratio_min
+# void_ratio_sep
+# void_ratio_lim
+# void_ratio_tr
+# water_flux_b1
+# water_flux_b2
+# water_flux_b3
+# temp_rate_ref
+# seg_pot_0
+# void_ratio_0_comp
+# eff_stress_0_comp
+# comp_index_unfrozen
+# rebound_index_unfrozen
+# comp_index_frozen_a1
+# comp_index_frozen_a2
+# comp_index_frozen_a3
+# deg_sat_water()
+# hyd_cond()
+# water_flux()
+# eff_stress()
+# comp_index_frozen()
+# tot_stress()
 
 
 if __name__ == "__main__":
