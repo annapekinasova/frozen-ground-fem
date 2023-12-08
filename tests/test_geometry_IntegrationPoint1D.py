@@ -66,6 +66,23 @@ class TestIntegrationPoint1DDefaults(unittest.TestCase):
     def test_material_type(self):
         self.assertIsInstance(self.p.material, Material)
 
+    # AP Tests
+    # void_ratio_0
+    # temp
+    # temp_rate
+    # temp_grad
+    # hyd_cond
+    # hyd_cond_grad
+
+    # BK Tests
+    # water_flux_rate
+    # eff_stress
+    # eff_stress_grad
+    # void_ratio_0_ref_frozen
+    # tot_stress_0_ref_frozen
+    # tot_stress
+    # tot_stress_grad
+
 
 class TestIntegrationPoint1DInitializers(unittest.TestCase):
     def setUp(self):
@@ -144,6 +161,10 @@ class TestIntegrationPoint1DInitializers(unittest.TestCase):
     def test_vol_heat_cap(self):
         expected = 1235781866.66667
         self.assertAlmostEqual(self.p.vol_heat_cap, expected, places=4)
+
+    # AP Tests
+
+    # BK Tests
 
 
 class TestIntegrationPoint1DSetters(unittest.TestCase):
@@ -360,6 +381,10 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         )
         expected = 1385464369.230770
         self.assertAlmostEqual(self.p.vol_heat_cap, expected, places=4)
+
+    # AP Tests
+
+    # BK Tests
 
 
 if __name__ == "__main__":
