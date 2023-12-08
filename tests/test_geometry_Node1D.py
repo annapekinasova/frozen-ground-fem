@@ -38,10 +38,16 @@ class TestNode1DDefaults(unittest.TestCase):
     def test_temp_type(self):
         self.assertIsInstance(self.p.temp, float)
 
+    def test_void_ratio_value(self):
+        self.assertEqual(self.p.void_ratio, 0.0)
+
+    def test_void_ratio_type(self):
+        self.assertIsInstance(self.p.void_ratio, float)
+
 
 class TestNode1DInitializers(unittest.TestCase):
     def setUp(self):
-        self.p = Node1D(0, 1.0, -5.0)
+        self.p = Node1D(0, 1.0, temp=-5.0, void_ratio=0.3)
 
     def test_index_value(self):
         self.assertEqual(self.p.index, 0)
@@ -69,6 +75,12 @@ class TestNode1DInitializers(unittest.TestCase):
 
     def test_temp_type(self):
         self.assertIsInstance(self.p.temp, float)
+
+    def test_void_ratio_value(self):
+        self.assertEqual(self.p.void_ratio, 0.3)
+
+    def test_void_ratio_type(self):
+        self.assertIsInstance(self.p.void_ratio, float)
 
 
 class TestNode1DSetters(unittest.TestCase):
@@ -142,6 +154,30 @@ class TestNode1DSetters(unittest.TestCase):
     def test_set_temp_invalid_str(self):
         with self.assertRaises(ValueError):
             self.p.temp = "five"
+
+    def test_set_void_ratio_valid_float(self):
+        self.p.void_ratio = 1.0
+        self.assertEqual(self.p.void_ratio, 1.0)
+
+    def test_set_void_ratio_invalid_float(self):
+        with self.assertRaises(ValueError):
+            self.p.void_ratio = -0.1
+
+    def test_set_void_ratio_valid_int(self):
+        self.p.void_ratio = 1
+        self.assertEqual(self.p.void_ratio, 1.0)
+
+    def test_set_void_ratio_valid_int_type(self):
+        self.p.void_ratio = 1
+        self.assertIsInstance(self.p.void_ratio, float)
+
+    def test_set_void_ratio_valid_str(self):
+        self.p.void_ratio = "1.e-1"
+        self.assertEqual(self.p.void_ratio, 0.1)
+
+    def test_set_void_ratio_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.p.void_ratio = "five"
 
 
 if __name__ == "__main__":
