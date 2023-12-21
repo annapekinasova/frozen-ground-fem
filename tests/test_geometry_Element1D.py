@@ -63,7 +63,7 @@ class TestElement1DInvalid(unittest.TestCase):
 
 class TestElement1DLinear(unittest.TestCase):
     def setUp(self):
-        self.nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(2))
+        self.nodes = list(Node1D(k, 2.0 * k + 1.0) for k in range(2))
         self.e = Element1D(self.nodes, order=1)
 
     def test_initialize_valid_nodes_value(self):
@@ -96,7 +96,7 @@ class TestElement1DLinear(unittest.TestCase):
 
 class TestElement1DCubic(unittest.TestCase):
     def setUp(self):
-        self.nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(4))
+        self.nodes = list(Node1D(k, 2.0 * k + 1.0) for k in range(4))
         self.e = Element1D(self.nodes)
 
     def test_initialize_valid_nodes_value(self):
