@@ -3,6 +3,9 @@ import unittest
 import numpy as np
 
 from frozen_ground_fem.geometry import (
+    Node1D,
+    IntegrationPoint1D,
+    Boundary1D,
     Mesh1D,
 )
 
@@ -49,6 +52,31 @@ class TestMesh1DInvalid(unittest.TestCase):
             msh.generate_mesh(order=2)
         with self.assertRaises(ValueError):
             msh.generate_mesh(num_elements=0)
+
+    def test_add_boundary(self):
+        msh = Mesh1D((-8, 100), generate=True)
+        nd = Node1D(0, 5.0)
+        ip = IntegrationPoint1D(7.5)
+        with self.assertRaises(TypeError):
+            msh.add_boundary(nd)
+        with self.assertRaises(ValueError):
+            msh.add_boundary(Boundary1D((nd,)))
+        with self.assertRaises(ValueError):
+            msh.add_boundary(Boundary1D(
+                (msh.nodes[0],),
+                (ip,),
+            ))
+
+    def test_remove_boundary(self):
+        msh = Mesh1D((-8, 100), generate=True)
+        bnd0 = Boundary1D((msh.nodes[0],))
+        msh.add_boundary(bnd0)
+        bnd1 = Boundary1D(
+            (msh.nodes[-1],),
+            (msh.elements[-1].int_pts[-1],),
+        )
+        with self.assertRaises(KeyError):
+            msh.remove_boundary(bnd1)
 
 
 class TestMesh1DDefaults(unittest.TestCase):
@@ -222,6 +250,63 @@ class TestMesh1DCubic(unittest.TestCase):
         self.assertEqual(msh.num_elements, 108)
         self.assertEqual(msh.num_boundaries, 0)
         self.assertAlmostEqual(msh.elements[0].jacobian, 1.0)
+
+
+class TestAddBoundaries(unittest.TestCase):
+    def setUp(self):
+        self.msh = Mesh1D((-8, 100), generate=True)
+
+    def test_add_boundary_no_int_pt(self):
+        bnd = Boundary1D((self.msh.nodes[0],))
+        self.msh.add_boundary(bnd)
+        self.assertEqual(self.msh.num_boundaries, 1)
+        self.assertTrue(bnd in self.msh.boundaries)
+        bnd1 = Boundary1D((self.msh.nodes[-1],))
+        self.msh.add_boundary(bnd1)
+        self.assertEqual(self.msh.num_boundaries, 2)
+        self.assertTrue(bnd in self.msh.boundaries)
+
+    def test_add_boundary_with_int_pt(self):
+        bnd = Boundary1D((self.msh.nodes[0],))
+        self.msh.add_boundary(bnd)
+        bnd1 = Boundary1D(
+            (self.msh.nodes[-1],),
+            (self.msh.elements[-1].int_pts[-1],),
+        )
+        self.msh.add_boundary(bnd1)
+        self.assertEqual(self.msh.num_boundaries, 2)
+        self.assertTrue(bnd in self.msh.boundaries)
+
+
+class TestRemoveBoundaries(unittest.TestCase):
+    def setUp(self):
+        self.msh = Mesh1D((-8, 100), generate=True)
+        self.bnd0 = Boundary1D((self.msh.nodes[0],))
+        self.msh.add_boundary(self.bnd0)
+        self.bnd1 = Boundary1D(
+            (self.msh.nodes[-1],),
+            (self.msh.elements[-1].int_pts[-1],),
+        )
+        self.msh.add_boundary(self.bnd1)
+
+    def test_remove_boundary_by_ref(self):
+        self.assertEqual(self.msh.num_boundaries, 2)
+        self.assertTrue(self.bnd0 in self.msh.boundaries)
+        self.msh.remove_boundary(self.bnd0)
+        self.assertEqual(self.msh.num_boundaries, 1)
+        self.assertFalse(self.bnd0 in self.msh.boundaries)
+        self.msh.boundaries.discard(self.bnd0)
+        self.assertEqual(self.msh.num_boundaries, 1)
+        self.assertTrue(self.bnd1 in self.msh.boundaries)
+
+    def test_clear_boundaries(self):
+        self.assertEqual(self.msh.num_boundaries, 2)
+        self.assertTrue(self.bnd0 in self.msh.boundaries)
+        self.assertTrue(self.bnd1 in self.msh.boundaries)
+        self.msh.clear_boundaries()
+        self.assertEqual(self.msh.num_boundaries, 0)
+        self.assertFalse(self.bnd0 in self.msh.boundaries)
+        self.assertFalse(self.bnd1 in self.msh.boundaries)
 
 
 if __name__ == "__main__":
