@@ -127,7 +127,7 @@ class Material:
     hyd_cond_index: float, optional, default=0.0
         The value to assign to hydraulic conductivity index constant
         of unfrozen soil. Cannot be negative.
-    hyd_cond_mult: float, optional, default=0.0
+    hyd_cond_mult: float, optional, default=1.0
         The value to assign to hydraulic conductivity multiplier constant[]
         for adjusting the hydraulic conductivity of
         thawed soil encoutered in freeze-thaw cycle.
@@ -254,7 +254,7 @@ class Material:
     _deg_sat_water_alpha: float = 0.0
     _deg_sat_water_beta: float = 0.0
     _hyd_cond_index: float = 0.0
-    _hyd_cond_mult: float = 0.0
+    _hyd_cond_mult: float = 1.0
     _hyd_cond_0: float = 0.0
     _void_ratio_0_hyd_cond: float = 0.0
     _void_ratio_min: float = 0.0
@@ -282,7 +282,7 @@ class Material:
         deg_sat_water_alpha: float = 0.0,
         deg_sat_water_beta: float = 0.0,
         hyd_cond_index: float = 0.0,
-        hyd_cond_mult: float = 0.0,
+        hyd_cond_mult: float = 1.0,
         hyd_cond_0: float = 0.0,
         void_ratio_0_hyd_cond: float = 0.0,
         void_ratio_min: float = 0.0,
