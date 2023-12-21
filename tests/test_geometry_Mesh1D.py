@@ -7,13 +7,78 @@ from frozen_ground_fem.geometry import (
 )
 
 
-# TODO: update tests for cubic case
+class TestMesh1DInvalid(unittest.TestCase):
+    def test_z_min_max_setters(self):
+        msh = Mesh1D((100, -8))
+        self.assertAlmostEqual(msh.z_min, -8.0)
+        self.assertAlmostEqual(msh.z_max, 100.0)
+        with self.assertRaises(ValueError):
+            msh.z_min = "twelve"
+        with self.assertRaises(ValueError):
+            msh.z_min = 101.0
+        with self.assertRaises(ValueError):
+            msh.z_max = "twelve"
+        with self.assertRaises(ValueError):
+            msh.z_max = -8.0
+        self.assertAlmostEqual(msh.z_min, -8.0)
+        self.assertAlmostEqual(msh.z_max, 100.0)
+
+    def test_grid_size_setter(self):
+        msh = Mesh1D((100, -8))
+        self.assertEqual(msh.grid_size, 0.0)
+        with self.assertRaises(ValueError):
+            msh.grid_size = "twelve"
+        with self.assertRaises(ValueError):
+            msh.grid_size = -0.5
+        self.assertEqual(msh.grid_size, 0.0)
+
+    def test_generate_mesh(self):
+        msh = Mesh1D(num_elements=9)
+        self.assertFalse(msh.mesh_valid)
+        with self.assertRaises(ValueError):
+            msh.generate_mesh()
+        with self.assertRaises(ValueError):
+            Mesh1D(generate=True)
+        self.assertFalse(msh.mesh_valid)
+        msh.grid_size = np.inf
+        msh.z_min = -8
+        msh.z_max = 100
+        with self.assertRaises(ValueError):
+            msh.generate_mesh()
+        self.assertFalse(msh.mesh_valid)
 
 
-class TestMesh1D(unittest.TestCase):
+class TestMesh1DDefaults(unittest.TestCase):
     def setUp(self):
-        pass
+        self.msh = Mesh1D()
 
+    def test_zmin_zmax(self):
+        self.assertEqual(self.msh.z_min, -np.inf)
+        self.assertEqual(self.msh.z_max, np.inf)
+
+    def test_mesh_valid(self):
+        self.assertFalse(self.msh.mesh_valid)
+
+    def test_grid_size(self):
+        self.assertEqual(self.msh.grid_size, 0.0)
+
+    def test_num_objects(self):
+        self.assertEqual(self.msh.num_nodes, 0)
+        self.assertEqual(self.msh.num_elements, 0)
+        self.assertEqual(self.msh.num_boundaries, 0)
+
+    def test_object_types(self):
+        self.assertIsInstance(self.msh.nodes, tuple)
+        self.assertIsInstance(self.msh.elements, tuple)
+        self.assertIsInstance(self.msh.boundaries, set)
+
+    def test_object_lens(self):
+        self.assertEqual(len(self.msh.nodes), 0)
+        self.assertEqual(len(self.msh.elements), 0)
+        self.assertEqual(len(self.msh.boundaries), 0)
+
+
+class TestMesh1DLinear(unittest.TestCase):
     def test_create_mesh_no_args(self):
         msh = Mesh1D(order=1)
         self.assertFalse(msh.mesh_valid)
@@ -41,17 +106,9 @@ class TestMesh1D(unittest.TestCase):
         msh = Mesh1D((100, -8), order=1)
         self.assertAlmostEqual(msh.z_min, -8.0)
         self.assertAlmostEqual(msh.z_max, 100.0)
-        with self.assertRaises(ValueError):
-            msh.z_min = "twelve"
-        with self.assertRaises(ValueError):
-            msh.z_min = 101.0
         msh.z_min = -7
         self.assertAlmostEqual(msh.z_min, -7.0)
         self.assertIsInstance(msh.z_min, float)
-        with self.assertRaises(ValueError):
-            msh.z_max = "twelve"
-        with self.assertRaises(ValueError):
-            msh.z_max = -8.0
         msh.z_max = 101
         self.assertAlmostEqual(msh.z_max, 101.0)
         self.assertIsInstance(msh.z_max, float)
@@ -62,10 +119,6 @@ class TestMesh1D(unittest.TestCase):
         msh.grid_size = 1
         self.assertAlmostEqual(msh.grid_size, 1.0)
         self.assertIsInstance(msh.grid_size, float)
-        with self.assertRaises(ValueError):
-            msh.grid_size = "twelve"
-        with self.assertRaises(ValueError):
-            msh.grid_size = -0.5
         msh.generate_mesh(order=1)
         self.assertEqual(msh.num_nodes, 109)
         self.assertEqual(msh.num_elements, 108)
@@ -73,17 +126,10 @@ class TestMesh1D(unittest.TestCase):
         self.assertAlmostEqual(msh.nodes[1].z - msh.nodes[0].z, 1.0)
 
     def test_generate_mesh(self):
-        msh = Mesh1D(order=1, num_elements=9)
+        msh = Mesh1D()
         self.assertFalse(msh.mesh_valid)
-        with self.assertRaises(ValueError):
-            msh.generate_mesh(order=1)
-        with self.assertRaises(ValueError):
-            Mesh1D(generate=True, order=1)
-        msh.grid_size = np.inf
         msh.z_min = -8
         msh.z_max = 100
-        with self.assertRaises(ValueError):
-            msh.generate_mesh(order=1)
         msh.grid_size = 0
         msh.generate_mesh(num_elements=9, order=1)
         self.assertTrue(msh.mesh_valid)
@@ -99,6 +145,77 @@ class TestMesh1D(unittest.TestCase):
         msh.generate_mesh(order=1)
         self.assertTrue(msh.mesh_valid)
         self.assertEqual(msh.num_nodes, 109)
+        self.assertEqual(msh.num_elements, 108)
+        self.assertEqual(msh.num_boundaries, 0)
+        self.assertAlmostEqual(msh.elements[0].jacobian, 1.0)
+
+
+class TestMesh1DCubic(unittest.TestCase):
+    def test_create_mesh_no_args(self):
+        msh = Mesh1D()
+        self.assertFalse(msh.mesh_valid)
+        self.assertEqual(msh.num_nodes, 0)
+        self.assertEqual(msh.num_elements, 0)
+        self.assertEqual(msh.num_boundaries, 0)
+        self.assertTrue(np.isinf(msh.z_min))
+        self.assertTrue(np.isinf(msh.z_max))
+        self.assertTrue(msh.z_min < 0)
+        self.assertTrue(msh.z_max > 0)
+        self.assertEqual(msh.grid_size, 0.0)
+
+    def test_create_mesh_z_range_generate(self):
+        msh = Mesh1D(z_range=(100, -8), num_elements=9, generate=True)
+        self.assertTrue(msh.mesh_valid)
+        self.assertEqual(msh.num_nodes, 28)
+        self.assertEqual(msh.num_elements, 9)
+        self.assertEqual(msh.num_boundaries, 0)
+        self.assertAlmostEqual(msh.z_min, -8.0)
+        self.assertAlmostEqual(msh.z_max, 100.0)
+        self.assertEqual(msh.grid_size, 0.0)
+        self.assertAlmostEqual(msh.nodes[1].z - msh.nodes[0].z, 4.0)
+
+    def test_z_min_max_setters(self):
+        msh = Mesh1D((100, -8))
+        self.assertAlmostEqual(msh.z_min, -8.0)
+        self.assertAlmostEqual(msh.z_max, 100.0)
+        msh.z_min = -7
+        self.assertAlmostEqual(msh.z_min, -7.0)
+        self.assertIsInstance(msh.z_min, float)
+        msh.z_max = 101
+        self.assertAlmostEqual(msh.z_max, 101.0)
+        self.assertIsInstance(msh.z_max, float)
+
+    def test_grid_size_setter(self):
+        msh = Mesh1D((100, -8))
+        self.assertEqual(msh.grid_size, 0.0)
+        msh.grid_size = 1
+        self.assertAlmostEqual(msh.grid_size, 1.0)
+        self.assertIsInstance(msh.grid_size, float)
+        msh.generate_mesh()
+        self.assertEqual(msh.num_nodes, 325)
+        self.assertEqual(msh.num_elements, 108)
+        self.assertEqual(msh.num_boundaries, 0)
+        self.assertAlmostEqual(msh.nodes[1].z - msh.nodes[0].z, 1.0/3.0)
+
+    def test_generate_mesh(self):
+        msh = Mesh1D()
+        self.assertFalse(msh.mesh_valid)
+        msh.z_min = -8
+        msh.z_max = 100
+        msh.generate_mesh(num_elements=9)
+        self.assertTrue(msh.mesh_valid)
+        self.assertEqual(msh.num_nodes, 28)
+        self.assertEqual(msh.num_elements, 9)
+        self.assertEqual(msh.num_boundaries, 0)
+        self.assertAlmostEqual(msh.elements[0].jacobian, 12.0)
+        msh.grid_size = 1
+        self.assertFalse(msh.mesh_valid)
+        self.assertEqual(msh.num_nodes, 0)
+        self.assertEqual(msh.num_elements, 0)
+        self.assertEqual(msh.num_boundaries, 0)
+        msh.generate_mesh()
+        self.assertTrue(msh.mesh_valid)
+        self.assertEqual(msh.num_nodes, 325)
         self.assertEqual(msh.num_elements, 108)
         self.assertEqual(msh.num_boundaries, 0)
         self.assertAlmostEqual(msh.elements[0].jacobian, 1.0)
