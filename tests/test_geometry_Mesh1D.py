@@ -33,8 +33,7 @@ class TestMesh1DInvalid(unittest.TestCase):
         self.assertEqual(msh.grid_size, 0.0)
 
     def test_generate_mesh(self):
-        msh = Mesh1D(num_elements=9)
-        self.assertFalse(msh.mesh_valid)
+        msh = Mesh1D()
         with self.assertRaises(ValueError):
             msh.generate_mesh()
         with self.assertRaises(ValueError):
@@ -46,6 +45,10 @@ class TestMesh1DInvalid(unittest.TestCase):
         with self.assertRaises(ValueError):
             msh.generate_mesh()
         self.assertFalse(msh.mesh_valid)
+        with self.assertRaises(ValueError):
+            msh.generate_mesh(order=2)
+        with self.assertRaises(ValueError):
+            msh.generate_mesh(num_elements=0)
 
 
 class TestMesh1DDefaults(unittest.TestCase):
