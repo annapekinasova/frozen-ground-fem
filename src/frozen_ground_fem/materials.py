@@ -116,11 +116,11 @@ class Material:
     spec_heat_cap_solids: float, optional, default=0.0
         The value to assign to specific heat capacity of solids.
         Cannot be negative.
-    deg_sat_water_alpha: float, optional, default=0.0
+    deg_sat_water_alpha: float, optional, default=1.0
         The value to assign to alpha material constant[kPa]
         for calculation of degree of saturation of water.
         Cannot be negative.
-    deg_sat_water_beta: float, optional, default=0.0
+    deg_sat_water_beta: float, optional, default=0.9
         The value to assign to beta material constant[]
         for calculation of degree of saturation of water.
         Cannot be negative.
@@ -251,8 +251,8 @@ class Material:
     _spec_grav_solids: float = 0.0
     _dens_solids: float = 0.0
     _spec_heat_cap_solids: float = 0.0
-    _deg_sat_water_alpha: float = 0.0
-    _deg_sat_water_beta: float = 0.0
+    _deg_sat_water_alpha: float = 1.0
+    _deg_sat_water_beta: float = 0.9
     _hyd_cond_index: float = 0.0
     _hyd_cond_mult: float = 0.0
     _hyd_cond_0: float = 0.0
@@ -279,8 +279,8 @@ class Material:
         thrm_cond_solids: float = 0.0,
         spec_grav_solids: float = 0.0,
         spec_heat_cap_solids: float = 0.0,
-        deg_sat_water_alpha: float = 0.0,
-        deg_sat_water_beta: float = 0.0,
+        deg_sat_water_alpha: float = 1.0,
+        deg_sat_water_beta: float = 0.9,
         hyd_cond_index: float = 0.0,
         hyd_cond_mult: float = 0.0,
         hyd_cond_0: float = 0.0,
@@ -471,6 +471,11 @@ class Material:
         ValueError
             If value to assign is not convertible to float.
             If value < 0.
+
+        Notes
+        -----
+        The default values of alpha=1.0 and beta=0.9
+        give step function behaviour.
         """
         return self._deg_sat_water_alpha
 
@@ -501,6 +506,11 @@ class Material:
         ValueError
             If value to assign is not convertible to float.
             If value < 0.
+
+        Notes
+        -----
+        The default values of alpha=1.0 and beta=0.9
+        give step function behaviour.
         """
         return self._deg_sat_water_beta
 
