@@ -25,6 +25,16 @@ class TestConstants(unittest.TestCase):
 
 # TODO: Default tests
 # deg_sat_water()
+#   check Sw = 0.0 for some (small) negative temp
+#   check Sw = 0.0 for some (large) negative temp
+#   check Sw = 1.0 for some (small) positive temp
+#   check Sw = 1.0 for some (large) positive temp
+#   check Sw = 0.0 for temp = 0.0
+#   check dSw_dT = 0.0 for some (small) negative temp
+#   check dSw_dT = 0.0 for some (large) negative temp
+#   check dSw_dT = 0.0 for some (small) positive temp
+#   check dSw_dT = 0.0 for some (large) positive temp
+#   check dSw_dT = 0.0 for temp = 0.0
 # hyd_cond()
 # water_flux()
 # eff_stress()
@@ -117,6 +127,16 @@ class TestMaterialDefaults(unittest.TestCase):
 
 # TODO: Null Material tests
 # deg_sat_water()
+#   check Sw = 0.0 for some (small) negative temp
+#   check Sw = 0.0 for some (large) negative temp
+#   check Sw = 1.0 for some (small) positive temp
+#   check Sw = 1.0 for some (large) positive temp
+#   check Sw = 0.0 for temp = 0.0
+#   check dSw_dT = 0.0 for some (small) negative temp
+#   check dSw_dT = 0.0 for some (large) negative temp
+#   check dSw_dT = 0.0 for some (small) positive temp
+#   check dSw_dT = 0.0 for some (large) positive temp
+#   check dSw_dT = 0.0 for temp = 0.0
 # hyd_cond()
 # water_flux()
 # eff_stress()
@@ -206,6 +226,16 @@ class TestNullMaterial(unittest.TestCase):
 
 # TODO: Initializer tests
 # deg_sat_water()
+#   check Sw = <value> for some (small) negative temp
+#   check Sw = <value> for some (large) negative temp
+#   check Sw = 1.0 for some (small) positive temp
+#   check Sw = 1.0 for some (large) positive temp
+#   check Sw = 1.0 for temp = 0.0
+#   check dSw_dT = <value> for some (small) negative temp
+#   check dSw_dT = <value> for some (large) negative temp
+#   check dSw_dT = 0.0 for some (small) positive temp
+#   check dSw_dT = 0.0 for some (large) positive temp
+#   check dSw_dT = 0.0 for temp = 0.0
 # hyd_cond()
 # water_flux()
 # eff_stress()
@@ -219,7 +249,7 @@ class TestMaterialInitializers(unittest.TestCase):
             thrm_cond_solids=7.8,
             spec_grav_solids=2.5,
             spec_heat_cap_solids=7.41e5,
-            deg_sat_water_alpha=12.0,
+            deg_sat_water_alpha=12.0e3,
             deg_sat_water_beta=0.35,
             hyd_cond_index=0.305,
             hyd_cond_mult=0.5,
@@ -256,7 +286,7 @@ class TestMaterialInitializers(unittest.TestCase):
         self.assertEqual(self.m.vol_heat_cap_solids, 1.8525e9)
 
     def test_deg_sat_water_alpha(self):
-        self.assertEqual(self.m.deg_sat_water_alpha, 12.0)
+        self.assertEqual(self.m.deg_sat_water_alpha, 12.0e3)
 
     def test_deg_sat_water_beta(self):
         self.assertEqual(self.m.deg_sat_water_beta, 0.35)
@@ -1273,7 +1303,6 @@ class TestMaterialCompIndexFrozena3Setter(unittest.TestCase):
 
 
 # TODO: Setter tests
-# deg_sat_water()
 # hyd_cond()
 # water_flux()
 # eff_stress()
