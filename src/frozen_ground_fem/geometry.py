@@ -455,6 +455,10 @@ class IntegrationPoint1D(Point1D):
         Also sets degree of saturation of ice (assuming full saturation)
         and volumetric ice content.
         Value should be between 0.0 and 1.0.
+    deg_sat_water_temp_gradient: float, optional, default=0.0
+        Gradient of degree of saturation of water
+        with respect to temperature, dSw/dT.
+        Value should be >= 0.0.
     material: Material, optional, default=materials.NULL_MATERIAL
         Contains the properties of the solids.
     hyd_cond: float, optional, default=0.0
@@ -502,6 +506,8 @@ class IntegrationPoint1D(Point1D):
         If temp_gradient is not convertible to float.
         If deg_sat_water is not convertible to float.
         If deg_sat_water <0.0 or >1.0.
+        If deg_sat_water_temp_gradient is not convertible to float.
+        If deg_sat_water_temp_gradient is negative.
         If hyd_cond is not convertible to float.
         If hyd_cond is negative.
         If hyd_cond_gradient is not convertible to float.
@@ -527,6 +533,7 @@ class IntegrationPoint1D(Point1D):
     _temp_gradient: float = 0.0
     _deg_sat_water: float = 1.0
     _deg_sat_ice: float = 0.0
+    _deg_sat_water_temp_gradient: float = 0.0
     _vol_ice_cont: float = 0.0
     _hyd_cond: float = 0.0
     _hyd_cond_gradient: float = 0.0
@@ -551,6 +558,7 @@ class IntegrationPoint1D(Point1D):
         temp_rate: float = 0.0,
         temp_gradient: float = 0.0,
         deg_sat_water: float = 1.0,
+        deg_sat_water_temp_gradient: float = 0.0,
         material: Material = NULL_MATERIAL,
         hyd_cond: float = 0.0,
         hyd_cond_gradient: float = 0.0,
@@ -572,6 +580,7 @@ class IntegrationPoint1D(Point1D):
         self.temp_rate = temp_rate
         self.temp_gradient = temp_gradient
         self.deg_sat_water = deg_sat_water
+        self.deg_sat_water_temp_gradient = deg_sat_water_temp_gradient
         self.material = material
         self.hyd_cond = hyd_cond
         self.hyd_cond_gradient = hyd_cond_gradient
@@ -845,6 +854,37 @@ class IntegrationPoint1D(Point1D):
             deg_sat_water + deg_sat_ice = 1.0
         """
         return self._deg_sat_ice
+
+    @property
+    def deg_sat_water_temp_gradient(self) -> float:
+        """Gradient of degree of saturation of water
+        with respect to temperature.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value to assign is negative.
+        """
+        return self._deg_sat_water_temp_gradient
+
+    @deg_sat_water_temp_gradient.setter
+    def deg_sat_water_temp_gradient(self, value: float) -> None:
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(
+                f"deg_sat_water_temp_gradient value {value} "
+                + "is negative"
+            )
+        self._deg_sat_water_temp_gradient = value
 
     @property
     def material(self) -> Material:
