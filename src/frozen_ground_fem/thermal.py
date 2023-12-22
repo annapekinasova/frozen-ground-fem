@@ -120,11 +120,11 @@ class ThermalElement1D(Element1D):
         Te = np.array([nd.temp for nd in self.nodes])
         for ip in self.int_pts:
             N = self._shape_matrix(ip.local_coord)
-            T = N @ Te
-            if T <= 0.0:
-                ip.deg_sat_water = 0.0
-            else:
-                ip.deg_sat_water = 1.0
+            Tp = (N @ Te)[0]
+            Sw, dSw_dT = ip.material.deg_sat_water(Tp)
+            ip.temp = Tp
+            ip.deg_sat_water = Sw
+            ip.deg_sat_water_temp_gradient = dSw_dT
 
 
 class ThermalBoundary1D(Boundary1D):
