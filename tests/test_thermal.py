@@ -60,6 +60,51 @@ class TestThermalElement1DLinear(unittest.TestCase):
         self.assertTrue(np.allclose(
             self.thrm_e.heat_storage_matrix, expected))
 
+    def test_update_integration_points_null_material(self):
+        self.thrm_e.nodes[0].temp = -1.0
+        self.thrm_e.nodes[1].temp = +2.0
+        self.thrm_e.update_integration_points()
+        self.assertAlmostEqual(self.thrm_e.int_pts[0].temp, -0.366025403784439)
+        self.assertAlmostEqual(self.thrm_e.int_pts[1].temp, 1.366025403784440)
+        self.assertAlmostEqual(self.thrm_e.int_pts[0].deg_sat_water, 0.0)
+        self.assertAlmostEqual(self.thrm_e.int_pts[1].deg_sat_water, 1.0)
+        self.assertAlmostEqual(
+            self.thrm_e.int_pts[0].deg_sat_water_temp_gradient, 0.0)
+        self.assertAlmostEqual(
+            self.thrm_e.int_pts[1].deg_sat_water_temp_gradient, 0.0)
+
+    def test_update_integration_points_with_material(self):
+        m = Material(deg_sat_water_alpha=1.2e4, deg_sat_water_beta=0.35)
+        for ip in self.thrm_e.int_pts:
+            ip.material = m
+        self.thrm_e.nodes[0].temp = -1.0
+        self.thrm_e.nodes[1].temp = +2.0
+        self.thrm_e.update_integration_points()
+        self.assertAlmostEqual(
+            self.thrm_e.int_pts[0].temp,
+            -0.366025403784439,
+        )
+        self.assertAlmostEqual(
+            self.thrm_e.int_pts[1].temp,
+            1.366025403784440,
+        )
+        self.assertAlmostEqual(
+            self.thrm_e.int_pts[0].deg_sat_water,
+            0.149711781050801,
+        )
+        self.assertAlmostEqual(
+            self.thrm_e.int_pts[1].deg_sat_water,
+            1.0,
+        )
+        self.assertAlmostEqual(
+            self.thrm_e.int_pts[0].deg_sat_water_temp_gradient,
+            0.219419354111454,
+        )
+        self.assertAlmostEqual(
+            self.thrm_e.int_pts[1].deg_sat_water_temp_gradient,
+            0.0,
+        )
+
 
 class TestThermalElement1DCubic(unittest.TestCase):
     def setUp(self):
