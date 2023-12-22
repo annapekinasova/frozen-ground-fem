@@ -49,10 +49,10 @@ class TestMaterialDefaults(unittest.TestCase):
         self.assertEqual(self.m.vol_heat_cap_solids, 0.0)
 
     def test_deg_sat_water_alpha(self):
-        self.assertEqual(self.m.deg_sat_water_alpha, 0.0)
+        self.assertEqual(self.m.deg_sat_water_alpha, 1.0)
 
     def test_deg_sat_water_beta(self):
-        self.assertEqual(self.m.deg_sat_water_beta, 0.0)
+        self.assertEqual(self.m.deg_sat_water_beta, 0.9)
 
     def test_hyd_cond_index(self):
         self.assertEqual(self.m.hyd_cond_index, 0.0)
@@ -138,10 +138,10 @@ class TestNullMaterial(unittest.TestCase):
         self.assertEqual(NULL_MATERIAL.vol_heat_cap_solids, 0.0)
 
     def test_deg_sat_water_alpha(self):
-        self.assertEqual(NULL_MATERIAL.deg_sat_water_alpha, 0.0)
+        self.assertEqual(NULL_MATERIAL.deg_sat_water_alpha, 1.0)
 
     def test_deg_sat_water_beta(self):
-        self.assertEqual(NULL_MATERIAL.deg_sat_water_beta, 0.0)
+        self.assertEqual(NULL_MATERIAL.deg_sat_water_beta, 0.9)
 
     def test_hyd_cond_index(self):
         self.assertEqual(NULL_MATERIAL.hyd_cond_index, 0.0)
