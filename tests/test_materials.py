@@ -599,11 +599,11 @@ class TestMaterialHydCondMultSetter(unittest.TestCase):
 
     def test_set_hyd_cond_mult_invalid_value(self):
         with self.assertRaises(ValueError):
-            self.m.hyd_cond_0 = -12.0
+            self.m.hyd_cond_mult = -12.0
 
     def test_set_hyd_cond_0_invalid_str(self):
         with self.assertRaises(ValueError):
-            self.m.hyd_cond_0 = "twelve"
+            self.m.hyd_cond_mult = "twelve"
 
 
 class TestMaterialHydCond0Setter(unittest.TestCase):
@@ -641,6 +641,43 @@ class TestMaterialHydCond0Setter(unittest.TestCase):
     def test_set_hyd_cond_0_invalid_str(self):
         with self.assertRaises(ValueError):
             self.m.hyd_cond_0 = "twelve"
+
+
+class TestMaterialVoidRatio0HydCondSetter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_void_ratio_0_hyd_cond_valid_float(self):
+        self.m.void_ratio_0_hyd_cond = 0.2
+        self.assertEqual(self.m.void_ratio_0_hyd_cond, 0.2)
+
+    def test_set_void_ratio_0_hyd_cond_valid_int(self):
+        self.m.void_ratio_0_hyd_cond = 12
+        self.assertEqual(self.m.void_ratio_0_hyd_cond, 12.0)
+
+    def test_set_void_ratio_0_hyd_cond_valid_int_type(self):
+        self.m.void_ratio_0_hyd_cond = 12
+        self.assertIsInstance(self.m.void_ratio_0_hyd_cond, float)
+
+    def test_set_void_ratio_0_hyd_cond_valid_str(self):
+        self.m.void_ratio_0_hyd_cond = "1.2e1"
+        self.assertEqual(self.m.void_ratio_0_hyd_cond, 12.0)
+
+    def test_set_void_ratio_0_hyd_cond_valid_str_type(self):
+        self.m.void_ratio_0_hyd_cond = "1.2e1"
+        self.assertIsInstance(self.m.void_ratio_0_hyd_cond, float)
+
+    def test_set_void_ratio_0_hyd_cond_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.void_ratio_0_hyd_cond = (12.0, 1.8)
+
+    def test_set_void_ratio_0_hyd_cond_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.void_ratio_0_hyd_cond = -12.0
+
+    def test_set_void_ratio_0_hyd_cond_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.void_ratio_0_hyd_cond = "twelve"
 
 
 class TestMaterialVoidRatioMinSetter(unittest.TestCase):
