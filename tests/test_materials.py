@@ -219,28 +219,28 @@ class TestMaterialInitializers(unittest.TestCase):
             thrm_cond_solids=7.8,
             spec_grav_solids=2.5,
             spec_heat_cap_solids=7.41e5,
-            # deg_sat_water_alpha=,
-            # deg_sat_water_beta=,
-            # hyd_cond_index=,
-            # hyd_cond_mult=,
-            # hyd_cond_0=,
-            # void_ratio_0_hyd_cond=,
-            # void_ratio_min=,
-            # void_ratio_sep=,
-            # void_ratio_lim=,
-            # void_ratio_tr=,
-            # water_flux_b1=,
-            # water_flux_b2=,
-            # water_flux_b3=,
-            # temp_rate_ref=,
-            # seg_pot_0=,
-            # void_ratio_0_comp=,
-            # eff_stress_0_comp=,
-            # comp_index_unfrozen=,
-            # rebound_index_unfrozen=,
-            # comp_index_frozen_a1=,
-            # comp_index_frozen_a2=,
-            # comp_index_frozen_a3=,
+            deg_sat_water_alpha=12.0,
+            deg_sat_water_beta=0.35,
+            hyd_cond_index=0.305,
+            hyd_cond_mult=0.5,
+            hyd_cond_0=4.05e-4,
+            void_ratio_0_hyd_cond=2.6,
+            void_ratio_min=0.3,
+            void_ratio_sep=1.6,
+            void_ratio_lim=0.28,
+            void_ratio_tr=0.5,
+            water_flux_b1=0.08,
+            water_flux_b2=4.0,
+            water_flux_b3=10.0,
+            temp_rate_ref=10.0e-9,
+            seg_pot_0=2.0e-9,
+            void_ratio_0_comp=2.6,
+            eff_stress_0_comp=0.0028,
+            comp_index_unfrozen=0.421,
+            rebound_index_unfrozen=0.08,
+            comp_index_frozen_a1=0.021,
+            comp_index_frozen_a2=0.01,
+            comp_index_frozen_a3=0.23,
         )
 
     def test_thrm_cond_solids(self):
@@ -255,71 +255,71 @@ class TestMaterialInitializers(unittest.TestCase):
     def test_vol_heat_cap_solids(self):
         self.assertEqual(self.m.vol_heat_cap_solids, 1.8525e9)
 
-    # def test_deg_sat_water_alpha(self):
-    #     self.assertEqual(self.m.deg_sat_water_alpha, 12.0)
-    #
-    # def test_deg_sat_water_beta(self):
-    #     self.assertEqual(self.m.deg_sat_water_beta, 0.35)
-    #
-    # def test_hyd_cond_index(self):
-    #     self.assertEqual(self.m.hyd_cond_index, 0.305)
-    #
-    # def test_hyd_cond_mult(self):
-    #     self.assertEqual(self.m.hyd_cond_mult, 0.5)
-    #
-    # def test_hyd_cond_0(self):
-    #     self.assertEqual(self.m.hyd_cond_0, 4.05e-4)
-    #
-    # def test_void_ratio_0_hyd_cond(self):
-    #     self.assertEqual(self.m.void_ratio_0_hyd_cond, 2.6)
-    #
-    # def test_void_ratio_min(self):
-    #     self.assertEqual(self.m.void_ratio_min, 0.3)
-    #
-    # def test_void_ratio_sep(self):
-    #     self.assertEqual(self.m.void_ratio_sep, 1.6)
-    #
-    # def test_void_ratio_lim(self):
-    #     self.assertEqual(self.m.void_ratio_lim, 0.28)
-    #
-    # def test_void_ratio_tr(self):
-    #     self.assertEqual(self.m.void_ratio_tr, 0.5)
-    #
-    # def test_water_flux_b1(self):
-    #     self.assertEqual(self.m.water_flux_b1, 0.08)
-    #
-    # def test_water_flux_b2(self):
-    #     self.assertEqual(self.m.water_flux_b2, 4.0)
-    #
-    # def test_water_flux_b3(self):
-    #     self.assertEqual(self.m.water_flux_b3, 10.0)
-    #
-    # def test_temp_rate_ref(self):
-    #     self.assertEqual(self.m.temp_rate_ref, 10.0e-9)
-    #
-    # def test_seg_pot_0(self):
-    #     self.assertEqual(self.m.seg_pot_0, 2.0e-9)
-    #
-    # def test_void_ratio_0_comp(self):
-    #     self.assertEqual(self.m.void_ratio_0_comp, 2.6)
-    #
-    # def test_eff_stress_0_comp(self):
-    #     self.assertEqual(self.m.eff_stress_0_comp, 0.0028)
-    #
-    # def test_comp_index_unfrozen(self):
-    #     self.assertEqual(self.m.comp_index_unfrozen, 0.421)
-    #
-    # def test_rebound_index_unfozen(self):
-    #     self.assertEqual(self.m.comp_index_unfrozen, 0.08)
-    #
-    # def test_comp_index_frozen_a1(self):
-    #     self.assertEqual(self.m.comp_index_frozen_a1, 0.021)
-    #
-    # def test_comp_index_frozen_a2(self):
-    #     self.assertEqual(self.m.comp_index_frozen_a2, 0.01)
-    #
-    # def test_comp_index_frozen_a3(self):
-    #     self.assertEqual(self.m.comp_index_frozen_a3, 0.23)
+    def test_deg_sat_water_alpha(self):
+        self.assertEqual(self.m.deg_sat_water_alpha, 12.0)
+
+    def test_deg_sat_water_beta(self):
+        self.assertEqual(self.m.deg_sat_water_beta, 0.35)
+
+    def test_hyd_cond_index(self):
+        self.assertEqual(self.m.hyd_cond_index, 0.305)
+
+    def test_hyd_cond_mult(self):
+        self.assertEqual(self.m.hyd_cond_mult, 0.5)
+
+    def test_hyd_cond_0(self):
+        self.assertEqual(self.m.hyd_cond_0, 4.05e-4)
+
+    def test_void_ratio_0_hyd_cond(self):
+        self.assertEqual(self.m.void_ratio_0_hyd_cond, 2.6)
+
+    def test_void_ratio_min(self):
+        self.assertEqual(self.m.void_ratio_min, 0.3)
+
+    def test_void_ratio_sep(self):
+        self.assertEqual(self.m.void_ratio_sep, 1.6)
+
+    def test_void_ratio_lim(self):
+        self.assertEqual(self.m.void_ratio_lim, 0.28)
+
+    def test_void_ratio_tr(self):
+        self.assertEqual(self.m.void_ratio_tr, 0.5)
+
+    def test_water_flux_b1(self):
+        self.assertEqual(self.m.water_flux_b1, 0.08)
+
+    def test_water_flux_b2(self):
+        self.assertEqual(self.m.water_flux_b2, 4.0)
+
+    def test_water_flux_b3(self):
+        self.assertEqual(self.m.water_flux_b3, 10.0)
+
+    def test_temp_rate_ref(self):
+        self.assertEqual(self.m.temp_rate_ref, 10.0e-9)
+
+    def test_seg_pot_0(self):
+        self.assertEqual(self.m.seg_pot_0, 2.0e-9)
+
+    def test_void_ratio_0_comp(self):
+        self.assertEqual(self.m.void_ratio_0_comp, 2.6)
+
+    def test_eff_stress_0_comp(self):
+        self.assertEqual(self.m.eff_stress_0_comp, 0.0028)
+
+    def test_comp_index_unfrozen(self):
+        self.assertEqual(self.m.comp_index_unfrozen, 0.421)
+
+    def test_rebound_index_unfozen(self):
+        self.assertEqual(self.m.rebound_index_unfrozen, 0.08)
+
+    def test_comp_index_frozen_a1(self):
+        self.assertEqual(self.m.comp_index_frozen_a1, 0.021)
+
+    def test_comp_index_frozen_a2(self):
+        self.assertEqual(self.m.comp_index_frozen_a2, 0.01)
+
+    def test_comp_index_frozen_a3(self):
+        self.assertEqual(self.m.comp_index_frozen_a3, 0.23)
 
 
 class TestMaterialThrmCondSolidsSetter(unittest.TestCase):
@@ -458,73 +458,789 @@ class TestMaterialVolHeatCapSolidsSetter(unittest.TestCase):
             self.m.vol_heat_cap_solids = 5.0
 
 
-# class TestMaterialDegSatWaterAlphaSetter(unittest.TestCase):
-#     def setUp(self):
-#         self.m = Material()
-#
-#     def test_set_deg_sat_water_alpha_valid_float(self):
-#         self.m.deg_sat_water_alpha = 1.2
-#         self.assertEqual(self.m.deg_sat_water_alpha, 1.2)
-#
-#     def test_set_deg_sat_water_alpha_valid_int(self):
-#         self.m.deg_sat_water_alpha = 12
-#         self.assertEqual(self.m.deg_sat_water_alpha, 12.0)
-#
-#     def test_set_deg_sat_water_alpha_valid_int_type(self):
-#         self.m.deg_sat_water_alpha = 12
-#         self.assertIsInstance(self.m.deg_sat_water_alpha, float)
-#
-#     def test_set_deg_sat_water_alpha_valid_str(self):
-#         self.m.deg_sat_water_alpha = "1.2e1"
-#         self.assertEqual(self.m.deg_sat_water_alpha, 12.0)
-#
-#     def test_set_deg_sat_water_alpha_valid_str_type(self):
-#         self.m.deg_sat_water_alpha = "1.2e1"
-#         self.assertIsInstance(self.m.deg_sat_water_alpha, float)
-#
-#     def test_set_deg_sat_water_alpha_invalid_type(self):
-#         with self.assertRaises(TypeError):
-#             self.m.deg_sat_water_alpha = (12.0, 1.8)
-#
-#     def test_set_deg_sat_water_alpha_invalid_value(self):
-#         with self.assertRaises(ValueError):
-#             self.m.deg_sat_water_alpha = -12.0
-#
-#     def test_set_deg_sat_water_alpha_invalid_str(self):
-#         with self.assertRaises(ValueError):
-#             self.m.deg_sat_water_alpha = "twelve"
+class TestMaterialDegSatWaterAlphaSetter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_deg_sat_water_alpha_valid_float(self):
+        self.m.deg_sat_water_alpha = 0.2
+        self.assertEqual(self.m.deg_sat_water_alpha, 0.2)
+
+    def test_set_deg_sat_water_alpha_valid_int(self):
+        self.m.deg_sat_water_alpha = 12
+        self.assertEqual(self.m.deg_sat_water_alpha, 12.0)
+
+    def test_set_deg_sat_water_alpha_valid_int_type(self):
+        self.m.deg_sat_water_alpha = 12
+        self.assertIsInstance(self.m.deg_sat_water_alpha, float)
+
+    def test_set_deg_sat_water_alpha_valid_str(self):
+        self.m.deg_sat_water_alpha = "1.2e1"
+        self.assertEqual(self.m.deg_sat_water_alpha, 12.0)
+
+    def test_set_deg_sat_water_alpha_valid_str_type(self):
+        self.m.deg_sat_water_alpha = "1.2e1"
+        self.assertIsInstance(self.m.deg_sat_water_alpha, float)
+
+    def test_set_deg_sat_water_alpha_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.deg_sat_water_alpha = (12.0, 1.8)
+
+    def test_set_deg_sat_water_alpha_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.deg_sat_water_alpha = -12.0
+
+    def test_set_deg_sat_water_alpha_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.deg_sat_water_alpha = "twelve"
+
+
+class TestMaterialDegSatWaterBetaSetter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_deg_sat_water_beta_valid_float(self):
+        self.m.deg_sat_water_beta = 0.2
+        self.assertEqual(self.m.deg_sat_water_beta, 0.2)
+
+    def test_set_deg_sat_water_beta_valid_int(self):
+        self.m.deg_sat_water_beta = 12
+        self.assertEqual(self.m.deg_sat_water_beta, 12.0)
+
+    def test_set_deg_sat_water_beta_valid_int_type(self):
+        self.m.deg_sat_water_beta = 12
+        self.assertIsInstance(self.m.deg_sat_water_beta, float)
+
+    def test_set_deg_sat_water_beta_valid_str(self):
+        self.m.deg_sat_water_beta = "1.2e1"
+        self.assertEqual(self.m.deg_sat_water_beta, 12.0)
+
+    def test_set_deg_sat_water_beta_valid_str_type(self):
+        self.m.deg_sat_water_beta = "1.2e1"
+        self.assertIsInstance(self.m.deg_sat_water_beta, float)
+
+    def test_set_deg_sat_water_beta_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.deg_sat_water_beta = (12.0, 1.8)
+
+    def test_set_deg_sat_water_beta_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.deg_sat_water_beta = -12.0
+
+    def test_set_deg_sat_water_beta_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.deg_sat_water_beta = "twelve"
+
+
+class TestMaterialHydCondIndexSetter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_hyd_cond_index_valid_float(self):
+        self.m.hyd_cond_index = 0.2
+        self.assertEqual(self.m.hyd_cond_index, 0.2)
+
+    def test_set_hyd_cond_index_valid_int(self):
+        self.m.hyd_cond_index = 12
+        self.assertEqual(self.m.hyd_cond_index, 12.0)
+
+    def test_set_hyd_cond_index_valid_int_type(self):
+        self.m.hyd_cond_index = 12
+        self.assertIsInstance(self.m.hyd_cond_index, float)
+
+    def test_set_hyd_cond_index_valid_str(self):
+        self.m.hyd_cond_index = "1.2e1"
+        self.assertEqual(self.m.hyd_cond_index, 12.0)
+
+    def test_set_hyd_cond_index_valid_str_type(self):
+        self.m.hyd_cond_index = "1.2e1"
+        self.assertIsInstance(self.m.hyd_cond_index, float)
+
+    def test_set_hyd_cond_index_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.hyd_cond_index = (12.0, 1.8)
+
+    def test_set_hyd_cond_index_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.hyd_cond_index = -12.0
+
+    def test_set_hyd_cond_index_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.hyd_cond_index = "twelve"
+
+
+class TestMaterialHydCondMultSetter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_hyd_cond_mult_valid_float(self):
+        self.m.hyd_cond_mult = 0.2
+        self.assertEqual(self.m.hyd_cond_mult, 0.2)
+
+    def test_set_hyd_cond_mult_valid_int(self):
+        self.m.hyd_cond_mult = 12
+        self.assertEqual(self.m.hyd_cond_mult, 12.0)
+
+    def test_set_hyd_cond_mult_valid_int_type(self):
+        self.m.hyd_cond_mult = 12
+        self.assertIsInstance(self.m.hyd_cond_mult, float)
+
+    def test_set_hyd_cond_mult_valid_str(self):
+        self.m.hyd_cond_mult = "1.2e1"
+        self.assertEqual(self.m.hyd_cond_mult, 12.0)
+
+    def test_set_hyd_cond_mult_valid_str_type(self):
+        self.m.hyd_cond_mult = "1.2e1"
+        self.assertIsInstance(self.m.hyd_cond_mult, float)
+
+    def test_set_hyd_cond_mult_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.hyd_cond_mult = (12.0, 1.8)
+
+    def test_set_hyd_cond_mult_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.hyd_cond_0 = -12.0
+
+    def test_set_hyd_cond_0_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.hyd_cond_0 = "twelve"
+
+
+class TestMaterialHydCond0Setter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_hyd_cond_0_valid_float(self):
+        self.m.hyd_cond_0 = 0.2
+        self.assertEqual(self.m.hyd_cond_0, 0.2)
+
+    def test_set_hyd_cond_0_valid_int(self):
+        self.m.hyd_cond_0 = 12
+        self.assertEqual(self.m.hyd_cond_0, 12.0)
+
+    def test_set_hyd_cond_0_valid_int_type(self):
+        self.m.hyd_cond_0 = 12
+        self.assertIsInstance(self.m.hyd_cond_0, float)
+
+    def test_set_hyd_cond_0_valid_str(self):
+        self.m.hyd_cond_0 = "1.2e1"
+        self.assertEqual(self.m.hyd_cond_0, 12.0)
+
+    def test_set_hyd_cond_0_valid_str_type(self):
+        self.m.hyd_cond_0 = "1.2e1"
+        self.assertIsInstance(self.m.hyd_cond_0, float)
+
+    def test_set_hyd_cond_0_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.hyd_cond_0 = (12.0, 1.8)
+
+    def test_set_hyd_cond_0_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.hyd_cond_0 = -12.0
+
+    def test_set_hyd_cond_0_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.hyd_cond_0 = "twelve"
+
+
+class TestMaterialVoidRatioMinSetter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_void_ratio_min_valid_float(self):
+        self.m.void_ratio_min = 0.2
+        self.assertEqual(self.m.void_ratio_min, 0.2)
+
+    def test_set_void_ratio_min_valid_int(self):
+        self.m.void_ratio_min = 12
+        self.assertEqual(self.m.void_ratio_min, 12.0)
+
+    def test_set_void_ratio_min_valid_int_type(self):
+        self.m.void_ratio_min = 12
+        self.assertIsInstance(self.m.void_ratio_min, float)
+
+    def test_set_void_ratio_min_valid_str(self):
+        self.m.void_ratio_min = "1.2e1"
+        self.assertEqual(self.m.void_ratio_min, 12.0)
+
+    def test_set_void_ratio_min_valid_str_type(self):
+        self.m.void_ratio_min = "1.2e1"
+        self.assertIsInstance(self.m.void_ratio_min, float)
+
+    def test_set_void_ratio_min_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.void_ratio_min = (12.0, 1.8)
+
+    def test_set_void_ratio_min_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.void_ratio_min = -12.0
+
+    def test_set_void_ratio_min_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.void_ratio_min = "twelve"
+
+
+class TestMaterialVoidRatioSepSetter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_void_ratio_sep_valid_float(self):
+        self.m.void_ratio_sep = 0.2
+        self.assertEqual(self.m.void_ratio_sep, 0.2)
+
+    def test_set_void_ratio_sep_valid_int(self):
+        self.m.void_ratio_sep = 12
+        self.assertEqual(self.m.void_ratio_sep, 12.0)
+
+    def test_set_void_ratio_sep_valid_int_type(self):
+        self.m.void_ratio_sep = 12
+        self.assertIsInstance(self.m.void_ratio_sep, float)
+
+    def test_set_void_ratio_sep_valid_str(self):
+        self.m.void_ratio_sep = "1.2e1"
+        self.assertEqual(self.m.void_ratio_sep, 12.0)
+
+    def test_set_void_ratio_sep_valid_str_type(self):
+        self.m.void_ratio_sep = "1.2e1"
+        self.assertIsInstance(self.m.void_ratio_sep, float)
+
+    def test_set_void_ratio_sep_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.void_ratio_sep = (12.0, 1.8)
+
+    def test_set_void_ratio_sep_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.void_ratio_sep = -12.0
+
+    def test_set_void_ratio_sep_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.void_ratio_sep = "twelve"
+
+
+class TestMaterialVoidRatioLimSetter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_void_ratio_lim_valid_float(self):
+        self.m.void_ratio_lim = 0.2
+        self.assertEqual(self.m.void_ratio_lim, 0.2)
+
+    def test_set_void_ratio_lim_valid_int(self):
+        self.m.void_ratio_lim = 12
+        self.assertEqual(self.m.void_ratio_lim, 12.0)
+
+    def test_set_void_ratio_lim_valid_int_type(self):
+        self.m.void_ratio_lim = 12
+        self.assertIsInstance(self.m.void_ratio_lim, float)
+
+    def test_set_void_ratio_lim_valid_str(self):
+        self.m.void_ratio_lim = "1.2e1"
+        self.assertEqual(self.m.void_ratio_lim, 12.0)
+
+    def test_set_void_ratio_lim_valid_str_type(self):
+        self.m.void_ratio_lim = "1.2e1"
+        self.assertIsInstance(self.m.void_ratio_lim, float)
+
+    def test_set_void_ratio_lim_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.void_ratio_lim = (12.0, 1.8)
+
+    def test_set_void_ratio_lim_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.void_ratio_lim = -12.0
+
+    def test_set_void_ratio_lim_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.void_ratio_lim = "twelve"
+
+
+class TestMaterialVoidRatioTrSetter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_void_ratio_tr_valid_float(self):
+        self.m.void_ratio_tr = 0.2
+        self.assertEqual(self.m.void_ratio_tr, 0.2)
+
+    def test_set_void_ratio_tr_valid_int(self):
+        self.m.void_ratio_tr = 12
+        self.assertEqual(self.m.void_ratio_tr, 12.0)
+
+    def test_set_void_ratio_tr_valid_int_type(self):
+        self.m.void_ratio_tr = 12
+        self.assertIsInstance(self.m.void_ratio_tr, float)
+
+    def test_set_void_ratio_tr_valid_str(self):
+        self.m.void_ratio_tr = "1.2e1"
+        self.assertEqual(self.m.void_ratio_tr, 12.0)
+
+    def test_set_void_ratio_tr_valid_str_type(self):
+        self.m.void_ratio_tr = "1.2e1"
+        self.assertIsInstance(self.m.void_ratio_tr, float)
+
+    def test_set_void_ratio_tr_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.void_ratio_tr = (12.0, 1.8)
+
+    def test_set_void_ratio_tr_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.void_ratio_tr = -12.0
+
+    def test_set_void_ratio_tr_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.void_ratio_tr = "twelve"
+
+
+class TestMaterialWaterFluxb1Setter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_water_flux_b1_valid_float(self):
+        self.m.water_flux_b1 = 0.2
+        self.assertEqual(self.m.water_flux_b1, 0.2)
+
+    def test_set_water_flux_b1_valid_int(self):
+        self.m.water_flux_b1 = 12
+        self.assertEqual(self.m.water_flux_b1, 12.0)
+
+    def test_set_water_flux_b1_valid_int_type(self):
+        self.m.water_flux_b1 = 12
+        self.assertIsInstance(self.m.water_flux_b1, float)
+
+    def test_set_water_flux_b1_valid_str(self):
+        self.m.water_flux_b1 = "1.2e1"
+        self.assertEqual(self.m.water_flux_b1, 12.0)
+
+    def test_set_water_flux_b1_valid_str_type(self):
+        self.m.water_flux_b1 = "1.2e1"
+        self.assertIsInstance(self.m.water_flux_b1, float)
+
+    def test_set_water_flux_b1_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.water_flux_b1 = (12.0, 1.8)
+
+    def test_set_water_flux_b1_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.water_flux_b1 = -12.0
+
+    def test_set_water_flux_b1_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.water_flux_b1 = "twelve"
+
+
+class TestMaterialWaterFluxb2Setter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_water_flux_b2_valid_float(self):
+        self.m.water_flux_b2 = 0.2
+        self.assertEqual(self.m.water_flux_b2, 0.2)
+
+    def test_set_water_flux_b2_valid_int(self):
+        self.m.water_flux_b2 = 12
+        self.assertEqual(self.m.water_flux_b2, 12.0)
+
+    def test_set_water_flux_b2_valid_int_type(self):
+        self.m.water_flux_b2 = 12
+        self.assertIsInstance(self.m.water_flux_b2, float)
+
+    def test_set_water_flux_b2_valid_str(self):
+        self.m.water_flux_b2 = "1.2e1"
+        self.assertEqual(self.m.water_flux_b2, 12.0)
+
+    def test_set_water_flux_b2_valid_str_type(self):
+        self.m.water_flux_b2 = "1.2e1"
+        self.assertIsInstance(self.m.water_flux_b2, float)
+
+    def test_set_water_flux_b2_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.water_flux_b2 = (12.0, 1.8)
+
+    def test_set_water_flux_b2_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.water_flux_b2 = -12.0
+
+    def test_set_water_flux_b2_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.water_flux_b2 = "twelve"
+
+
+class TestMaterialWaterFluxb3Setter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_water_flux_b3_valid_float(self):
+        self.m.water_flux_b3 = 0.2
+        self.assertEqual(self.m.water_flux_b3, 0.2)
+
+    def test_set_water_flux_b3_valid_int(self):
+        self.m.water_flux_b3 = 12
+        self.assertEqual(self.m.water_flux_b3, 12.0)
+
+    def test_set_water_flux_b3_valid_int_type(self):
+        self.m.water_flux_b3 = 12
+        self.assertIsInstance(self.m.water_flux_b3, float)
+
+    def test_set_water_flux_b3_valid_str(self):
+        self.m.water_flux_b3 = "1.2e1"
+        self.assertEqual(self.m.water_flux_b3, 12.0)
+
+    def test_set_water_flux_b3_valid_str_type(self):
+        self.m.water_flux_b3 = "1.2e1"
+        self.assertIsInstance(self.m.water_flux_b3, float)
+
+    def test_set_water_flux_b3_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.water_flux_b3 = (12.0, 1.8)
+
+    def test_set_water_flux_b3_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.water_flux_b3 = -12.0
+
+    def test_set_water_flux_b3_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.water_flux_b3 = "twelve"
+
+
+class TestMaterialTempRateRefSetter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_temp_rate_ref_valid_float(self):
+        self.m.temp_rate_ref = 0.2
+        self.assertEqual(self.m.temp_rate_ref, 0.2)
+
+    def test_set_temp_rate_ref_valid_int(self):
+        self.m.temp_rate_ref = 12
+        self.assertEqual(self.m.temp_rate_ref, 12.0)
+
+    def test_set_temp_rate_ref_valid_int_type(self):
+        self.m.temp_rate_ref = 12
+        self.assertIsInstance(self.m.temp_rate_ref, float)
+
+    def test_set_temp_rate_ref_valid_str(self):
+        self.m.temp_rate_ref = "1.2e1"
+        self.assertEqual(self.m.temp_rate_ref, 12.0)
+
+    def test_set_temp_rate_ref_valid_str_type(self):
+        self.m.temp_rate_ref = "1.2e1"
+        self.assertIsInstance(self.m.temp_rate_ref, float)
+
+    def test_set_temp_rate_ref_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.temp_rate_ref = (12.0, 1.8)
+
+    def test_set_temp_rate_ref_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.temp_rate_ref = -12.0
+
+    def test_set_temp_rate_ref_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.temp_rate_ref = "twelve"
+
+
+class TestMaterialSegPot0Setter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_seg_pot_0_valid_float(self):
+        self.m.seg_pot_0 = 0.2
+        self.assertEqual(self.m.seg_pot_0, 0.2)
+
+    def test_set_seg_pot_0_valid_int(self):
+        self.m.seg_pot_0 = 12
+        self.assertEqual(self.m.seg_pot_0, 12.0)
+
+    def test_set_seg_pot_0_valid_int_type(self):
+        self.m.seg_pot_0 = 12
+        self.assertIsInstance(self.m.seg_pot_0, float)
+
+    def test_set_seg_pot_0_valid_str(self):
+        self.m.seg_pot_0 = "1.2e1"
+        self.assertEqual(self.m.seg_pot_0, 12.0)
+
+    def test_set_seg_pot_0_valid_str_type(self):
+        self.m.seg_pot_0 = "1.2e1"
+        self.assertIsInstance(self.m.seg_pot_0, float)
+
+    def test_set_seg_pot_0_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.seg_pot_0 = (12.0, 1.8)
+
+    def test_set_seg_pot_0_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.seg_pot_0 = -12.0
+
+    def test_set_seg_pot_0_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.seg_pot_0 = "twelve"
+
+
+class TestMaterialVoidRatio0CompSetter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_void_ratio_0_comp_valid_float(self):
+        self.m.void_ratio_0_comp = 0.2
+        self.assertEqual(self.m.void_ratio_0_comp, 0.2)
+
+    def test_set_void_ratio_0_comp_valid_int(self):
+        self.m.void_ratio_0_comp = 12
+        self.assertEqual(self.m.void_ratio_0_comp, 12.0)
+
+    def test_set_void_ratio_0_comp_valid_int_type(self):
+        self.m.void_ratio_0_comp = 12
+        self.assertIsInstance(self.m.void_ratio_0_comp, float)
+
+    def test_set_void_ratio_0_comp_valid_str(self):
+        self.m.void_ratio_0_comp = "1.2e1"
+        self.assertEqual(self.m.void_ratio_0_comp, 12.0)
+
+    def test_set_void_ratio_0_comp_valid_str_type(self):
+        self.m.void_ratio_0_comp = "1.2e1"
+        self.assertIsInstance(self.m.void_ratio_0_comp, float)
+
+    def test_set_void_ratio_0_comp_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.void_ratio_0_comp = (12.0, 1.8)
+
+    def test_set_void_ratio_0_comp_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.void_ratio_0_comp = -12.0
+
+    def test_set_void_ratio_0_comp_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.void_ratio_0_comp = "twelve"
+
+
+class TestMaterialEffStress0Setter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_eff_stress_0_comp_valid_float(self):
+        self.m.eff_stress_0_comp = 0.2
+        self.assertEqual(self.m.eff_stress_0_comp, 0.2)
+
+    def test_set_eff_stress_0_comp_valid_int(self):
+        self.m.eff_stress_0_comp = 12
+        self.assertEqual(self.m.eff_stress_0_comp, 12.0)
+
+    def test_set_eff_stress_0_comp_valid_int_type(self):
+        self.m.eff_stress_0_comp = 12
+        self.assertIsInstance(self.m.eff_stress_0_comp, float)
+
+    def test_set_eff_stress_0_comp_valid_str(self):
+        self.m.eff_stress_0_comp = "1.2e1"
+        self.assertEqual(self.m.eff_stress_0_comp, 12.0)
+
+    def test_set_eff_stress_0_comp_valid_str_type(self):
+        self.m.eff_stress_0_comp = "1.2e1"
+        self.assertIsInstance(self.m.eff_stress_0_comp, float)
+
+    def test_set_eff_stress_0_comp_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.eff_stress_0_comp = (12.0, 1.8)
+
+    def test_set_eff_stress_0_comp_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.eff_stress_0_comp = -12.0
+
+    def test_set_eff_stress_0_comp_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.eff_stress_0_comp = "twelve"
+
+
+class TestMaterialCompIndexUnfrozenSetter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_comp_index_unfrozen_valid_float(self):
+        self.m.comp_index_unfrozen = 0.2
+        self.assertEqual(self.m.comp_index_unfrozen, 0.2)
+
+    def test_set_comp_index_unfrozen_valid_int(self):
+        self.m.comp_index_unfrozen = 12
+        self.assertEqual(self.m.comp_index_unfrozen, 12.0)
+
+    def test_set_comp_index_unfrozen_valid_int_type(self):
+        self.m.comp_index_unfrozen = 12
+        self.assertIsInstance(self.m.comp_index_unfrozen, float)
+
+    def test_set_comp_index_unfrozen_valid_str(self):
+        self.m.comp_index_unfrozen = "1.2e1"
+        self.assertEqual(self.m.comp_index_unfrozen, 12.0)
+
+    def test_set_comp_index_unfrozen_valid_str_type(self):
+        self.m.comp_index_unfrozen = "1.2e1"
+        self.assertIsInstance(self.m.comp_index_unfrozen, float)
+
+    def test_set_comp_index_unfrozen_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.comp_index_unfrozen = (12.0, 1.8)
+
+    def test_set_comp_index_unfrozen_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.comp_index_unfrozen = -12.0
+
+    def test_set_comp_index_unfrozen_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.comp_index_unfrozen = "twelve"
+
+
+class TestMaterialReboundIndexUnfrozenSetter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_rebound_index_unfrozen_valid_float(self):
+        self.m.rebound_index_unfrozen = 0.2
+        self.assertEqual(self.m.rebound_index_unfrozen, 0.2)
+
+    def test_set_rebound_index_unfrozen_valid_int(self):
+        self.m.rebound_index_unfrozen = 12
+        self.assertEqual(self.m.rebound_index_unfrozen, 12.0)
+
+    def test_set_rebound_index_unfrozen_valid_int_type(self):
+        self.m.rebound_index_unfrozen = 12
+        self.assertIsInstance(self.m.rebound_index_unfrozen, float)
+
+    def test_set_rebound_index_unfrozen_valid_str(self):
+        self.m.rebound_index_unfrozen = "1.2e1"
+        self.assertEqual(self.m.rebound_index_unfrozen, 12.0)
+
+    def test_set_rebound_index_unfrozen_valid_str_type(self):
+        self.m.rebound_index_unfrozen = "1.2e1"
+        self.assertIsInstance(self.m.rebound_index_unfrozen, float)
+
+    def test_set_rebound_index_unfrozen_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.rebound_index_unfrozen = (12.0, 1.8)
+
+    def test_set_rebound_index_unfrozen_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.rebound_index_unfrozen = -12.0
+
+    def test_set_rebound_index_unfrozen_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.rebound_index_unfrozen = "twelve"
+
+
+class TestMaterialCompIndexFrozena1Setter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_comp_index_frozen_a1_valid_float(self):
+        self.m.comp_index_frozen_a1 = 0.2
+        self.assertEqual(self.m.comp_index_frozen_a1, 0.2)
+
+    def test_set_comp_index_frozen_a1_valid_int(self):
+        self.m.comp_index_frozen_a1 = 12
+        self.assertEqual(self.m.comp_index_frozen_a1, 12.0)
+
+    def test_set_comp_index_frozen_a1_valid_int_type(self):
+        self.m.comp_index_frozen_a1 = 12
+        self.assertIsInstance(self.m.comp_index_frozen_a1, float)
+
+    def test_set_comp_index_frozen_a1_valid_str(self):
+        self.m.comp_index_frozen_a1 = "1.2e1"
+        self.assertEqual(self.m.comp_index_frozen_a1, 12.0)
+
+    def test_set_comp_index_frozen_a1_valid_str_type(self):
+        self.m.comp_index_frozen_a1 = "1.2e1"
+        self.assertIsInstance(self.m.comp_index_frozen_a1, float)
+
+    def test_set_comp_index_frozen_a1_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.comp_index_frozen_a1 = (12.0, 1.8)
+
+    def test_set_comp_index_frozen_a1_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.comp_index_frozen_a1 = -12.0
+
+    def test_set_comp_index_frozen_a1_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.comp_index_frozen_a1 = "twelve"
+
+
+class TestMaterialCompIndexFrozena2Setter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_comp_index_frozen_a2_valid_float(self):
+        self.m.comp_index_frozen_a2 = 0.2
+        self.assertEqual(self.m.comp_index_frozen_a2, 0.2)
+
+    def test_set_comp_index_frozen_a2_valid_int(self):
+        self.m.comp_index_frozen_a2 = 12
+        self.assertEqual(self.m.comp_index_frozen_a2, 12.0)
+
+    def test_set_comp_index_frozen_a2_valid_int_type(self):
+        self.m.comp_index_frozen_a2 = 12
+        self.assertIsInstance(self.m.comp_index_frozen_a2, float)
+
+    def test_set_comp_index_frozen_a2_valid_str(self):
+        self.m.comp_index_frozen_a2 = "1.2e1"
+        self.assertEqual(self.m.comp_index_frozen_a2, 12.0)
+
+    def test_set_comp_index_frozen_a2_valid_str_type(self):
+        self.m.comp_index_frozen_a2 = "1.2e1"
+        self.assertIsInstance(self.m.comp_index_frozen_a2, float)
+
+    def test_set_comp_index_frozen_a2_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.comp_index_frozen_a2 = (12.0, 1.8)
+
+    def test_set_comp_index_frozen_a2_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.comp_index_frozen_a2 = -12.0
+
+    def test_set_comp_index_frozen_a2_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.comp_index_frozen_a2 = "twelve"
+
+
+class TestMaterialCompIndexFrozena3Setter(unittest.TestCase):
+    def setUp(self):
+        self.m = Material()
+
+    def test_set_comp_index_frozen_a3_valid_float(self):
+        self.m.comp_index_frozen_a3 = 0.2
+        self.assertEqual(self.m.comp_index_frozen_a3, 0.2)
+
+    def test_set_comp_index_frozen_a3_valid_int(self):
+        self.m.comp_index_frozen_a3 = 12
+        self.assertEqual(self.m.comp_index_frozen_a3, 12.0)
+
+    def test_set_comp_index_frozen_a3_valid_int_type(self):
+        self.m.comp_index_frozen_a3 = 12
+        self.assertIsInstance(self.m.comp_index_frozen_a3, float)
+
+    def test_set_comp_index_frozen_a3_valid_str(self):
+        self.m.comp_index_frozen_a3 = "1.2e1"
+        self.assertEqual(self.m.comp_index_frozen_a3, 12.0)
+
+    def test_set_comp_index_frozen_a3_valid_str_type(self):
+        self.m.comp_index_frozen_a3 = "1.2e1"
+        self.assertIsInstance(self.m.comp_index_frozen_a3, float)
+
+    def test_set_comp_index_frozen_a3_invalid_type(self):
+        with self.assertRaises(TypeError):
+            self.m.comp_index_frozen_a3 = (12.0, 1.8)
+
+    def test_set_comp_index_frozen_a3_invalid_value(self):
+        with self.assertRaises(ValueError):
+            self.m.comp_index_frozen_a3 = -12.0
+
+    def test_set_comp_index_frozen_a3_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.m.comp_index_frozen_a3 = "twelve"
 
 
 # TODO: Setter tests
-# deg_sat_water_alpha
-# deg_sat_water_beta
-# hyd_cond_index
-# hyd_cond_mult
-# hyd_cond_0
-# void_ratio_0_hyd_cond
-# void_ratio_min
-# void_ratio_sep
-# void_ratio_lim
-# void_ratio_tr
-# water_flux_b1
-# water_flux_b2
-# water_flux_b3
-# temp_rate_ref
-# seg_pot_0
-# void_ratio_0_comp
-# eff_stress_0_comp
-# comp_index_unfrozen
-# rebound_index_unfrozen
-# comp_index_frozen_a1
-# comp_index_frozen_a2
-# comp_index_frozen_a3
 # deg_sat_water()
 # hyd_cond()
 # water_flux()
 # eff_stress()
 # comp_index_frozen()
 # tot_stress()
-
-
 if __name__ == "__main__":
     unittest.main()
