@@ -1177,6 +1177,8 @@ class Material:
         """
         if temp < 0.0:
             raise ValueError(f"temp {temp} is negative.")
+        if e < self.void_ratio_lim:
+            raise ValueError(f"e {e} less than e_lim {self.void_ratio_lim}")
         eu0 = self.void_ratio_0_hyd_cond
         e_min = self.void_ratio_min
         e_tr = self.void_ratio_tr
