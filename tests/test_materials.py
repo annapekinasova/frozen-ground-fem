@@ -24,8 +24,9 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(thrm_cond_ice, 2.22e0)
 
 # TODO: Default tests
-# hyd_cond()
 # water_flux()
+#   Raise ValueError for temp >= 0.0
+#   Raise ZeroDivisionError for temp < 0.0 (due to temp_rate_ref=0.0)
 # eff_stress()
 # comp_index_frozen()
 # tot_stress()
@@ -140,10 +141,27 @@ class TestMaterialDefaults(unittest.TestCase):
         self.assertAlmostEqual(Sw, expected_Sw)
         self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
 
+# hyd_cond()
+#   Raise ValueError for temp < 0.0
+#   Raise ValueError for e < e_lim
+#   Raise ZeroDivisionError for default Cku = 0.0
+    def test_hyd_cond(self):
+        with self.assertRaises(ValueError):
+            self.m.hyd_cond(e=0.2, temp=-0.1, thawed=False)
+        with self.assertRaises(ValueError):
+            self.m.hyd_cond(e=-0.01, temp=0.1, thawed=False)
+        with self.assertRaises(ZeroDivisionError):
+            self.m.hyd_cond(e=0.2, temp=1.0, thawed=False)
+
 
 # TODO: Null Material tests
 # hyd_cond()
+#   Raise ValueError for temp < 0.0
+#   Raise ValueError for e < e_lim
+#   Raise ZeroDivisionError for default Cku = 0.0
 # water_flux()
+#   Raise ValueError for temp >= 0.0
+#   Raise ZeroDivisionError for temp < 0.0 (due to temp_rate_ref=0.0)
 # eff_stress()
 # comp_index_frozen()
 # tot_stress()
@@ -256,19 +274,42 @@ class TestNullMaterial(unittest.TestCase):
         self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
 
 # TODO: Initializer tests
-# deg_sat_water()
-#   check Sw = <value> for some (small) negative temp
-#   check Sw = <value> for some (large) negative temp
-#   check Sw = 1.0 for some (small) positive temp
-#   check Sw = 1.0 for some (large) positive temp
-#   check Sw = 1.0 for temp = 0.0
-#   check dSw_dT = <value> for some (small) negative temp
-#   check dSw_dT = <value> for some (large) negative temp
-#   check dSw_dT = 0.0 for some (small) positive temp
-#   check dSw_dT = 0.0 for some (large) positive temp
-#   check dSw_dT = 0.0 for temp = 0.0
 # hyd_cond()
+#   Raise ValueError for temp < 0.0
+#   Raise ValueError for e < e_lim
+#   Check thawed=False, emin < e < e_tr
+#   Check thawed=False, e > e_tr
+#   Check thawed=True, emin < e < e_tr
+#   Check thawed=True, e > e_tr
 # water_flux()
+#   Raise ValueError for temp >= 0.0
+#   Check temp_rate > 0.0, temp_grad > 0.0, sigma_1 > 0.0
+#   Check temp_rate > 0.0, temp_grad > 0.0, sigma_1 = 0.0
+#   Check temp_rate > 0.0, temp_grad > 0.0, sigma_1 < 0.0
+#   Check temp_rate > 0.0, temp_grad = 0.0, sigma_1 > 0.0
+#   Check temp_rate > 0.0, temp_grad = 0.0, sigma_1 = 0.0
+#   Check temp_rate > 0.0, temp_grad = 0.0, sigma_1 < 0.0
+#   Check temp_rate > 0.0, temp_grad < 0.0, sigma_1 > 0.0
+#   Check temp_rate > 0.0, temp_grad < 0.0, sigma_1 = 0.0
+#   Check temp_rate > 0.0, temp_grad < 0.0, sigma_1 < 0.0
+#   Check temp_rate = 0.0, temp_grad > 0.0, sigma_1 > 0.0
+#   Check temp_rate = 0.0, temp_grad > 0.0, sigma_1 = 0.0
+#   Check temp_rate = 0.0, temp_grad > 0.0, sigma_1 < 0.0
+#   Check temp_rate = 0.0, temp_grad = 0.0, sigma_1 > 0.0
+#   Check temp_rate = 0.0, temp_grad = 0.0, sigma_1 = 0.0
+#   Check temp_rate = 0.0, temp_grad = 0.0, sigma_1 < 0.0
+#   Check temp_rate = 0.0, temp_grad < 0.0, sigma_1 > 0.0
+#   Check temp_rate = 0.0, temp_grad < 0.0, sigma_1 = 0.0
+#   Check temp_rate = 0.0, temp_grad < 0.0, sigma_1 < 0.0
+#   Check temp_rate < 0.0, temp_grad > 0.0, sigma_1 > 0.0
+#   Check temp_rate < 0.0, temp_grad > 0.0, sigma_1 = 0.0
+#   Check temp_rate < 0.0, temp_grad > 0.0, sigma_1 < 0.0
+#   Check temp_rate < 0.0, temp_grad = 0.0, sigma_1 > 0.0
+#   Check temp_rate < 0.0, temp_grad = 0.0, sigma_1 = 0.0
+#   Check temp_rate < 0.0, temp_grad = 0.0, sigma_1 < 0.0
+#   Check temp_rate < 0.0, temp_grad < 0.0, sigma_1 > 0.0
+#   Check temp_rate < 0.0, temp_grad < 0.0, sigma_1 = 0.0
+#   Check temp_rate < 0.0, temp_grad < 0.0, sigma_1 < 0.0
 # eff_stress()
 # comp_index_frozen()
 # tot_stress()
@@ -1361,8 +1402,6 @@ class TestMaterialCompIndexFrozena3Setter(unittest.TestCase):
 
 
 # TODO: Setter tests
-# hyd_cond()
-# water_flux()
 # eff_stress()
 # comp_index_frozen()
 # tot_stress()
