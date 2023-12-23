@@ -1211,7 +1211,7 @@ class Material:
         temp_rate: float
             Current temperature time derivative.
         temp_grad: float
-            Current temperature gradient ( in Lagrangian coordinates).
+            Current temperature gradient (in Lagrangian coordinates).
         sigma_1: float
             Current local stress(overburden and void ratio correction).
 
@@ -1223,10 +1223,10 @@ class Material:
         Raises
         ------
         ValueError
-            If the given temp > 0.0 since this only applies for frozen soil.
+            If the given temp >= 0.0 since this only applies for frozen soil.
         """
-        if temp > 0.0:
-            raise ValueError(f"temp {temp} is above Tf = 0.0")
+        if temp >= 0.0:
+            raise ValueError(f"temp {temp} is >= Tf = 0.0")
         void_ratio_factor = (1.0 + e0) / (1.0 + e)
         temp_rate_ratio = np.abs(temp_rate / self.temp_rate_ref)
         temp_rate_factor = 1.0
