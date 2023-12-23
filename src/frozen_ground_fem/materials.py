@@ -1173,10 +1173,10 @@ class Material:
         Raises
         ------
         ValueError
-            If temp <= 0.0.
+            If temp < 0.0.
         """
-        if temp <= 0.0:
-            raise ValueError(f"temp {temp} is not positive.")
+        if temp < 0.0:
+            raise ValueError(f"temp {temp} is negative.")
         eu0 = self.void_ratio_0_hyd_cond
         e_min = self.void_ratio_min
         e_tr = self.void_ratio_tr
