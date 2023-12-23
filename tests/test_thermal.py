@@ -165,6 +165,91 @@ class TestThermalElement1DCubic(unittest.TestCase):
         self.assertTrue(np.allclose(
             self.thrm_e.heat_storage_matrix, expected))
 
+    def test_update_integration_points_null_material(self):
+        Te = np.array([
+            -1.00,
+            -0.10,
+            1.10,
+            2.00,
+        ])
+        for T, nd in zip(Te, self.thrm_e.nodes):
+            nd.temp = T
+        self.thrm_e.update_integration_points()
+        expected_Tip = np.array([
+            -0.913964840018686,
+            -0.436743906025892,
+            0.500000000000000,
+            1.436743906025890,
+            1.913964840018690,
+        ])
+        expected_Sw = np.array([
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            1.0,
+        ])
+        expected_dSw_dT = np.array([
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ])
+        for ip, eT, eSw, edSw in zip(
+            self.thrm_e.int_pts,
+            expected_Tip,
+            expected_Sw,
+            expected_dSw_dT,
+        ):
+            self.assertAlmostEqual(ip.temp, eT)
+            self.assertAlmostEqual(ip.deg_sat_water, eSw)
+            self.assertAlmostEqual(ip.deg_sat_water_temp_gradient, edSw)
+
+    def test_update_integration_points_with_material(self):
+        m = Material(deg_sat_water_alpha=1.2e4, deg_sat_water_beta=0.35)
+        for ip in self.thrm_e.int_pts:
+            ip.material = m
+        Te = np.array([
+            -1.00,
+            -0.10,
+            1.10,
+            2.00,
+        ])
+        for T, nd in zip(Te, self.thrm_e.nodes):
+            nd.temp = T
+        self.thrm_e.update_integration_points()
+        expected_Tip = np.array([
+            -0.913964840018686,
+            -0.436743906025892,
+            0.500000000000000,
+            1.436743906025890,
+            1.913964840018690,
+        ])
+        expected_Sw = np.array([
+            0.0915235681884727,
+            0.1361684964587000,
+            1.00000000000000,
+            1.00000000000000,
+            1.00000000000000,
+        ])
+        expected_dSw_dT = np.array([
+            0.0539532190585967,
+            0.1674525178303510,
+            0.00000000000000,
+            0.00000000000000,
+            0.00000000000000,
+        ])
+        for ip, eT, eSw, edSw in zip(
+            self.thrm_e.int_pts,
+            expected_Tip,
+            expected_Sw,
+            expected_dSw_dT,
+        ):
+            self.assertAlmostEqual(ip.temp, eT)
+            self.assertAlmostEqual(ip.deg_sat_water, eSw)
+            self.assertAlmostEqual(ip.deg_sat_water_temp_gradient, edSw)
+
 
 class TestThermalBoundary1D(unittest.TestCase):
     def setUp(self):
