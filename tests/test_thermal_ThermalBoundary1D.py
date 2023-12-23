@@ -41,6 +41,24 @@ class TestThermalBoundary1DInvalid(unittest.TestCase):
         self.nodes = (Node1D(0, 2.0),)
         self.thrm_bnd = ThermalBoundary1D(self.nodes)
 
+    def test_initialize_no_nodes(self):
+        with self.assertRaises(TypeError):
+            ThermalBoundary1D()
+
+    def test_initialize_too_few_nodes(self):
+        with self.assertRaises(ValueError):
+            ThermalBoundary1D((),)
+
+    def test_initialize_too_many_nodes(self):
+        with self.assertRaises(ValueError):
+            ThermalBoundary1D(tuple([
+                Node1D(k, 2.0*k + 1.0) for k in range(2)
+            ]))
+
+    def test_initialize_invalid_nodes(self):
+        with self.assertRaises(TypeError):
+            ThermalBoundary1D((1,))
+
     def test_assign_nodes_not_allowed(self):
         with self.assertRaises(AttributeError):
             self.thrm_bnd.nodes = (Node1D(1, 3.0),)
