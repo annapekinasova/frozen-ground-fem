@@ -24,17 +24,6 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(thrm_cond_ice, 2.22e0)
 
 # TODO: Default tests
-# deg_sat_water()
-#   check Sw = 0.0 for some (small) negative temp
-#   check Sw = 0.0 for some (large) negative temp
-#   check Sw = 1.0 for some (small) positive temp
-#   check Sw = 1.0 for some (large) positive temp
-#   check Sw = 0.0 for temp = 0.0
-#   check dSw_dT = 0.0 for some (small) negative temp
-#   check dSw_dT = 0.0 for some (large) negative temp
-#   check dSw_dT = 0.0 for some (small) positive temp
-#   check dSw_dT = 0.0 for some (large) positive temp
-#   check dSw_dT = 0.0 for temp = 0.0
 # hyd_cond()
 # water_flux()
 # eff_stress()
@@ -124,19 +113,35 @@ class TestMaterialDefaults(unittest.TestCase):
     def test_comp_index_frozen_a3(self):
         self.assertEqual(self.m.comp_index_frozen_a3, 0.0)
 
+    def test_deg_sat_water(self):
+        Sw, dSw_dT = self.m.deg_sat_water(-0.01)
+        expected_Sw = 0.0
+        expected_dSw_dT = 0.0
+        self.assertAlmostEqual(Sw, expected_Sw)
+        self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
+        Sw, dSw_dT = self.m.deg_sat_water(-50.0)
+        expected_Sw = 0.0
+        expected_dSw_dT = 0.0
+        self.assertAlmostEqual(Sw, expected_Sw)
+        self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
+        Sw, dSw_dT = self.m.deg_sat_water(0.01)
+        expected_Sw = 1.0
+        expected_dSw_dT = 0.0
+        self.assertAlmostEqual(Sw, expected_Sw)
+        self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
+        Sw, dSw_dT = self.m.deg_sat_water(50.0)
+        expected_Sw = 1.0
+        expected_dSw_dT = 0.0
+        self.assertAlmostEqual(Sw, expected_Sw)
+        self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
+        Sw, dSw_dT = self.m.deg_sat_water(0.0)
+        expected_Sw = 1.0
+        expected_dSw_dT = 0.0
+        self.assertAlmostEqual(Sw, expected_Sw)
+        self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
+
 
 # TODO: Null Material tests
-# deg_sat_water()
-#   check Sw = 0.0 for some (small) negative temp
-#   check Sw = 0.0 for some (large) negative temp
-#   check Sw = 1.0 for some (small) positive temp
-#   check Sw = 1.0 for some (large) positive temp
-#   check Sw = 0.0 for temp = 0.0
-#   check dSw_dT = 0.0 for some (small) negative temp
-#   check dSw_dT = 0.0 for some (large) negative temp
-#   check dSw_dT = 0.0 for some (small) positive temp
-#   check dSw_dT = 0.0 for some (large) positive temp
-#   check dSw_dT = 0.0 for temp = 0.0
 # hyd_cond()
 # water_flux()
 # eff_stress()
@@ -223,6 +228,32 @@ class TestNullMaterial(unittest.TestCase):
     def test_comp_index_frozen_a3(self):
         self.assertEqual(NULL_MATERIAL.comp_index_frozen_a3, 0.0)
 
+    def test_deg_sat_water(self):
+        Sw, dSw_dT = NULL_MATERIAL.deg_sat_water(-0.01)
+        expected_Sw = 0.0
+        expected_dSw_dT = 0.0
+        self.assertAlmostEqual(Sw, expected_Sw)
+        self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
+        Sw, dSw_dT = NULL_MATERIAL.deg_sat_water(-50.0)
+        expected_Sw = 0.0
+        expected_dSw_dT = 0.0
+        self.assertAlmostEqual(Sw, expected_Sw)
+        self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
+        Sw, dSw_dT = NULL_MATERIAL.deg_sat_water(0.01)
+        expected_Sw = 1.0
+        expected_dSw_dT = 0.0
+        self.assertAlmostEqual(Sw, expected_Sw)
+        self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
+        Sw, dSw_dT = NULL_MATERIAL.deg_sat_water(50.0)
+        expected_Sw = 1.0
+        expected_dSw_dT = 0.0
+        self.assertAlmostEqual(Sw, expected_Sw)
+        self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
+        Sw, dSw_dT = NULL_MATERIAL.deg_sat_water(0.0)
+        expected_Sw = 1.0
+        expected_dSw_dT = 0.0
+        self.assertAlmostEqual(Sw, expected_Sw)
+        self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
 
 # TODO: Initializer tests
 # deg_sat_water()
@@ -350,6 +381,33 @@ class TestMaterialInitializers(unittest.TestCase):
 
     def test_comp_index_frozen_a3(self):
         self.assertEqual(self.m.comp_index_frozen_a3, 0.23)
+
+    def test_deg_sat_water(self):
+        Sw, dSw_dT = self.m.deg_sat_water(-0.15)
+        expected_Sw = 0.240990639551049
+        expected_dSw_dT = 0.850491042320274
+        self.assertAlmostEqual(Sw, expected_Sw)
+        self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
+        Sw, dSw_dT = self.m.deg_sat_water(-50.0)
+        expected_Sw = 0.0100688310213271
+        expected_dSw_dT = 0.000120172321947552
+        self.assertAlmostEqual(Sw, expected_Sw)
+        self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
+        Sw, dSw_dT = self.m.deg_sat_water(1.0)
+        expected_Sw = 1.0
+        expected_dSw_dT = 0.0
+        self.assertAlmostEqual(Sw, expected_Sw)
+        self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
+        Sw, dSw_dT = self.m.deg_sat_water(50.0)
+        expected_Sw = 1.0
+        expected_dSw_dT = 0.0
+        self.assertAlmostEqual(Sw, expected_Sw)
+        self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
+        Sw, dSw_dT = self.m.deg_sat_water(0.0)
+        expected_Sw = 1.0
+        expected_dSw_dT = 0.0
+        self.assertAlmostEqual(Sw, expected_Sw)
+        self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
 
 
 class TestMaterialThrmCondSolidsSetter(unittest.TestCase):
