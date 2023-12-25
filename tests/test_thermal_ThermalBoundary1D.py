@@ -263,3 +263,7 @@ class TestThermalBoundary1DBndFunctionClass(unittest.TestCase):
         expected1 = 24.8904379073655
         self.assertAlmostEqual(self.thrm_bnd.bnd_value, expected0)
         self.assertAlmostEqual(self.thrm_bnd.bnd_value, expected1)
+
+
+if __name__ == "__main__":
+    unittest.main()

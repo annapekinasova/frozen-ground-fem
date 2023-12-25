@@ -247,3 +247,7 @@ class TestThermalElement1DCubic(unittest.TestCase):
             self.assertAlmostEqual(ip.temp, eT)
             self.assertAlmostEqual(ip.deg_sat_water, eSw)
             self.assertAlmostEqual(ip.deg_sat_water_temp_gradient, edSw)
+
+
+if __name__ == "__main__":
+    unittest.main()
