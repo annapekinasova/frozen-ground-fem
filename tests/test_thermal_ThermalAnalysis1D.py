@@ -708,16 +708,25 @@ class TestUpdateGlobalMatricesLinear(unittest.TestCase):
 
     def test_initial_heat_flow_matrix(self):
         expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-        self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected))
         self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected))
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected))
 
     def test_initial_heat_storage_matrix(self):
         expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-        self.assertTrue(np.allclose(self.msh._heat_storage_matrix, expected))
         self.assertTrue(np.allclose(self.msh._heat_storage_matrix_0, expected))
+        self.assertTrue(np.allclose(self.msh._heat_storage_matrix, expected))
 
     def test_update_heat_flow_matrix(self):
-        expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        k0 = 0.193577535046995
+        d0 = np.ones((self.msh.num_nodes,)) * 2.0 * k0
+        d0[0] = k0
+        d0[-1] = k0
+        d1 = -np.ones((self.msh.num_nodes - 1,)) * k0
+        expected1 = np.diag(d0) + np.diag(d1, -1) + np.diag(d1, 1)
+        self.msh.update_heat_flow_matrix()
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected0))
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected1))
 
 
 if __name__ == "__main__":
