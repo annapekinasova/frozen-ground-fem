@@ -141,10 +141,6 @@ class TestMaterialDefaults(unittest.TestCase):
         self.assertAlmostEqual(Sw, expected_Sw)
         self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
 
-# hyd_cond()
-#   Raise ValueError for temp < 0.0
-#   Raise ValueError for e < e_lim
-#   Raise ZeroDivisionError for default Cku = 0.0
     def test_hyd_cond(self):
         with self.assertRaises(ValueError):
             self.m.hyd_cond(e=0.2, temp=-0.1, thawed=False)
@@ -152,6 +148,20 @@ class TestMaterialDefaults(unittest.TestCase):
             self.m.hyd_cond(e=-0.01, temp=0.1, thawed=False)
         with self.assertRaises(ZeroDivisionError):
             self.m.hyd_cond(e=0.2, temp=1.0, thawed=False)
+
+    def test_water_flux(self):
+        with self.assertRaises(ValueError):
+            self.m.water_flux(
+                e=0.2, e0=0.3, temp=0.0, temp_rate=0.1,
+                temp_grad=0.05, sigma_1=10.0)
+        with self.assertRaises(ValueError):
+            self.m.water_flux(
+                e=0.2, e0=0.3, temp=1.5, temp_rate=0.1,
+                temp_grad=0.05, sigma_1=10.0)
+        with self.assertRaises(ZeroDivisionError):
+            self.m.water_flux(
+                e=0.2, e0=0.3, temp=-1.5, temp_rate=0.1,
+                temp_grad=0.05, sigma_1=10.0)
 
 
 # TODO: Null Material tests
@@ -273,14 +283,38 @@ class TestNullMaterial(unittest.TestCase):
         self.assertAlmostEqual(Sw, expected_Sw)
         self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
 
-# TODO: Initializer tests
 # hyd_cond()
 #   Raise ValueError for temp < 0.0
 #   Raise ValueError for e < e_lim
-#   Check thawed=False, emin < e < e_tr
-#   Check thawed=False, e > e_tr
-#   Check thawed=True, emin < e < e_tr
-#   Check thawed=True, e > e_tr
+#   Raise ZeroDivisionError for default Cku = 0.0
+
+    def test_hyd_cond(self):
+        with self.assertRaises(ValueError):
+            NULL_MATERIAL.hyd_cond(e=0.2, temp=-0.1, thawed=False)
+        with self.assertRaises(ValueError):
+            NULL_MATERIAL.hyd_cond(e=-0.01, temp=0.1, thawed=False)
+        with self.assertRaises(ZeroDivisionError):
+            NULL_MATERIAL.hyd_cond(e=0.2, temp=1.0, thawed=False)
+
+# water_flux()
+#   Raise ValueError for temp >= 0.0
+#   Raise ZeroDivisionError for temp < 0.0 (due to temp_rate_ref=0.0)
+    def test_water_flux(self):
+        with self.assertRaises(ValueError):
+            NULL_MATERIAL.water_flux(
+                e=0.2, e0=0.3, temp=0.0, temp_rate=0.1,
+                temp_grad=0.05, sigma_1=10.0)
+        with self.assertRaises(ValueError):
+            NULL_MATERIAL.water_flux(
+                e=0.2, e0=0.3, temp=1.5, temp_rate=0.1,
+                temp_grad=0.05, sigma_1=10.0)
+        with self.assertRaises(ZeroDivisionError):
+            NULL_MATERIAL.water_flux(
+                e=0.2, e0=0.3, temp=-1.5, temp_rate=0.1,
+                temp_grad=0.05, sigma_1=10.0)
+
+
+# TODO: Initializer tests
 # water_flux()
 #   Raise ValueError for temp >= 0.0
 #   Check temp_rate > 0.0, temp_grad > 0.0, sigma_1 > 0.0
@@ -449,6 +483,205 @@ class TestMaterialInitializers(unittest.TestCase):
         expected_dSw_dT = 0.0
         self.assertAlmostEqual(Sw, expected_Sw)
         self.assertAlmostEqual(dSw_dT, expected_dSw_dT)
+
+    def test_hyd_cond(self):
+        with self.assertRaises(ValueError):
+            self.m.hyd_cond(e=0.2, temp=-0.1, thawed=False)
+        with self.assertRaises(ValueError):
+            self.m.hyd_cond(e=-0.01, temp=0.1, thawed=False)
+        K, dK_de = self.m.hyd_cond(e=0.4, temp=1.50, thawed=False)
+        expected_K = 2.47936387494043E-11
+        expected_dK_de = 1.87178567165436E-10
+        self.assertAlmostEqual(K, expected_K)
+        self.assertAlmostEqual(dK_de, expected_dK_de)
+        K, dK_de = self.m.hyd_cond(e=0.6, temp=1.50, thawed=False)
+        expected_K = 1.12221992165536E-10
+        expected_dK_de = 8.47215364808056E-10
+        self.assertAlmostEqual(K, expected_K)
+        self.assertAlmostEqual(dK_de, expected_dK_de)
+        K, dK_de = self.m.hyd_cond(e=0.4, temp=1.50, thawed=True)
+        expected_K = 1.23968193747022E-11
+        expected_dK_de = 4.6794641791359E-11
+        self.assertAlmostEqual(K, expected_K)
+        self.assertAlmostEqual(dK_de, expected_dK_de)
+        K, dK_de = self.m.hyd_cond(e=0.6, temp=1.50, thawed=True)
+        expected_K = 5.61109960827679E-11
+        expected_dK_de = 2.11803841202014E-10
+        self.assertAlmostEqual(K, expected_K)
+        self.assertAlmostEqual(dK_de, expected_dK_de)
+
+# water_flux()
+    def test_water_flux(self):
+        with self.assertRaises(ValueError):
+            self.m.water_flux(
+                e=0.2, e0=0.3, temp=0.0, temp_rate=0.1,
+                temp_grad=0.05, sigma_1=10.0)
+        with self.assertRaises(ValueError):
+            self.m.water_flux(
+                e=0.2, e0=0.3, temp=1.5, temp_rate=0.1,
+                temp_grad=0.05, sigma_1=10.0)
+#   Check temp_rate > 0.0, temp_grad > 0.0, sigma_1 > 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
+            temp_grad=0.05, sigma_1=1e-3)
+        expected_water_flux = 1.34121901234503E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate > 0.0, temp_grad > 0.0, sigma_1 = 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
+            temp_grad=0.05, sigma_1=0.0)
+        expected_water_flux = 1.35469848751556E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate > 0.0, temp_grad > 0.0, sigma_1 < 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
+            temp_grad=0.05, sigma_1=1e-3)
+        expected_water_flux = 1.36831343366376E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate > 0.0, temp_grad = 0.0, sigma_1 > 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
+            temp_grad=0.0, sigma_1=1e-3)
+        expected_water_flux = 0.0
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate > 0.0, temp_grad = 0.0, sigma_1 = 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
+            temp_grad=0.0, sigma_1=0.0)
+        expected_water_flux = 0.0
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate > 0.0, temp_grad = 0.0, sigma_1 < 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
+            temp_grad=0.0, sigma_1=-1e-3)
+        expected_water_flux = 0.0
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate > 0.0, temp_grad < 0.0, sigma_1 > 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
+            temp_grad=-0.05, sigma_1=1e-3)
+        expected_water_flux = -1.34121901234503E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate > 0.0, temp_grad < 0.0, sigma_1 = 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
+            temp_grad=-0.05, sigma_1=0.0)
+        expected_water_flux = -1.35469848751556E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate > 0.0, temp_grad < 0.0, sigma_1 < 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
+            temp_grad=-0.05, sigma_1=-1e-3)
+        expected_water_flux = -1.36831343366376E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate = 0.0, temp_grad > 0.0, sigma_1 > 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.0,
+            temp_grad=0.05, sigma_1=1e-3)
+        expected_water_flux = -2.8316402081699E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate = 0.0, temp_grad > 0.0, sigma_1 = 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.0,
+            temp_grad=0.05, sigma_1=0.0)
+        expected_water_flux = -2.86009866538426E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate = 0.0, temp_grad > 0.0, sigma_1 < 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.0,
+            temp_grad=0.05, sigma_1=-1e-3)
+        expected_water_flux = -2.88884313484858E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate = 0.0, temp_grad = 0.0, sigma_1 > 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.0,
+            temp_grad=0.0, sigma_1=1e-3)
+        expected_water_flux = 0.0
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate = 0.0, temp_grad = 0.0, sigma_1 = 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.0,
+            temp_grad=0.0, sigma_1=0.0)
+        expected_water_flux = 0.0
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate = 0.0, temp_grad = 0.0, sigma_1 < 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.0,
+            temp_grad=0.0, sigma_1=-1e-3)
+        expected_water_flux = 0.0
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate = 0.0, temp_grad < 0.0, sigma_1 > 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.0,
+            temp_grad=-0.05, sigma_1=1e-3)
+        expected_water_flux = 2.8316402081699E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate = 0.0, temp_grad < 0.0, sigma_1 = 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.0,
+            temp_grad=-0.05, sigma_1=0.0)
+        expected_water_flux = 2.86009866538426E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate = 0.0, temp_grad < 0.0, sigma_1 < 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=0.0,
+            temp_grad=-0.05, sigma_1=-1e-3)
+        expected_water_flux = 2.88884313484858E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate < 0.0, temp_grad > 0.0, sigma_1 > 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=-0.1,
+            temp_grad=0.05, sigma_1=1e-3)
+        expected_water_flux = -7.00449942868483E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate < 0.0, temp_grad > 0.0, sigma_1 = 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=-0.1,
+            temp_grad=0.05, sigma_1=0.0)
+        expected_water_flux = -7.07489581828408E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate < 0.0, temp_grad > 0.0, sigma_1 < 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=-0.1,
+            temp_grad=0.05, sigma_1=-1e-3)
+        expected_water_flux = -7.14599970336091E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate < 0.0, temp_grad = 0.0, sigma_1 > 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=-0.1,
+            temp_grad=0.0, sigma_1=1e-3)
+        expected_water_flux = 0.0
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate < 0.0, temp_grad = 0.0, sigma_1 = 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=-0.1,
+            temp_grad=0.0, sigma_1=0.0)
+        expected_water_flux = 0.0
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate < 0.0, temp_grad = 0.0, sigma_1 < 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=-0.1,
+            temp_grad=0.0, sigma_1=-1e-3)
+        expected_water_flux = 0.0
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate < 0.0, temp_grad < 0.0, sigma_1 > 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=-0.1,
+            temp_grad=-0.05, sigma_1=1e-3)
+        expected_water_flux = 7.00449942868483E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate < 0.0, temp_grad < 0.0, sigma_1 = 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=-0.1,
+            temp_grad=-0.05, sigma_1=0.0)
+        expected_water_flux = 7.07489581828408E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
+#   Check temp_rate < 0.0, temp_grad < 0.0, sigma_1 < 0.0
+        water_flux = self.m.water_flux(
+            e=0.3, e0=0.5, temp=-1.5, temp_rate=-0.1,
+            temp_grad=-0.05, sigma_1=-1e-3)
+        expected_water_flux = 7.14599970336091E-13
+        self.assertAlmostEqual(water_flux, expected_water_flux)
 
 
 class TestMaterialThrmCondSolidsSetter(unittest.TestCase):
