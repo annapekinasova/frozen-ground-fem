@@ -384,7 +384,7 @@ class TestMaterialInitializers(unittest.TestCase):
         self.assertEqual(self.m.water_flux_b3, 10.0)
 
     def test_temp_rate_ref(self):
-        self.assertEqual(self.m.temp_rate_ref, 10.0e-9)
+        self.assertEqual(self.m.temp_rate_ref, 1.0e-9)
 
     def test_seg_pot_0(self):
         self.assertEqual(self.m.seg_pot_0, 2.0e-9)
@@ -501,7 +501,7 @@ class TestMaterialInitializers(unittest.TestCase):
         #   Check temp_rate > 0.0, temp_grad > 0.0, sigma_1 < 0.0
         water_flux = self.m.water_flux(
             e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
-            temp_grad=0.05, sigma_1=1e-3)
+            temp_grad=0.05, sigma_1=-1e-3)
         expected_water_flux = 1.36831343366376E-13
         self.assertAlmostEqual(water_flux, expected_water_flux, delta=1e-20)
 
