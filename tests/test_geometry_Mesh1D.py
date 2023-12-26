@@ -294,7 +294,7 @@ class TestAddBoundaries(unittest.TestCase):
         bnd1 = Boundary1D((self.msh.nodes[-1],))
         self.msh.add_boundary(bnd1)
         self.assertEqual(self.msh.num_boundaries, 2)
-        self.assertTrue(bnd in self.msh.boundaries)
+        self.assertTrue(bnd1 in self.msh.boundaries)
 
     def test_add_boundary_with_int_pt(self):
         bnd = Boundary1D((self.msh.nodes[0],))
@@ -305,7 +305,7 @@ class TestAddBoundaries(unittest.TestCase):
         )
         self.msh.add_boundary(bnd1)
         self.assertEqual(self.msh.num_boundaries, 2)
-        self.assertTrue(bnd in self.msh.boundaries)
+        self.assertTrue(bnd1 in self.msh.boundaries)
 
 
 class TestRemoveBoundaries(unittest.TestCase):
