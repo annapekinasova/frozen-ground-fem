@@ -787,7 +787,7 @@ class ThermalAnalysis1D(Mesh1D):
             if be.bnd_type == ThermalBoundary1D.BoundaryType.heat_flux:
                 self._heat_flux_vector[be.nodes[0].index] += be.bnd_value
             elif be.bnd_type == ThermalBoundary1D.BoundaryType.temp_grad:
-                if be.int_pts is None:
+                if not be.int_pts:
                     raise AttributeError(f"boundary {be} has no int_pts")
                 self._heat_flux_vector[be.nodes[0].index] += (
                     -be.int_pts[0].thrm_cond * be.bnd_value
