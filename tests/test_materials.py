@@ -321,7 +321,7 @@ class TestMaterialInitializers(unittest.TestCase):
             water_flux_b1=0.08,
             water_flux_b2=4.0,
             water_flux_b3=10.0,
-            temp_rate_ref=10.0e-9,
+            temp_rate_ref=1e-9,
             seg_pot_0=2.0e-9,
             void_ratio_0_comp=2.6,
             eff_stress_0_comp=0.0028,
@@ -486,7 +486,7 @@ class TestMaterialInitializers(unittest.TestCase):
         water_flux = self.m.water_flux(
             e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
             temp_grad=0.05, sigma_1=1e-3)
-        expected_water_flux = 2.11803841202014E-10
+        expected_water_flux = 1.34121901234503E-13
         self.assertAlmostEqual(water_flux, expected_water_flux, delta=1e-20)
 
     def test_water_flux_method_1(self):
@@ -494,7 +494,7 @@ class TestMaterialInitializers(unittest.TestCase):
         water_flux = self.m.water_flux(
             e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
             temp_grad=0.05, sigma_1=0.0)
-        expected_water_flux = 2.11803841202014E-10
+        expected_water_flux = 1.35469848751556E-13
         self.assertAlmostEqual(water_flux, expected_water_flux, delta=1e-20)
 
     def test_water_flux_method_2(self):
@@ -502,7 +502,7 @@ class TestMaterialInitializers(unittest.TestCase):
         water_flux = self.m.water_flux(
             e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
             temp_grad=0.05, sigma_1=1e-3)
-        expected_water_flux = 2.11803841202014E-10
+        expected_water_flux = 1.36831343366376E-13
         self.assertAlmostEqual(water_flux, expected_water_flux, delta=1e-20)
 
     def test_water_flux_method_3(self):
