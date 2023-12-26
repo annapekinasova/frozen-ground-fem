@@ -12,7 +12,6 @@ from frozen_ground_fem.geometry import (
 from frozen_ground_fem.thermal import (
     ThermalAnalysis1D,
     ThermalBoundary1D,
-    ThermalElement1D,
 )
 
 
@@ -229,6 +228,23 @@ class TestThermalAnalysis1DInvalid(unittest.TestCase):
         with self.assertRaises(KeyError):
             msh.remove_boundary(bnd1)
 
+    def test_update_heat_flux_vector_no_int_pt(self):
+        msh = ThermalAnalysis1D((0, 100), generate=True)
+        bnd0 = ThermalBoundary1D((msh.nodes[0],))
+        msh.add_boundary(bnd0)
+        bnd1 = ThermalBoundary1D(
+            (msh.nodes[-1],),
+            bnd_type=ThermalBoundary1D.BoundaryType.temp_grad,
+        )
+        msh.add_boundary(bnd1)
+        bnd2 = ThermalBoundary1D(
+            (msh.nodes[5],),
+            bnd_type=ThermalBoundary1D.BoundaryType.heat_flux,
+        )
+        msh.add_boundary(bnd2)
+        with self.assertRaises(AttributeError):
+            msh.update_heat_flux_vector()
+
 
 class TestThermalAnalysis1DDefaults(unittest.TestCase):
     def setUp(self):
@@ -357,7 +373,7 @@ class TestThermalAnalysis1DLinearNoArgs(unittest.TestCase):
         self.assertEqual(self.msh.grid_size, 0.0)
 
 
-class TestThermalAnalysis1DLinear(unittest.TestCase):
+class TestThermalAnalysis1DLinearMeshGen(unittest.TestCase):
     def setUp(self):
         self.msh = ThermalAnalysis1D(z_range=(100, -8))
 
@@ -430,7 +446,7 @@ class TestThermalAnalysis1DLinear(unittest.TestCase):
             _ = self.msh._free_arr
 
 
-class TestThermalAnalysis1DCubic(unittest.TestCase):
+class TestThermalAnalysis1DCubicMeshGen(unittest.TestCase):
     def setUp(self):
         self.msh = ThermalAnalysis1D(z_range=(100, -8))
 
@@ -556,6 +572,124 @@ class TestRemoveBoundaries(unittest.TestCase):
         self.assertEqual(self.msh.num_boundaries, 0)
         self.assertFalse(self.bnd0 in self.msh.boundaries)
         self.assertFalse(self.bnd1 in self.msh.boundaries)
+
+
+class TestUpdateBoundaries(unittest.TestCase):
+    def setUp(self):
+        self.mtl = Material(
+            thrm_cond_solids=3.0,
+            spec_heat_cap_solids=741.0,
+        )
+        self.msh = ThermalAnalysis1D((0, 100), generate=True)
+        for e in self.msh.elements:
+            for ip in e.int_pts:
+                ip.material = self.mtl
+                ip.deg_sat_water = 0.8
+                ip.void_ratio = 0.35
+                ip.void_ratio_0 = 0.3
+        per = 365.0 * 86400.0
+        om = 2.0 * np.pi / per
+        t0 = (7.0/12.0) * per
+        Tavg = 5.0
+        Tamp = 20.0
+        def f(t): return Tavg + Tamp * np.cos(om * (t - t0))
+        self.f = f
+        self.bnd0 = ThermalBoundary1D(
+            (self.msh.nodes[0],),
+            bnd_type=ThermalBoundary1D.BoundaryType.temp,
+            bnd_function=f)
+        self.msh.add_boundary(self.bnd0)
+        self.geotherm_grad = 25.0 / 1.0e3
+        self.flux_geotherm = -0.05218861799159
+        self.bnd1 = ThermalBoundary1D(
+            (self.msh.nodes[-1],),
+            (self.msh.elements[-1].int_pts[-1],),
+            bnd_type=ThermalBoundary1D.BoundaryType.temp_grad,
+            bnd_value=self.geotherm_grad,
+        )
+        self.msh.add_boundary(self.bnd1)
+        self.fixed_flux = 0.08
+        self.bnd2 = ThermalBoundary1D(
+            (self.msh.nodes[5],),
+            bnd_type=ThermalBoundary1D.BoundaryType.heat_flux,
+            bnd_value=self.fixed_flux,
+        )
+        self.msh.add_boundary(self.bnd2)
+
+    def test_initial_temp_heat_flux_vector(self):
+        for tn, tn0 in zip(self.msh._temp_vector,
+                           self.msh._temp_vector_0):
+            self.assertEqual(tn, 0.0)
+            self.assertEqual(tn0, 0.0)
+        for fx, fx0 in zip(self.msh._heat_flux_vector,
+                           self.msh._heat_flux_vector_0):
+            self.assertEqual(fx, 0.0)
+            self.assertEqual(fx0, 0.0)
+
+    def test_initial_thrm_cond(self):
+        expected_thrm_cond = 2.0875447196636
+        for e in self.msh.elements:
+            for ip in e.int_pts:
+                self.assertAlmostEqual(ip.thrm_cond, expected_thrm_cond)
+
+    def test_update_thermal_boundaries(self):
+        t = 1.314e7
+        expected_temp_0 = self.f(t)
+        expected_temp_1 = 15.0
+        self.msh.update_thermal_boundary_conditions(t)
+        self.assertAlmostEqual(self.msh.nodes[0].temp, expected_temp_0)
+        self.assertAlmostEqual(self.msh.nodes[0].temp, expected_temp_1)
+        self.assertAlmostEqual(self.msh._temp_vector[0], expected_temp_0)
+        self.assertAlmostEqual(self.msh._temp_vector[0], expected_temp_1)
+        for tn in self.msh._temp_vector[1:]:
+            self.assertEqual(tn, 0.0)
+        for tn0 in self.msh._temp_vector_0:
+            self.assertEqual(tn0, 0.0)
+        for fx, fx0 in zip(self.msh._heat_flux_vector,
+                           self.msh._heat_flux_vector_0):
+            self.assertEqual(fx, 0.0)
+            self.assertEqual(fx0, 0.0)
+        t = 3.5478e7
+        expected_temp_2 = self.f(t)
+        expected_temp_3 = -14.3185165257814
+        self.msh.update_thermal_boundary_conditions(t)
+        self.assertAlmostEqual(self.msh.nodes[0].temp, expected_temp_2)
+        self.assertAlmostEqual(self.msh.nodes[0].temp, expected_temp_3)
+        self.assertAlmostEqual(self.msh._temp_vector[0], expected_temp_2)
+        self.assertAlmostEqual(self.msh._temp_vector[0], expected_temp_3)
+        for tn in self.msh._temp_vector[1:]:
+            self.assertEqual(tn, 0.0)
+        for tn0 in self.msh._temp_vector_0:
+            self.assertEqual(tn0, 0.0)
+        for fx, fx0 in zip(self.msh._heat_flux_vector,
+                           self.msh._heat_flux_vector_0):
+            self.assertEqual(fx, 0.0)
+            self.assertEqual(fx0, 0.0)
+
+    def test_update_heat_flux_vector(self):
+        t = 1.314e7
+        self.msh.update_thermal_boundary_conditions(t)
+        self.msh.update_heat_flux_vector()
+        for k, (fx, fx0) in enumerate(zip(self.msh._heat_flux_vector,
+                                          self.msh._heat_flux_vector_0)):
+            self.assertEqual(fx0, 0.0)
+            if k == 5:
+                self.assertAlmostEqual(fx, self.fixed_flux)
+            elif k == self.msh.num_nodes - 1:
+                self.assertAlmostEqual(fx, self.flux_geotherm)
+            else:
+                self.assertEqual(fx, 0.0)
+        self.msh.update_thermal_boundary_conditions(t)
+        self.msh.update_heat_flux_vector()
+        for k, (fx, fx0) in enumerate(zip(self.msh._heat_flux_vector,
+                                          self.msh._heat_flux_vector_0)):
+            self.assertEqual(fx0, 0.0)
+            if k == 5:
+                self.assertAlmostEqual(fx, self.fixed_flux)
+            elif k == self.msh.num_nodes - 1:
+                self.assertAlmostEqual(fx, self.flux_geotherm)
+            else:
+                self.assertEqual(fx, 0.0)
 
 
 if __name__ == "__main__":
