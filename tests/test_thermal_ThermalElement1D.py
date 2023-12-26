@@ -35,6 +35,7 @@ class TestThermalElement1DLinear(unittest.TestCase):
         for ip in self.thrm_e.int_pts:
             ip.material = m
             ip.void_ratio = 0.2
+            ip.void_ratio_0 = 0.2
             ip.deg_sat_water = 0.1
         lam = self.thrm_e.int_pts[0].thrm_cond
         jac = self.thrm_e.jacobian
@@ -126,6 +127,7 @@ class TestThermalElement1DCubic(unittest.TestCase):
         for ip in self.thrm_e.int_pts:
             ip.material = m
             ip.void_ratio = 0.2
+            ip.void_ratio_0 = 0.2
             ip.deg_sat_water = 0.1
         lam = self.thrm_e.int_pts[0].thrm_cond
         jac = self.thrm_e.jacobian
