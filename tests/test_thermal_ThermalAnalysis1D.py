@@ -692,5 +692,33 @@ class TestUpdateBoundaries(unittest.TestCase):
                 self.assertEqual(fx, 0.0)
 
 
+class TestUpdateGlobalMatricesLinear(unittest.TestCase):
+    def setUp(self):
+        self.mtl = Material(
+            thrm_cond_solids=3.0,
+            spec_heat_cap_solids=741.0,
+        )
+        self.msh = ThermalAnalysis1D((0, 100), generate=True, order=1)
+        for e in self.msh.elements:
+            for ip in e.int_pts:
+                ip.material = self.mtl
+                ip.deg_sat_water = 0.8
+                ip.void_ratio = 0.35
+                ip.void_ratio_0 = 0.3
+
+    def test_initial_heat_flow_matrix(self):
+        expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected))
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected))
+
+    def test_initial_heat_storage_matrix(self):
+        expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        self.assertTrue(np.allclose(self.msh._heat_storage_matrix, expected))
+        self.assertTrue(np.allclose(self.msh._heat_storage_matrix_0, expected))
+
+    def test_update_heat_flow_matrix(self):
+        expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+
+
 if __name__ == "__main__":
     unittest.main()
