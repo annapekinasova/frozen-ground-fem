@@ -244,6 +244,23 @@ class TestThermalAnalysis1DDefaults(unittest.TestCase):
     def test_grid_size(self):
         self.assertEqual(self.msh.grid_size, 0.0)
 
+    def test_time_step(self):
+        self.assertEqual(self.msh.time_step, 0.0)
+        self.assertEqual(self.msh.dt, 0.0)
+        self.assertEqual(self.msh.over_dt, 0.0)
+
+    def test_implicit_factor(self):
+        self.assertEqual(self.msh.implicit_factor, 0.5)
+        self.assertEqual(self.msh.alpha, 0.5)
+        self.assertEqual(self.msh.one_minus_alpha, 0.5)
+
+    def test_implicit_error_tolerance(self):
+        self.assertEqual(self.msh.implicit_error_tolerance, 1.0e-3)
+        self.assertEqual(self.msh.eps_s, 1.0e-3)
+
+    def test_max_iterations(self):
+        self.assertEqual(self.msh.max_iterations, 100)
+
     def test_num_objects(self):
         self.assertEqual(self.msh.num_nodes, 0)
         self.assertEqual(self.msh.num_elements, 0)
@@ -260,149 +277,228 @@ class TestThermalAnalysis1DDefaults(unittest.TestCase):
         self.assertEqual(len(self.msh.boundaries), 0)
 
 
-class TestThermalAnalysis1DLinear(unittest.TestCase):
-    def test_create_mesh_no_args(self):
-        msh = ThermalAnalysis1D(order=1)
-        self.assertFalse(msh.mesh_valid)
-        self.assertEqual(msh.num_nodes, 0)
-        self.assertEqual(msh.num_elements, 0)
-        self.assertEqual(msh.num_boundaries, 0)
-        self.assertTrue(np.isinf(msh.z_min))
-        self.assertTrue(np.isinf(msh.z_max))
-        self.assertTrue(msh.z_min < 0)
-        self.assertTrue(msh.z_max > 0)
-        self.assertEqual(msh.grid_size, 0.0)
-
-    def test_create_mesh_z_range_generate(self):
-        msh = ThermalAnalysis1D(
-            z_range=(100, -8), num_elements=9, generate=True, order=1)
-        self.assertTrue(msh.mesh_valid)
-        self.assertEqual(msh.num_nodes, 10)
-        self.assertEqual(msh.num_elements, 9)
-        self.assertEqual(msh.num_boundaries, 0)
-        self.assertAlmostEqual(msh.z_min, -8.0)
-        self.assertAlmostEqual(msh.z_max, 100.0)
-        self.assertEqual(msh.grid_size, 0.0)
-        self.assertAlmostEqual(msh.nodes[1].z - msh.nodes[0].z, 12.0)
+class TestThermalAnalysis1DSetters(unittest.TestCase):
+    def setUp(self):
+        self.msh = ThermalAnalysis1D((100, -8))
 
     def test_z_min_max_setters(self):
-        msh = ThermalAnalysis1D((100, -8), order=1)
-        self.assertAlmostEqual(msh.z_min, -8.0)
-        self.assertAlmostEqual(msh.z_max, 100.0)
-        msh.z_min = -7
-        self.assertAlmostEqual(msh.z_min, -7.0)
-        self.assertIsInstance(msh.z_min, float)
-        msh.z_max = 101
-        self.assertAlmostEqual(msh.z_max, 101.0)
-        self.assertIsInstance(msh.z_max, float)
+        self.assertAlmostEqual(self.msh.z_min, -8.0)
+        self.assertAlmostEqual(self.msh.z_max, 100.0)
+        self.msh.z_min = -7
+        self.assertAlmostEqual(self.msh.z_min, -7.0)
+        self.assertIsInstance(self.msh.z_min, float)
+        self.msh.z_max = 101
+        self.assertAlmostEqual(self.msh.z_max, 101.0)
+        self.assertIsInstance(self.msh.z_max, float)
 
     def test_grid_size_setter(self):
-        msh = ThermalAnalysis1D((100, -8), order=1)
-        self.assertEqual(msh.grid_size, 0.0)
-        msh.grid_size = 1
-        self.assertAlmostEqual(msh.grid_size, 1.0)
-        self.assertIsInstance(msh.grid_size, float)
-        msh.generate_mesh(order=1)
-        self.assertEqual(msh.num_nodes, 109)
-        self.assertEqual(msh.num_elements, 108)
-        self.assertEqual(msh.num_boundaries, 0)
-        self.assertAlmostEqual(msh.nodes[1].z - msh.nodes[0].z, 1.0)
+        self.assertEqual(self.msh.grid_size, 0.0)
+        self.msh.grid_size = 1
+        self.assertAlmostEqual(self.msh.grid_size, 1.0)
+        self.assertIsInstance(self.msh.grid_size, float)
 
-    def test_generate_mesh(self):
-        msh = ThermalAnalysis1D()
-        self.assertFalse(msh.mesh_valid)
-        msh.z_min = -8
-        msh.z_max = 100
-        msh.grid_size = 0
-        msh.generate_mesh(num_elements=9, order=1)
-        self.assertTrue(msh.mesh_valid)
-        self.assertEqual(msh.num_nodes, 10)
-        self.assertEqual(msh.num_elements, 9)
-        self.assertEqual(msh.num_boundaries, 0)
-        self.assertAlmostEqual(msh.elements[0].jacobian, 12.0)
-        msh.grid_size = 1
-        self.assertFalse(msh.mesh_valid)
-        self.assertEqual(msh.num_nodes, 0)
-        self.assertEqual(msh.num_elements, 0)
-        self.assertEqual(msh.num_boundaries, 0)
-        msh.generate_mesh(order=1)
-        self.assertTrue(msh.mesh_valid)
-        self.assertEqual(msh.num_nodes, 109)
-        self.assertEqual(msh.num_elements, 108)
-        self.assertEqual(msh.num_boundaries, 0)
-        self.assertAlmostEqual(msh.elements[0].jacobian, 1.0)
+    def test_time_step_setter(self):
+        self.assertAlmostEqual(self.msh.time_step, 0.0)
+        self.assertAlmostEqual(self.msh.dt, 0.0)
+        self.assertAlmostEqual(self.msh.over_dt, 0.0)
+        self.msh.time_step = 0.1
+        self.assertAlmostEqual(self.msh.time_step, 0.1)
+        self.assertAlmostEqual(self.msh.dt, 0.1)
+        self.assertAlmostEqual(self.msh.over_dt, 10.0)
+        self.msh.time_step = 1.5
+        self.assertAlmostEqual(self.msh.time_step, 1.5)
+        self.assertAlmostEqual(self.msh.dt, 1.5)
+        self.assertAlmostEqual(self.msh.over_dt, 1.0/1.5)
+
+    def test_implicit_factor_setter(self):
+        self.assertAlmostEqual(self.msh.implicit_factor, 0.5)
+        self.assertAlmostEqual(self.msh.alpha, 0.5)
+        self.assertAlmostEqual(self.msh.one_minus_alpha, 0.5)
+        self.msh.implicit_factor = 0.1
+        self.assertAlmostEqual(self.msh.implicit_factor, 0.1)
+        self.assertAlmostEqual(self.msh.alpha, 0.1)
+        self.assertAlmostEqual(self.msh.one_minus_alpha, 0.9)
+        self.msh.implicit_factor = 0.85
+        self.assertAlmostEqual(self.msh.implicit_factor, 0.85)
+        self.assertAlmostEqual(self.msh.alpha, 0.85)
+        self.assertAlmostEqual(self.msh.one_minus_alpha, 0.15)
+
+    def test_implicit_error_tolerance_setter(self):
+        self.assertAlmostEqual(self.msh.implicit_error_tolerance, 1.0e-3)
+        self.assertAlmostEqual(self.msh.eps_s, 1.0e-3)
+        self.msh.implicit_error_tolerance = 0.1
+        self.assertAlmostEqual(self.msh.implicit_error_tolerance, 1.0e-1)
+        self.assertAlmostEqual(self.msh.eps_s, 1.0e-1)
+        self.msh.implicit_error_tolerance = 1.5e-4
+        self.assertAlmostEqual(self.msh.implicit_error_tolerance, 0.00015)
+        self.assertAlmostEqual(self.msh.eps_s, 1.5e-4)
+
+    def test_max_iterations_setter(self):
+        self.assertEqual(self.msh.max_iterations, 100)
+        self.msh.max_iterations = 10
+        self.assertEqual(self.msh.max_iterations, 10)
+        self.msh.max_iterations = 500
+        self.assertEqual(self.msh.max_iterations, 500)
+
+
+class TestThermalAnalysis1DLinearNoArgs(unittest.TestCase):
+    def setUp(self):
+        self.msh = ThermalAnalysis1D(order=1)
+
+    def test_create_analysis_no_args(self):
+        self.assertFalse(self.msh.mesh_valid)
+        self.assertEqual(self.msh.num_nodes, 0)
+        self.assertEqual(self.msh.num_elements, 0)
+        self.assertEqual(self.msh.num_boundaries, 0)
+        self.assertTrue(np.isinf(self.msh.z_min))
+        self.assertTrue(np.isinf(self.msh.z_max))
+        self.assertTrue(self.msh.z_min < 0)
+        self.assertTrue(self.msh.z_max > 0)
+        self.assertEqual(self.msh.grid_size, 0.0)
+
+
+class TestThermalAnalysis1DLinear(unittest.TestCase):
+    def setUp(self):
+        self.msh = ThermalAnalysis1D(z_range=(100, -8))
+
+    def test_z_range_generate(self):
+        nel = 9
+        nnod = 10
+        self.msh.generate_mesh(nel, order=1)
+        self.assertTrue(self.msh.mesh_valid)
+        self.assertEqual(self.msh.num_nodes, nnod)
+        self.assertEqual(self.msh.num_elements, nel)
+        self.assertEqual(self.msh.num_boundaries, 0)
+        self.assertAlmostEqual(self.msh.z_min, -8.0)
+        self.assertAlmostEqual(self.msh.z_max, 100.0)
+        self.assertEqual(self.msh.grid_size, 0.0)
+        self.assertAlmostEqual(self.msh.nodes[1].z - self.msh.nodes[0].z, 12.0)
+        self.assertEqual(self.msh._temp_vector_0.shape, (nnod,))
+        self.assertEqual(self.msh._temp_vector.shape, (nnod,))
+        self.assertEqual(self.msh._heat_flux_vector_0.shape, (nnod,))
+        self.assertEqual(self.msh._heat_flux_vector.shape, (nnod,))
+        self.assertEqual(self.msh._weighted_heat_flux_vector.shape, (nnod,))
+        self.assertEqual(self.msh._residual_heat_flux_vector.shape, (nnod,))
+        self.assertEqual(self.msh._delta_temp_vector.shape, (nnod,))
+        self.assertEqual(self.msh._heat_flow_matrix_0.shape, (nnod, nnod))
+        self.assertEqual(self.msh._heat_flow_matrix.shape, (nnod, nnod))
+        self.assertEqual(
+            self.msh._weighted_heat_flow_matrix.shape, (nnod, nnod))
+        self.assertEqual(self.msh._heat_storage_matrix_0.shape, (nnod, nnod))
+        self.assertEqual(self.msh._heat_storage_matrix.shape, (nnod, nnod))
+        self.assertEqual(
+            self.msh._weighted_heat_storage_matrix.shape, (nnod, nnod))
+        self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
+        self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
+        with self.assertRaises(AttributeError):
+            _ = self.msh._free_vec
+        with self.assertRaises(AttributeError):
+            _ = self.msh._free_arr
+
+    def test_grid_size_generate(self):
+        nel = 108
+        nnod = 109
+        self.msh.grid_size = 1.0
+        self.msh.generate_mesh(order=1)
+        self.assertAlmostEqual(self.msh.grid_size, 1.0)
+        self.assertIsInstance(self.msh.grid_size, float)
+        self.msh.generate_mesh(order=1)
+        self.assertEqual(self.msh.num_nodes, nnod)
+        self.assertEqual(self.msh.num_elements, nel)
+        self.assertEqual(self.msh.num_boundaries, 0)
+        self.assertAlmostEqual(self.msh.nodes[1].z - self.msh.nodes[0].z, 1.0)
+        self.assertEqual(self.msh._temp_vector_0.shape, (nnod,))
+        self.assertEqual(self.msh._temp_vector.shape, (nnod,))
+        self.assertEqual(self.msh._heat_flux_vector_0.shape, (nnod,))
+        self.assertEqual(self.msh._heat_flux_vector.shape, (nnod,))
+        self.assertEqual(self.msh._weighted_heat_flux_vector.shape, (nnod,))
+        self.assertEqual(self.msh._residual_heat_flux_vector.shape, (nnod,))
+        self.assertEqual(self.msh._delta_temp_vector.shape, (nnod,))
+        self.assertEqual(self.msh._heat_flow_matrix_0.shape, (nnod, nnod))
+        self.assertEqual(self.msh._heat_flow_matrix.shape, (nnod, nnod))
+        self.assertEqual(
+            self.msh._weighted_heat_flow_matrix.shape, (nnod, nnod))
+        self.assertEqual(self.msh._heat_storage_matrix_0.shape, (nnod, nnod))
+        self.assertEqual(self.msh._heat_storage_matrix.shape, (nnod, nnod))
+        self.assertEqual(
+            self.msh._weighted_heat_storage_matrix.shape, (nnod, nnod))
+        self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
+        self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
+        with self.assertRaises(AttributeError):
+            _ = self.msh._free_vec
+        with self.assertRaises(AttributeError):
+            _ = self.msh._free_arr
 
 
 class TestThermalAnalysis1DCubic(unittest.TestCase):
-    def test_create_mesh_no_args(self):
-        msh = ThermalAnalysis1D()
-        self.assertFalse(msh.mesh_valid)
-        self.assertEqual(msh.num_nodes, 0)
-        self.assertEqual(msh.num_elements, 0)
-        self.assertEqual(msh.num_boundaries, 0)
-        self.assertTrue(np.isinf(msh.z_min))
-        self.assertTrue(np.isinf(msh.z_max))
-        self.assertTrue(msh.z_min < 0)
-        self.assertTrue(msh.z_max > 0)
-        self.assertEqual(msh.grid_size, 0.0)
+    def setUp(self):
+        self.msh = ThermalAnalysis1D(z_range=(100, -8))
 
-    def test_create_mesh_z_range_generate(self):
-        msh = ThermalAnalysis1D(
-            z_range=(100, -8), num_elements=9, generate=True)
-        self.assertTrue(msh.mesh_valid)
-        self.assertEqual(msh.num_nodes, 28)
-        self.assertEqual(msh.num_elements, 9)
-        self.assertEqual(msh.num_boundaries, 0)
-        self.assertAlmostEqual(msh.z_min, -8.0)
-        self.assertAlmostEqual(msh.z_max, 100.0)
-        self.assertEqual(msh.grid_size, 0.0)
-        self.assertAlmostEqual(msh.nodes[1].z - msh.nodes[0].z, 4.0)
+    def test_z_range_generate(self):
+        nel = 9
+        nnod = nel * 3 + 1
+        self.msh.generate_mesh(nel)
+        self.assertTrue(self.msh.mesh_valid)
+        self.assertEqual(self.msh.num_nodes, nnod)
+        self.assertEqual(self.msh.num_elements, nel)
+        self.assertEqual(self.msh.num_boundaries, 0)
+        self.assertAlmostEqual(self.msh.z_min, -8.0)
+        self.assertAlmostEqual(self.msh.z_max, 100.0)
+        self.assertEqual(self.msh.grid_size, 0.0)
+        self.assertAlmostEqual(self.msh.nodes[1].z - self.msh.nodes[0].z, 4.0)
+        self.assertEqual(self.msh._temp_vector_0.shape, (nnod,))
+        self.assertEqual(self.msh._temp_vector.shape, (nnod,))
+        self.assertEqual(self.msh._heat_flux_vector_0.shape, (nnod,))
+        self.assertEqual(self.msh._heat_flux_vector.shape, (nnod,))
+        self.assertEqual(self.msh._weighted_heat_flux_vector.shape, (nnod,))
+        self.assertEqual(self.msh._residual_heat_flux_vector.shape, (nnod,))
+        self.assertEqual(self.msh._delta_temp_vector.shape, (nnod,))
+        self.assertEqual(self.msh._heat_flow_matrix_0.shape, (nnod, nnod))
+        self.assertEqual(self.msh._heat_flow_matrix.shape, (nnod, nnod))
+        self.assertEqual(
+            self.msh._weighted_heat_flow_matrix.shape, (nnod, nnod))
+        self.assertEqual(self.msh._heat_storage_matrix_0.shape, (nnod, nnod))
+        self.assertEqual(self.msh._heat_storage_matrix.shape, (nnod, nnod))
+        self.assertEqual(
+            self.msh._weighted_heat_storage_matrix.shape, (nnod, nnod))
+        self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
+        self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
+        with self.assertRaises(AttributeError):
+            _ = self.msh._free_vec
+        with self.assertRaises(AttributeError):
+            _ = self.msh._free_arr
 
-    def test_z_min_max_setters(self):
-        msh = ThermalAnalysis1D((100, -8))
-        self.assertAlmostEqual(msh.z_min, -8.0)
-        self.assertAlmostEqual(msh.z_max, 100.0)
-        msh.z_min = -7
-        self.assertAlmostEqual(msh.z_min, -7.0)
-        self.assertIsInstance(msh.z_min, float)
-        msh.z_max = 101
-        self.assertAlmostEqual(msh.z_max, 101.0)
-        self.assertIsInstance(msh.z_max, float)
-
-    def test_grid_size_setter(self):
-        msh = ThermalAnalysis1D((100, -8))
-        self.assertEqual(msh.grid_size, 0.0)
-        msh.grid_size = 1
-        self.assertAlmostEqual(msh.grid_size, 1.0)
-        self.assertIsInstance(msh.grid_size, float)
-        msh.generate_mesh()
-        self.assertEqual(msh.num_nodes, 325)
-        self.assertEqual(msh.num_elements, 108)
-        self.assertEqual(msh.num_boundaries, 0)
-        self.assertAlmostEqual(msh.nodes[1].z - msh.nodes[0].z, 1.0/3.0)
-
-    def test_generate_mesh(self):
-        msh = ThermalAnalysis1D()
-        self.assertFalse(msh.mesh_valid)
-        msh.z_min = -8
-        msh.z_max = 100
-        msh.generate_mesh(num_elements=9)
-        self.assertTrue(msh.mesh_valid)
-        self.assertEqual(msh.num_nodes, 28)
-        self.assertEqual(msh.num_elements, 9)
-        self.assertEqual(msh.num_boundaries, 0)
-        self.assertAlmostEqual(msh.elements[0].jacobian, 12.0)
-        msh.grid_size = 1
-        self.assertFalse(msh.mesh_valid)
-        self.assertEqual(msh.num_nodes, 0)
-        self.assertEqual(msh.num_elements, 0)
-        self.assertEqual(msh.num_boundaries, 0)
-        msh.generate_mesh()
-        self.assertTrue(msh.mesh_valid)
-        self.assertEqual(msh.num_nodes, 325)
-        self.assertEqual(msh.num_elements, 108)
-        self.assertEqual(msh.num_boundaries, 0)
-        self.assertAlmostEqual(msh.elements[0].jacobian, 1.0)
+    def test_grid_size_generate(self):
+        nel = 108
+        nnod = nel * 3 + 1
+        self.msh.grid_size = 1.0
+        self.msh.generate_mesh()
+        self.assertEqual(self.msh.num_nodes, nnod)
+        self.assertEqual(self.msh.num_elements, nel)
+        self.assertEqual(self.msh.num_boundaries, 0)
+        self.assertAlmostEqual(
+            self.msh.nodes[1].z - self.msh.nodes[0].z, 1.0/3.0)
+        self.assertEqual(self.msh._temp_vector_0.shape, (nnod,))
+        self.assertEqual(self.msh._temp_vector.shape, (nnod,))
+        self.assertEqual(self.msh._heat_flux_vector_0.shape, (nnod,))
+        self.assertEqual(self.msh._heat_flux_vector.shape, (nnod,))
+        self.assertEqual(self.msh._weighted_heat_flux_vector.shape, (nnod,))
+        self.assertEqual(self.msh._residual_heat_flux_vector.shape, (nnod,))
+        self.assertEqual(self.msh._delta_temp_vector.shape, (nnod,))
+        self.assertEqual(self.msh._heat_flow_matrix_0.shape, (nnod, nnod))
+        self.assertEqual(self.msh._heat_flow_matrix.shape, (nnod, nnod))
+        self.assertEqual(
+            self.msh._weighted_heat_flow_matrix.shape, (nnod, nnod))
+        self.assertEqual(self.msh._heat_storage_matrix_0.shape, (nnod, nnod))
+        self.assertEqual(self.msh._heat_storage_matrix.shape, (nnod, nnod))
+        self.assertEqual(
+            self.msh._weighted_heat_storage_matrix.shape, (nnod, nnod))
+        self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
+        self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
+        with self.assertRaises(AttributeError):
+            _ = self.msh._free_vec
+        with self.assertRaises(AttributeError):
+            _ = self.msh._free_arr
 
 
 class TestAddBoundaries(unittest.TestCase):
@@ -417,7 +513,7 @@ class TestAddBoundaries(unittest.TestCase):
         bnd1 = ThermalBoundary1D((self.msh.nodes[-1],))
         self.msh.add_boundary(bnd1)
         self.assertEqual(self.msh.num_boundaries, 2)
-        self.assertTrue(bnd in self.msh.boundaries)
+        self.assertTrue(bnd1 in self.msh.boundaries)
 
     def test_add_boundary_with_int_pt(self):
         bnd = ThermalBoundary1D((self.msh.nodes[0],))
@@ -428,7 +524,7 @@ class TestAddBoundaries(unittest.TestCase):
         )
         self.msh.add_boundary(bnd1)
         self.assertEqual(self.msh.num_boundaries, 2)
-        self.assertTrue(bnd in self.msh.boundaries)
+        self.assertTrue(bnd1 in self.msh.boundaries)
 
 
 class TestRemoveBoundaries(unittest.TestCase):
