@@ -77,8 +77,11 @@ class ThermalElement1D(Element1D):
         H = np.zeros_like(B.T @ B)
         jac = self.jacobian
         for ip in self.int_pts:
+            e = ip.void_ratio
+            e0 = ip.void_ratio_0
+            e_fact = (1+e0) / (1+e)
             B = self._gradient_matrix(ip.local_coord, jac)
-            H += B.T @ (ip.thrm_cond * B) * ip.weight
+            H += B.T @ (ip.thrm_cond * B) * ip.weight * e_fact ** 2
         H *= jac
         return H
 
