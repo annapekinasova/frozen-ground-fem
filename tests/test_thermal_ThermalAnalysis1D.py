@@ -697,6 +697,7 @@ class TestUpdateGlobalMatricesLinear(unittest.TestCase):
         self.mtl = Material(
             thrm_cond_solids=3.0,
             spec_heat_cap_solids=741.0,
+            spec_grav_solids=2.65,
         )
         self.msh = ThermalAnalysis1D((0, 100), generate=True, order=1)
         for e in self.msh.elements:
@@ -727,6 +728,20 @@ class TestUpdateGlobalMatricesLinear(unittest.TestCase):
         self.msh.update_heat_flow_matrix()
         self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected0))
         self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected1))
+
+    def test_update_heat_storage_matrix(self):
+        expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        c0 = 8.08009876543210e6
+        d0 = np.ones((self.msh.num_nodes,)) * 2.0 * c0
+        d0[0] = c0
+        d0[-1] = c0
+        d1 = np.ones((self.msh.num_nodes - 1,)) * c0 * 0.5
+        expected1 = np.diag(d0) + np.diag(d1, -1) + np.diag(d1, 1)
+        self.msh.update_heat_storage_matrix()
+        self.assertTrue(np.allclose(
+            self.msh._heat_storage_matrix_0, expected0))
+        self.assertTrue(np.allclose(
+            self.msh._heat_storage_matrix, expected1))
 
 
 if __name__ == "__main__":
