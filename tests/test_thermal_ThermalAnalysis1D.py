@@ -692,7 +692,7 @@ class TestUpdateBoundaries(unittest.TestCase):
                 self.assertEqual(fx, 0.0)
 
 
-class TestUpdateGlobalMatricesLinear(unittest.TestCase):
+class TestUpdateGlobalMatricesLinearConstant(unittest.TestCase):
     def setUp(self):
         self.mtl = Material(
             thrm_cond_solids=3.0,
@@ -742,6 +742,92 @@ class TestUpdateGlobalMatricesLinear(unittest.TestCase):
             self.msh._heat_storage_matrix_0, expected0))
         self.assertTrue(np.allclose(
             self.msh._heat_storage_matrix, expected1))
+
+# TODO: add linear test case with non-constant integration point values
+
+
+class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
+    def setUp(self):
+        self.mtl = Material(
+            thrm_cond_solids=3.0,
+            spec_heat_cap_solids=741.0,
+            spec_grav_solids=2.65,
+        )
+        self.msh = ThermalAnalysis1D((0, 100), generate=True)
+        for e in self.msh.elements:
+            for ip in e.int_pts:
+                ip.material = self.mtl
+                ip.deg_sat_water = 0.8
+                ip.void_ratio = 0.35
+                ip.void_ratio_0 = 0.3
+
+    def test_initial_heat_flow_matrix(self):
+        expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected))
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected))
+
+    def test_initial_heat_storage_matrix(self):
+        expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        self.assertTrue(np.allclose(self.msh._heat_storage_matrix_0, expected))
+        self.assertTrue(np.allclose(self.msh._heat_storage_matrix, expected))
+
+    def test_update_heat_flow_matrix(self):
+        expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        h00 = 0.7162368796738820
+        h11 = 2.0906373785075500
+        h10 = -0.9146538530970510
+        h20 = 0.2613296723134430
+        h30 = -0.0629126988902734
+        h21 = -1.4373131977239400
+        d0 = np.ones((self.msh.num_nodes,)) * 2.0 * h00
+        d0[0] = h00
+        d0[-1] = h00
+        d0[1::3] = h11
+        d0[2::3] = h11
+        d1 = np.ones((self.msh.num_nodes - 1,)) * h10
+        d1[1::3] = h21
+        d2 = np.ones((self.msh.num_nodes - 2,)) * h20
+        d2[2::3] = 0.0
+        d3 = np.zeros((self.msh.num_nodes - 3,))
+        d3[0::3] = h30
+        expected1 = np.diag(d0)
+        expected1 += np.diag(d1, -1) + np.diag(d1, 1)
+        expected1 += np.diag(d2, -2) + np.diag(d2, 2)
+        expected1 += np.diag(d3, -3) + np.diag(d3, 3)
+        self.msh.update_heat_flow_matrix()
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected0))
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected1))
+
+    def test_update_heat_storage_matrix(self):
+        expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        c00 = 1.84687971781305e6
+        c11 = 9.34982857142857e6
+        c10 = 1.42844603174603e6
+        c20 = -5.19434920634924e5
+        c30 = 2.74146208112873e5
+        c21 = -1.16872857142856e6
+        d0 = np.ones((self.msh.num_nodes,)) * 2.0 * c00
+        d0[0] = c00
+        d0[-1] = c00
+        d0[1::3] = c11
+        d0[2::3] = c11
+        d1 = np.ones((self.msh.num_nodes - 1,)) * c10
+        d1[1::3] = c21
+        d2 = np.ones((self.msh.num_nodes - 2,)) * c20
+        d2[2::3] = 0.0
+        d3 = np.zeros((self.msh.num_nodes - 3,))
+        d3[0::3] = c30
+        expected1 = np.diag(d0)
+        expected1 += np.diag(d1, -1) + np.diag(d1, 1)
+        expected1 += np.diag(d2, -2) + np.diag(d2, 2)
+        expected1 += np.diag(d3, -3) + np.diag(d3, 3)
+        self.msh.update_heat_storage_matrix()
+        self.assertTrue(np.allclose(
+            self.msh._heat_storage_matrix_0, expected0))
+        self.assertTrue(np.allclose(
+            self.msh._heat_storage_matrix, expected1))
+
+# TODO: add cubic test case with non-constant integration point values
 
 
 if __name__ == "__main__":
