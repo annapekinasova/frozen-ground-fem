@@ -71,6 +71,7 @@ class TestThermalElement1DLinear(unittest.TestCase):
             self.thrm_e.int_pts[0].deg_sat_water_temp_gradient, 0.0)
         self.assertAlmostEqual(
             self.thrm_e.int_pts[1].deg_sat_water_temp_gradient, 0.0)
+        # TODO: test temp_rate, temp_gradient, water_flux_rate
 
     def test_update_integration_points_with_material(self):
         m = Material(deg_sat_water_alpha=1.2e4, deg_sat_water_beta=0.35)
@@ -103,6 +104,7 @@ class TestThermalElement1DLinear(unittest.TestCase):
             self.thrm_e.int_pts[1].deg_sat_water_temp_gradient,
             0.0,
         )
+        # TODO: test temp_rate, temp_gradient, water_flux_rate
 
 
 class TestThermalElement1DCubic(unittest.TestCase):
@@ -205,6 +207,7 @@ class TestThermalElement1DCubic(unittest.TestCase):
             self.assertAlmostEqual(ip.temp, eT)
             self.assertAlmostEqual(ip.deg_sat_water, eSw)
             self.assertAlmostEqual(ip.deg_sat_water_temp_gradient, edSw)
+            # TODO: test temp_rate, temp_gradient, water_flux_rate
 
     def test_update_integration_points_with_material(self):
         m = Material(deg_sat_water_alpha=1.2e4, deg_sat_water_beta=0.35)
@@ -249,6 +252,7 @@ class TestThermalElement1DCubic(unittest.TestCase):
             self.assertAlmostEqual(ip.temp, eT)
             self.assertAlmostEqual(ip.deg_sat_water, eSw)
             self.assertAlmostEqual(ip.deg_sat_water_temp_gradient, edSw)
+            # TODO: test temp_rate, temp_gradient, water_flux_rate
 
 
 if __name__ == "__main__":

@@ -121,13 +121,29 @@ class ThermalElement1D(Element1D):
         and updates degree of saturation of water accordingly.
         """
         Te = np.array([nd.temp for nd in self.nodes])
+        dTdte = np.array([nd.temp_rate for nd in self.nodes])
         for ip in self.int_pts:
             N = self._shape_matrix(ip.local_coord)
+            B = self._gradient_matrix(ip.local_coord, self.jacobian)
             T = (N @ Te)[0]
+            dTdZ = (B @ Te)[0]
+            dTdt = (N @ dTdte)[0]
             Sw, dSw_dT = ip.material.deg_sat_water(T)
             ip.temp = T
+            ip.temp_gradient = dTdZ
+            ip.temp_rate = dTdt
             ip.deg_sat_water = Sw
             ip.deg_sat_water_temp_gradient = dSw_dT
+            if T < 0.0:
+                qw = ip.material.water_flux(
+                    ip.void_ratio,
+                    ip.void_ratio_0,
+                    ip.temp,
+                    ip.temp_rate,
+                    ip.temp_gradient,
+                    ip.tot_stress,
+                )
+                ip.water_flux_rate = qw
 
 
 class ThermalBoundary1D(Boundary1D):
