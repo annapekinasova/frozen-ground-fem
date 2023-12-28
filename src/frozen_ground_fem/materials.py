@@ -162,9 +162,10 @@ class Material:
         The value to assign to the b3 parameter for the water flux function
         for frozen soil. This value has units of(MPa) ^ {-1}.
         Cannot be negative.
-    temp_rate_ref: float, optional, default=0.0
+    temp_rate_ref: float, optional, default=1.0e-9
         The value to assign to the reference temperature rate
-         for the water flux function. Cannot be negative.
+         for the water flux function. This value has units of
+         (deg C) / s. Cannot be negative.
     seg_pot_0: float, optional, default=0.0
         The value to assign to the reference segregation potential
         for the water flux function. Cannot be negative.
@@ -264,7 +265,7 @@ class Material:
     _water_flux_b1: float = 0.0
     _water_flux_b2: float = 0.0
     _water_flux_b3: float = 0.0
-    _temp_rate_ref: float = 0.0
+    _temp_rate_ref: float = 1.0e-9
     _seg_pot_0: float = 0.0
     _void_ratio_0_comp: float = 0.0
     _comp_index_unfrozen: float = 0.0
@@ -292,7 +293,7 @@ class Material:
         water_flux_b1: float = 0.0,
         water_flux_b2: float = 0.0,
         water_flux_b3: float = 0.0,
-        temp_rate_ref: float = 0.0,
+        temp_rate_ref: float = 1.0e-9,
         seg_pot_0: float = 0.0,
         void_ratio_0_comp: float = 0.0,
         comp_index_unfrozen: float = 0.0,

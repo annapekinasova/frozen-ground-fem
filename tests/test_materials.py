@@ -84,7 +84,7 @@ class TestMaterialDefaults(unittest.TestCase):
         self.assertEqual(self.m.water_flux_b3, 0.0)
 
     def test_temp_rate_ref(self):
-        self.assertEqual(self.m.temp_rate_ref, 0.0)
+        self.assertEqual(self.m.temp_rate_ref, 1.0e-9)
 
     def test_seg_pot_0(self):
         self.assertEqual(self.m.seg_pot_0, 0.0)
@@ -154,10 +154,10 @@ class TestMaterialDefaults(unittest.TestCase):
             self.m.water_flux(
                 e=0.2, e0=0.3, temp=1.5, temp_rate=0.1,
                 temp_grad=0.05, sigma_1=10.0)
-        with self.assertRaises(ZeroDivisionError):
-            self.m.water_flux(
-                e=0.2, e0=0.3, temp=-1.5, temp_rate=0.1,
-                temp_grad=0.05, sigma_1=10.0)
+        qw = self.m.water_flux(
+            e=0.2, e0=0.3, temp=-1.5, temp_rate=0.1,
+            temp_grad=0.05, sigma_1=10.0)
+        self.assertAlmostEqual(qw, 0.0)
 
     def test_eff_stress(self):
         with self.assertRaises(ZeroDivisionError):
@@ -221,7 +221,7 @@ class TestNullMaterial(unittest.TestCase):
         self.assertEqual(NULL_MATERIAL.water_flux_b3, 0.0)
 
     def test_temp_rate_ref(self):
-        self.assertEqual(NULL_MATERIAL.temp_rate_ref, 0.0)
+        self.assertEqual(NULL_MATERIAL.temp_rate_ref, 1.0e-9)
 
     def test_seg_pot_0(self):
         self.assertEqual(NULL_MATERIAL.seg_pot_0, 0.0)
@@ -291,10 +291,10 @@ class TestNullMaterial(unittest.TestCase):
             NULL_MATERIAL.water_flux(
                 e=0.2, e0=0.3, temp=1.5, temp_rate=0.1,
                 temp_grad=0.05, sigma_1=10.0)
-        with self.assertRaises(ZeroDivisionError):
-            NULL_MATERIAL.water_flux(
-                e=0.2, e0=0.3, temp=-1.5, temp_rate=0.1,
-                temp_grad=0.05, sigma_1=10.0)
+        qw = NULL_MATERIAL.water_flux(
+            e=0.2, e0=0.3, temp=-1.5, temp_rate=0.1,
+            temp_grad=0.05, sigma_1=10.0)
+        self.assertAlmostEqual(qw, 0.0)
 
     def test_eff_stress(self):
         with self.assertRaises(ZeroDivisionError):
