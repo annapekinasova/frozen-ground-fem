@@ -830,5 +830,30 @@ class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
 # TODO: add cubic test case with non-constant integration point values
 
 
+class TestUpdateNodes(unittest.TestCase):
+    def setUp(self):
+        self.msh = ThermalAnalysis1D((0, 100), generate=True, order=1)
+        self.msh._temp_vector[:] = np.linspace(1.0, 11.0, self.msh.num_nodes)
+        self.msh.update_nodes()
+
+    def test_initial_node_values(self):
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.temp, k+1)
+
+    def test_repeat_update_nodes(self):
+        self.msh.update_nodes()
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.temp, k+1)
+
+    def test_change_temp_vectors_update_nodes(self):
+        self.msh._temp_vector[:] = np.linspace(2.0, 22.0, self.msh.num_nodes)
+        self.msh._temp_vector_0[:] = np.linspace(1.0, 11.0, self.msh.num_nodes)
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.temp, k+1)
+        self.msh.update_nodes()
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.temp, 2.0 * (k+1))
+
+
 if __name__ == "__main__":
     unittest.main()
