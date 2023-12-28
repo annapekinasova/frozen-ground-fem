@@ -1339,9 +1339,9 @@ class Material:
         Raises
         ------
         ValueError
-            If temp > 0.0.
+            If temp >= 0.0.
         """
-        if temp > 0.0:
+        if temp >= 0.0:
             raise ValueError(f"temp {temp} must be negative.")
         Cf = self.comp_index_frozen(temp)
         sig = sig_f0 * 10 ** ((e_f0 - e) / Cf)
