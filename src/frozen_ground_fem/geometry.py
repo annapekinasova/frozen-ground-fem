@@ -264,11 +264,12 @@ class Node1D(Point1D):
 
     Attributes
     ----------
+    index
     coords
     z
     temp
-    index
     void_ratio
+    temp_rate
 
     Parameters
     ----------
@@ -282,6 +283,9 @@ class Node1D(Point1D):
     void_ratio: float, optional, default=0.0
         The value to assign to the void ratio of the node.
         Cannot be negative.
+    temp_rate: float, optional, default=0.0
+        The value to assign to the rate of change (with time)
+        of temperature of the node.
 
     Raises
     ------
@@ -294,22 +298,26 @@ class Node1D(Point1D):
         If temp is not convertible to float.
         If void_ratio is not convertible to float.
         If void_ratio is negative.
+        If temp_rate cannot be converted to float.
     """
     _index: int
-    _temp: npt.NDArray[np.floating]
+    _temp: float = 0.0
     _void_ratio: float = 0.0
+    _temp_rate: float = 0.0
 
     def __init__(
-            self,
-            index: int,
-            coord: float = 0.0,
-            temp: float = 0.0,
-            void_ratio: float = 0.0):
+        self,
+        index: int,
+        coord: float = 0.0,
+        temp: float = 0.0,
+        void_ratio: float = 0.0,
+        temp_rate: float = 0.0,
+    ):
         self.index = index
         super().__init__(coord)
-        self._temp = np.zeros((1,))
         self.temp = temp
         self.void_ratio = void_ratio
+        self.temp_rate = temp_rate
 
     @property
     def temp(self) -> float:
@@ -329,11 +337,37 @@ class Node1D(Point1D):
         ValueError
             If value to assign is not convertible to float.
         """
-        return self._temp[0]
+        return self._temp
 
     @temp.setter
     def temp(self, value: float) -> None:
-        self._temp[0] = value
+        value = float(value)
+        self._temp = value
+
+    @property
+    def temp_rate(self) -> float:
+        """Rate of change of temperature (with time) of the node.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the temperature rate of the :c:`Node1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+        """
+        return self._temp_rate
+
+    @temp_rate.setter
+    def temp_rate(self, value: float) -> None:
+        value = float(value)
+        self._temp_rate = value
 
     @property
     def index(self) -> int:

@@ -123,9 +123,9 @@ class ThermalElement1D(Element1D):
         Te = np.array([nd.temp for nd in self.nodes])
         for ip in self.int_pts:
             N = self._shape_matrix(ip.local_coord)
-            Tp = (N @ Te)[0]
-            Sw, dSw_dT = ip.material.deg_sat_water(Tp)
-            ip.temp = Tp
+            T = (N @ Te)[0]
+            Sw, dSw_dT = ip.material.deg_sat_water(T)
+            ip.temp = T
             ip.deg_sat_water = Sw
             ip.deg_sat_water_temp_gradient = dSw_dT
 

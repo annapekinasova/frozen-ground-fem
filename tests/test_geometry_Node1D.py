@@ -38,6 +38,12 @@ class TestNode1DDefaults(unittest.TestCase):
     def test_temp_type(self):
         self.assertIsInstance(self.p.temp, float)
 
+    def test_temp_rate_value(self):
+        self.assertEqual(self.p.temp_rate, 0.0)
+
+    def test_temp_rate_type(self):
+        self.assertIsInstance(self.p.temp_rate, float)
+
     def test_void_ratio_value(self):
         self.assertEqual(self.p.void_ratio, 0.0)
 
@@ -47,7 +53,8 @@ class TestNode1DDefaults(unittest.TestCase):
 
 class TestNode1DInitializers(unittest.TestCase):
     def setUp(self):
-        self.p = Node1D(0, 1.0, temp=-5.0, void_ratio=0.3)
+        self.p = Node1D(0, 1.0, temp=-5.0, void_ratio=0.3,
+                        temp_rate=1.5)
 
     def test_index_value(self):
         self.assertEqual(self.p.index, 0)
@@ -75,6 +82,12 @@ class TestNode1DInitializers(unittest.TestCase):
 
     def test_temp_type(self):
         self.assertIsInstance(self.p.temp, float)
+
+    def test_temp_rate_value(self):
+        self.assertEqual(self.p.temp_rate, 1.5)
+
+    def test_temp_rate_type(self):
+        self.assertIsInstance(self.p.temp_rate, float)
 
     def test_void_ratio_value(self):
         self.assertEqual(self.p.void_ratio, 0.3)
@@ -154,6 +167,26 @@ class TestNode1DSetters(unittest.TestCase):
     def test_set_temp_invalid_str(self):
         with self.assertRaises(ValueError):
             self.p.temp = "five"
+
+    def test_set_temp_rate_valid_float(self):
+        self.p.temp_rate = 1.0
+        self.assertEqual(self.p.temp_rate, 1.0)
+
+    def test_set_temp_rate_valid_int(self):
+        self.p.temp_rate = -1
+        self.assertEqual(self.p.temp_rate, -1.0)
+
+    def test_set_temp_rate_valid_int_type(self):
+        self.p.temp_rate = 1
+        self.assertIsInstance(self.p.temp_rate, float)
+
+    def test_set_temp_rate_valid_str(self):
+        self.p.temp_rate = "-1.e5"
+        self.assertEqual(self.p.temp_rate, -1.0e5)
+
+    def test_set_temp_rate_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.p.temp_rate = "five"
 
     def test_set_void_ratio_valid_float(self):
         self.p.void_ratio = 1.0
