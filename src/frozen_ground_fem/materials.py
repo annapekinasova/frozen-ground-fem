@@ -1298,7 +1298,14 @@ class Material:
         -------
         float
             The compression / rebound index of frozen soil.
+
+        Raises
+        ------
+        ValueError
+            If the given temp >= 0.0 since this only applies for frozen soil.
         """
+        if temp >= 0.0:
+            raise ValueError(f"temp {temp} is >= Tf = 0.0")
         return (
             self.comp_index_frozen_a1
             - self.comp_index_frozen_a2 *
