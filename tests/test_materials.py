@@ -24,7 +24,6 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(thrm_cond_ice, 2.22e0)
 
 # TODO: Default tests
-# comp_index_frozen()
 # tot_stress()
 
 
@@ -167,8 +166,11 @@ class TestMaterialDefaults(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.m.comp_index_frozen(temp=0.0)
 
+    def test_tot_stress(self):
+        with self.assertRaises(ValueError):
+            self.m.tot_stress(temp=0.0, e=0.350, e_f0=0.355, sig_f0=3e5)
+
 # TODO: Null Material tests
-# comp_index_frozen()
 # tot_stress()
 
 
@@ -308,9 +310,11 @@ class TestNullMaterial(unittest.TestCase):
         with self.assertRaises(ValueError):
             NULL_MATERIAL.comp_index_frozen(temp=0.0)
 
+    def test_tot_stress(self):
+        with self.assertRaises(ValueError):
+            NULL_MATERIAL.tot_stress(temp=0.0, e=0.350, e_f0=0.355, sig_f0=3e5)
 
 # TODO: Initializer tests
-# comp_index_frozen()
 # tot_stress()
 
 
@@ -732,6 +736,39 @@ class TestMaterialInitializers(unittest.TestCase):
         expected_comp_index_frozen = 0.00652018207187661
         self.assertAlmostEqual(
             comp_index_frozen, expected_comp_index_frozen, places=10)
+
+    def test_tot_stress(self):
+        with self.assertRaises(ValueError):
+            self.m.tot_stress(temp=0.0, e=0.350, e_f0=0.355, sig_f0=3e5)
+        with self.assertRaises(ValueError):
+            self.m.tot_stress(temp=5.0, e=0.350, e_f0=0.355, sig_f0=3e5)
+        # e < e_f0
+        sig, dsig_de = self.m.tot_stress(
+            temp=-5.0, e=0.350, e_f0=0.355, sig_f0=3e5)
+        expected_sig = 1753763.41459215
+        expected_dsig_de = -619336921.96972
+        self.assertAlmostEqual(
+            sig, expected_sig, places=5)
+        self.assertAlmostEqual(
+            dsig_de, expected_dsig_de, places=5)
+        # e > e_f0
+        sig, dsig_de = self.m.tot_stress(
+            temp=-5.0, e=0.36, e_f0=0.355, sig_f0=3e5)
+        expected_sig = 51318.2104559584
+        expected_dsig_de = -18122890.6021962
+        self.assertAlmostEqual(
+            sig, expected_sig, places=5)
+        self.assertAlmostEqual(
+            dsig_de, expected_dsig_de, places=5)
+        # e = e_f0
+        sig, dsig_de = self.m.tot_stress(
+            temp=-5.0, e=0.355, e_f0=0.355, sig_f0=3e5)
+        expected_sig = 300000
+        expected_dsig_de = -105944208.349292
+        self.assertAlmostEqual(
+            sig, expected_sig, places=5)
+        self.assertAlmostEqual(
+            dsig_de, expected_dsig_de, places=5)
 
 
 class TestMaterialThrmCondSolidsSetter(unittest.TestCase):
