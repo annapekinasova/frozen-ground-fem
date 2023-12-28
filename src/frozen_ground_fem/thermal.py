@@ -841,7 +841,7 @@ class ThermalAnalysis1D(Mesh1D):
         # in the ThermalAnalysis1D.
         """
         for nd in self.nodes:
-            nd.temp = float(self._temp_vector[nd.index])
+            nd.temp = self._temp_vector[nd.index]
 
     def update_integration_points(self) -> None:
         """Updates the properties of integration points
