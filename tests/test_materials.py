@@ -515,7 +515,7 @@ class TestMaterialInitializers(unittest.TestCase):
             e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
             temp_grad=0.0, sigma_1=1e-3)
         expected_water_flux = 0.0
-        self.assertAlmostEqual(water_flux, expected_water_flux)
+        self.assertAlmostEqual(water_flux, expected_water_flux, delta=1e-20)
 
     def test_water_flux_method_4(self):
         #   Check temp_rate > 0.0, temp_grad = 0.0, sigma_1 = 0.0
@@ -523,7 +523,7 @@ class TestMaterialInitializers(unittest.TestCase):
             e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
             temp_grad=0.0, sigma_1=0.0)
         expected_water_flux = 0.0
-        self.assertAlmostEqual(water_flux, expected_water_flux)
+        self.assertAlmostEqual(water_flux, expected_water_flux, delta=1e-20)
 
     def test_water_flux_method_5(self):
         #   Check temp_rate > 0.0, temp_grad = 0.0, sigma_1 < 0.0
@@ -531,7 +531,7 @@ class TestMaterialInitializers(unittest.TestCase):
             e=0.3, e0=0.5, temp=-1.5, temp_rate=0.1,
             temp_grad=0.0, sigma_1=-1e-3)
         expected_water_flux = 0.0
-        self.assertAlmostEqual(water_flux, expected_water_flux)
+        self.assertAlmostEqual(water_flux, expected_water_flux, delta=1e-20)
 
     def test_water_flux_method_6(self):
         #   Check temp_rate > 0.0, temp_grad < 0.0, sigma_1 > 0.0
@@ -587,7 +587,7 @@ class TestMaterialInitializers(unittest.TestCase):
             e=0.3, e0=0.5, temp=-1.5, temp_rate=0.0,
             temp_grad=0.0, sigma_1=1e-3)
         expected_water_flux = 0.0
-        self.assertAlmostEqual(water_flux, expected_water_flux)
+        self.assertAlmostEqual(water_flux, expected_water_flux, delta=1e-20)
 
     def test_water_flux_method_13(self):
         #   Check temp_rate = 0.0, temp_grad = 0.0, sigma_1 = 0.0
@@ -595,7 +595,7 @@ class TestMaterialInitializers(unittest.TestCase):
             e=0.3, e0=0.5, temp=-1.5, temp_rate=0.0,
             temp_grad=0.0, sigma_1=0.0)
         expected_water_flux = 0.0
-        self.assertAlmostEqual(water_flux, expected_water_flux)
+        self.assertAlmostEqual(water_flux, expected_water_flux, delta=1e-20)
 
     def test_water_flux_method_14(self):
         #   Check temp_rate = 0.0, temp_grad = 0.0, sigma_1 < 0.0
@@ -603,7 +603,7 @@ class TestMaterialInitializers(unittest.TestCase):
             e=0.3, e0=0.5, temp=-1.5, temp_rate=0.0,
             temp_grad=0.0, sigma_1=-1e-3)
         expected_water_flux = 0.0
-        self.assertAlmostEqual(water_flux, expected_water_flux)
+        self.assertAlmostEqual(water_flux, expected_water_flux, delta=1e-20)
 
     def test_water_flux_method_15(self):
         #   Check temp_rate = 0.0, temp_grad < 0.0, sigma_1 > 0.0
@@ -659,7 +659,7 @@ class TestMaterialInitializers(unittest.TestCase):
             e=0.3, e0=0.5, temp=-1.5, temp_rate=-0.1,
             temp_grad=0.0, sigma_1=1e-3)
         expected_water_flux = 0.0
-        self.assertAlmostEqual(water_flux, expected_water_flux)
+        self.assertAlmostEqual(water_flux, expected_water_flux, delta=1e-20)
 
     def test_water_flux_method_22(self):
         #   Check temp_rate < 0.0, temp_grad = 0.0, sigma_1 = 0.0
@@ -667,7 +667,7 @@ class TestMaterialInitializers(unittest.TestCase):
             e=0.3, e0=0.5, temp=-1.5, temp_rate=-0.1,
             temp_grad=0.0, sigma_1=0.0)
         expected_water_flux = 0.0
-        self.assertAlmostEqual(water_flux, expected_water_flux)
+        self.assertAlmostEqual(water_flux, expected_water_flux, delta=1e-20)
 
     def test_water_flux_method_23(self):
         #   Check temp_rate < 0.0, temp_grad = 0.0, sigma_1 < 0.0
@@ -675,7 +675,7 @@ class TestMaterialInitializers(unittest.TestCase):
             e=0.3, e0=0.5, temp=-1.5, temp_rate=-0.1,
             temp_grad=0.0, sigma_1=-1e-3)
         expected_water_flux = 0.0
-        self.assertAlmostEqual(water_flux, expected_water_flux)
+        self.assertAlmostEqual(water_flux, expected_water_flux, delta=1e-20)
 
     def test_water_flux_method_24(self):
         #   Check temp_rate < 0.0, temp_grad < 0.0, sigma_1 > 0.0

@@ -7,11 +7,9 @@ from frozen_ground_fem.materials import (
 )
 from frozen_ground_fem.geometry import (
     Node1D,
-    IntegrationPoint1D,
 )
 from frozen_ground_fem.thermal import (
     ThermalElement1D,
-    ThermalBoundary1D,
 )
 
 
@@ -37,6 +35,7 @@ class TestThermalElement1DLinear(unittest.TestCase):
         for ip in self.thrm_e.int_pts:
             ip.material = m
             ip.void_ratio = 0.2
+            ip.void_ratio_0 = 0.2
             ip.deg_sat_water = 0.1
         lam = self.thrm_e.int_pts[0].thrm_cond
         jac = self.thrm_e.jacobian
@@ -128,6 +127,7 @@ class TestThermalElement1DCubic(unittest.TestCase):
         for ip in self.thrm_e.int_pts:
             ip.material = m
             ip.void_ratio = 0.2
+            ip.void_ratio_0 = 0.2
             ip.deg_sat_water = 0.1
         lam = self.thrm_e.int_pts[0].thrm_cond
         jac = self.thrm_e.jacobian
@@ -165,80 +165,91 @@ class TestThermalElement1DCubic(unittest.TestCase):
         self.assertTrue(np.allclose(
             self.thrm_e.heat_storage_matrix, expected))
 
+    def test_update_integration_points_null_material(self):
+        Te = np.array([
+            -1.00,
+            -0.10,
+            1.10,
+            2.00,
+        ])
+        for T, nd in zip(Te, self.thrm_e.nodes):
+            nd.temp = T
+        self.thrm_e.update_integration_points()
+        expected_Tip = np.array([
+            -0.913964840018686,
+            -0.436743906025892,
+            0.500000000000000,
+            1.436743906025890,
+            1.913964840018690,
+        ])
+        expected_Sw = np.array([
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            1.0,
+        ])
+        expected_dSw_dT = np.array([
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ])
+        for ip, eT, eSw, edSw in zip(
+            self.thrm_e.int_pts,
+            expected_Tip,
+            expected_Sw,
+            expected_dSw_dT,
+        ):
+            self.assertAlmostEqual(ip.temp, eT)
+            self.assertAlmostEqual(ip.deg_sat_water, eSw)
+            self.assertAlmostEqual(ip.deg_sat_water_temp_gradient, edSw)
 
-class TestThermalBoundary1D(unittest.TestCase):
-    def setUp(self):
-        self.nodes = (Node1D(0, 2.0),)
-        self.int_pts = (IntegrationPoint1D(),)
-        self.thrm_bnd = ThermalBoundary1D(self.nodes, self.int_pts)
+    def test_update_integration_points_with_material(self):
+        m = Material(deg_sat_water_alpha=1.2e4, deg_sat_water_beta=0.35)
+        for ip in self.thrm_e.int_pts:
+            ip.material = m
+        Te = np.array([
+            -1.00,
+            -0.10,
+            1.10,
+            2.00,
+        ])
+        for T, nd in zip(Te, self.thrm_e.nodes):
+            nd.temp = T
+        self.thrm_e.update_integration_points()
+        expected_Tip = np.array([
+            -0.913964840018686,
+            -0.436743906025892,
+            0.500000000000000,
+            1.436743906025890,
+            1.913964840018690,
+        ])
+        expected_Sw = np.array([
+            0.0915235681884727,
+            0.1361684964587000,
+            1.00000000000000,
+            1.00000000000000,
+            1.00000000000000,
+        ])
+        expected_dSw_dT = np.array([
+            0.0539532190585967,
+            0.1674525178303510,
+            0.00000000000000,
+            0.00000000000000,
+            0.00000000000000,
+        ])
+        for ip, eT, eSw, edSw in zip(
+            self.thrm_e.int_pts,
+            expected_Tip,
+            expected_Sw,
+            expected_dSw_dT,
+        ):
+            self.assertAlmostEqual(ip.temp, eT)
+            self.assertAlmostEqual(ip.deg_sat_water, eSw)
+            self.assertAlmostEqual(ip.deg_sat_water_temp_gradient, edSw)
 
-    def test_defaults(self):
-        self.assertEqual(self.thrm_bnd.bnd_type,
-                         ThermalBoundary1D.BoundaryType.temp)
-        self.assertAlmostEqual(self.thrm_bnd.bnd_value, 0.0)
 
-    def test_nodes_equal(self):
-        for nd, bnd_nd in zip(self.nodes, self.thrm_bnd.nodes):
-            self.assertIs(nd, bnd_nd)
-
-    def test_int_pts_equal(self):
-        for ip, bnd_ip in zip(self.int_pts, self.thrm_bnd.int_pts):
-            self.assertIs(ip, bnd_ip)
-
-    def test_assign_bnd_type_invalid(self):
-        with self.assertRaises(TypeError):
-            self.thrm_bnd.bnd_type = 0
-        with self.assertRaises(TypeError):
-            self.thrm_bnd.bnd_type = "temp"
-        with self.assertRaises(AttributeError):
-            self.thrm_bnd.bnd_type = ThermalBoundary1D.BoundaryType.disp
-
-    def test_assign_bnd_type_valid(self):
-        self.thrm_bnd.bnd_type = ThermalBoundary1D.BoundaryType.heat_flux
-        self.assertEqual(
-            self.thrm_bnd.bnd_type, ThermalBoundary1D.BoundaryType.heat_flux
-        )
-        self.thrm_bnd.bnd_type = ThermalBoundary1D.BoundaryType.temp
-        self.assertEqual(self.thrm_bnd.bnd_type,
-                         ThermalBoundary1D.BoundaryType.temp)
-        self.thrm_bnd.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
-        self.assertEqual(
-            self.thrm_bnd.bnd_type, ThermalBoundary1D.BoundaryType.temp_grad
-        )
-
-    def test_assign_bnd_value_invalid(self):
-        with self.assertRaises(ValueError):
-            self.thrm_bnd.bnd_value = "temp"
-
-    def test_assign_bnd_value_valid(self):
-        self.thrm_bnd.bnd_value = 1.0
-        self.assertAlmostEqual(self.thrm_bnd.bnd_value, 1.0)
-        self.thrm_bnd.bnd_value = -2
-        self.assertAlmostEqual(self.thrm_bnd.bnd_value, -2.0)
-        self.thrm_bnd.bnd_value = "1e-5"
-        self.assertAlmostEqual(self.thrm_bnd.bnd_value, 1e-5)
-
-    def test_update_nodes_bnd_type_temp(self):
-        self.nodes[0].temp = 20.0
-        self.assertAlmostEqual(self.thrm_bnd.nodes[0].temp, 20.0)
-        self.thrm_bnd.bnd_type = ThermalBoundary1D.BoundaryType.temp
-        self.thrm_bnd.bnd_value = 5.0
-        self.assertAlmostEqual(self.thrm_bnd.nodes[0].temp, 20.0)
-        self.thrm_bnd.update_nodes()
-        self.assertAlmostEqual(self.thrm_bnd.nodes[0].temp, 5.0)
-        self.thrm_bnd.bnd_value = 7.0
-        self.assertAlmostEqual(self.thrm_bnd.nodes[0].temp, 5.0)
-
-    def test_update_nodes_bnd_type_non_temp(self):
-        self.nodes[0].temp = 20.0
-        self.assertAlmostEqual(self.thrm_bnd.nodes[0].temp, 20.0)
-        self.thrm_bnd.bnd_type = ThermalBoundary1D.BoundaryType.heat_flux
-        self.thrm_bnd.bnd_value = 5.0
-        self.assertAlmostEqual(self.thrm_bnd.nodes[0].temp, 20.0)
-        self.thrm_bnd.update_nodes()
-        self.assertAlmostEqual(self.thrm_bnd.nodes[0].temp, 20.0)
-        self.thrm_bnd.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
-        self.thrm_bnd.bnd_value = 7.0
-        self.assertAlmostEqual(self.thrm_bnd.nodes[0].temp, 20.0)
-        self.thrm_bnd.update_nodes()
-        self.assertAlmostEqual(self.thrm_bnd.nodes[0].temp, 20.0)
+if __name__ == "__main__":
+    unittest.main()

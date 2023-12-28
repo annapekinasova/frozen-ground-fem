@@ -77,8 +77,11 @@ class ThermalElement1D(Element1D):
         H = np.zeros_like(B.T @ B)
         jac = self.jacobian
         for ip in self.int_pts:
+            e = ip.void_ratio
+            e0 = ip.void_ratio_0
+            e_fact = (1+e0) / (1+e)
             B = self._gradient_matrix(ip.local_coord, jac)
-            H += B.T @ (ip.thrm_cond * B) * ip.weight
+            H += B.T @ (ip.thrm_cond * B) * ip.weight * e_fact ** 2
         H *= jac
         return H
 
@@ -787,7 +790,7 @@ class ThermalAnalysis1D(Mesh1D):
             if be.bnd_type == ThermalBoundary1D.BoundaryType.heat_flux:
                 self._heat_flux_vector[be.nodes[0].index] += be.bnd_value
             elif be.bnd_type == ThermalBoundary1D.BoundaryType.temp_grad:
-                if be.int_pts is None:
+                if not be.int_pts:
                     raise AttributeError(f"boundary {be} has no int_pts")
                 self._heat_flux_vector[be.nodes[0].index] += (
                     -be.int_pts[0].thrm_cond * be.bnd_value
