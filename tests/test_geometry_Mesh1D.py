@@ -35,6 +35,36 @@ class TestMesh1DInvalid(unittest.TestCase):
             msh.grid_size = -0.5
         self.assertEqual(msh.grid_size, 0.0)
 
+    def test_set_num_nodes_not_allowed(self):
+        msh = Mesh1D((100, -8))
+        with self.assertRaises(AttributeError):
+            msh.num_nodes = 5
+
+    def test_set_nodes_not_allowed(self):
+        msh = Mesh1D((100, -8))
+        with self.assertRaises(AttributeError):
+            msh.nodes = ()
+
+    def test_set_num_elements_not_allowed(self):
+        msh = Mesh1D((100, -8))
+        with self.assertRaises(AttributeError):
+            msh.num_elements = 5
+
+    def test_set_elements_not_allowed(self):
+        msh = Mesh1D((100, -8))
+        with self.assertRaises(AttributeError):
+            msh.elements = ()
+
+    def test_set_num_boundaries_not_allowed(self):
+        msh = Mesh1D((100, -8))
+        with self.assertRaises(AttributeError):
+            msh.num_boundaries = 3
+
+    def test_set_boundaries_not_allowed(self):
+        msh = Mesh1D((100, -8))
+        with self.assertRaises(AttributeError):
+            msh.boundaries = ()
+
     def test_generate_mesh(self):
         msh = Mesh1D()
         with self.assertRaises(ValueError):
@@ -264,7 +294,7 @@ class TestAddBoundaries(unittest.TestCase):
         bnd1 = Boundary1D((self.msh.nodes[-1],))
         self.msh.add_boundary(bnd1)
         self.assertEqual(self.msh.num_boundaries, 2)
-        self.assertTrue(bnd in self.msh.boundaries)
+        self.assertTrue(bnd1 in self.msh.boundaries)
 
     def test_add_boundary_with_int_pt(self):
         bnd = Boundary1D((self.msh.nodes[0],))
@@ -275,7 +305,7 @@ class TestAddBoundaries(unittest.TestCase):
         )
         self.msh.add_boundary(bnd1)
         self.assertEqual(self.msh.num_boundaries, 2)
-        self.assertTrue(bnd in self.msh.boundaries)
+        self.assertTrue(bnd1 in self.msh.boundaries)
 
 
 class TestRemoveBoundaries(unittest.TestCase):

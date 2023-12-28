@@ -27,6 +27,7 @@ def main():
         for ip in e.int_pts:
             ip.material = mtl
             ip.void_ratio = void_ratio
+            ip.void_ratio_0 = void_ratio
             ip.deg_sat_water = deg_sat_water
 
     # initialize global matrices
