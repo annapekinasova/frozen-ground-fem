@@ -407,6 +407,7 @@ class ThermalAnalysis1D(Mesh1D):
     _coef_matrix_1: npt.NDArray[np.floating]
     _residual_heat_flux_vector: npt.NDArray[np.floating]
     _delta_temp_vector: npt.NDArray[np.floating]
+    _temp_rate_vector: npt.NDArray[np.floating]
 
     @property
     def elements(self) -> tuple[ThermalElement1D, ...]:
@@ -512,6 +513,7 @@ class ThermalAnalysis1D(Mesh1D):
                 (self.num_nodes, self.num_nodes))
             self._residual_heat_flux_vector = np.zeros(self.num_nodes)
             self._delta_temp_vector = np.zeros(self.num_nodes)
+            self._temp_rate_vector = np.zeros(self.num_nodes)
         else:
             self._nodes = ()
             self._elements = ()
@@ -842,6 +844,7 @@ class ThermalAnalysis1D(Mesh1D):
         """
         for nd in self.nodes:
             nd.temp = self._temp_vector[nd.index]
+            nd.temp_rate = self._temp_rate_vector[nd.index]
 
     def update_integration_points(self) -> None:
         """Updates the properties of integration points
@@ -882,6 +885,7 @@ class ThermalAnalysis1D(Mesh1D):
         # (we assume that initial conditions have already been applied)
         for nd in self.nodes:
             self._temp_vector[nd.index] = nd.temp
+            self._temp_vector_0[nd.index] = nd.temp
         # now build the global matrices and vectors
         self.update_integration_points()
         self.update_heat_flux_vector()
@@ -990,6 +994,10 @@ class ThermalAnalysis1D(Mesh1D):
         self._temp_vector[self._free_vec] += (
             self._delta_temp_vector[self._free_vec]
         )
+        # update temp rate vector
+        self._temp_rate_vector[:] = (
+            self._temp_vector[:] - self._temp_vector_0[:]
+        ) / self.dt
         self._eps_a = float(
             np.linalg.norm(self._delta_temp_vector) /
             np.linalg.norm(self._temp_vector)
