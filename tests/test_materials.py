@@ -24,7 +24,6 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(thrm_cond_ice, 2.22e0)
 
 # TODO: Default tests
-# eff_stress()
 # comp_index_frozen()
 # tot_stress()
 
@@ -160,9 +159,11 @@ class TestMaterialDefaults(unittest.TestCase):
                 e=0.2, e0=0.3, temp=-1.5, temp_rate=0.1,
                 temp_grad=0.05, sigma_1=10.0)
 
+    def test_eff_stress(self):
+        with self.assertRaises(ZeroDivisionError):
+            self.m.eff_stress(0.0, ppc=0.0)
 
 # TODO: Null Material tests
-# eff_stress()
 # comp_index_frozen()
 # tot_stress()
 
@@ -295,9 +296,12 @@ class TestNullMaterial(unittest.TestCase):
                 e=0.2, e0=0.3, temp=-1.5, temp_rate=0.1,
                 temp_grad=0.05, sigma_1=10.0)
 
+    def test_eff_stress(self):
+        with self.assertRaises(ZeroDivisionError):
+            NULL_MATERIAL.eff_stress(0.0, ppc=0.0)
+
 
 # TODO: Initializer tests
-# eff_stress()
 # comp_index_frozen()
 # tot_stress()
 
@@ -324,7 +328,7 @@ class TestMaterialInitializers(unittest.TestCase):
             temp_rate_ref=1e-9,
             seg_pot_0=2.0e-9,
             void_ratio_0_comp=2.6,
-            eff_stress_0_comp=0.0028,
+            eff_stress_0_comp=2.8e0,
             comp_index_unfrozen=0.421,
             rebound_index_unfrozen=0.08,
             comp_index_frozen_a1=0.021,
@@ -393,7 +397,7 @@ class TestMaterialInitializers(unittest.TestCase):
         self.assertEqual(self.m.void_ratio_0_comp, 2.6)
 
     def test_eff_stress_0_comp(self):
-        self.assertEqual(self.m.eff_stress_0_comp, 0.0028)
+        self.assertEqual(self.m.eff_stress_0_comp, 2.8e0)
 
     def test_comp_index_unfrozen(self):
         self.assertEqual(self.m.comp_index_unfrozen, 0.421)
@@ -696,6 +700,20 @@ class TestMaterialInitializers(unittest.TestCase):
             temp_grad=-0.05, sigma_1=-1e-3)
         expected_water_flux = 7.14599970336091E-13
         self.assertAlmostEqual(water_flux, expected_water_flux, delta=1e-20)
+
+    def test_eff_stress(self):
+        #    e < e pc´
+        sig_p, dsig_de = self.m.eff_stress(e=0.4, ppc=1e5)
+        expected_sig_p = 470772.665017368
+        expected_dsig_de = -2574807.88754886
+        self.assertAlmostEqual(sig_p, expected_sig_p, places=5)
+        self.assertAlmostEqual(dsig_de, expected_dsig_de, places=5)
+        #    e > e pc´
+        sig_p, dsig_de = self.m.eff_stress(e=0.9, ppc=1e5)
+        expected_sig_p = 195.28511416096
+        expected_dsig_de = -5620.75740938333
+        self.assertAlmostEqual(sig_p, expected_sig_p, places=5)
+        self.assertAlmostEqual(dsig_de, expected_dsig_de, places=5)
 
 
 class TestMaterialThrmCondSolidsSetter(unittest.TestCase):
