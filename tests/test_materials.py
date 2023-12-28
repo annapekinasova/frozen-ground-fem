@@ -163,6 +163,10 @@ class TestMaterialDefaults(unittest.TestCase):
         with self.assertRaises(ZeroDivisionError):
             self.m.eff_stress(0.0, ppc=0.0)
 
+    def test_comp_index_frozen(self):
+        with self.assertRaises(ValueError):
+            self.m.comp_index_frozen(temp=0.0)
+
 # TODO: Null Material tests
 # comp_index_frozen()
 # tot_stress()
@@ -299,6 +303,10 @@ class TestNullMaterial(unittest.TestCase):
     def test_eff_stress(self):
         with self.assertRaises(ZeroDivisionError):
             NULL_MATERIAL.eff_stress(0.0, ppc=0.0)
+
+    def test_comp_index_frozen(self):
+        with self.assertRaises(ValueError):
+            NULL_MATERIAL.comp_index_frozen(temp=0.0)
 
 
 # TODO: Initializer tests
@@ -706,14 +714,24 @@ class TestMaterialInitializers(unittest.TestCase):
         sig_p, dsig_de = self.m.eff_stress(e=0.4, ppc=1e5)
         expected_sig_p = 470772.665017368
         expected_dsig_de = -2574807.88754886
-        self.assertAlmostEqual(sig_p, expected_sig_p, places=5)
-        self.assertAlmostEqual(dsig_de, expected_dsig_de, places=5)
+        self.assertAlmostEqual(sig_p, expected_sig_p, places=8)
+        self.assertAlmostEqual(dsig_de, expected_dsig_de, places=8)
         #    e > e pc´
         sig_p, dsig_de = self.m.eff_stress(e=0.9, ppc=1e5)
         expected_sig_p = 195.28511416096
         expected_dsig_de = -5620.75740938333
-        self.assertAlmostEqual(sig_p, expected_sig_p, places=5)
-        self.assertAlmostEqual(dsig_de, expected_dsig_de, places=5)
+        self.assertAlmostEqual(sig_p, expected_sig_p, places=8)
+        self.assertAlmostEqual(dsig_de, expected_dsig_de, places=8)
+
+    def test_comp_index_frozen(self):
+        with self.assertRaises(ValueError):
+            self.m.comp_index_frozen(temp=0.0)
+        with self.assertRaises(ValueError):
+            self.m.comp_index_frozen(temp=5.0)
+        comp_index_frozen = self.m.comp_index_frozen(temp=-5.0)
+        expected_comp_index_frozen = 0.00652018207187661
+        self.assertAlmostEqual(
+            comp_index_frozen, expected_comp_index_frozen, places=10)
 
 
 class TestMaterialThrmCondSolidsSetter(unittest.TestCase):
