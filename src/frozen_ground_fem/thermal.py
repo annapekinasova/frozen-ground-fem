@@ -18,6 +18,8 @@ import numpy.typing as npt
 
 from .materials import (
     vol_heat_cap_water as Cw,
+    dens_ice as rho_i,
+    latent_heat_fusion_water as Lw,
 )
 from .geometry import (
     Node1D,
@@ -111,8 +113,14 @@ class ThermalElement1D(Element1D):
         C = np.zeros_like(N.T @ N)
         jac = self.jacobian
         for ip in self.int_pts:
+            ee = ip.void_ratio
+            e_fact = ee / (1.0 + ee)
             N = self._shape_matrix(ip.local_coord)
-            C += N.T @ (ip.vol_heat_cap * N) * ip.weight
+            C += (
+                (ip.vol_heat_cap
+                 + Lw * rho_i * e_fact * ip.deg_sat_water_temp_gradient)
+                * ip.weight
+            ) * N.T @ N
         C *= jac
         return C
 
