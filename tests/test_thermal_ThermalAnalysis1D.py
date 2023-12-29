@@ -706,6 +706,7 @@ class TestUpdateGlobalMatricesLinearConstant(unittest.TestCase):
                 ip.deg_sat_water = 0.8
                 ip.void_ratio = 0.35
                 ip.void_ratio_0 = 0.3
+                ip.water_flux_rate = -1.5e-8
 
     def test_initial_heat_flow_matrix(self):
         expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
@@ -719,12 +720,14 @@ class TestUpdateGlobalMatricesLinearConstant(unittest.TestCase):
 
     def test_update_heat_flow_matrix(self):
         expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-        k0 = 0.193577535046995
-        d0 = np.ones((self.msh.num_nodes,)) * 2.0 * k0
-        d0[0] = k0
-        d0[-1] = k0
-        d1 = -np.ones((self.msh.num_nodes - 1,)) * k0
-        expected1 = np.diag(d0) + np.diag(d1, -1) + np.diag(d1, 1)
+        k00 = 0.2239397572692170
+        k11 = 0.1632153128247730
+        d0 = np.ones((self.msh.num_nodes,)) * (k00 + k11)
+        d0[0] = k00
+        d0[-1] = k11
+        dp1 = -np.ones((self.msh.num_nodes - 1,)) * k00
+        dm1 = -np.ones((self.msh.num_nodes - 1,)) * k11
+        expected1 = np.diag(d0) + np.diag(dm1, -1) + np.diag(dp1, 1)
         self.msh.update_heat_flow_matrix()
         self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected0))
         self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected1))
@@ -760,6 +763,7 @@ class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
                 ip.deg_sat_water = 0.8
                 ip.void_ratio = 0.35
                 ip.void_ratio_0 = 0.3
+                ip.water_flux_rate = -1.5e-8
 
     def test_initial_heat_flow_matrix(self):
         expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
@@ -773,27 +777,38 @@ class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
 
     def test_update_heat_flow_matrix(self):
         expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-        h00 = 0.7162368796738820
+        h00 = 0.7465991018961040
         h11 = 2.0906373785075500
-        h10 = -0.9146538530970510
-        h20 = 0.2613296723134430
-        h30 = -0.0629126988902734
-        h21 = -1.4373131977239400
-        d0 = np.ones((self.msh.num_nodes,)) * 2.0 * h00
+        h33 = 0.6858746574516590
+        h10 = -0.8713876864303850
+        h20 = 0.2431123389801100
+        h30 = -0.0575993100013845
+        h21 = -1.3758296977239400
+        h01 = -0.9579200197637180
+        h02 = 0.2795470056467770
+        h03 = -0.0682260877791622
+        h12 = -1.4987966977239400
+        d0 = np.ones((self.msh.num_nodes,)) * (h00 + h33)
         d0[0] = h00
-        d0[-1] = h00
+        d0[-1] = h33
         d0[1::3] = h11
         d0[2::3] = h11
-        d1 = np.ones((self.msh.num_nodes - 1,)) * h10
-        d1[1::3] = h21
-        d2 = np.ones((self.msh.num_nodes - 2,)) * h20
-        d2[2::3] = 0.0
-        d3 = np.zeros((self.msh.num_nodes - 3,))
-        d3[0::3] = h30
+        dm1 = np.ones((self.msh.num_nodes - 1,)) * h10
+        dm1[1::3] = h21
+        dm2 = np.ones((self.msh.num_nodes - 2,)) * h20
+        dm2[2::3] = 0.0
+        dm3 = np.zeros((self.msh.num_nodes - 3,))
+        dm3[0::3] = h30
+        dp1 = np.ones((self.msh.num_nodes - 1,)) * h01
+        dp1[1::3] = h12
+        dp2 = np.ones((self.msh.num_nodes - 2,)) * h02
+        dp2[2::3] = 0.0
+        dp3 = np.zeros((self.msh.num_nodes - 3,))
+        dp3[0::3] = h03
         expected1 = np.diag(d0)
-        expected1 += np.diag(d1, -1) + np.diag(d1, 1)
-        expected1 += np.diag(d2, -2) + np.diag(d2, 2)
-        expected1 += np.diag(d3, -3) + np.diag(d3, 3)
+        expected1 += np.diag(dm1, -1) + np.diag(dp1, 1)
+        expected1 += np.diag(dm2, -2) + np.diag(dp2, 2)
+        expected1 += np.diag(dm3, -3) + np.diag(dp3, 3)
         self.msh.update_heat_flow_matrix()
         self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected0))
         self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected1))
