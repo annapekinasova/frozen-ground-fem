@@ -4,6 +4,7 @@ import numpy as np
 
 from frozen_ground_fem.materials import (
     Material,
+    vol_heat_cap_water as Cw,
 )
 from frozen_ground_fem.geometry import (
     Node1D,
@@ -30,16 +31,37 @@ class TestThermalElement1DLinear(unittest.TestCase):
         self.assertTrue(np.allclose(
             self.thrm_e.heat_flow_matrix, np.zeros((2, 2))))
 
-    def test_heat_flow_matrix(self):
-        m = Material(thrm_cond_solids=1e-5)
+    def test_heat_flow_matrix_conduction_only(self):
+        m = Material(thrm_cond_solids=3.0)
         for ip in self.thrm_e.int_pts:
             ip.material = m
-            ip.void_ratio = 0.2
-            ip.void_ratio_0 = 0.2
-            ip.deg_sat_water = 0.1
-        lam = self.thrm_e.int_pts[0].thrm_cond
-        jac = self.thrm_e.jacobian
-        expected = lam / jac * np.array([[1.0, -1.0], [-1.0, 1.0]])
+            ip.void_ratio = 0.35
+            ip.void_ratio_0 = 0.3
+            ip.deg_sat_water = 0.8
+        e_fact = 1.30 / 1.35
+        lam = 2.0875447196636
+        jac = 2.0
+        expected = (
+            lam / jac * np.array([[1.0, -1.0], [-1.0, 1.0]]) * e_fact ** 2
+        )
+        self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix, expected))
+
+    def test_heat_flow_matrix_conduction_advection(self):
+        m = Material(thrm_cond_solids=3.0)
+        for ip in self.thrm_e.int_pts:
+            ip.material = m
+            ip.void_ratio = 0.35
+            ip.void_ratio_0 = 0.3
+            ip.deg_sat_water = 0.8
+            ip.water_flux_rate = -1.5e-8
+        e_fact = 1.30 / 1.35
+        lam = 2.0875447196636
+        qw = -1.5e-8
+        jac = 2.0
+        expected = (
+            lam / jac * np.array([[1.0, -1.0], [-1.0, 1.0]]) * e_fact ** 2
+            + qw * Cw * e_fact * np.array([[-0.5, 0.5], [-0.5, 0.5]])
+        )
         self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix, expected))
 
     def test_heat_storage_matrix_uninitialized(self):
@@ -124,15 +146,16 @@ class TestThermalElement1DCubic(unittest.TestCase):
         self.assertTrue(np.allclose(
             self.thrm_e.heat_flow_matrix, np.zeros((4, 4))))
 
-    def test_heat_flow_matrix(self):
-        m = Material(thrm_cond_solids=1e-5)
+    def test_heat_flow_matrix_conduction_only(self):
+        m = Material(thrm_cond_solids=3.0)
         for ip in self.thrm_e.int_pts:
             ip.material = m
-            ip.void_ratio = 0.2
-            ip.void_ratio_0 = 0.2
-            ip.deg_sat_water = 0.1
-        lam = self.thrm_e.int_pts[0].thrm_cond
-        jac = self.thrm_e.jacobian
+            ip.void_ratio = 0.35
+            ip.void_ratio_0 = 0.3
+            ip.deg_sat_water = 0.8
+        lam = 2.0875447196636
+        jac = 6.0
+        e_fact = 1.30 / 1.35
         expected = (1/40) * lam / jac * np.array(
             [
                 [148, -189, 54, -13],
@@ -140,7 +163,37 @@ class TestThermalElement1DCubic(unittest.TestCase):
                 [54, -297, 432, -189],
                 [-13, 54, -189, 148],
             ]
-        )
+        ) * e_fact ** 2
+        self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix, expected))
+
+    def test_heat_flow_matrix_conduction_advection(self):
+        m = Material(thrm_cond_solids=3.0)
+        for ip in self.thrm_e.int_pts:
+            ip.material = m
+            ip.void_ratio = 0.35
+            ip.void_ratio_0 = 0.3
+            ip.deg_sat_water = 0.8
+            ip.water_flux_rate = -1.5e-8
+        lam = 2.0875447196636
+        jac = 6.0
+        e_fact = 1.30 / 1.35
+        qw = -1.5e-8
+        expected = (1/40) * lam / jac * np.array(
+            [
+                [148, -189, 54, -13],
+                [-189, 432, -297, 54],
+                [54, -297, 432, -189],
+                [-13, 54, -189, 148],
+            ]
+        ) * e_fact ** 2
+        expected += (1/1680) * qw * Cw * np.array(
+            [
+                [-840, 1197, -504, 147],
+                [-1197, 0, 1701, -504],
+                [504, -1701, 0, 1197],
+                [-147, 504, -1197, 840],
+            ]
+        ) * e_fact
         self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix, expected))
 
     def test_heat_storage_matrix_uninitialized(self):
