@@ -16,6 +16,9 @@ from enum import Enum
 import numpy as np
 import numpy.typing as npt
 
+from .materials import (
+    vol_heat_cap_water as Cw,
+)
 from .geometry import (
     Node1D,
     IntegrationPoint1D,
@@ -81,7 +84,10 @@ class ThermalElement1D(Element1D):
             e0 = ip.void_ratio_0
             e_fact = (1+e0) / (1+e)
             B = self._gradient_matrix(ip.local_coord, jac)
-            H += B.T @ (ip.thrm_cond * B) * ip.weight * e_fact ** 2
+            N = self._shape_matrix(ip.local_coord)
+            H += ((B.T * e_fact * ip.thrm_cond
+                   + N.T * ip.water_flux_rate * Cw)
+                  @ (ip.weight * e_fact * B))
         H *= jac
         return H
 
