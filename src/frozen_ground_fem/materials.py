@@ -29,6 +29,12 @@ spec_grav_ice : float
 spec_grav_ice: float = 0.91
 
 """
+dens_ice : float
+    The density of ice in SI units, kg * m^{-3}
+"""
+dens_ice: float = spec_grav_ice * dens_water
+
+"""
 vol_heat_cap_water : float
     The volumetric heat capacity of water in SI units, J.m^{-3}.K^{-1}
 """
