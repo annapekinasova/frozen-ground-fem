@@ -53,6 +53,7 @@ class TestThermalElement1DLinear(unittest.TestCase):
             ip.void_ratio = 0.35
             ip.void_ratio_0 = 0.3
             ip.deg_sat_water = 0.8
+            ip.deg_sat_water_temp_gradient = 1.5e-2
             ip.water_flux_rate = -1.5e-8
         e_fact = 1.30 / 1.35
         lam = 2.0875447196636
@@ -69,15 +70,40 @@ class TestThermalElement1DLinear(unittest.TestCase):
             np.allclose(self.thrm_e.heat_storage_matrix, np.zeros((2, 2)))
         )
 
-    def test_heat_storage_matrix(self):
-        m = Material(spec_grav_solids=2.65, spec_heat_cap_solids=2.0e2)
+    def test_heat_storage_matrix_heat_capacity_only(self):
+        m = Material(spec_grav_solids=2.65, spec_heat_cap_solids=7.41e2)
         for ip in self.thrm_e.int_pts:
             ip.material = m
-            ip.void_ratio = 0.3
-            ip.deg_sat_water = 0.2
-        heat_cap = self.thrm_e.int_pts[0].vol_heat_cap
-        jac = self.thrm_e.jacobian
-        expected = heat_cap * jac / 6 * np.array([[2.0, 1.0], [1.0, 2.0]])
+            ip.void_ratio = 0.35
+            ip.void_ratio_0 = 0.3
+            ip.deg_sat_water = 0.8
+            ip.water_flux_rate = -1.5e-8
+        heat_cap = 2.42402962962963e6
+        lat_heat = 0.0
+        jac = 2.0
+        expected = (
+            (heat_cap + lat_heat) * jac * np.array([[2.0, 1.0], [1.0, 2.0]])
+            / 6.0
+        )
+        self.assertTrue(np.allclose(
+            self.thrm_e.heat_storage_matrix, expected))
+
+    def test_heat_storage_matrix_heat_capacity_and_latent_heat(self):
+        m = Material(spec_grav_solids=2.65, spec_heat_cap_solids=7.41e2)
+        for ip in self.thrm_e.int_pts:
+            ip.material = m
+            ip.void_ratio = 0.35
+            ip.void_ratio_0 = 0.3
+            ip.deg_sat_water = 0.8
+            ip.deg_sat_water_temp_gradient = 1.5e-2
+            ip.water_flux_rate = -1.5e-8
+        heat_cap = 2.42402962962963e6
+        lat_heat = 1.18039638888889e6
+        jac = 2.0
+        expected = (
+            (heat_cap + lat_heat) * jac * np.array([[2.0, 1.0], [1.0, 2.0]])
+            / 6.0
+        )
         self.assertTrue(np.allclose(
             self.thrm_e.heat_storage_matrix, expected))
 
@@ -232,15 +258,43 @@ class TestThermalElement1DCubic(unittest.TestCase):
             np.allclose(self.thrm_e.heat_storage_matrix, np.zeros((4, 4)))
         )
 
-    def test_heat_storage_matrix(self):
-        m = Material(spec_grav_solids=2.65, spec_heat_cap_solids=2.0e2)
+    def test_heat_storage_matrix_heat_capacity_only(self):
+        m = Material(spec_grav_solids=2.65,
+                     spec_heat_cap_solids=7.41e2)
         for ip in self.thrm_e.int_pts:
             ip.material = m
-            ip.void_ratio = 0.3
-            ip.deg_sat_water = 0.2
-        heat_cap = self.thrm_e.int_pts[0].vol_heat_cap
-        jac = self.thrm_e.jacobian
-        expected = (1/1680) * heat_cap * jac * np.array(
+            ip.void_ratio = 0.35
+            ip.void_ratio_0 = 0.3
+            ip.deg_sat_water = 0.8
+            ip.water_flux_rate = -1.5e-8
+        heat_cap = 2.42402962962963e6
+        lat_heat = 0.0
+        jac = 6.0
+        expected = (1/1680) * (heat_cap + lat_heat) * jac * np.array(
+            [
+                [128,   99,  -36,   19],
+                [99,  648,  -81,  -36],
+                [-36,  -81,  648,   99],
+                [19,  -36,   99,  128],
+            ]
+        )
+        self.assertTrue(np.allclose(
+            self.thrm_e.heat_storage_matrix, expected))
+
+    def test_heat_storage_matrix_heat_capacity_and_latent_heat(self):
+        m = Material(spec_grav_solids=2.65,
+                     spec_heat_cap_solids=7.41e2)
+        for ip in self.thrm_e.int_pts:
+            ip.material = m
+            ip.void_ratio = 0.35
+            ip.void_ratio_0 = 0.3
+            ip.deg_sat_water = 0.8
+            ip.deg_sat_water_temp_gradient = 1.5e-2
+            ip.water_flux_rate = -1.5e-8
+        heat_cap = 2.42402962962963e6
+        lat_heat = 1.18039638888889e6
+        jac = 6.0
+        expected = (1/1680) * (heat_cap + lat_heat) * jac * np.array(
             [
                 [128,   99,  -36,   19],
                 [99,  648,  -81,  -36],
