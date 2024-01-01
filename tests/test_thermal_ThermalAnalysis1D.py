@@ -749,6 +749,100 @@ class TestUpdateGlobalMatricesLinearConstant(unittest.TestCase):
 # TODO: add linear test case with non-constant integration point values
 
 
+class TestUpdateIntegrationPointsLinear(unittest.TestCase):
+    def setUp(self):
+        self.mtl = Material(
+            thrm_cond_solids=3.0,
+            spec_heat_cap_solids=741.0,
+            spec_grav_solids=2.65,
+            deg_sat_water_alpha=1.20e4,
+            deg_sat_water_beta=0.35,
+            water_flux_b1=0.08,
+            water_flux_b2=4.0,
+            water_flux_b3=1.0e-5,
+            seg_pot_0=2.0e-9,
+        )
+        self.msh = ThermalAnalysis1D(
+            z_range=(0, 100),
+            num_elements=4,
+            generate=True,
+            order=1
+        )
+        self.msh._temp_vector[:] = np.array([
+            2,
+            0.1,
+            -0.8,
+            -1.5,
+            -12,
+        ])
+        self.msh._temp_rate_vector[:] = np.array([
+            0.05,
+            0.02,
+            0.01,
+            -0.08,
+            -0.05,
+        ])
+        self.msh.update_nodes()
+        for e in self.msh.elements:
+            for ip in e.int_pts:
+                ip.material = self.mtl
+                ip.void_ratio = 0.35
+                ip.void_ratio_0 = 0.3
+                ip.tot_stress = 1.2e5
+        self.msh.update_integration_points()
+
+    def test_temperature_distribution(self):
+        expected_temp_int_pts = np.array([
+            1.5984827557301400,
+            0.5015172442698560,
+            -0.0901923788646684,
+            -0.6098076211353320,
+            -0.9479274057836310,
+            -1.3520725942163700,
+            -3.7189110867544700,
+            -9.7810889132455400,
+        ])
+        actual_temp_int_pts = np.array([
+            ip.temp for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(actual_temp_int_pts,
+                                    expected_temp_int_pts))
+
+    def test_temperature_rate_distribution(self):
+        expected_temp_rate_int_pts = np.array([
+            0.04366025403784440,
+            0.02633974596215560,
+            0.01788675134594810,
+            0.01211324865405190,
+            -0.00901923788646684,
+            -0.06098076211353320,
+            -0.07366025403784440,
+            -0.05633974596215560,
+        ])
+        actual_temp_rate_int_pts = np.array([
+            ip.temp_rate for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(actual_temp_rate_int_pts,
+                                    expected_temp_rate_int_pts))
+
+    def test_temperature_gradient_distribution(self):
+        expected_temp_gradient_int_pts = np.array([
+            -0.0760000,
+            -0.0760000,
+            -0.0360000,
+            -0.0360000,
+            -0.0280000,
+            -0.0280000,
+            -0.4200000,
+            -0.4200000,
+        ])
+        actual_temp_gradient_int_pts = np.array([
+            ip.temp_gradient for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(actual_temp_gradient_int_pts,
+                                    expected_temp_gradient_int_pts))
+
+
 class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
     def setUp(self):
         self.mtl = Material(
