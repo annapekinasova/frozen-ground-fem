@@ -842,6 +842,60 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
         self.assertTrue(np.allclose(actual_temp_gradient_int_pts,
                                     expected_temp_gradient_int_pts))
 
+    def test_deg_sat_water_distribution(self):
+        expected_deg_sat_water_int_pts = np.array([
+            1.000000000000000,
+            1.000000000000000,
+            0.314715929845879,
+            0.113801777607921,
+            0.089741864676250,
+            0.074104172041942,
+            0.042882888566470,
+            0.025322726744343,
+        ])
+        actual_deg_sat_water_int_pts = np.array([
+            ip.deg_sat_water for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(actual_deg_sat_water_int_pts,
+                                    expected_deg_sat_water_int_pts))
+
+    def test_deg_sat_water_temp_grad_distribution(self):
+        expected_deg_sat_water_temp_grad_int_pts = np.array([
+            0.000000000000000,
+            0.000000000000001,
+            1.810113168088841,
+            0.100397364897923,
+            0.051013678629442,
+            0.029567794445951,
+            0.006250998062539,
+            0.001419738751606,
+        ])
+        actual_deg_sat_water_temp_grad_int_pts = np.array([
+            ip.deg_sat_water_temp_gradient
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(actual_deg_sat_water_temp_grad_int_pts,
+                                    expected_deg_sat_water_temp_grad_int_pts))
+
+    def test_water_flux_distribution(self):
+        expected_water_flux_int_pts = np.array([
+            0.0000000000E+00,
+            0.0000000000E+00,
+            -4.8910645169E-12,
+            -5.5518497692E-13,
+            8.3577053338E-13,
+            1.7708810805E-13,
+            2.0670411271E-16,
+            6.0318175808E-27,
+        ])
+        actual_water_flux_int_pts = np.array([
+            ip.water_flux_rate
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(actual_water_flux_int_pts,
+                                    expected_water_flux_int_pts,
+                                    atol=1e-30))
+
 
 class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
     def setUp(self):
