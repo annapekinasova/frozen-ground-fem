@@ -2400,18 +2400,17 @@ class TestTemperatureCorrectionLinearOneStep(unittest.TestCase):
                                     self.msh._temp_rate_vector))
 
     def test_global_heat_flow_matrix(self):
-        # TODO: update Linear_2
         expected_H = np.array([
             [0.0721139528911510, -0.0721139528911510, 0.0000000000000000,
                 0.0000000000000000, 0.0000000000000000],
-            [-0.0721139528911510, 0.1507583313920580, -0.0786443785009067,
+            [-0.0721139528911510, 0.1675205356603570, -0.0954065827692065,
                 0.0000000000000000, 0.0000000000000000],
-            [0.0000000000000000, -0.0786056432160232, 0.1767637295188870,
-             -0.0981580863028642, 0.0000000000000000],
-            [0.0000000000000000, 0.0000000000000000, -0.0981468970118543,
-                0.1992782620987600, -0.1011313650869050],
+            [0.0000000000000000, -0.0954368524138330, 0.1954002217027660,
+             -0.0999633692889327, 0.0000000000000000],
+            [0.0000000000000000, 0.0000000000000000, -0.0999643764055516,
+                0.2016434316692080, -0.1016790552636560],
             [0.0000000000000000, 0.0000000000000000, 0.0000000000000000,
-             -0.1011312105966210, 0.1011312105966210],
+             -0.1016790554408220, 0.1016790554408220],
         ])
         self.assertTrue(np.allclose(
             expected_H, self.msh._heat_flow_matrix,
@@ -2469,18 +2468,17 @@ class TestTemperatureCorrectionLinearOneStep(unittest.TestCase):
         ))
 
     def test_global_heat_storage_matrix(self):
-        # TODO: update Linear_2
         expected_C = np.array([
             [2.12040123456790E+07, 1.06020061728395E+07, 0.00000000000000E+00,
                 0.00000000000000E+00, 0.00000000000000E+00],
-            [1.06020061728395E+07, 3.82127786353284E+08, 1.27845341703034E+09,
+            [1.06020061728395E+07, 1.15082401284158E+09, 3.21846886400860E+08,
                 0.00000000000000E+00, 0.00000000000000E+00],
-            [0.00000000000000E+00, 1.27845341703034E+09, 4.93329220496251E+09,
-                6.53471451217525E+07, 0.00000000000000E+00],
-            [0.00000000000000E+00, 0.00000000000000E+00, 6.53471451217525E+07,
-                1.08389521552969E+08, 1.17642307395528E+07],
+            [0.00000000000000E+00, 3.21846886400860E+08, 2.06909317631999E+08,
+                2.15090157480156E+07, 0.00000000000000E+00],
+            [0.00000000000000E+00, 0.00000000000000E+00, 2.15090157480156E+07,
+                5.71758161655548E+07, 9.43574147951723E+06],
             [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
-                1.17642307395528E+07, 1.96536710434876E+07],
+                9.43574147951723E+06, 1.74614402201153E+07],
         ])
         self.assertTrue(np.allclose(
             expected_C, self.msh._heat_storage_matrix,
@@ -2547,9 +2545,8 @@ class TestTemperatureCorrectionLinearOneStep(unittest.TestCase):
                                     self.msh._heat_flux_vector_0))
 
     def test_global_flux_vector(self):
-        # TODO: update Linear_2
         expected_flux_vector = np.zeros(self.msh.num_nodes)
-        expected_flux_vector[-1] = -2.73851722970310 * 25.0e-3
+        expected_flux_vector[-1] = -2.74983450612506 * 25.0e-3
         self.assertTrue(np.allclose(expected_flux_vector,
                                     self.msh._heat_flux_vector))
 
@@ -2561,16 +2558,33 @@ class TestTemperatureCorrectionLinearOneStep(unittest.TestCase):
                                     self.msh._weighted_heat_flux_vector))
 
     def test_global_residual_vector(self):
-        # TODO: update Linear_1
-        pass
+        expected_Psi = np.array([
+            -5.30100308654E+09,
+            -8.63328040829E+11,
+            -1.97253518894E+12,
+            -1.47604633121E+11,
+            -1.18765324067E+11,
+        ])
+        self.assertTrue(np.allclose(
+            expected_Psi, self.msh._residual_heat_flux_vector,
+        ))
 
     def test_temperature_increment_vector(self):
-        # TODO: update Linear_1
-        pass
+        expected_dT = np.array([
+            0.00000E+00,
+            -5.00000E-01,
+            -6.00000E-01,
+            -7.00000E-01,
+            -6.00000E+00,
+        ])
+        self.assertTrue(np.allclose(
+            expected_dT, self.msh._delta_temp_vector,
+        ))
 
     def test_iteration_variables(self):
-        # TODO: update Linear_1
-        pass
+        expected_eps_a = 4.95840885995792E-01
+        self.assertAlmostEqual(self.msh._eps_a, expected_eps_a)
+        self.assertEqual(self.msh._iter, 1)
 
 
 if __name__ == "__main__":
