@@ -979,6 +979,10 @@ class ThermalAnalysis1D(Mesh1D):
         and coefficient matrices
         using the implicit_factor property.
         """
+        self._weighted_heat_flux_vector[:] = (
+            self.one_minus_alpha * self._heat_flux_vector_0
+            + self.alpha * self._heat_flux_vector
+        )
         self._weighted_heat_flow_matrix[:, :] = (
             self.one_minus_alpha * self._heat_flow_matrix_0
             + self.alpha * self._heat_flow_matrix
@@ -1037,6 +1041,7 @@ class ThermalAnalysis1D(Mesh1D):
         # update global system
         self.update_nodes()
         self.update_integration_points()
+        self.update_heat_flux_vector()
         self.update_heat_flow_matrix()
         self.update_heat_storage_matrix()
 
