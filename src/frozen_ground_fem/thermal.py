@@ -916,6 +916,7 @@ class ThermalAnalysis1D(Mesh1D):
         for nd in self.nodes:
             self._temp_vector[nd.index] = nd.temp
             self._temp_vector_0[nd.index] = nd.temp
+            self._temp_rate_vector[nd.index] = nd.temp_rate
         # now build the global matrices and vectors
         self.update_integration_points()
         self.update_heat_flux_vector()
