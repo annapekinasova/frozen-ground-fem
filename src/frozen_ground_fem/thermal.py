@@ -157,7 +157,9 @@ class ThermalElement1D(Element1D):
                     ip.temp_gradient,
                     ip.tot_stress,
                 )
-                ip.water_flux_rate = qw
+            else:
+                qw = 0.0
+            ip.water_flux_rate = qw
 
 
 class ThermalBoundary1D(Boundary1D):
