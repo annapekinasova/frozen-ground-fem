@@ -2363,41 +2363,47 @@ class TestTemperatureCorrectionLinearOneStep(unittest.TestCase):
             -1.5,
             -12,
         ])
-        # TODO: update Linear_1
         expected_temp_vector = np.array([
-            2.0,
-            0.6,
-            -0.2,
-            -0.8,
-            -6,
+            2.0000000000000000,
+            0.0999999999995405,
+            -0.7999999999994870,
+            -1.5000000000217000,
+            -11.9999999999265000,
         ])
         actual_temp_nodes = np.array([
             nd.temp for nd in self.msh.nodes
         ])
-        # TODO: atol=1e-15, rtol=1e-20
         self.assertTrue(np.allclose(expected_temp_vector,
-                                    actual_temp_nodes))
+                                    actual_temp_nodes,
+                                    atol=1e-13, rtol=1e-20))
         self.assertTrue(np.allclose(expected_temp_vector,
-                                    self.msh._temp_vector))
+                                    self.msh._temp_vector,
+                                    atol=1e-13, rtol=1e-20))
         self.assertTrue(np.allclose(expected_temp_vector_0,
-                                    self.msh._temp_vector_0))
+                                    self.msh._temp_vector_0,
+                                    atol=1e-13, rtol=1e-20))
 
     def test_temperature_rate_distribution_nodes(self):
-        # TODO: update Linear_2
         expected_temp_rate_vector = np.array([
-            0,
-            500,
-            600,
-            700,
-            6000,
+            0.000000E+00,
+            -4.595491E-10,
+            5.135892E-10,
+            -2.170086E-08,
+            7.346657E-08,
         ])
         actual_temp_rate_nodes = np.array([
             nd.temp_rate for nd in self.msh.nodes
         ])
         self.assertTrue(np.allclose(expected_temp_rate_vector,
-                                    actual_temp_rate_nodes))
+                                    actual_temp_rate_nodes,
+                                    atol=1e-12,
+                                    rtol=1e-3,
+                                    ))
         self.assertTrue(np.allclose(expected_temp_rate_vector,
-                                    self.msh._temp_rate_vector))
+                                    self.msh._temp_rate_vector,
+                                    atol=1e-12,
+                                    rtol=1e-3,
+                                    ))
 
     def test_global_heat_flow_matrix(self):
         expected_H = np.array([
