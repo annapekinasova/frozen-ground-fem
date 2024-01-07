@@ -3455,14 +3455,19 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
 
     def test_temperature_distribution_nodes(self):
         expected_temp_vector = np.array([
-            2.0,
-            0.1,
-            -0.8,
-            -1.5,
-            -12,
-        ])
-        actual_temp_nodes = np.array([
-            nd.temp for nd in self.msh.nodes
+            -2.000000000000000,
+            -9.157452320220460,
+            -10.488299785319000,
+            -7.673205119057850,
+            -3.379831977359920,
+            0.186084957826655,
+            1.975912628300400,
+            2.059737589813890,
+            1.158320034961550,
+            0.100523127786268,
+            -0.548750924584512,
+            -0.609286860003055,
+            -0.205841501790609,
         ])
         self.assertTrue(np.allclose(expected_temp_vector,
                                     actual_temp_nodes))
