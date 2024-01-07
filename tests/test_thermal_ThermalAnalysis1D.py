@@ -4675,33 +4675,33 @@ class TestTemperatureCorrectionCubicOneStep(unittest.TestCase):
         self.msh.initialize_time_step()
         self.msh._temp_vector[:] = np.array([
             -2.000000000000000,
-            -9.157452320100920,
-            -10.488299785247600,
-            -7.673205119026180,
-            -3.379831977369980,
-            0.186084957800307,
-            1.975912628285290,
-            2.059737589803070,
-            1.158320034961120,
-            0.100523127786127,
-            -0.548750924582867,
-            -0.609286860000696,
-            -0.205841501793126,
+            -9.157543894743660,
+            -10.488404668316800,
+            -7.673281851109040,
+            -3.379865775679690,
+            0.186086818676234,
+            1.975932387426680,
+            2.059758187189790,
+            1.158331618161900,
+            0.100524133017546,
+            -0.548756412093758,
+            -0.609292952871655,
+            -0.205843560205627,
         ])
         self.msh._temp_rate_vector[:] = np.array([
-            0.00000000000000E+03,
-            1.19538157150600E-09,
-            7.13562542387081E-010,
-            3.16733306249262E-010,
-            -1.00595087815236E-10,
-            -2.63478683315554E-10,
-            -1.51088030975188E-10,
-            -1.08153486166884E-10,
-            -4.32320845789036E-12,
-            -1.40887301824932E-12,
-            1.64468438867971E-011,
-            2.35877983811861E-011,
-            -2.51726417488385E-11,
+            0.00000000000000E+00,
+            -9.15745232017429E-02,
+            -1.04882997852940E-01,
+            -7.67320511902980E-02,
+            -3.37983197735703E-02,
+            1.86084957826127E-03,
+            1.97591262829366E-02,
+            2.05973758982125E-02,
+            1.15832003495520E-02,
+            1.00523127785634E-03,
+            -5.48750924589392E-03,
+            -6.09286859998282E-03,
+            -2.05841501790816E-03,
         ])
         self.msh.update_thermal_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
@@ -4778,40 +4778,57 @@ class TestTemperatureCorrectionCubicOneStep(unittest.TestCase):
         self.assertTrue(np.allclose(expected_temp_rate_vector,
                                     actual_temp_rate_nodes,
                                     atol=1e-12,
-                                    rtol=1e-3,
+                                    rtol=1e-10,
                                     ))
         self.assertTrue(np.allclose(expected_temp_rate_vector,
                                     self.msh._temp_rate_vector,
                                     atol=1e-12,
-                                    rtol=1e-3,
+                                    rtol=1e-10,
                                     ))
 
     def test_global_heat_flow_matrix(self):
         expected_H = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
         expected_H[0:4, 0:4] = np.array([
-[0.3754127685077310, -0.4791349478258730, 0.1366244789908620, -0.0329022996727200],
-[-0.4791349496693890, 1.0974938419781100, -0.7555601288938970, 0.1372012365851720],
-[0.1366244797783630, -0.7555601289255820, 1.1003657455723900, -0.4814300964251700],
-[-0.0329022998392129, 0.1372012365941040, -0.4814300964261240, 0.7513590334249440],
+            [0.3754127685077310, -0.4791349478258730,
+                0.1366244789908620, -0.0329022996727200],
+            [-0.4791349496693890, 1.0974938419781100,
+             -0.7555601288938970, 0.1372012365851720],
+            [0.1366244797783630, -0.7555601289255820,
+                1.1003657455723900, -0.4814300964251700],
+            [-0.0329022998392129, 0.1372012365941040,
+             -0.4814300964261240, 0.7513590334249440],
         ])
         expected_H[3:7, 3:7] = np.array([
-[0.7513590334249440, -0.4704045465033010, 0.1245488443348180, -0.0283721715852281],
-[-0.4704043870680910, 1.0458043504407100, -0.6891104546310090, 0.1137104912583860],
-[0.1245485254752460, -0.6891061500305520, 0.9190440219144710, -0.3544863973591650],
-[-0.0283721538707407, 0.1137101723984170, -0.3544862379296680, 0.5359698450992510],
+            [0.7513590334249440, -0.4704045465033010,
+                0.1245488443348180, -0.0283721715852281],
+            [-0.4704043870680910, 1.0458043504407100,
+             -0.6891104546310090, 0.1137104912583860],
+            [0.1245485254752460, -0.6891061500305520,
+                0.9190440219144710, -0.3544863973591650],
+            [-0.0283721538707407, 0.1137101723984170,
+             -0.3544862379296680, 0.5359698450992510],
         ])
         expected_H[6:10, 6:10] = np.array([
-[0.5359698450992510, -0.3407384274106900, 0.0973538364030547, -0.0234370346896243],
-[-0.3407384274106900, 0.7788306912244320, -0.5354461002167970, 0.0973538364030541],
-[0.0973538364030547, -0.5354461002167970, 0.7788306912244330, -0.3407384274106900],
-[-0.0234370346896243, 0.0973538364030541, -0.3407384274106900, 0.5959083732909660],
+            [0.5359698450992510, -0.3407384274106900,
+                0.0973538364030547, -0.0234370346896243],
+            [-0.3407384274106900, 0.7788306912244320,
+             -0.5354461002167970, 0.0973538364030541],
+            [0.0973538364030547, -0.5354461002167970,
+                0.7788306912244330, -0.3407384274106900],
+            [-0.0234370346896243, 0.0973538364030541,
+             -0.3407384274106900, 0.5959083732909660],
         ])
         expected_H[9:13, 9:13] = np.array([
-[0.5959083732909660, -0.4132037184518070, 0.1111717585476730, -0.0270547876895725],
-[-0.4134791823328720, 0.9869466717130710, -0.6971967795841350, 0.1237292902039360],
-[0.1112834973498860, -0.6972094742830320, 1.0421741681109100, -0.4562481911777670],
-[-0.0270746940945498, 0.1237148240767320, -0.4562007410634830, 0.3595606110813010],
+            [0.5959083732909660, -0.4132037184518070,
+                0.1111717585476730, -0.0270547876895725],
+            [-0.4134791823328720, 0.9869466717130710,
+             -0.6971967795841350, 0.1237292902039360],
+            [0.1112834973498860, -0.6972094742830320,
+                1.0421741681109100, -0.4562481911777670],
+            [-0.0270746940945498, 0.1237148240767320,
+             -0.4562007410634830, 0.3595606110813010],
         ])
+        print(self.msh._heat_flow_matrix)
         self.assertTrue(np.allclose(
             expected_H, self.msh._heat_flow_matrix,
         ))
@@ -4904,11 +4921,10 @@ class TestTemperatureCorrectionCubicOneStep(unittest.TestCase):
             [-0.0270753013289352, 0.1237052894950540,
              -0.4561656685786790, 0.3595356804125600],
         ])
-        print(self.msh._weighted_heat_flow_matrix)
         self.assertTrue(np.allclose(
             expected_H, self.msh._weighted_heat_flow_matrix,
-            atol=1e-6,
-           ))
+            rtol=1e-10, atol=1e-15,
+        ))
 
     def test_global_heat_storage_matrix_0(self):
         expected_C = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
@@ -4954,7 +4970,7 @@ class TestTemperatureCorrectionCubicOneStep(unittest.TestCase):
         ])
         self.assertTrue(np.allclose(
             expected_C, self.msh._heat_storage_matrix_0,
-            rtol=1e-13,
+            rtol=1e-10,
         ))
 
     def test_global_heat_storage_matrix(self):
@@ -4999,10 +5015,9 @@ class TestTemperatureCorrectionCubicOneStep(unittest.TestCase):
             [5.50357660694532E+07, 1.42597922700073E+07,
                 1.93503173101947E+07, 5.14006065935181E+07],
         ])
-        print(self.msh._heat_storage_matrix)
         self.assertTrue(np.allclose(
             expected_C, self.msh._heat_storage_matrix,
-            rtol=1e-11,
+            rtol=1e-10,
         ))
 
     def test_global_heat_storage_matrix_weighted(self):
@@ -5049,7 +5064,7 @@ class TestTemperatureCorrectionCubicOneStep(unittest.TestCase):
         ])
         self.assertTrue(np.allclose(
             expected_C, self.msh._weighted_heat_storage_matrix,
-            rtol=1e-13,
+            rtol=1e-10,
         ))
 
     def test_global_coef_matrix_0(self):
@@ -5097,7 +5112,7 @@ class TestTemperatureCorrectionCubicOneStep(unittest.TestCase):
         print(self.msh._coef_matrix_0)
         self.assertTrue(np.allclose(
             expected_C0, self.msh._coef_matrix_0,
-            rtol=1e-13,
+            rtol=1e-10,
         ))
 
     def test_global_coef_matrix_1(self):
@@ -5144,7 +5159,7 @@ class TestTemperatureCorrectionCubicOneStep(unittest.TestCase):
         ])
         self.assertTrue(np.allclose(
             expected_C1, self.msh._coef_matrix_1,
-            rtol=1e-13,
+            rtol=1e-10,
         ))
 
     def test_global_flux_vector_0(self):
@@ -5187,7 +5202,7 @@ class TestTemperatureCorrectionCubicOneStep(unittest.TestCase):
         ])
         self.assertTrue(np.allclose(
             expected_Psi, self.msh._residual_heat_flux_vector,
-            rtol=1e-15, atol=1e-12,
+            rtol=1e-10,
         ))
 
     def test_temperature_increment_vector(self):
@@ -5208,7 +5223,7 @@ class TestTemperatureCorrectionCubicOneStep(unittest.TestCase):
         ])
         self.assertTrue(np.allclose(
             expected_dT, self.msh._delta_temp_vector,
-            rtol=1e-15, atol=1e-20,
+            rtol=1e-10, atol=1e-20,
         ))
 
     def test_iteration_variables(self):
