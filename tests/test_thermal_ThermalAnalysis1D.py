@@ -4339,7 +4339,6 @@ class TestUpdateWeightedMatricesCubic(unittest.TestCase):
                 1.0422001879261100, -0.4562684736182830],
             [-0.0270753013289352, 0.1237052894950540,
              -0.4561656685786790, 0.3595356804125600],
-            >>>>>> > 36e2e15ae6c75aff405e751ad629fd86bdf7dc34
         ])
         self.assertTrue(np.allclose(
             expected_H, self.msh._weighted_heat_flow_matrix,
