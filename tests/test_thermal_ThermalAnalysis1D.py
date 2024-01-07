@@ -3469,6 +3469,9 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
             -0.609286860003055,
             -0.205841501790609,
         ])
+        actual_temp_nodes = np.array([
+            nd.temp for nd in self.msh.nodes
+        ])
         self.assertTrue(np.allclose(expected_temp_vector,
                                     actual_temp_nodes))
         self.assertTrue(np.allclose(expected_temp_vector,
