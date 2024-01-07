@@ -2227,7 +2227,6 @@ class TestUpdateWeightedMatricesLinear(unittest.TestCase):
             [0.0000000000000E+00, 0.0000000000000E+00, 0.0000000000000E+00,
                 1.0599986109585E+10, 1.8557555631747E+10],
         ])
-        print(self.msh._coef_matrix_0)
         self.assertTrue(np.allclose(
             expected_C0, self.msh._coef_matrix_0,
             rtol=1e-14, atol=1e-3,
@@ -2520,7 +2519,6 @@ class TestTemperatureCorrectionLinearOneStep(unittest.TestCase):
             [0.0000000000000E+00, 0.0000000000000E+00, 0.0000000000000E+00,
                 1.0599986109585E+10, 1.8557555631747E+10],
         ])
-        print(self.msh._coef_matrix_0)
         self.assertTrue(np.allclose(
             expected_C0, self.msh._coef_matrix_0,
             rtol=1e-14, atol=1e-3,
@@ -2740,7 +2738,6 @@ class TestIterativeTemperatureCorrectionLinear(unittest.TestCase):
             [0.0000000000000000, 0.0000000000000000,
              0.0000000000000000, -0.1016790554457790, 0.1016790554457790],
         ])
-        print(self.msh._heat_flow_matrix)
         self.assertTrue(np.allclose(
             expected_H, self.msh._heat_flow_matrix,
         ))
@@ -2882,7 +2879,6 @@ class TestIterativeTemperatureCorrectionLinear(unittest.TestCase):
         expected_flux_vector = np.zeros(self.msh.num_nodes)
         expected_flux_vector[-1] = -0.5 * (2.74983450612514
                                            + 2.74983450612506) * 25.0e-3
-        print(self.msh._heat_flux_vector)
         self.assertTrue(np.allclose(expected_flux_vector,
                                     self.msh._weighted_heat_flux_vector))
 
@@ -2894,7 +2890,6 @@ class TestIterativeTemperatureCorrectionLinear(unittest.TestCase):
             -4.6118164062500E-01,
             5.8278333356252E-02,
         ])
-        print(self.msh._residual_heat_flux_vector)
         self.assertTrue(np.allclose(
             expected_Psi, self.msh._residual_heat_flux_vector,
             rtol=1e-13, atol=1e-3,
@@ -4524,7 +4519,6 @@ class TestUpdateWeightedMatricesCubic(unittest.TestCase):
             [5.50354343989765E+10, 1.42597165565657E+10,
                 1.93501729919798E+10, 5.14002478972216E+10],
         ])
-        print(self.msh._coef_matrix_0)
         self.assertTrue(np.allclose(
             expected_C0, self.msh._coef_matrix_0,
             rtol=1e-14, atol=1e-3,
@@ -4828,7 +4822,6 @@ class TestTemperatureCorrectionCubicOneStep(unittest.TestCase):
             [-0.0270746940945498, 0.1237148240767320,
              -0.4562007410634830, 0.3595606110813010],
         ])
-        print(self.msh._heat_flow_matrix)
         self.assertTrue(np.allclose(
             expected_H, self.msh._heat_flow_matrix,
         ))
@@ -5109,7 +5102,6 @@ class TestTemperatureCorrectionCubicOneStep(unittest.TestCase):
             [5.50354343989765E+10, 1.42597165565657E+10,
                 1.93501729919798E+10, 5.14002478972216E+10],
         ])
-        print(self.msh._coef_matrix_0)
         self.assertTrue(np.allclose(
             expected_C0, self.msh._coef_matrix_0,
             rtol=1e-10,
