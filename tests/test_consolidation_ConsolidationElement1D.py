@@ -4,134 +4,130 @@ import numpy as np
 
 from frozen_ground_fem.materials import (
     Material,
-    vol_heat_cap_water as Cw,
+    unit_weight_water as gam_w,
+    spec_grav_ice as Gi,
 )
 from frozen_ground_fem.geometry import (
     Node1D,
 )
-from frozen_ground_fem.thermal import (
-    ThermalElement1D,
+from frozen_ground_fem.consolidation import (
+    ConsolidationElement1D,
 )
 
 
-class TestThermalElement1DLinear(unittest.TestCase):
+class TestConsolidationElement1DLinear(unittest.TestCase):
     def setUp(self):
         self.nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(2))
-        self.thrm_e = ThermalElement1D(self.nodes, order=1)
+        self.consol_e = ConsolidationElement1D(self.nodes, order=1)
 
     def test_jacobian_value(self):
-        expected = self.nodes[-1].z - self.nodes[0].z
-        self.assertAlmostEqual(self.thrm_e.jacobian, expected)
+        expected0 = self.nodes[-1].z - self.nodes[0].z
+        expected1 = 2.0
+        self.assertAlmostEqual(self.consol_e.jacobian, expected0)
+        self.assertAlmostEqual(self.consol_e.jacobian, expected1)
 
     def test_nodes_equal(self):
-        for nd, e_nd in zip(self.nodes, self.thrm_e.nodes):
+        for nd, e_nd in zip(self.nodes, self.consol_e.nodes):
             self.assertIs(nd, e_nd)
 
-    def test_heat_flow_matrix_uninitialized(self):
+    def test_stiffness_matrix_uninitialized(self):
         self.assertTrue(np.allclose(
-            self.thrm_e.heat_flow_matrix, np.zeros((2, 2))))
+            self.consol_e.stiffness_matrix, np.zeros((2, 2))))
 
-    def test_heat_flow_matrix_conduction_only(self):
-        m = Material(thrm_cond_solids=3.0)
-        for ip in self.thrm_e.int_pts:
-            ip.material = m
-            ip.void_ratio = 0.35
-            ip.void_ratio_0 = 0.3
-            ip.deg_sat_water = 0.8
-        e_fact = 1.30 / 1.35
-        lam = 2.0875447196636
-        jac = 2.0
-        expected = (
-            lam / jac * np.array([[1.0, -1.0], [-1.0, 1.0]]) * e_fact ** 2
+    def test_stiffness_matrix_full(self):
+        m = Material(
+            spec_grav_solids=2.60,
+            hyd_cond_index=0.305,
+            hyd_cond_0=4.05e-4,
+            void_ratio_0_hyd_cond=2.60,
+            void_ratio_min=0.30,
+            void_ratio_tr=2.60,
+            void_ratio_0_comp=2.60,
+            comp_index_unfrozen=0.421,
+            rebound_index_unfrozen=0.08,
+            eff_stress_0_comp=2.80e00,
         )
-        self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix, expected))
-
-    def test_heat_flow_matrix_conduction_advection(self):
-        m = Material(thrm_cond_solids=3.0)
-        for ip in self.thrm_e.int_pts:
+        for ip in self.consol_e.int_pts:
             ip.material = m
-            ip.void_ratio = 0.35
-            ip.void_ratio_0 = 0.3
-            ip.deg_sat_water = 0.8
-            ip.deg_sat_water_temp_gradient = 1.5e-2
-            ip.water_flux_rate = -1.5e-8
-        e_fact = 1.30 / 1.35
-        lam = 2.0875447196636
-        qw = -1.5e-8
+            ip.void_ratio_0 = 0.9
+            ip.void_ratio = 0.3
+            ip.deg_sat_water = 0.1
+            ip.pre_consol_stress = 1.0
+            k, dk_de = m.hyd_cond(ip.void_ratio, 1.0, False)
+            ip.hyd_cond = k
+            ip.hyd_cond_gradient = dk_de
+            sig, dsig_de = m.eff_stress(ip.void_ratio, ip.pre_consol_stress)
+            ip.eff_stress = sig
+            ip.eff_stress_gradient = dsig_de
         jac = 2.0
-        expected = (
-            lam / jac * np.array([[1.0, -1.0], [-1.0, 1.0]]) * e_fact ** 2
-            + qw * Cw * e_fact * np.array([[-0.5, 0.5], [-0.5, 0.5]])
-        )
-        self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix, expected))
+        Gs = 2.60
+        e0 = 0.9
+        e = 0.3
+        Cku = 0.305
+        k0 = 4.05e-4
+        ek0 = 2.60
+        k = k0 * 10 ** ((e - ek0) / Cku)
+        dk_de = k * np.log(10) / Cku
+        sig_p_0 = 2.80
+        Ccu = 0.421
+        ecu0 = 2.60
+        sig_p = sig_p_0 * 10 ** (-(e - ecu0) / Ccu)
+        dsig_de = -sig_p * np.log(10) / Ccu
+        e_ratio = (1.0 + e0) / (1.0 + e)
+        coef_0 = k * e_ratio * dsig_de / gam_w / jac
+        coef_1 = (dk_de * (Gs - 1.0) / (1.0 + e)
+                  - k * (Gs - 1.0) / (1.0 + e) ** 2)
+        stiff_0 = coef_0 * np.array([[1.0, -1.0], [-1.0, 1.0]])
+        stiff_1 = coef_1 * np.array([[-0.5, 0.5], [-0.5, 0.5]])
+        expected = stiff_0 + stiff_1
+        self.assertTrue(np.allclose(self.consol_e.stiffness_matrix, expected))
 
-    def test_heat_storage_matrix_uninitialized(self):
+    def test_mass_matrix_uninitialized(self):
+        jac = 2.0
+        expected = jac / 6.0 * np.array([[2.0, 1.0], [1.0, 2.0]])
         self.assertTrue(
-            np.allclose(self.thrm_e.heat_storage_matrix, np.zeros((2, 2)))
+            np.allclose(self.consol_e.mass_matrix,
+                        expected)
         )
 
-    def test_heat_storage_matrix_heat_capacity_only(self):
-        m = Material(spec_grav_solids=2.65, spec_heat_cap_solids=7.41e2)
-        for ip in self.thrm_e.int_pts:
-            ip.material = m
-            ip.void_ratio = 0.35
+    def test_mass_matrix_full(self):
+        for ip in self.consol_e.int_pts:
             ip.void_ratio_0 = 0.3
-            ip.deg_sat_water = 0.8
-            ip.water_flux_rate = -1.5e-8
-        heat_cap = 2.42402962962963e6
-        lat_heat = 0.0
+            ip.deg_sat_water = 0.2
         jac = 2.0
-        expected = (
-            (heat_cap + lat_heat) * jac * np.array([[2.0, 1.0], [1.0, 2.0]])
-            / 6.0
-        )
-        self.assertTrue(np.allclose(
-            self.thrm_e.heat_storage_matrix, expected))
-
-    def test_heat_storage_matrix_heat_capacity_and_latent_heat(self):
-        m = Material(spec_grav_solids=2.65, spec_heat_cap_solids=7.41e2)
-        for ip in self.thrm_e.int_pts:
-            ip.material = m
-            ip.void_ratio = 0.35
-            ip.void_ratio_0 = 0.3
-            ip.deg_sat_water = 0.8
-            ip.deg_sat_water_temp_gradient = 1.5e-2
-            ip.water_flux_rate = -1.5e-8
-        heat_cap = 2.42402962962963e6
-        lat_heat = 1.18039638888889e6
-        jac = 2.0
-        expected = (
-            (heat_cap + lat_heat) * jac * np.array([[2.0, 1.0], [1.0, 2.0]])
-            / 6.0
-        )
-        self.assertTrue(np.allclose(
-            self.thrm_e.heat_storage_matrix, expected))
+        e0 = 0.3
+        Sw = 0.2
+        coef = (Sw + Gi * (1.0 - Sw)) / (1.0 + e0)
+        expected = coef * jac / 6.0 * np.array([[2.0, 1.0], [1.0, 2.0]])
+        self.assertTrue(np.allclose(self.consol_e.mass_matrix, expected))
 
     def test_update_integration_points_null_material(self):
-        self.thrm_e.nodes[0].temp = -1.0
-        self.thrm_e.nodes[1].temp = +2.0
-        self.thrm_e.nodes[0].temp_rate = 0.2
-        self.thrm_e.nodes[1].temp_rate = 0.4
-        self.thrm_e.update_integration_points()
-        self.assertAlmostEqual(self.thrm_e.int_pts[0].temp, -0.366025403784439)
-        self.assertAlmostEqual(self.thrm_e.int_pts[1].temp, 1.366025403784440)
+        self.consol_e.nodes[0].temp = -1.0
+        self.consol_e.nodes[1].temp = +2.0
+        self.consol_e.nodes[0].temp_rate = 0.2
+        self.consol_e.nodes[1].temp_rate = 0.4
+        self.consol_e.update_integration_points()
         self.assertAlmostEqual(
-            self.thrm_e.int_pts[0].temp_rate, 0.242264973081037)
+            self.consol_e.int_pts[0].temp, -0.366025403784439)
         self.assertAlmostEqual(
-            self.thrm_e.int_pts[1].temp_rate, 0.357735026918963)
-        self.assertAlmostEqual(self.thrm_e.int_pts[0].temp_gradient, 1.5)
-        self.assertAlmostEqual(self.thrm_e.int_pts[1].temp_gradient, 1.5)
-        self.assertAlmostEqual(self.thrm_e.int_pts[0].deg_sat_water, 0.0)
-        self.assertAlmostEqual(self.thrm_e.int_pts[1].deg_sat_water, 1.0)
+            self.consol_e.int_pts[1].temp, 1.366025403784440)
         self.assertAlmostEqual(
-            self.thrm_e.int_pts[0].deg_sat_water_temp_gradient, 0.0)
+            self.consol_e.int_pts[0].temp_rate, 0.242264973081037)
         self.assertAlmostEqual(
-            self.thrm_e.int_pts[1].deg_sat_water_temp_gradient, 0.0)
+            self.consol_e.int_pts[1].temp_rate, 0.357735026918963)
+        self.assertAlmostEqual(self.consol_e.int_pts[0].temp_gradient, 1.5)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].temp_gradient, 1.5)
+        self.assertAlmostEqual(self.consol_e.int_pts[0].deg_sat_water, 0.0)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].deg_sat_water, 1.0)
         self.assertAlmostEqual(
-            self.thrm_e.int_pts[0].water_flux_rate, 0.0
+            self.consol_e.int_pts[0].deg_sat_water_temp_gradient, 0.0)
+        self.assertAlmostEqual(
+            self.consol_e.int_pts[1].deg_sat_water_temp_gradient, 0.0)
+        self.assertAlmostEqual(
+            self.consol_e.int_pts[0].water_flux_rate, 0.0
         )
         self.assertAlmostEqual(
-            self.thrm_e.int_pts[1].water_flux_rate, 0.0
+            self.consol_e.int_pts[1].water_flux_rate, 0.0
         )
 
     def test_update_integration_points_with_material(self):
@@ -143,134 +139,148 @@ class TestThermalElement1DLinear(unittest.TestCase):
             water_flux_b3=10.0e-6,
             seg_pot_0=2e-9,
         )
-        for ip in self.thrm_e.int_pts:
+        for ip in self.consol_e.int_pts:
             ip.material = m
             ip.tot_stress = 120.0e3
-        self.thrm_e.nodes[0].temp = -1.0
-        self.thrm_e.nodes[1].temp = +2.0
-        self.thrm_e.nodes[0].temp_rate = 0.2
-        self.thrm_e.nodes[1].temp_rate = 0.4
-        self.thrm_e.update_integration_points()
-        self.assertAlmostEqual(self.thrm_e.int_pts[0].temp, -0.366025403784439)
-        self.assertAlmostEqual(self.thrm_e.int_pts[1].temp, 1.366025403784440)
+        self.consol_e.nodes[0].temp = -1.0
+        self.consol_e.nodes[1].temp = +2.0
+        self.consol_e.nodes[0].temp_rate = 0.2
+        self.consol_e.nodes[1].temp_rate = 0.4
+        self.consol_e.update_integration_points()
         self.assertAlmostEqual(
-            self.thrm_e.int_pts[0].temp_rate, 0.242264973081037)
+            self.consol_e.int_pts[0].temp, -0.366025403784439)
         self.assertAlmostEqual(
-            self.thrm_e.int_pts[1].temp_rate, 0.357735026918963)
-        self.assertAlmostEqual(self.thrm_e.int_pts[0].temp_gradient, 1.5)
-        self.assertAlmostEqual(self.thrm_e.int_pts[1].temp_gradient, 1.5)
+            self.consol_e.int_pts[1].temp, 1.366025403784440)
         self.assertAlmostEqual(
-            self.thrm_e.int_pts[0].deg_sat_water,
+            self.consol_e.int_pts[0].temp_rate, 0.242264973081037)
+        self.assertAlmostEqual(
+            self.consol_e.int_pts[1].temp_rate, 0.357735026918963)
+        self.assertAlmostEqual(self.consol_e.int_pts[0].temp_gradient, 1.5)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].temp_gradient, 1.5)
+        self.assertAlmostEqual(
+            self.consol_e.int_pts[0].deg_sat_water,
             0.149711781050801,
         )
         self.assertAlmostEqual(
-            self.thrm_e.int_pts[1].deg_sat_water,
+            self.consol_e.int_pts[1].deg_sat_water,
             1.0,
         )
         self.assertAlmostEqual(
-            self.thrm_e.int_pts[0].deg_sat_water_temp_gradient,
+            self.consol_e.int_pts[0].deg_sat_water_temp_gradient,
             0.219419354111454,
         )
         self.assertAlmostEqual(
-            self.thrm_e.int_pts[1].deg_sat_water_temp_gradient,
+            self.consol_e.int_pts[1].deg_sat_water_temp_gradient,
             0.0,
         )
         self.assertAlmostEqual(
-            self.thrm_e.int_pts[0].water_flux_rate,
+            self.consol_e.int_pts[0].water_flux_rate,
             1.1378090109e-10,
             delta=1e-17,
         )
         self.assertAlmostEqual(
-            self.thrm_e.int_pts[1].water_flux_rate, 0.0,
+            self.consol_e.int_pts[1].water_flux_rate, 0.0,
             delta=1e-17,
         )
 
 
-class TestThermalElement1DCubic(unittest.TestCase):
+class TestConsolidationElement1DCubic(unittest.TestCase):
     def setUp(self):
         self.nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(4))
-        self.thrm_e = ThermalElement1D(self.nodes, order=3)
+        self.consol_e = ConsolidationElement1D(self.nodes, order=3)
 
     def test_jacobian_value(self):
-        expected = self.nodes[-1].z - self.nodes[0].z
-        self.assertAlmostEqual(self.thrm_e.jacobian, expected)
+        expected0 = self.nodes[-1].z - self.nodes[0].z
+        expected1 = 6.0
+        self.assertAlmostEqual(self.consol_e.jacobian, expected0)
+        self.assertAlmostEqual(self.consol_e.jacobian, expected1)
 
     def test_nodes_equal(self):
-        for nd, e_nd in zip(self.nodes, self.thrm_e.nodes):
+        for nd, e_nd in zip(self.nodes, self.consol_e.nodes):
             self.assertIs(nd, e_nd)
 
-    def test_heat_flow_matrix_uninitialized(self):
+    def test_stiffness_matrix_uninitialized(self):
         self.assertTrue(np.allclose(
-            self.thrm_e.heat_flow_matrix, np.zeros((4, 4))))
+            self.consol_e.stiffness_matrix, np.zeros((4, 4))))
 
-    def test_heat_flow_matrix_conduction_only(self):
-        m = Material(thrm_cond_solids=3.0)
-        for ip in self.thrm_e.int_pts:
+    def test_stiffness_matrix_full(self):
+        m = Material(
+            spec_grav_solids=2.60,
+            hyd_cond_index=0.305,
+            hyd_cond_0=4.05e-4,
+            void_ratio_0_hyd_cond=2.60,
+            void_ratio_min=0.30,
+            void_ratio_tr=2.60,
+            void_ratio_0_comp=2.60,
+            comp_index_unfrozen=0.421,
+            rebound_index_unfrozen=0.08,
+            eff_stress_0_comp=2.80e00,
+        )
+        for ip in self.consol_e.int_pts:
             ip.material = m
-            ip.void_ratio = 0.35
-            ip.void_ratio_0 = 0.3
-            ip.deg_sat_water = 0.8
-        lam = 2.0875447196636
+            ip.void_ratio_0 = 0.9
+            ip.void_ratio = 0.3
+            ip.deg_sat_water = 0.1
+            ip.pre_consol_stress = 1.0
+            k, dk_de = m.hyd_cond(ip.void_ratio, 1.0, False)
+            ip.hyd_cond = k
+            ip.hyd_cond_gradient = dk_de
+            sig, dsig_de = m.eff_stress(ip.void_ratio, ip.pre_consol_stress)
+            ip.eff_stress = sig
+            ip.eff_stress_gradient = dsig_de
         jac = 6.0
-        e_fact = 1.30 / 1.35
-        expected = (1/40) * lam / jac * np.array(
-            [
-                [148, -189, 54, -13],
-                [-189, 432, -297, 54],
-                [54, -297, 432, -189],
-                [-13, 54, -189, 148],
-            ]
-        ) * e_fact ** 2
-        self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix, expected))
+        Gs = 2.60
+        e0 = 0.9
+        e = 0.3
+        Cku = 0.305
+        k0 = 4.05e-4
+        ek0 = 2.60
+        k = k0 * 10 ** ((e - ek0) / Cku)
+        dk_de = k * np.log(10) / Cku
+        sig_p_0 = 2.80
+        Ccu = 0.421
+        ecu0 = 2.60
+        sig_p = sig_p_0 * 10 ** (-(e - ecu0) / Ccu)
+        dsig_de = -sig_p * np.log(10) / Ccu
+        e_ratio = (1.0 + e0) / (1.0 + e)
+        coef_0 = k * e_ratio * dsig_de / gam_w / jac
+        coef_1 = (dk_de * (Gs - 1.0) / (1.0 + e)
+                  - k * (Gs - 1.0) / (1.0 + e) ** 2)
+        stiff_0 = coef_0 / 40.0 * np.array([[148, -189, 54, -13],
+                                            [-189, 432, -297, 54],
+                                            [54, -297, 432, -189],
+                                            [-13, 54, -189, 148]])
+        stiff_1 = coef_1 / 1680.0 * np.array([[-840, 1197, -504, 147],
+                                              [-1197, 0, 1701, -504],
+                                              [504, -1701, 0, 1197],
+                                              [-147, 504, -1197, 840]])
+        expected = stiff_0 + stiff_1
+        self.assertTrue(np.allclose(self.consol_e.stiffness_matrix, expected))
 
-    def test_heat_flow_matrix_conduction_advection(self):
-        m = Material(thrm_cond_solids=3.0)
-        for ip in self.thrm_e.int_pts:
-            ip.material = m
-            ip.void_ratio = 0.35
-            ip.void_ratio_0 = 0.3
-            ip.deg_sat_water = 0.8
-            ip.water_flux_rate = -1.5e-8
-        lam = 2.0875447196636
+    def test_mass_matrix_uninitialized(self):
         jac = 6.0
-        e_fact = 1.30 / 1.35
-        qw = -1.5e-8
-        expected = (1/40) * lam / jac * np.array(
+        expected = jac / 1680.0 * np.array(
             [
-                [148, -189, 54, -13],
-                [-189, 432, -297, 54],
-                [54, -297, 432, -189],
-                [-13, 54, -189, 148],
+                [128,   99,  -36,   19],
+                [99,  648,  -81,  -36],
+                [-36,  -81,  648,   99],
+                [19,  -36,   99,  128],
             ]
-        ) * e_fact ** 2
-        expected += (1/1680) * qw * Cw * np.array(
-            [
-                [-840, 1197, -504, 147],
-                [-1197, 0, 1701, -504],
-                [504, -1701, 0, 1197],
-                [-147, 504, -1197, 840],
-            ]
-        ) * e_fact
-        self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix, expected))
-
-    def test_heat_storage_matrix_uninitialized(self):
+        )
         self.assertTrue(
-            np.allclose(self.thrm_e.heat_storage_matrix, np.zeros((4, 4)))
+            np.allclose(self.consol_e.mass_matrix,
+                        expected)
         )
 
-    def test_heat_storage_matrix_heat_capacity_only(self):
-        m = Material(spec_grav_solids=2.65,
-                     spec_heat_cap_solids=7.41e2)
-        for ip in self.thrm_e.int_pts:
-            ip.material = m
-            ip.void_ratio = 0.35
+    def test_mass_matrix_full(self):
+        for ip in self.consol_e.int_pts:
             ip.void_ratio_0 = 0.3
-            ip.deg_sat_water = 0.8
-            ip.water_flux_rate = -1.5e-8
-        heat_cap = 2.42402962962963e6
-        lat_heat = 0.0
+            ip.deg_sat_water = 0.2
         jac = 6.0
-        expected = (1/1680) * (heat_cap + lat_heat) * jac * np.array(
+        e0 = 0.3
+        Sw = 0.2
+        coef = (Sw + Gi * (1.0 - Sw)) / (1.0 + e0)
+        expected = coef * jac / 1680.0 * np.array(
             [
                 [128,   99,  -36,   19],
                 [99,  648,  -81,  -36],
@@ -278,32 +288,7 @@ class TestThermalElement1DCubic(unittest.TestCase):
                 [19,  -36,   99,  128],
             ]
         )
-        self.assertTrue(np.allclose(
-            self.thrm_e.heat_storage_matrix, expected))
-
-    def test_heat_storage_matrix_heat_capacity_and_latent_heat(self):
-        m = Material(spec_grav_solids=2.65,
-                     spec_heat_cap_solids=7.41e2)
-        for ip in self.thrm_e.int_pts:
-            ip.material = m
-            ip.void_ratio = 0.35
-            ip.void_ratio_0 = 0.3
-            ip.deg_sat_water = 0.8
-            ip.deg_sat_water_temp_gradient = 1.5e-2
-            ip.water_flux_rate = -1.5e-8
-        heat_cap = 2.42402962962963e6
-        lat_heat = 1.18039638888889e6
-        jac = 6.0
-        expected = (1/1680) * (heat_cap + lat_heat) * jac * np.array(
-            [
-                [128,   99,  -36,   19],
-                [99,  648,  -81,  -36],
-                [-36,  -81,  648,   99],
-                [19,  -36,   99,  128],
-            ]
-        )
-        self.assertTrue(np.allclose(
-            self.thrm_e.heat_storage_matrix, expected))
+        self.assertTrue(np.allclose(self.consol_e.mass_matrix, expected))
 
     def test_update_integration_points_null_material(self):
         Te = np.array([
@@ -318,10 +303,10 @@ class TestThermalElement1DCubic(unittest.TestCase):
             0.5,
             0.8,
         ])
-        for T, dTdt, nd in zip(Te, dTdte, self.thrm_e.nodes):
+        for T, dTdt, nd in zip(Te, dTdte, self.consol_e.nodes):
             nd.temp = T
             nd.temp_rate = dTdt
-        self.thrm_e.update_integration_points()
+        self.consol_e.update_integration_points()
         expected_Tip = np.array([
             -0.913964840018686,
             -0.436743906025892,
@@ -365,7 +350,7 @@ class TestThermalElement1DCubic(unittest.TestCase):
             0.0,
         ])
         for ip, eT, edTdt, edTdZ, eSw, edSw, eqw in zip(
-            self.thrm_e.int_pts,
+            self.consol_e.int_pts,
             expected_Tip,
             expected_dTdtip,
             expected_dTdZip,
@@ -389,7 +374,7 @@ class TestThermalElement1DCubic(unittest.TestCase):
             water_flux_b3=10.0e-6,
             seg_pot_0=2e-9,
         )
-        for ip in self.thrm_e.int_pts:
+        for ip in self.consol_e.int_pts:
             ip.material = m
             ip.tot_stress = 120.0e3
         Te = np.array([
@@ -404,10 +389,10 @@ class TestThermalElement1DCubic(unittest.TestCase):
             0.5,
             0.8,
         ])
-        for T, dTdt, nd in zip(Te, dTdte, self.thrm_e.nodes):
+        for T, dTdt, nd in zip(Te, dTdte, self.consol_e.nodes):
             nd.temp = T
             nd.temp_rate = dTdt
-        self.thrm_e.update_integration_points()
+        self.consol_e.update_integration_points()
         expected_Tip = np.array([
             -0.913964840018686,
             -0.436743906025892,
@@ -451,7 +436,7 @@ class TestThermalElement1DCubic(unittest.TestCase):
             0.0,
         ])
         for ip, eT, edTdt, edTdZ, eSw, edSw, eqw in zip(
-            self.thrm_e.int_pts,
+            self.consol_e.int_pts,
             expected_Tip,
             expected_dTdtip,
             expected_dTdZip,
