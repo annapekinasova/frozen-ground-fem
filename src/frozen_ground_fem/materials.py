@@ -116,7 +116,7 @@ class Material:
     thrm_cond_solids : float, optional, default=0.0
         The value to assign to thermal conductivity of solids.
         Cannot be negative.
-    spec_grav_solids: float, optional, default=0.0
+    spec_grav_solids: float, optional, default=1.0
         The value to assign to specific gravity of solids.
         Cannot be negative.
     spec_heat_cap_solids: float, optional, default=0.0
@@ -130,7 +130,7 @@ class Material:
         The value to assign to beta material constant[]
         for calculation of degree of saturation of water.
         Cannot be negative.
-    hyd_cond_index: float, optional, default=0.0
+    hyd_cond_index: float, optional, default=1.0
         The value to assign to hydraulic conductivity index constant
         of unfrozen soil. Cannot be negative.
     hyd_cond_mult: float, optional, default=1.0
@@ -179,10 +179,10 @@ class Material:
         The value to assign to reference unfrozen void ratio
         corresponding to compression (normal consolidation line).
         Cannot be negative.
-    comp_index_unfrozen: float, optional, default=0.0
+    comp_index_unfrozen: float, optional, default=1.0
         The value to assign to compression index in unfrozen soil.
         Cannot be negative.
-    rebound_index_unfrozen: float, optional, default=0.0
+    rebound_index_unfrozen: float, optional, default=1.0
         The value to assign to rebound index in unfrozen soil.
         Cannot be negative.
     eff_stress_0_comp: float, optional, default=0.0
@@ -255,12 +255,12 @@ class Material:
 
     """
     _thrm_cond_solids: float = 0.0
-    _spec_grav_solids: float = 0.0
-    _dens_solids: float = 0.0
+    _spec_grav_solids: float = 1.0
+    _dens_solids: float = dens_water
     _spec_heat_cap_solids: float = 0.0
     _deg_sat_water_alpha: float = 1.0
     _deg_sat_water_beta: float = 0.9
-    _hyd_cond_index: float = 0.0
+    _hyd_cond_index: float = 1.0
     _hyd_cond_mult: float = 1.0
     _hyd_cond_0: float = 0.0
     _void_ratio_0_hyd_cond: float = 0.0
@@ -274,8 +274,8 @@ class Material:
     _temp_rate_ref: float = 1.0e-9
     _seg_pot_0: float = 0.0
     _void_ratio_0_comp: float = 0.0
-    _comp_index_unfrozen: float = 0.0
-    _rebound_index_unfrozen: float = 0.0
+    _comp_index_unfrozen: float = 1.0
+    _rebound_index_unfrozen: float = 1.0
     _eff_stress_0_comp: float = 0.0
     _comp_index_frozen_a1: float = 0.0
     _comp_index_frozen_a2: float = 0.0
@@ -284,11 +284,11 @@ class Material:
     def __init__(
         self,
         thrm_cond_solids: float = 0.0,
-        spec_grav_solids: float = 0.0,
+        spec_grav_solids: float = 1.0,
         spec_heat_cap_solids: float = 0.0,
         deg_sat_water_alpha: float = 1.0,
         deg_sat_water_beta: float = 0.9,
-        hyd_cond_index: float = 0.0,
+        hyd_cond_index: float = 1.0,
         hyd_cond_mult: float = 1.0,
         hyd_cond_0: float = 0.0,
         void_ratio_0_hyd_cond: float = 0.0,
@@ -302,8 +302,8 @@ class Material:
         temp_rate_ref: float = 1.0e-9,
         seg_pot_0: float = 0.0,
         void_ratio_0_comp: float = 0.0,
-        comp_index_unfrozen: float = 0.0,
-        rebound_index_unfrozen: float = 0.0,
+        comp_index_unfrozen: float = 1.0,
+        rebound_index_unfrozen: float = 1.0,
         eff_stress_0_comp: float = 0.0,
         comp_index_frozen_a1: float = 0.0,
         comp_index_frozen_a2: float = 0.0,

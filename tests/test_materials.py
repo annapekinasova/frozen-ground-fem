@@ -23,9 +23,6 @@ class TestConstants(unittest.TestCase):
     def test_thrm_cond_ice(self):
         self.assertEqual(thrm_cond_ice, 2.22e0)
 
-# TODO: Default tests
-# tot_stress()
-
 
 class TestMaterialDefaults(unittest.TestCase):
     def setUp(self):
@@ -35,7 +32,7 @@ class TestMaterialDefaults(unittest.TestCase):
         self.assertEqual(self.m.thrm_cond_solids, 0.0)
 
     def test_dens_solids(self):
-        self.assertEqual(self.m.dens_solids, 0.0)
+        self.assertEqual(self.m.dens_solids, 1.0e3)
 
     def test_spec_heat_cap_solids(self):
         self.assertEqual(self.m.spec_heat_cap_solids, 0.0)
@@ -50,7 +47,7 @@ class TestMaterialDefaults(unittest.TestCase):
         self.assertEqual(self.m.deg_sat_water_beta, 0.9)
 
     def test_hyd_cond_index(self):
-        self.assertEqual(self.m.hyd_cond_index, 0.0)
+        self.assertEqual(self.m.hyd_cond_index, 1.0)
 
     def test_hyd_cond_mult(self):
         self.assertEqual(self.m.hyd_cond_mult, 1.0)
@@ -95,10 +92,10 @@ class TestMaterialDefaults(unittest.TestCase):
         self.assertEqual(self.m.eff_stress_0_comp, 0.0)
 
     def test_comp_index_unfrozen(self):
-        self.assertEqual(self.m.comp_index_unfrozen, 0.0)
+        self.assertEqual(self.m.comp_index_unfrozen, 1.0)
 
     def test_rebound_index_unfozen(self):
-        self.assertEqual(self.m.comp_index_unfrozen, 0.0)
+        self.assertEqual(self.m.comp_index_unfrozen, 1.0)
 
     def test_comp_index_frozen_a1(self):
         self.assertEqual(self.m.comp_index_frozen_a1, 0.0)
@@ -141,8 +138,9 @@ class TestMaterialDefaults(unittest.TestCase):
             self.m.hyd_cond(e=0.2, temp=-0.1, thawed=False)
         with self.assertRaises(ValueError):
             self.m.hyd_cond(e=-0.01, temp=0.1, thawed=False)
-        with self.assertRaises(ZeroDivisionError):
-            self.m.hyd_cond(e=0.2, temp=1.0, thawed=False)
+        k, dk_de = self.m.hyd_cond(e=0.2, temp=1.0, thawed=False)
+        self.assertEqual(k, 0.0)
+        self.assertEqual(dk_de, 0.0)
 
     def test_water_flux(self):
         with self.assertRaises(ValueError):
@@ -159,8 +157,9 @@ class TestMaterialDefaults(unittest.TestCase):
         self.assertAlmostEqual(qw, 0.0)
 
     def test_eff_stress(self):
-        with self.assertRaises(ZeroDivisionError):
-            self.m.eff_stress(0.0, ppc=0.0)
+        sig_p, dsig_de = self.m.eff_stress(0.0, ppc=0.0)
+        self.assertEqual(sig_p, 0.0)
+        self.assertEqual(dsig_de, 0.0)
 
     def test_comp_index_frozen(self):
         with self.assertRaises(ValueError):
@@ -170,16 +169,13 @@ class TestMaterialDefaults(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.m.tot_stress(temp=0.0, e=0.350, e_f0=0.355, sig_f0=3e5)
 
-# TODO: Null Material tests
-# tot_stress()
-
 
 class TestNullMaterial(unittest.TestCase):
     def test_thrm_cond_solids(self):
         self.assertEqual(NULL_MATERIAL.thrm_cond_solids, 0.0)
 
     def test_dens_solids(self):
-        self.assertEqual(NULL_MATERIAL.dens_solids, 0.0)
+        self.assertEqual(NULL_MATERIAL.dens_solids, 1.0e3)
 
     def test_spec_heat_cap_solids(self):
         self.assertEqual(NULL_MATERIAL.spec_heat_cap_solids, 0.0)
@@ -194,7 +190,7 @@ class TestNullMaterial(unittest.TestCase):
         self.assertEqual(NULL_MATERIAL.deg_sat_water_beta, 0.9)
 
     def test_hyd_cond_index(self):
-        self.assertEqual(NULL_MATERIAL.hyd_cond_index, 0.0)
+        self.assertEqual(NULL_MATERIAL.hyd_cond_index, 1.0)
 
     def test_hyd_cond_mult(self):
         self.assertEqual(NULL_MATERIAL.hyd_cond_mult, 1.0)
@@ -239,10 +235,10 @@ class TestNullMaterial(unittest.TestCase):
         self.assertEqual(NULL_MATERIAL.eff_stress_0_comp, 0.0)
 
     def test_comp_index_unfrozen(self):
-        self.assertEqual(NULL_MATERIAL.comp_index_unfrozen, 0.0)
+        self.assertEqual(NULL_MATERIAL.comp_index_unfrozen, 1.0)
 
     def test_rebound_index_unfozen(self):
-        self.assertEqual(NULL_MATERIAL.comp_index_unfrozen, 0.0)
+        self.assertEqual(NULL_MATERIAL.comp_index_unfrozen, 1.0)
 
     def test_comp_index_frozen_a1(self):
         self.assertEqual(NULL_MATERIAL.comp_index_frozen_a1, 0.0)
@@ -285,8 +281,9 @@ class TestNullMaterial(unittest.TestCase):
             NULL_MATERIAL.hyd_cond(e=0.2, temp=-0.1, thawed=False)
         with self.assertRaises(ValueError):
             NULL_MATERIAL.hyd_cond(e=-0.01, temp=0.1, thawed=False)
-        with self.assertRaises(ZeroDivisionError):
-            NULL_MATERIAL.hyd_cond(e=0.2, temp=1.0, thawed=False)
+        k, dk_de = NULL_MATERIAL.hyd_cond(e=0.2, temp=1.0, thawed=False)
+        self.assertEqual(k, 0.0)
+        self.assertEqual(dk_de, 0.0)
 
     def test_water_flux(self):
         with self.assertRaises(ValueError):
@@ -303,8 +300,9 @@ class TestNullMaterial(unittest.TestCase):
         self.assertAlmostEqual(qw, 0.0)
 
     def test_eff_stress(self):
-        with self.assertRaises(ZeroDivisionError):
-            NULL_MATERIAL.eff_stress(0.0, ppc=0.0)
+        sig_p, dsig_de = NULL_MATERIAL.eff_stress(0.0, ppc=0.0)
+        self.assertEqual(sig_p, 0.0)
+        self.assertEqual(dsig_de, 0.0)
 
     def test_comp_index_frozen(self):
         with self.assertRaises(ValueError):
@@ -313,9 +311,6 @@ class TestNullMaterial(unittest.TestCase):
     def test_tot_stress(self):
         with self.assertRaises(ValueError):
             NULL_MATERIAL.tot_stress(temp=0.0, e=0.350, e_f0=0.355, sig_f0=3e5)
-
-# TODO: Initializer tests
-# tot_stress()
 
 
 class TestMaterialInitializers(unittest.TestCase):
@@ -1721,9 +1716,5 @@ class TestMaterialCompIndexFrozena3Setter(unittest.TestCase):
             self.m.comp_index_frozen_a3 = "twelve"
 
 
-# TODO: Setter tests
-# eff_stress()
-# comp_index_frozen()
-# tot_stress()
 if __name__ == "__main__":
     unittest.main()
