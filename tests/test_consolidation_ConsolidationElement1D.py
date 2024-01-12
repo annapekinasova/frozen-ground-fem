@@ -102,86 +102,88 @@ class TestConsolidationElement1DLinear(unittest.TestCase):
         self.assertTrue(np.allclose(self.consol_e.mass_matrix, expected))
 
     def test_update_integration_points_null_material(self):
-        self.consol_e.nodes[0].temp = -1.0
-        self.consol_e.nodes[1].temp = +2.0
-        self.consol_e.nodes[0].temp_rate = 0.2
-        self.consol_e.nodes[1].temp_rate = 0.4
+        self.consol_e.nodes[0].void_ratio = 0.75
+        self.consol_e.nodes[1].void_ratio = 0.65
+        for ip in self.consol_e.int_pts:
+            ip.void_ratio_0 = 0.9
         self.consol_e.update_integration_points()
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[0].temp, -0.366025403784439)
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[1].temp, 1.366025403784440)
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[0].temp_rate, 0.242264973081037)
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[1].temp_rate, 0.357735026918963)
-        self.assertAlmostEqual(self.consol_e.int_pts[0].temp_gradient, 1.5)
-        self.assertAlmostEqual(self.consol_e.int_pts[1].temp_gradient, 1.5)
-        self.assertAlmostEqual(self.consol_e.int_pts[0].deg_sat_water, 0.0)
-        self.assertAlmostEqual(self.consol_e.int_pts[1].deg_sat_water, 1.0)
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[0].deg_sat_water_temp_gradient, 0.0)
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[1].deg_sat_water_temp_gradient, 0.0)
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[0].water_flux_rate, 0.0
-        )
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[1].water_flux_rate, 0.0
-        )
+        self.assertAlmostEqual(self.consol_e.int_pts[0].void_ratio,
+                               0.728867513459481)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].void_ratio,
+                               0.671132486540519)
+        self.assertAlmostEqual(self.consol_e.int_pts[0].hyd_cond,
+                               0.0)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].hyd_cond,
+                               0.0)
+        self.assertAlmostEqual(self.consol_e.int_pts[0].hyd_cond_gradient,
+                               0.0)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].hyd_cond_gradient,
+                               0.0)
+        self.assertAlmostEqual(self.consol_e.int_pts[0].eff_stress,
+                               0.0)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].eff_stress,
+                               0.0)
+        self.assertAlmostEqual(self.consol_e.int_pts[0].eff_stress_gradient,
+                               0.0)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].eff_stress_gradient,
+                               0.0)
+        self.assertAlmostEqual(self.consol_e.int_pts[0].pre_consol_stress,
+                               0.0)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].pre_consol_stress,
+                               0.0)
+        self.assertAlmostEqual(self.consol_e.int_pts[0].water_flux_rate,
+                               0.0)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].water_flux_rate,
+                               0.0)
 
     def test_update_integration_points_with_material(self):
+        self.consol_e.nodes[0].void_ratio = 0.75
+        self.consol_e.nodes[1].void_ratio = 0.65
         m = Material(
-            deg_sat_water_alpha=1.2e4,
-            deg_sat_water_beta=0.35,
-            water_flux_b1=0.08,
-            water_flux_b2=4.0,
-            water_flux_b3=10.0e-6,
-            seg_pot_0=2e-9,
+            spec_grav_solids=2.60,
+            hyd_cond_index=0.305,
+            hyd_cond_0=4.05e-4,
+            hyd_cond_mult=0.8,
+            void_ratio_0_hyd_cond=2.60,
+            void_ratio_min=0.30,
+            void_ratio_tr=2.60,
+            void_ratio_0_comp=2.60,
+            comp_index_unfrozen=0.421,
+            rebound_index_unfrozen=0.08,
+            eff_stress_0_comp=2.80e00,
         )
         for ip in self.consol_e.int_pts:
             ip.material = m
-            ip.tot_stress = 120.0e3
-        self.consol_e.nodes[0].temp = -1.0
-        self.consol_e.nodes[1].temp = +2.0
-        self.consol_e.nodes[0].temp_rate = 0.2
-        self.consol_e.nodes[1].temp_rate = 0.4
+            ip.void_ratio_0 = 0.9
         self.consol_e.update_integration_points()
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[0].temp, -0.366025403784439)
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[1].temp, 1.366025403784440)
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[0].temp_rate, 0.242264973081037)
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[1].temp_rate, 0.357735026918963)
-        self.assertAlmostEqual(self.consol_e.int_pts[0].temp_gradient, 1.5)
-        self.assertAlmostEqual(self.consol_e.int_pts[1].temp_gradient, 1.5)
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[0].deg_sat_water,
-            0.149711781050801,
-        )
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[1].deg_sat_water,
-            1.0,
-        )
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[0].deg_sat_water_temp_gradient,
-            0.219419354111454,
-        )
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[1].deg_sat_water_temp_gradient,
-            0.0,
-        )
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[0].water_flux_rate,
-            1.1378090109e-10,
-            delta=1e-17,
-        )
-        self.assertAlmostEqual(
-            self.consol_e.int_pts[1].water_flux_rate, 0.0,
-            delta=1e-17,
-        )
+        self.assertAlmostEqual(self.consol_e.int_pts[0].void_ratio,
+                               0.728867513459481)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].void_ratio,
+                               0.671132486540519)
+        self.assertAlmostEqual(self.consol_e.int_pts[0].hyd_cond,
+                               2.968892083014210E-10, delta=1e-17)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].hyd_cond,
+                               1.919991214136810E-10, delta=1e-17)
+        self.assertAlmostEqual(self.consol_e.int_pts[0].hyd_cond_gradient,
+                               2.241353001002160E-09, delta=1e-17)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].hyd_cond_gradient,
+                               1.449489556836380E-09, delta=1e-17)
+        self.assertAlmostEqual(self.consol_e.int_pts[0].eff_stress,
+                               7.792077237928290E+04)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].eff_stress,
+                               1.068540727404800E+05)
+        self.assertAlmostEqual(self.consol_e.int_pts[0].eff_stress_gradient,
+                               -4.261738929100220E+05)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].eff_stress_gradient,
+                               -5.844194656007840E+05)
+        self.assertAlmostEqual(self.consol_e.int_pts[0].pre_consol_stress,
+                               7.792077237928290E+04)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].pre_consol_stress,
+                               1.068540727404800E+05)
+        self.assertAlmostEqual(self.consol_e.int_pts[0].water_flux_rate,
+                               4.339596237668420E-10, delta=1e-17)
+        self.assertAlmostEqual(self.consol_e.int_pts[1].water_flux_rate,
+                               4.664043445100810E-10, delta=1e-17)
 
 
 class TestConsolidationElement1DCubic(unittest.TestCase):

@@ -175,7 +175,9 @@ class ConsolidationElement1D(Element1D):
         ee = np.array([nd.void_ratio for nd in self.nodes])
         for ip in self.int_pts:
             N = self._shape_matrix(ip.local_coord)
-            ep = N @ ee
+            B = self._gradient_matrix(ip.local_coord, self.jacobian)
+            ep = (N @ ee)[0]
+            de_dZ = (B @ ee)[0]
             ip.void_ratio = ep
             k, dk_de = ip.material.hyd_cond(ep, 1.0, False)
             ip.hyd_cond = k
@@ -186,8 +188,6 @@ class ConsolidationElement1D(Element1D):
                 ip.pre_consol_stress = sig
             ip.eff_stress = sig
             ip.eff_stress_gradient = dsig_de
-            B = self._gradient_matrix(ip.local_coord, self.jacobian)
-            de_dZ = B @ ee
             e0 = ip.void_ratio_0
             Gs = ip.material.spec_grav_solids
             e_ratio = (1.0 + e0) / (1.0 + ep)
