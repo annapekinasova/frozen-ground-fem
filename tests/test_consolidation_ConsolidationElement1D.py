@@ -293,79 +293,35 @@ class TestConsolidationElement1DCubic(unittest.TestCase):
         self.assertTrue(np.allclose(self.consol_e.mass_matrix, expected))
 
     def test_update_integration_points_null_material(self):
-        Te = np.array([
-            -1.00,
-            -0.10,
-            1.10,
-            2.00,
+        enode = np.array([
+            1.1,
+            0.89,
+            0.75,
+            0.7,
         ])
-        dTdte = np.array([
-            -0.5,
-            -0.1,
-            0.5,
-            0.8,
-        ])
-        for T, dTdt, nd in zip(Te, dTdte, self.consol_e.nodes):
-            nd.temp = T
-            nd.temp_rate = dTdt
+        for nd, e in zip(self.consol_e.nodes, enode):
+            nd.void_ratio = e
+        for ip in self.consol_e.int_pts:
+            ip.void_ratio_0 = 0.9
         self.consol_e.update_integration_points()
-        expected_Tip = np.array([
-            -0.913964840018686,
-            -0.436743906025892,
-            0.500000000000000,
-            1.436743906025890,
-            1.913964840018690,
+        expected_e = np.array([
+            1.066963710411440,
+            0.948090621196697,
+            0.810000000000000,
+            0.724100234429932,
+            0.700845433961932,
         ])
-        expected_dTdtip = np.array([
-            -0.474536483402387,
-            -0.267597978008154,
-            0.206250000000000,
-            0.647478693241513,
-            0.794655768169027,
-        ])
-        expected_dTdZip = np.array([
-            0.33535785429992,
-            0.51464214570008,
-            0.61250000000000,
-            0.51464214570008,
-            0.33535785429992,
-        ])
-        expected_Sw = np.array([
-            0.0,
-            0.0,
-            1.0,
-            1.0,
-            1.0,
-        ])
-        expected_dSw_dT = np.array([
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-        ])
-        expected_qw = np.array([
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-        ])
-        for ip, eT, edTdt, edTdZ, eSw, edSw, eqw in zip(
+        for ip, e in zip(
             self.consol_e.int_pts,
-            expected_Tip,
-            expected_dTdtip,
-            expected_dTdZip,
-            expected_Sw,
-            expected_dSw_dT,
-            expected_qw,
+            expected_e,
         ):
-            self.assertAlmostEqual(ip.temp, eT)
-            self.assertAlmostEqual(ip.temp_rate, edTdt)
-            self.assertAlmostEqual(ip.temp_gradient, edTdZ)
-            self.assertAlmostEqual(ip.deg_sat_water, eSw)
-            self.assertAlmostEqual(ip.deg_sat_water_temp_gradient, edSw)
-            self.assertAlmostEqual(ip.water_flux_rate, eqw)
+            self.assertAlmostEqual(ip.void_ratio, e)
+            self.assertEqual(ip.hyd_cond, 0.0)
+            self.assertEqual(ip.hyd_cond_gradient, 0.0)
+            self.assertEqual(ip.eff_stress, 0.0)
+            self.assertEqual(ip.eff_stress_gradient, 0.0)
+            self.assertEqual(ip.pre_consol_stress, 0.0)
+            self.assertEqual(ip.water_flux_rate, 0.0)
 
     def test_update_integration_points_with_material(self):
         m = Material(
