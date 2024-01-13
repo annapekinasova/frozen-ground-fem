@@ -1403,11 +1403,11 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_void_ratio_distribution_nodes(self):
         expected_void_ratio_vector = np.array([
-            2.0,
-            0.1,
-            -0.8,
-            -1.5,
-            -12,
+            0.6,
+            0.55,
+            0.51,
+            0.48,
+            0.46,
         ])
         actual_void_ratio_nodes = np.array([
             nd.void_ratio for nd in self.msh.nodes
@@ -1421,14 +1421,14 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_void_ratio_distribution_int_pts(self):
         expected_void_ratio_int_pts = np.array([
-            1.5984827557301400,
-            0.5015172442698560,
-            -0.0901923788646684,
-            -0.6098076211353320,
-            -0.9479274057836310,
-            -1.3520725942163700,
-            -3.7189110867544700,
-            -9.7810889132455400,
+            0.589433756729741,
+            0.560566243270259,
+            0.541547005383793,
+            0.518452994616208,
+            0.503660254037844,
+            0.486339745962156,
+            0.475773502691896,
+            0.464226497308104,
         ])
         actual_void_ratio_int_pts = np.array([
             ip.void_ratio for e in self.msh.elements for ip in e.int_pts
