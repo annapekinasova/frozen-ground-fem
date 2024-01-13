@@ -368,90 +368,97 @@ class TestConsolidationElement1DCubic(unittest.TestCase):
             self.assertAlmostEqual(ip.water_flux_rate, eqw)
 
     def test_update_integration_points_with_material(self):
+        ee = np.array([
+            1.1,
+            0.89,
+            0.75,
+            0.7,
+        ])
+        for nd, e in zip(self.consol_e.nodes, ee):
+            nd.void_ratio = e
         m = Material(
-            deg_sat_water_alpha=1.2e4,
-            deg_sat_water_beta=0.35,
-            water_flux_b1=0.08,
-            water_flux_b2=4.0,
-            water_flux_b3=10.0e-6,
-            seg_pot_0=2e-9,
+            spec_grav_solids=2.60,
+            hyd_cond_index=0.305,
+            hyd_cond_0=4.05e-4,
+            hyd_cond_mult=0.8,
+            void_ratio_0_hyd_cond=2.60,
+            void_ratio_min=0.30,
+            void_ratio_tr=2.60,
+            void_ratio_0_comp=2.60,
+            comp_index_unfrozen=0.421,
+            rebound_index_unfrozen=0.08,
+            eff_stress_0_comp=2.80e00,
         )
         for ip in self.consol_e.int_pts:
             ip.material = m
-            ip.tot_stress = 120.0e3
-        Te = np.array([
-            -1.00,
-            -0.10,
-            1.10,
-            2.00,
-        ])
-        dTdte = np.array([
-            -0.5,
-            -0.1,
-            0.5,
-            0.8,
-        ])
-        for T, dTdt, nd in zip(Te, dTdte, self.consol_e.nodes):
-            nd.temp = T
-            nd.temp_rate = dTdt
+            ip.void_ratio_0 = 0.9
         self.consol_e.update_integration_points()
-        expected_Tip = np.array([
-            -0.913964840018686,
-            -0.436743906025892,
-            0.500000000000000,
-            1.436743906025890,
-            1.913964840018690,
+        expected_e_ip = np.array([
+            1.066963710411440,
+            0.948090621196697,
+            0.810000000000000,
+            0.724100234429932,
+            0.700845433961932,
         ])
-        expected_dTdtip = np.array([
-            -0.474536483402387,
-            -0.267597978008154,
-            0.206250000000000,
-            0.647478693241513,
-            0.794655768169027,
+        expected_k_ip = np.array([
+            3.811593105902900E-09,
+            1.553669711281440E-09,
+            5.477754498683320E-10,
+            2.863940483811450E-10,
+            2.402806184667600E-10,
         ])
-        expected_dTdZip = np.array([
-            0.33535785429992,
-            0.51464214570008,
-            0.61250000000000,
-            0.51464214570008,
-            0.33535785429992,
+        expected_dkde_ip = np.array([
+            2.877546710233080E-08,
+            1.172936628404270E-08,
+            4.135408475983370E-09,
+            2.162120218113580E-09,
+            1.813988754809670E-09,
         ])
-        expected_Sw = np.array([
-            0.0915235681884727,
-            0.1361684964587000,
-            1.00000000000000,
-            1.00000000000000,
-            1.00000000000000,
+        expected_sigp_ip = np.array([
+            1.226236943355600E+04,
+            2.349271866733930E+04,
+            4.999648864537800E+04,
+            7.997918088269650E+04,
+            9.082679879495540E+04,
         ])
-        expected_dSw_dT = np.array([
-            0.0539532190585967,
-            0.1674525178303510,
-            0.00000000000000,
-            0.00000000000000,
-            0.00000000000000,
+        expected_dsigde_ip = np.array([
+            -6.706686238121600E+04,
+            -1.284892726777160E+05,
+            -2.734469583299130E+05,
+            -4.374319944189340E+05,
+            -4.967611233958050E+05,
         ])
-        expected_qw = np.array([
-            -1.3562595181e-11,
-            -1.3792048602e-10,
-            0.0,
-            0.0,
-            0.0,
+        expected_ppc_ip = np.array([
+            1.226236943355600E+04,
+            2.349271866733930E+04,
+            4.999648864537800E+04,
+            7.997918088269650E+04,
+            9.082679879495540E+04,
         ])
-        for ip, eT, edTdt, edTdZ, eSw, edSw, eqw in zip(
+        expected_qw_ip = np.array([
+            -1.826918124450690E-10,
+            6.980126240925340E-10,
+            6.444230380341150E-10,
+            2.246276375886120E-10,
+            -1.335017975631420E-10,
+        ])
+        for ip, e, k, dkde, sigp, dsigde, ppc, qw in zip(
             self.consol_e.int_pts,
-            expected_Tip,
-            expected_dTdtip,
-            expected_dTdZip,
-            expected_Sw,
-            expected_dSw_dT,
-            expected_qw,
+            expected_e_ip,
+            expected_k_ip,
+            expected_dkde_ip,
+            expected_sigp_ip,
+            expected_dsigde_ip,
+            expected_ppc_ip,
+            expected_qw_ip,
         ):
-            self.assertAlmostEqual(ip.temp, eT)
-            self.assertAlmostEqual(ip.temp_rate, edTdt)
-            self.assertAlmostEqual(ip.temp_gradient, edTdZ)
-            self.assertAlmostEqual(ip.deg_sat_water, eSw)
-            self.assertAlmostEqual(ip.deg_sat_water_temp_gradient, edSw)
-            self.assertAlmostEqual(ip.water_flux_rate, eqw, delta=1e-18)
+            self.assertAlmostEqual(ip.void_ratio, e)
+            self.assertAlmostEqual(ip.hyd_cond, k, delta=1e-18)
+            self.assertAlmostEqual(ip.hyd_cond_gradient, dkde, delta=1e-18)
+            self.assertAlmostEqual(ip.eff_stress, sigp)
+            self.assertAlmostEqual(ip.eff_stress_gradient, dsigde)
+            self.assertAlmostEqual(ip.pre_consol_stress, ppc)
+            self.assertAlmostEqual(ip.water_flux_rate, qw, delta=1e-18)
 
 
 if __name__ == "__main__":
