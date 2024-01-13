@@ -185,6 +185,15 @@ class TestConsolidationElement1DLinear(unittest.TestCase):
         self.assertAlmostEqual(self.consol_e.int_pts[1].water_flux_rate,
                                4.664043445100810E-10, delta=1e-17)
 
+    def test_deformed_lenght(self):
+        self.consol_e.nodes[0].void_ratio = 0.75
+        self.consol_e.nodes[1].void_ratio = 0.65
+        for ip in self.consol_e.int_pts:
+            ip.void_ratio_0 = 0.9
+        self.consol_e.update_integration_points()
+        expected = 1.7894736842105
+        self.assertAlmostEqual(self.consol_e.deformed_length, expected)
+
 
 class TestConsolidationElement1DCubic(unittest.TestCase):
     def setUp(self):
