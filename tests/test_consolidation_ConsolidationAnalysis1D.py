@@ -799,6 +799,7 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
         for e in self.msh.elements:
             for ip in e.int_pts:
                 ip.material = self.mtl
+                ip.void_ratio_0 = 0.9
         self.msh.update_integration_points()
         # self.msh.update_stiffness_matrix()
         # self.msh.update_mass_matrix()
@@ -875,79 +876,84 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
 
     def test_water_flux_distribution(self):
         expected_water_flux_int_pts = np.array([
-            0.0000000000E+00,
-            0.0000000000E+00,
-            -4.8910645169E-12,
-            -5.5518497692E-13,
-            8.3577053338E-13,
-            1.7708810805E-13,
-            2.0670411271E-16,
-            6.0318175808E-27,
+            -8.123441622973750E-11,
+            -6.330331621462550E-11,
+            -5.769218208232310E-11,
+            -4.722093512946930E-11,
+            -4.545873593535430E-11,
+            -3.927183415246080E-11,
+            -3.978293540543520E-11,
+            -3.627677855006020E-11,
         ])
         actual_water_flux_int_pts = np.array([
             ip.water_flux_rate
             for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_water_flux_int_pts,
-                                    expected_water_flux_int_pts,
-                                    atol=1e-30))
+        self.assertTrue(np.allclose(
+            actual_water_flux_int_pts,
+            expected_water_flux_int_pts,
+            atol=1e-19, rtol=1e-8,
+        ))
 
     def test_eff_stress_distribution(self):
-        expected_spec_grav_int_pts = np.array([
-            1.94419643704324,
-            1.94419643704324,
-            2.48085630059944,
-            2.66463955659925,
-            2.68754164945741,
-            2.70253225701445,
-            2.73271219424962,
-            2.74983450612514,
+        expected_sig_int_pts = np.array([
+            1.670512849594790E+05,
+            1.956224690989220E+05,
+            2.170676343218650E+05,
+            2.462919434227970E+05,
+            2.670467867470950E+05,
+            2.935815141421210E+05,
+            3.110474684266550E+05,
+            3.313250233604040E+05,
         ])
-        actual_spec_grav_int_pts = np.array([
-            ip.spec_grav
+        actual_sigp_int_pts = np.array([
+            ip.eff_stress
             for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_spec_grav_int_pts,
-                                    expected_spec_grav_int_pts,
-                                    atol=1e-30))
+        self.assertTrue(np.allclose(
+            expected_sig_int_pts,
+            actual_sigp_int_pts,
+        ))
 
     def test_eff_stress_grad_distribution(self):
-        expected_spec_grav_int_pts = np.array([
-            1.94419643704324,
-            1.94419643704324,
-            2.48085630059944,
-            2.66463955659925,
-            2.68754164945741,
-            2.70253225701445,
-            2.73271219424962,
-            2.74983450612514,
+        expected_dsigde_int_pts = np.array([
+            -9.136574786536750E+05,
+            -1.069922520669520E+06,
+            -1.187213061665100E+06,
+            -1.347050255225330E+06,
+            -1.460565202602900E+06,
+            -1.605692204375930E+06,
+            -1.701219154424590E+06,
+            -1.812123657305390E+06,
         ])
-        actual_spec_grav_int_pts = np.array([
-            ip.spec_grav
+        actual_dsigde_int_pts = np.array([
+            ip.eff_stress_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_spec_grav_int_pts,
-                                    expected_spec_grav_int_pts,
-                                    atol=1e-30))
+        self.assertTrue(np.allclose(
+            expected_dsigde_int_pts,
+            actual_dsigde_int_pts,
+        ))
 
     def test_pre_consol_stress_distribution(self):
-        expected_spec_grav_int_pts = np.array([
-            1.94419643704324,
-            1.94419643704324,
-            2.48085630059944,
-            2.66463955659925,
-            2.68754164945741,
-            2.70253225701445,
-            2.73271219424962,
-            2.74983450612514,
+        expected_ppc_int_pts = np.array([
+            1.670512849594790E+05,
+            1.956224690989220E+05,
+            2.170676343218650E+05,
+            2.462919434227970E+05,
+            2.670467867470950E+05,
+            2.935815141421210E+05,
+            3.110474684266550E+05,
+            3.313250233604040E+05,
         ])
-        actual_spec_grav_int_pts = np.array([
-            ip.spec_grav
+        actual_ppc_int_pts = np.array([
+            ip.pre_consol_stress
             for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_spec_grav_int_pts,
-                                    expected_spec_grav_int_pts,
-                                    atol=1e-30))
+        self.assertTrue(np.allclose(
+            actual_ppc_int_pts,
+            expected_ppc_int_pts,
+        ))
 
 
 #     def test_global_stiffness_matrix(self):
