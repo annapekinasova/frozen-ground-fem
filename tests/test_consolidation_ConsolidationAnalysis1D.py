@@ -1307,49 +1307,39 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
 #         self.assertTrue(np.allclose(actual_water_flux_int_pts,
 #                                     expected_water_flux_int_pts,
 #                                     atol=1e-30))
-#
-#
-# class TestUpdateNodes(unittest.TestCase):
-#     def setUp(self):
-#         self.msh = ConsolidationAnalysis1D((0, 100), generate=True, order=1)
-#         self.msh._void_ratio_vector[:] = np.linspace(
-#             2.0, 22.0, self.msh.num_nodes)
-#         self.msh._void_ratio_vector_0[:] = np.linspace(
-#             1.0, 11.0, self.msh.num_nodes)
-#         self.msh.time_step = 0.25
-#         self.msh._void_ratio_rate_vector[:] = (
-#             self.msh._void_ratio_vector[:] - self.msh._void_ratio_vector_0[:]
-#         ) / self.msh.dt
-#         self.msh.update_nodes()
-#
-#     def test_initial_node_values(self):
-#         for k, nd in enumerate(self.msh.nodes):
-#             self.assertAlmostEqual(nd.void_ratio, 2.0 * (k+1))
-#             self.assertAlmostEqual(nd.void_ratio_rate, 4.0 * (k+1))
-#
-#     def test_repeat_update_nodes(self):
-#         self.msh.update_nodes()
-#         for k, nd in enumerate(self.msh.nodes):
-#             self.assertAlmostEqual(nd.void_ratio, 2.0 * (k+1))
-#             self.assertAlmostEqual(nd.void_ratio_rate, 4.0 * (k+1))
-#
-#     def test_change_void_ratio_vectors_update_nodes(self):
-#         self.msh._void_ratio_vector[:] = np.linspace(
-#             4.0, 44.0, self.msh.num_nodes)
-#         self.msh._void_ratio_vector_0[:] = np.linspace(
-#             2.0, 22.0, self.msh.num_nodes)
-#         self.msh._void_ratio_rate_vector[:] = (
-#             self.msh._void_ratio_vector[:] - self.msh._void_ratio_vector_0[:]
-#         ) / self.msh.dt
-#         for k, nd in enumerate(self.msh.nodes):
-#             self.assertAlmostEqual(nd.void_ratio, 2.0 * (k+1))
-#             self.assertAlmostEqual(nd.void_ratio_rate, 4.0 * (k+1))
-#         self.msh.update_nodes()
-#         for k, nd in enumerate(self.msh.nodes):
-#             self.assertAlmostEqual(nd.void_ratio, 4.0 * (k+1))
-#             self.assertAlmostEqual(nd.void_ratio_rate, 8.0 * (k+1))
-#
-#
+
+
+class TestUpdateNodes(unittest.TestCase):
+    def setUp(self):
+        self.msh = ConsolidationAnalysis1D((0, 100), generate=True, order=1)
+        self.msh._void_ratio_vector[:] = np.linspace(
+            2.0, 22.0, self.msh.num_nodes)
+        self.msh._void_ratio_vector_0[:] = np.linspace(
+            1.0, 11.0, self.msh.num_nodes)
+        self.msh.time_step = 0.25
+        self.msh.update_nodes()
+
+    def test_initial_node_values(self):
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.void_ratio, 2.0 * (k+1))
+
+    def test_repeat_update_nodes(self):
+        self.msh.update_nodes()
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.void_ratio, 2.0 * (k+1))
+
+    def test_change_void_ratio_vectors_update_nodes(self):
+        self.msh._void_ratio_vector[:] = np.linspace(
+            4.0, 44.0, self.msh.num_nodes)
+        self.msh._void_ratio_vector_0[:] = np.linspace(
+            2.0, 22.0, self.msh.num_nodes)
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.void_ratio, 2.0 * (k+1))
+        self.msh.update_nodes()
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.void_ratio, 4.0 * (k+1))
+
+
 # class TestInitializeGlobalSystemLinear(unittest.TestCase):
 #     def setUp(self):
 #         self.mtl = Material(
