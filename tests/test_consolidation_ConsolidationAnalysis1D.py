@@ -228,23 +228,6 @@ class TestConsolidationAnalysis1DInvalid(unittest.TestCase):
         with self.assertRaises(KeyError):
             msh.remove_boundary(bnd1)
 
-    def test_update_water_flux_vector_no_int_pt(self):
-        msh = ConsolidationAnalysis1D((0, 100), generate=True)
-        bnd0 = ConsolidationBoundary1D((msh.nodes[0],))
-        msh.add_boundary(bnd0)
-        bnd1 = ConsolidationBoundary1D(
-            (msh.nodes[-1],),
-            bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio_grad,
-        )
-        msh.add_boundary(bnd1)
-        bnd2 = ConsolidationBoundary1D(
-            (msh.nodes[5],),
-            bnd_type=ConsolidationBoundary1D.BoundaryType.heat_flux,
-        )
-        msh.add_boundary(bnd2)
-        with self.assertRaises(AttributeError):
-            msh.update_water_flux_vector()
-
 
 class TestConsolidationAnalysis1DDefaults(unittest.TestCase):
     def setUp(self):
@@ -608,11 +591,11 @@ class TestUpdateBoundaries(unittest.TestCase):
             bnd_value=self.geotherm_grad,
         )
         self.msh.add_boundary(self.bnd1)
-        self.fixed_flux = 0.08
+        self.water_flux = 0.08
         self.bnd2 = ConsolidationBoundary1D(
             (self.msh.nodes[5],),
-            bnd_type=ConsolidationBoundary1D.BoundaryType.heat_flux,
-            bnd_value=self.fixed_flux,
+            bnd_type=ConsolidationBoundary1D.BoundaryType.water_flux,
+            bnd_value=self.water_flux,
         )
         self.msh.add_boundary(self.bnd2)
 
@@ -682,7 +665,7 @@ class TestUpdateBoundaries(unittest.TestCase):
                                           self.msh._water_flux_vector_0)):
             self.assertEqual(fx0, 0.0)
             if k == 5:
-                self.assertAlmostEqual(fx, self.fixed_flux)
+                self.assertAlmostEqual(fx, self.water_flux)
             elif k == self.msh.num_nodes - 1:
                 self.assertAlmostEqual(fx, self.flux_geotherm)
             else:
@@ -693,7 +676,7 @@ class TestUpdateBoundaries(unittest.TestCase):
                                           self.msh._water_flux_vector_0)):
             self.assertEqual(fx0, 0.0)
             if k == 5:
-                self.assertAlmostEqual(fx, self.fixed_flux)
+                self.assertAlmostEqual(fx, self.water_flux)
             elif k == self.msh.num_nodes - 1:
                 self.assertAlmostEqual(fx, self.flux_geotherm)
             else:
