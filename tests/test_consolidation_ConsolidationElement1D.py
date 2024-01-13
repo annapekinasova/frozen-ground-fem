@@ -416,6 +416,21 @@ class TestConsolidationElement1DCubic(unittest.TestCase):
             self.assertAlmostEqual(ip.pre_consol_stress, ppc)
             self.assertAlmostEqual(ip.water_flux_rate, qw, delta=1e-18)
 
+    def test_deformed_length(self):
+        ee = np.array([
+            1.1,
+            0.89,
+            0.75,
+            0.7,
+        ])
+        for nd, e in zip(self.consol_e.nodes, ee):
+            nd.void_ratio = e
+        for ip in self.consol_e.int_pts:
+            ip.void_ratio_0 = 0.9
+        self.consol_e.update_integration_points()
+        expected = 5.8105263157895
+        self.assertAlmostEqual(self.consol_e.deformed_length, expected)
+
 
 if __name__ == "__main__":
     unittest.main()
