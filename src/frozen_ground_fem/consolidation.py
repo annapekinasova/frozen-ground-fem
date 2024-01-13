@@ -952,6 +952,7 @@ class ConsolidationAnalysis1D(Mesh1D):
         # (we assume that initial conditions have already been applied)
         for nd in self.nodes:
             self._void_ratio_vector[nd.index] = nd.void_ratio
+            self._void_ratio_vector_0[nd.index] = nd.void_ratio
         # now build the global matrices and vectors
         self.update_integration_points()
         self.update_water_flux_vector()
