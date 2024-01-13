@@ -560,65 +560,67 @@ class TestRemoveBoundaries(unittest.TestCase):
 class TestUpdateBoundaries(unittest.TestCase):
     def setUp(self):
         self.mtl = Material(
-            spec_grav_solids=3.0,
-            spec_heat_cap_solids=741.0,
+            spec_grav_solids=2.6,
+            hyd_cond_index=0.305,
+            void_ratio_0_hyd_cond=2.6,
+            hyd_cond_mult=0.8,
+            hyd_cond_0=4.05e-4,
+            void_ratio_min=0.3,
+            void_ratio_tr=2.6,
+            void_ratio_0_comp=2.6,
+            comp_index_unfrozen=0.421,
+            rebound_index_unfrozen=0.08,
         )
         self.msh = ConsolidationAnalysis1D((0, 100), generate=True)
         for e in self.msh.elements:
             for ip in e.int_pts:
                 ip.material = self.mtl
-                ip.deg_sat_water = 0.8
-                ip.void_ratio = 0.35
-                ip.void_ratio_0 = 0.3
+                ip.void_ratio = 0.6
+                ip.void_ratio_0 = 0.9
         per = 365.0 * 86400.0
         om = 2.0 * np.pi / per
         t0 = (7.0/12.0) * per
-        Tavg = 5.0
-        Tamp = 20.0
-        def f(t): return Tavg + Tamp * np.cos(om * (t - t0))
+        eavg = 0.5
+        eamp = 0.1
+        def f(t): return eavg + eamp * np.cos(om * (t - t0))
         self.f = f
         self.bnd0 = ConsolidationBoundary1D(
             (self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
             bnd_function=f)
         self.msh.add_boundary(self.bnd0)
-        self.geotherm_grad = 25.0 / 1.0e3
-        self.flux_geotherm = -0.05218861799159
+        self.water_flux = 0.08
         self.bnd1 = ConsolidationBoundary1D(
             (self.msh.nodes[-1],),
-            (self.msh.elements[-1].int_pts[-1],),
-            bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio_grad,
-            bnd_value=self.geotherm_grad,
-        )
-        self.msh.add_boundary(self.bnd1)
-        self.water_flux = 0.08
-        self.bnd2 = ConsolidationBoundary1D(
-            (self.msh.nodes[5],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.water_flux,
             bnd_value=self.water_flux,
         )
-        self.msh.add_boundary(self.bnd2)
+        self.msh.add_boundary(self.bnd1)
 
     def test_initial_void_ratio_water_flux_vector(self):
-        for tn, tn0 in zip(self.msh._void_ratio_vector,
+        for en, en0 in zip(self.msh._void_ratio_vector,
                            self.msh._void_ratio_vector_0):
-            self.assertEqual(tn, 0.0)
-            self.assertEqual(tn0, 0.0)
+            self.assertEqual(en, 0.0)
+            self.assertEqual(en0, 0.0)
         for fx, fx0 in zip(self.msh._water_flux_vector,
                            self.msh._water_flux_vector_0):
             self.assertEqual(fx, 0.0)
             self.assertEqual(fx0, 0.0)
 
-    def test_initial_spec_grav(self):
-        expected_spec_grav = 2.0875447196636
+    def test_initial_porosity(self):
+        expected_porosity = 0.6/1.6
+        expected_Sw = 1.0
+        expected_Si = 0.0
         for e in self.msh.elements:
             for ip in e.int_pts:
-                self.assertAlmostEqual(ip.spec_grav, expected_spec_grav)
+                self.assertAlmostEqual(ip.porosity, expected_porosity)
+                self.assertAlmostEqual(ip.deg_sat_water, expected_Sw)
+                self.assertAlmostEqual(ip.deg_sat_ice, expected_Si)
 
     def test_update_consolidation_boundaries(self):
-        t = 1.314e7
+        t = 6307200.0
         expected_void_ratio_0 = self.f(t)
-        expected_void_ratio_1 = 15.0
+        expected_void_ratio_1 = 0.425685517452261
         self.msh.update_consolidation_boundary_conditions(t)
         self.assertAlmostEqual(
             self.msh.nodes[0].void_ratio, expected_void_ratio_0)
@@ -628,17 +630,17 @@ class TestUpdateBoundaries(unittest.TestCase):
             self.msh._void_ratio_vector[0], expected_void_ratio_0)
         self.assertAlmostEqual(
             self.msh._void_ratio_vector[0], expected_void_ratio_1)
-        for tn in self.msh._void_ratio_vector[1:]:
-            self.assertEqual(tn, 0.0)
-        for tn0 in self.msh._void_ratio_vector_0:
-            self.assertEqual(tn0, 0.0)
+        for en in self.msh._void_ratio_vector[1:]:
+            self.assertEqual(en, 0.0)
+        for en0 in self.msh._void_ratio_vector_0:
+            self.assertEqual(en0, 0.0)
         for fx, fx0 in zip(self.msh._water_flux_vector,
                            self.msh._water_flux_vector_0):
             self.assertEqual(fx, 0.0)
             self.assertEqual(fx0, 0.0)
-        t = 3.5478e7
+        t = 18921600.0
         expected_void_ratio_2 = self.f(t)
-        expected_void_ratio_3 = -14.3185165257814
+        expected_void_ratio_3 = 0.599452189536827
         self.msh.update_consolidation_boundary_conditions(t)
         self.assertAlmostEqual(
             self.msh.nodes[0].void_ratio, expected_void_ratio_2)
@@ -648,26 +650,24 @@ class TestUpdateBoundaries(unittest.TestCase):
             self.msh._void_ratio_vector[0], expected_void_ratio_2)
         self.assertAlmostEqual(
             self.msh._void_ratio_vector[0], expected_void_ratio_3)
-        for tn in self.msh._void_ratio_vector[1:]:
-            self.assertEqual(tn, 0.0)
-        for tn0 in self.msh._void_ratio_vector_0:
-            self.assertEqual(tn0, 0.0)
+        for en in self.msh._void_ratio_vector[1:]:
+            self.assertEqual(en, 0.0)
+        for en0 in self.msh._void_ratio_vector_0:
+            self.assertEqual(en0, 0.0)
         for fx, fx0 in zip(self.msh._water_flux_vector,
                            self.msh._water_flux_vector_0):
             self.assertEqual(fx, 0.0)
             self.assertEqual(fx0, 0.0)
 
     def test_update_water_flux_vector(self):
-        t = 1.314e7
+        t = 6307200.0
         self.msh.update_consolidation_boundary_conditions(t)
         self.msh.update_water_flux_vector()
         for k, (fx, fx0) in enumerate(zip(self.msh._water_flux_vector,
                                           self.msh._water_flux_vector_0)):
             self.assertEqual(fx0, 0.0)
-            if k == 5:
+            if k == self.msh.num_nodes - 1:
                 self.assertAlmostEqual(fx, self.water_flux)
-            elif k == self.msh.num_nodes - 1:
-                self.assertAlmostEqual(fx, self.flux_geotherm)
             else:
                 self.assertEqual(fx, 0.0)
         self.msh.update_consolidation_boundary_conditions(t)
@@ -675,10 +675,8 @@ class TestUpdateBoundaries(unittest.TestCase):
         for k, (fx, fx0) in enumerate(zip(self.msh._water_flux_vector,
                                           self.msh._water_flux_vector_0)):
             self.assertEqual(fx0, 0.0)
-            if k == 5:
+            if k == self.msh.num_nodes - 1:
                 self.assertAlmostEqual(fx, self.water_flux)
-            elif k == self.msh.num_nodes - 1:
-                self.assertAlmostEqual(fx, self.flux_geotherm)
             else:
                 self.assertEqual(fx, 0.0)
 
