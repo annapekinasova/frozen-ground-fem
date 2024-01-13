@@ -470,8 +470,6 @@ class ConsolidationAnalysis1D(Mesh1D):
     _free_arr: tuple[npt.NDArray, ...]
     _void_ratio_vector_0: npt.NDArray[np.floating]
     _void_ratio_vector: npt.NDArray[np.floating]
-    _heat_flux_vector_0: npt.NDArray[np.floating]
-    _heat_flux_vector: npt.NDArray[np.floating]
     _water_flux_vector_0: npt.NDArray[np.floating]
     _water_flux_vector: npt.NDArray[np.floating]
     _stiffness_matrix_0: npt.NDArray[np.floating]
