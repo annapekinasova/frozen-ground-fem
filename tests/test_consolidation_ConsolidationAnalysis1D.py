@@ -806,14 +806,14 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
 
     def test_void_ratio_distribution(self):
         expected_void_ratio_int_pts = np.array([
-            1.5984827557301400,
-            0.5015172442698560,
-            -0.0901923788646684,
-            -0.6098076211353320,
-            -0.9479274057836310,
-            -1.3520725942163700,
-            -3.7189110867544700,
-            -9.7810889132455400,
+            0.589433756729741,
+            0.560566243270259,
+            0.541547005383793,
+            0.518452994616208,
+            0.503660254037844,
+            0.486339745962156,
+            0.475773502691896,
+            0.464226497308104,
         ])
         actual_void_ratio_int_pts = np.array([
             ip.void_ratio for e in self.msh.elements for ip in e.int_pts
@@ -821,58 +821,40 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
         self.assertTrue(np.allclose(actual_void_ratio_int_pts,
                                     expected_void_ratio_int_pts))
 
-    def test_void_ratio_gradient_distribution(self):
-        expected_void_ratio_gradient_int_pts = np.array([
-            -0.0760000,
-            -0.0760000,
-            -0.0360000,
-            -0.0360000,
-            -0.0280000,
-            -0.0280000,
-            -0.4200000,
-            -0.4200000,
-        ])
-        actual_void_ratio_gradient_int_pts = np.array([
-            ip.void_ratio_gradient
-            for e in self.msh.elements for ip in e.int_pts
-        ])
-        self.assertTrue(np.allclose(actual_void_ratio_gradient_int_pts,
-                                    expected_void_ratio_gradient_int_pts))
-
     def test_hyd_cond_distribution(self):
-        expected_deg_sat_water_int_pts = np.array([
-            1.000000000000000,
-            1.000000000000000,
-            0.314715929845879,
-            0.113801777607921,
-            0.089741864676250,
-            0.074104172041942,
-            0.042882888566470,
-            0.025322726744343,
+        expected_hyd_cond_int_pts = np.array([
+            1.036178444520940E-10,
+            8.332723447117670E-11,
+            7.218198340441230E-11,
+            6.063323545379980E-11,
+            5.422629776125640E-11,
+            4.757966757424550E-11,
+            4.393169733182270E-11,
+            4.026418833655080E-11,
         ])
-        actual_deg_sat_water_int_pts = np.array([
-            ip.deg_sat_water for e in self.msh.elements for ip in e.int_pts
+        actual_hyd_cond_int_pts = np.array([
+            ip.hyd_cond for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_deg_sat_water_int_pts,
-                                    expected_deg_sat_water_int_pts))
+        self.assertTrue(np.allclose(actual_hyd_cond_int_pts,
+                                    expected_hyd_cond_int_pts))
 
     def test_hyd_cond_grad_distribution(self):
-        expected_deg_sat_water_void_ratio_grad_int_pts = np.array([
-            0.000000000000000,
-            0.000000000000001,
-            1.810113168088841,
-            0.100397364897923,
-            0.051013678629442,
-            0.029567794445951,
-            0.006250998062539,
-            0.001419738751606,
+        expected_hyd_cond_grad_int_pts = np.array([
+            7.822587016510380E-10,
+            6.290755669959050E-10,
+            5.449349474417820E-10,
+            4.577481445767780E-10,
+            4.093792290928700E-10,
+            3.592007648723600E-10,
+            3.316605619219050E-10,
+            3.039728519516280E-10,
         ])
-        actual_deg_sat_water_void_ratio_grad_int_pts = np.array([
-            ip.deg_sat_water_void_ratio_gradient
+        actual_hyd_cond_grad_int_pts = np.array([
+            ip.hyd_cond_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_deg_sat_water_void_ratio_grad_int_pts,
-                                    expected_deg_sat_water_void_ratio_grad_int_pts))
+        self.assertTrue(np.allclose(actual_hyd_cond_grad_int_pts,
+                                    expected_hyd_cond_grad_int_pts))
 
     def test_water_flux_distribution(self):
         expected_water_flux_int_pts = np.array([
