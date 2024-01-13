@@ -835,8 +835,11 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
         actual_hyd_cond_int_pts = np.array([
             ip.hyd_cond for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_hyd_cond_int_pts,
-                                    expected_hyd_cond_int_pts))
+        self.assertTrue(np.allclose(
+            actual_hyd_cond_int_pts,
+            expected_hyd_cond_int_pts,
+            atol=1e-18, rtol=1e-8,
+        ))
 
     def test_hyd_cond_grad_distribution(self):
         expected_hyd_cond_grad_int_pts = np.array([
@@ -853,8 +856,11 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
             ip.hyd_cond_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_hyd_cond_grad_int_pts,
-                                    expected_hyd_cond_grad_int_pts))
+        self.assertTrue(np.allclose(
+            actual_hyd_cond_grad_int_pts,
+            expected_hyd_cond_grad_int_pts,
+            atol=1e-18, rtol=1e-8,
+        ))
 
     def test_water_flux_distribution(self):
         expected_water_flux_int_pts = np.array([
