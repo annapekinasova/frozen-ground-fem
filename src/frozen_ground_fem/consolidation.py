@@ -225,7 +225,7 @@ class ConsolidationBoundary1D(Boundary1D):
     int_pts : Sequence[IntegrationPoint1D], optional, default=()
         The :c:`IntegrationPoint1D` to assign to the boundary condition.
     bnd_type : ConsolidationBoundary1D.BoundaryType, optional,
-                default=BoundaryType.fixed_flux
+                default=BoundaryType.water_flux
         The type of boundary condition.
     bnd_value : float, optional, default=0.0
         The value of the boundary condition.
@@ -246,7 +246,7 @@ class ConsolidationBoundary1D(Boundary1D):
     """
 
     BoundaryType = Enum(
-        "BoundaryType", ["void_ratio", "fixed_flux", "water_flux"]
+        "BoundaryType", ["void_ratio", "water_flux"]
     )
 
     _bnd_type: BoundaryType
@@ -257,7 +257,7 @@ class ConsolidationBoundary1D(Boundary1D):
         self,
         nodes: Sequence[Node1D],
         int_pts: Sequence[IntegrationPoint1D] = (),
-        bnd_type=BoundaryType.fixed_flux,
+        bnd_type=BoundaryType.water_flux,
         bnd_value: float = 0.0,
         bnd_function: Callable | None = None,
     ):

@@ -18,7 +18,7 @@ class TestConsolidationBoundary1DDefaults(unittest.TestCase):
 
     def test_default_bnd_type(self):
         self.assertEqual(self.consol_bnd.bnd_type,
-                         ConsolidationBoundary1D.BoundaryType.fixed_flux)
+                         ConsolidationBoundary1D.BoundaryType.water_flux)
 
     def test_default_bnd_value(self):
         self.assertAlmostEqual(self.consol_bnd.bnd_value, 0.0)
@@ -107,17 +107,13 @@ class TestConsolidationBoundary1DBasicSetters(unittest.TestCase):
 
     def test_assign_bnd_type_valid(self):
         bt = ConsolidationBoundary1D.BoundaryType
-        self.consol_bnd.bnd_type = bt.fixed_flux
-        self.assertEqual(
-            self.consol_bnd.bnd_type, bt.fixed_flux
-        )
-        self.consol_bnd.bnd_type = bt.void_ratio
-        self.assertEqual(self.consol_bnd.bnd_type,
-                         bt.void_ratio)
         self.consol_bnd.bnd_type = bt.water_flux
         self.assertEqual(
             self.consol_bnd.bnd_type, bt.water_flux
         )
+        self.consol_bnd.bnd_type = bt.void_ratio
+        self.assertEqual(self.consol_bnd.bnd_type,
+                         bt.void_ratio)
 
     def test_assign_bnd_value_valid(self):
         self.consol_bnd.bnd_value = 1.0
@@ -142,11 +138,6 @@ class TestConsolidationBoundary1DBasicSetters(unittest.TestCase):
     def test_update_nodes_bnd_type_flux(self):
         bt = ConsolidationBoundary1D.BoundaryType
         self.nodes[0].void_ratio = 0.87
-        self.assertAlmostEqual(self.consol_bnd.nodes[0].void_ratio, 0.87)
-        self.consol_bnd.bnd_type = bt.fixed_flux
-        self.consol_bnd.bnd_value = 5.0
-        self.assertAlmostEqual(self.consol_bnd.nodes[0].void_ratio, 0.87)
-        self.consol_bnd.update_nodes()
         self.assertAlmostEqual(self.consol_bnd.nodes[0].void_ratio, 0.87)
         self.consol_bnd.bnd_type = bt.water_flux
         self.consol_bnd.bnd_value = 7.0e-8
