@@ -2,12 +2,13 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-import frozen_ground_fem.materials as mtl
-import frozen_ground_fem.geometry as geom
-import frozen_ground_fem.consolidation as consol
-
 from frozen_ground_fem.materials import (
-    unit_weight_water as gam_w,
+    Material,
+    unit_weight_water,
+)
+from frozen_ground_fem.consolidation import (
+    ConsolidationAnalysis1D,
+    ConsolidationBoundary1D,
 )
 
 
@@ -36,7 +37,7 @@ def main():
     # }
 
     # define the material properties
-    m = mtl.Material(
+    m = Material(
         spec_grav_solids=2.60,
         hyd_cond_index=0.305,
         hyd_cond_0=4.05e-4,
@@ -49,37 +50,22 @@ def main():
         eff_stress_0_comp=2.80e00,
     )
 
-    # generate the mesh
-    mesh = geom.Mesh1D(
+    # create consolidation analysis
+    # and generate the mesh
+    con_static = ConsolidationAnalysis1D(
         z_range=[0.0, H_layer],
         num_elements=num_elements,
         generate=True,
     )
 
     # assign material properties to integration points
-    for e in mesh.elements:
+    for e in con_static.elements:
         for ip in e.int_pts:
             ip.material = m
 
-    # create geometric boundaries
-    # and assign them to the mesh
-    upper_boundary = geom.Boundary1D(
-        (mesh.nodes[0],),
-        (mesh.elements[0].int_pts[0],),
-    )
-    lower_boundary = geom.Boundary1D(
-        (mesh.nodes[-1],),
-        (mesh.elements[-1].int_pts[-1],),
-    )
-    mesh.add_boundary(upper_boundary)
-    mesh.add_boundary(lower_boundary)
-
-    # create consolidation analysis
-    con_static = consol.ConsolidationAnalysis1D(mesh)
-
     # initialize plotting arrays
-    z_nod = np.array([nd.z for nd in mesh.nodes])
-    z_int = np.array([ip.z for e in mesh.elements for ip in e.int_pts])
+    z_nod = np.array([nd.z for nd in con_static.nodes])
+    z_int = np.array([ip.z for e in con_static.elements for ip in e.int_pts])
     e_nod = np.zeros((len(z_nod), n_plot + 1))
     sig_p_int = np.zeros((len(z_int), n_plot + 1))
     hyd_cond_int = np.zeros((len(z_int), n_plot + 1))
@@ -89,7 +75,7 @@ def main():
     e1, sig_p_1_exp, hyd_cond_1_exp = calculate_static_profile(m, 1.1e4, z_nod)
     sig_p_0_exp *= 1.0e-3
     sig_p_1_exp *= 1.0e-3
-    for k, nd in enumerate(mesh.nodes):
+    for k, nd in enumerate(con_static.nodes):
         nd.void_ratio = e0[k]
 
     # update void ratio conditions at the integration points
@@ -105,13 +91,13 @@ def main():
     e_trz = np.zeros((len(z_nod), n_plot + 1))
     s_trz = np.zeros(n_plot + 1)
     t_trz = np.zeros(n_plot + 1)
-    H = 0.5 * (mesh.nodes[-1].z - mesh.nodes[0].z)
+    H = 0.5 * (con_static.nodes[-1].z - con_static.nodes[0].z)
     ui = sig_p_1_exp[0] - sig_p_0_exp[0]
     e0t = np.average(e0)
     e1t = np.average(e1)
     de_trz = e0 - e1
     Gs = m.spec_grav_solids
-    gam_w = mtl.unit_weight_water * 1e-3
+    gam_w = unit_weight_water * 1e-3
     gam_b = (Gs - 1.0) / (1.0 + e0t) * gam_w
     dsig_de_0 = -m.eff_stress(e0t, sig_p_0_exp[0] * 1e3)[1] * 1e-3
     dsig_de_1 = -m.eff_stress(e1t, sig_p_0_exp[0] * 1e3)[1] * 1e-3
@@ -120,20 +106,21 @@ def main():
     kt = np.average(hyd_cond_0_exp)
     cv = kt / mv / gam_w
     sig_p_1_trz = sig_p_1_exp[0] + gam_b * z_nod
-    s_tot_trz = 1e3 * (mesh.nodes[-1].z -
-                       mesh.nodes[0].z) / (1.0 + e0t) * (e0t - e1t)
+    s_tot_trz = 1e3 * (con_static.nodes[-1].z -
+                       con_static.nodes[0].z) / (1.0 + e0t) * (e0t - e1t)
 
     # create void ratio boundary conditions
-    void_ratio_boundary_0 = consol.ConsolidationBoundary1D(upper_boundary)
-    void_ratio_boundary_0.bnd_type = (
-        consol.ConsolidationBoundary1D.BoundaryType.void_ratio
+    # and assign them to the mesh
+    void_ratio_boundary_0 = ConsolidationBoundary1D(
+        (con_static.nodes[0],),
+        bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
+        bnd_value=e0[0],
     )
-    void_ratio_boundary_0.bnd_value = e0[0]
-    void_ratio_boundary_1 = consol.ConsolidationBoundary1D(lower_boundary)
-    void_ratio_boundary_1.bnd_type = (
-        consol.ConsolidationBoundary1D.BoundaryType.void_ratio
+    void_ratio_boundary_1 = ConsolidationBoundary1D(
+        (con_static.nodes[-1],),
+        bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
+        bnd_value=e0[-1],
     )
-    void_ratio_boundary_1.bnd_value = e0[-1]
     con_static.add_boundary(void_ratio_boundary_0)
     con_static.add_boundary(void_ratio_boundary_1)
 
@@ -193,10 +180,10 @@ def main():
     print(f"t = {con_static._t1 / 60.0:0.3f} min")
     e_nod[:, k_plot] = con_static._void_ratio_vector[:]
     sig_p_int[:, k_plot] = 1.0e-3 * np.array(
-        [ip.eff_stress for e in mesh.elements for ip in e.int_pts]
+        [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
     )
     hyd_cond_int[:, k_plot] = np.array(
-        [ip.hyd_cond for e in mesh.elements for ip in e.int_pts]
+        [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
     )
     sig_p_trz[:, k_plot] = sig_p_1_trz[:] - ui
     e_trz[:, k_plot] = e0[:]
@@ -219,10 +206,10 @@ def main():
     print(f"t = {(con_static._t1 - dt_plot) / 60.0:0.3f} min")
     e_nod[:, k_plot] = con_static._void_ratio_vector[:]
     sig_p_int[:, k_plot] = 1.0e-3 * np.array(
-        [ip.eff_stress for e in mesh.elements for ip in e.int_pts]
+        [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
     )
     hyd_cond_int[:, k_plot] = np.array(
-        [ip.hyd_cond for e in mesh.elements for ip in e.int_pts]
+        [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
     )
     ue, U_avg, Uz = terzaghi_consolidation(
         z_nod, con_static._t1 - dt_plot, cv, H, ui)
@@ -242,10 +229,10 @@ def main():
         print(f"t = {(con_static._t1 - dt_plot) / 60.0:0.3f} min")
         e_nod[:, k_plot] = con_static._void_ratio_vector[:]
         sig_p_int[:, k_plot] = 1.0e-3 * np.array(
-            [ip.eff_stress for e in mesh.elements for ip in e.int_pts]
+            [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
         )
         hyd_cond_int[:, k_plot] = np.array(
-            [ip.hyd_cond for e in mesh.elements for ip in e.int_pts]
+            [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
         )
         ue, U_avg, Uz = terzaghi_consolidation(
             z_nod, con_static._t1 - dt_plot, cv, H, ui
@@ -365,13 +352,15 @@ def main():
         # if k_plot > 0:
         #     plt.annotate(
         #         text="   ",
-        #         xy=(e_trz[k_lab[k_plot - 1], k_plot], z_nod[k_lab[k_plot - 1]]),
+        #         xy=(e_trz[k_lab[k_plot - 1], k_plot],
+        #         z_nod[k_lab[k_plot - 1]]),
         #         xytext=(e_lab[k_plot - 1], z_lab[k_plot - 1]),
         #         arrowprops=arrow_props,
         #     )
         #     plt.annotate(
         #         text=f"{t_lab[k_plot - 1]:0.0f}",
-        #         xy=(e_nod[k_lab[k_plot - 1], k_plot], z_nod[k_lab[k_plot - 1]]),
+        #         xy=(e_nod[k_lab[k_plot - 1], k_plot],
+        #         z_nod[k_lab[k_plot - 1]]),
         #         xytext=(e_lab[k_plot - 1], z_lab[k_plot - 1]),
         #         arrowprops=arrow_props,
         # )
@@ -445,7 +434,7 @@ def calculate_static_profile(m, qs, z):
     eps_a = 1.0
     while eps_a > eps_s:
         for k, e in enumerate(e0):
-            gam_p[k] = (Gs - 1.0) / (1.0 + e) * gam_w
+            gam_p[k] = (Gs - 1.0) / (1.0 + e) * unit_weight_water
             if k:
                 dz = z[k] - z[k - 1]
                 gam_p_avg = 0.5 * (gam_p[k - 1] + gam_p[k])
