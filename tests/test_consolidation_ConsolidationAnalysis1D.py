@@ -1599,7 +1599,8 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
         expected_flux_vector = np.zeros(self.msh.num_nodes)
         expected_flux_vector[-1] = -2.0e-11
         self.assertTrue(np.allclose(expected_flux_vector,
-                                    self.msh._water_flux_vector))
+                                    self.msh._water_flux_vector,
+                                    atol=1e-18, rtol=1e-8))
 
 
 class TestInitializeTimeStepLinear(unittest.TestCase):
@@ -1751,111 +1752,122 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
                                     expected_deg_sat_water_void_ratio_grad_int_pts))
 
     def test_eff_stress_grad_distribution(self):
-        expected_spec_grav_int_pts = np.array([
-            1.94419643704324,
-            1.94419643704324,
-            2.48085630059944,
-            2.66463955659925,
-            2.68754164945741,
-            2.70253225701445,
-            2.73271219424962,
-            2.74983450612514,
+        expected_dsigde_int_pts = np.array([
+            -9.136574786536750E+05,
+            -1.069922520669520E+06,
+            -1.187213061665100E+06,
+            -1.347050255225330E+06,
+            -1.460565202602900E+06,
+            -1.605692204375930E+06,
+            -1.701219154424590E+06,
+            -1.812123657305390E+06,
         ])
-        actual_spec_grav_int_pts = np.array([
-            ip.spec_grav
+        actual_dsigde_int_pts = np.array([
+            ip.eff_stress_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_spec_grav_int_pts,
-                                    expected_spec_grav_int_pts,
-                                    atol=1e-30))
+        self.assertTrue(np.allclose(
+            expected_dsigde_int_pts,
+            actual_dsigde_int_pts,
+        ))
 
     def test_pre_consol_stress_distribution(self):
-        expected_spec_grav_int_pts = np.array([
-            1.94419643704324,
-            1.94419643704324,
-            2.48085630059944,
-            2.66463955659925,
-            2.68754164945741,
-            2.70253225701445,
-            2.73271219424962,
-            2.74983450612514,
+        expected_ppc_int_pts = np.array([
+            1.670512849594790E+05,
+            1.956224690989220E+05,
+            2.170676343218650E+05,
+            2.462919434227970E+05,
+            2.670467867470950E+05,
+            2.935815141421210E+05,
+            3.110474684266550E+05,
+            3.313250233604040E+05,
         ])
-        actual_spec_grav_int_pts = np.array([
-            ip.spec_grav
+        actual_ppc_int_pts = np.array([
+            ip.pre_consol_stress
             for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_spec_grav_int_pts,
-                                    expected_spec_grav_int_pts,
-                                    atol=1e-30))
+        self.assertTrue(np.allclose(
+            actual_ppc_int_pts,
+            expected_ppc_int_pts,
+        ))
 
     def test_water_flux_distribution(self):
         expected_water_flux_int_pts = np.array([
-            0.0000000000E+00,
-            0.0000000000E+00,
-            -4.8910645169E-12,
-            -5.5518497692E-13,
-            8.3577053338E-13,
-            1.7708810805E-13,
-            2.0670411271E-16,
-            6.0318175808E-27,
+            -8.123441622973750E-11,
+            -6.330331621462550E-11,
+            -5.769218208232310E-11,
+            -4.722093512946930E-11,
+            -4.545873593535430E-11,
+            -3.927183415246080E-11,
+            -3.978293540543520E-11,
+            -3.627677855006020E-11,
         ])
         actual_water_flux_int_pts = np.array([
             ip.water_flux_rate
             for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_water_flux_int_pts,
-                                    expected_water_flux_int_pts,
-                                    atol=1e-30))
+        self.assertTrue(np.allclose(
+            actual_water_flux_int_pts,
+            expected_water_flux_int_pts,
+            atol=1e-18, rtol=1e-8,
+        ))
 
     def test_global_stiffness_matrix(self):
-        expected_H = np.array([
-            [0.0721139528911510, -0.0721139528911510, 0.0000000000000000,
-                0.0000000000000000, 0.0000000000000000],
-            [-0.0721139528911510, 0.1675501246312030, -0.0954361717400518,
-                0.0000000000000000, 0.0000000000000000],
-            [0.0000000000000000, -0.0954251477242246, 0.1953877970346430,
-             -0.0999626493104180, 0.0000000000000000],
-            [0.0000000000000000, 0.0000000000000000, -0.0999646994863613,
-                0.2016437545597640, -0.1016790550734020],
-            [0.0000000000000000, 0.0000000000000000, 0.0000000000000000,
-             -0.1016790554918020, 0.1016790554918020],
+        expected_K = np.array([
+            [-7.99028679973533E-10, 7.99028679973533E-10, 0.00000000000000E+00,
+                0.00000000000000E+00, 0.00000000000000E+00],
+            [1.42998283395020E-10, -8.17080731014650E-10, 6.74082447619630E-10,
+                0.00000000000000E+00, 0.00000000000000E+00],
+            [0.00000000000000E+00, 1.95455548875149E-10,
+             -7.92450395857143E-10, 5.96994846981994E-10,
+             0.00000000000000E+00],
+            [0.00000000000000E+00, 0.00000000000000E+00,
+                2.22272641090901E-10, -7.72457873113186E-10,
+             5.50185232022285E-10],
+            [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
+                2.35477581693084E-10, -2.35477581693084E-10],
         ])
         self.assertTrue(np.allclose(
-            expected_H, self.msh._stiffness_matrix,
+            expected_K, self.msh._stiffness_matrix,
+            atol=1e-18, rtol=1e-8,
         ))
         self.assertTrue(np.allclose(
-            expected_H, self.msh._stiffness_matrix_0,
+            expected_K, self.msh._stiffness_matrix_0,
+            atol=1e-18, rtol=1e-8,
         ))
 
     def test_global_mass_matrix(self):
-        expected_C = np.array([
-            [2.12040123456790E+07, 1.06020061728395E+07, 0.00000000000000E+00,
+        expected_M = np.array([
+            [4.38596491228070E+00, 2.19298245614036E+00, 0.00000000000000E+00,
                 0.00000000000000E+00, 0.00000000000000E+00],
-            [1.06020061728395E+07, 1.15082401284593E+09, 3.21846886402014E+08,
+            [2.19298245614035E+00, 8.77192982456140E+00, 2.19298245614036E+00,
                 0.00000000000000E+00, 0.00000000000000E+00],
-            [0.00000000000000E+00, 3.21846886402014E+08, 2.06909317632500E+08,
-                2.15090157481671E+07, 0.00000000000000E+00],
-            [0.00000000000000E+00, 0.00000000000000E+00, 2.15090157481671E+07,
-                5.71758161659235E+07, 9.43574147951588E+06],
+            [0.00000000000000E+00, 2.19298245614035E+00, 8.77192982456140E+00,
+                2.19298245614036E+00, 0.00000000000000E+00],
+            [0.00000000000000E+00, 0.00000000000000E+00, 2.19298245614035E+00,
+                8.77192982456140E+00, 2.19298245614036E+00],
             [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
-                9.43574147951588E+06, 1.74614402201079E+07],
+                2.19298245614035E+00, 4.38596491228070E+00],
         ])
         self.assertTrue(np.allclose(
-            expected_C, self.msh._mass_matrix,
+            expected_M, self.msh._mass_matrix,
         ))
         self.assertTrue(np.allclose(
-            expected_C, self.msh._mass_matrix_0,
+            expected_M, self.msh._mass_matrix_0,
         ))
 
     def test_global_flux_vector(self):
         expected_flux_vector = np.zeros(self.msh.num_nodes)
-        expected_flux_vector[-1] = -2.74983450612514 * 25.0e-3
+        expected_flux_vector[-1] = -2.0e-11
         self.assertTrue(np.allclose(expected_flux_vector,
-                                    self.msh._water_flux_vector))
+                                    self.msh._water_flux_vector,
+                                    atol=1e-18, rtol=1e-8))
         self.assertTrue(np.allclose(expected_flux_vector,
-                                    self.msh._water_flux_vector_0))
+                                    self.msh._water_flux_vector_0,
+                                    atol=1e-18, rtol=1e-8))
         self.assertTrue(np.allclose(expected_flux_vector,
-                                    self.msh._weighted_water_flux_vector))
+                                    self.msh._weighted_water_flux_vector,
+                                    atol=1e-18, rtol=1e-8))
 
 
 # class TestUpdateWeightedMatricesLinear(unittest.TestCase):
