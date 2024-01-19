@@ -2354,7 +2354,7 @@ class TestVoidRatioCorrectionLinearOneStep(unittest.TestCase):
             0.46,
         ])
         expected_void_ratio_vector = np.array([
-            0.600000000000001,
+            0.600000000000000,
             0.549999999999998,
             0.510000000000000,
             0.479999999999998,
