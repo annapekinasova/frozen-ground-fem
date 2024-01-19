@@ -1947,19 +1947,19 @@ class TestUpdateWeightedMatricesLinear(unittest.TestCase):
     def test_void_ratio_distribution_nodes(self):
         # Linear 0
         expected_void_ratio_vector_0 = np.array([
-            2.0,
-            0.1,
-            -0.8,
-            -1.5,
-            -12,
+            0.6,
+            0.55,
+            0.51,
+            0.48,
+            0.46,
         ])
         # Linear 1
         expected_void_ratio_vector = np.array([
-            2.0,
             0.6,
-            -0.2,
-            -0.8,
-            -6,
+            0.51,
+            0.44,
+            0.39,
+            0.35,
         ])
         actual_void_ratio_nodes = np.array([
             nd.void_ratio for nd in self.msh.nodes
@@ -1974,14 +1974,14 @@ class TestUpdateWeightedMatricesLinear(unittest.TestCase):
     def test_void_ratio_distribution_int_pts(self):
         # Linear 1
         expected_void_ratio_int_pts = np.array([
-            1.7041451884327400,
-            0.8958548115672620,
-            0.4309401076758500,
-            -0.0309401076758503,
-            -0.3267949192431120,
-            -0.6732050807568880,
-            -1.8988893001069700,
-            -4.9011106998930300,
+            0.580980762113533,
+            0.529019237886467,
+            0.495207259421637,
+            0.454792740578363,
+            0.429433756729741,
+            0.400566243270259,
+            0.381547005383793,
+            0.358452994616207,
         ])
         actual_void_ratio_int_pts = np.array([
             ip.void_ratio for e in self.msh.elements for ip in e.int_pts
@@ -1990,39 +1990,45 @@ class TestUpdateWeightedMatricesLinear(unittest.TestCase):
                                     expected_void_ratio_int_pts))
 
     def test_hyd_cond_distribution(self):
-        expected_void_ratio_rate_int_pts = np.array([
-            105.6624327025940,
-            394.3375672974060,
-            521.1324865405190,
-            578.8675134594810,
-            621.1324865405190,
-            678.8675134594810,
-            1820.0217866474900,
-            4879.9782133525100,
+        expected_hyd_cond_int_pts = np.array([
+            9.721198630328660E-11,
+            6.566805659823700E-11,
+            5.087392179522110E-11,
+            3.749631585663170E-11,
+            3.096309673105840E-11,
+            2.489985421821330E-11,
+            2.156942895510420E-11,
+            1.811843070467490E-11,
         ])
-        actual_void_ratio_rate_int_pts = np.array([
-            ip.void_ratio_rate for e in self.msh.elements for ip in e.int_pts
+        actual_hyd_cond_int_pts = np.array([
+            ip.hyd_cond for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_void_ratio_rate_int_pts,
-                                    expected_void_ratio_rate_int_pts))
+        self.assertTrue(np.allclose(
+            actual_hyd_cond_int_pts,
+            expected_hyd_cond_int_pts,
+            atol=1e-18, rtol=1e-8,
+        ))
 
     def test_hyd_cond_grad_distribution(self):
-        expected_void_ratio_gradient_int_pts = np.array([
-            -0.0560000,
-            -0.0560000,
-            -0.0320000,
-            -0.0320000,
-            -0.0240000,
-            -0.0240000,
-            -0.2080000,
-            -0.2080000,
+        expected_hyd_cond_grad_int_pts = np.array([
+            7.338979361386530E-10,
+            4.957583219966880E-10,
+            3.840706031076100E-10,
+            2.830769112579550E-10,
+            2.337546392323530E-10,
+            1.879804365265010E-10,
+            1.628375264800560E-10,
+            1.367843555705900E-10,
         ])
-        actual_void_ratio_gradient_int_pts = np.array([
-            ip.void_ratio_gradient
+        actual_hyd_cond_grad_int_pts = np.array([
+            ip.hyd_cond_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_void_ratio_gradient_int_pts,
-                                    expected_void_ratio_gradient_int_pts))
+        self.assertTrue(np.allclose(
+            actual_hyd_cond_grad_int_pts,
+            expected_hyd_cond_grad_int_pts,
+            atol=1e-18, rtol=1e-8,
+        ))
 
     def test_eff_stress_distribution(self):
         expected_deg_sat_water_int_pts = np.array([
