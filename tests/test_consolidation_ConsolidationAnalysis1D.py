@@ -2370,27 +2370,143 @@ class TestVoidRatioCorrectionLinearOneStep(unittest.TestCase):
                                     self.msh._void_ratio_vector_0))
 
     def test_void_ratio_distribution_int_pts(self):
-        # Linear 2
-        pass
+        expected_void_ratio_int_pts = np.array([
+            0.589433756729740,
+            0.560566243270258,
+            0.541547005383791,
+            0.518452994616207,
+            0.503660254037844,
+            0.486339745962154,
+            0.475773502691896,
+            0.464226497308109,
+        ])
+        actual_void_ratio_int_pts = np.array([
+            ip.void_ratio for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(actual_void_ratio_int_pts,
+                                    expected_void_ratio_int_pts))
 
     def test_hyd_cond_distribution(self):
-        # Linear 2
-        pass
+        expected_hyd_cond_int_pts = np.array([
+            1.036178444520930E-10,
+            8.332723447117580E-11,
+            7.218198340441160E-11,
+            6.063323545379960E-11,
+            5.422629776125630E-11,
+            4.757966757424490E-11,
+            4.393169733182260E-11,
+            4.026418833655240E-11,
+        ])
+        actual_hyd_cond_int_pts = np.array([
+            ip.hyd_cond for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            actual_hyd_cond_int_pts,
+            expected_hyd_cond_int_pts,
+            atol=1e-18, rtol=1e-8,
+        ))
 
     def test_hyd_cond_grad_distribution(self):
-        pass
+        expected_hyd_cond_grad_int_pts = np.array([
+            7.822587016510350E-10,
+            6.290755669958980E-10,
+            5.449349474417760E-10,
+            4.577481445767770E-10,
+            4.093792290928690E-10,
+            3.592007648723560E-10,
+            3.316605619219050E-10,
+            3.039728519516400E-10,
+        ])
+        actual_hyd_cond_grad_int_pts = np.array([
+            ip.hyd_cond_gradient
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            actual_hyd_cond_grad_int_pts,
+            expected_hyd_cond_grad_int_pts,
+            atol=1e-18, rtol=1e-8,
+        ))
 
     def test_eff_stress_distribution(self):
-        pass
+        expected_sig_int_pts = np.array([
+            1.371720913096690E+05,
+            9.375936845079700E+04,
+            7.369175578056780E+04,
+            5.583532328286030E+04,
+            4.732232895587810E+04,
+            3.974636884423720E+04,
+            3.457891505553490E+04,
+            2.814031327404820E+04,
+        ])
+        actual_sigp_int_pts = np.array([
+            ip.eff_stress
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            expected_sig_int_pts,
+            actual_sigp_int_pts,
+        ))
 
     def test_eff_stress_grad_distribution(self):
-        pass
+        expected_dsigde_int_pts = np.array([
+            -3.948130157805790E+06,
+            -2.698611551541770E+06,
+            -2.121019229211170E+06,
+            -1.607069788170220E+06,
+            -1.362046115244570E+06,
+            -1.143992455017300E+06,
+            -9.952611792347770E+05,
+            -8.099433232125740E+05,
+        ])
+        actual_dsigde_int_pts = np.array([
+            ip.eff_stress_gradient
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            expected_dsigde_int_pts,
+            actual_dsigde_int_pts,
+        ))
 
     def test_pre_consol_stress_distribution(self):
-        pass
+        expected_ppc_int_pts = np.array([
+            1.749557388226390E+05,
+            2.324621448835880E+05,
+            2.796827805717430E+05,
+            3.488688635308960E+05,
+            4.007719581555580E+05,
+            4.693169526892120E+05,
+            5.207659484958170E+05,
+            5.908778520765940E+05,
+        ])
+        actual_ppc_int_pts = np.array([
+            ip.pre_consol_stress
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            actual_ppc_int_pts,
+            expected_ppc_int_pts,
+        ))
 
     def test_water_flux_distribution(self):
-        pass
+        expected_water_flux_int_pts = np.array([
+            -4.605983696099940E-12,
+            -2.961668977150410E-11,
+            -4.414236745724510E-11,
+            -4.400342486575110E-11,
+            -4.628448188839970E-11,
+            -4.270685035950430E-11,
+            -4.303914014310940E-11,
+            -4.054681068966590E-11,
+        ])
+        actual_water_flux_int_pts = np.array([
+            ip.water_flux_rate
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            actual_water_flux_int_pts,
+            expected_water_flux_int_pts,
+            atol=1e-18, rtol=1e-8,
+        ))
 
     def test_global_stiffness_matrix_0(self):
         expected_K = np.array([
