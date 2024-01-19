@@ -2775,18 +2775,18 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
 
     def test_void_ratio_distribution_nodes(self):
         expected_void_ratio_vector_0 = np.array([
-            2.0,
-            0.1,
-            -0.8,
-            -1.5,
-            -12,
+            0.6,
+            0.55,
+            0.51,
+            0.48,
+            0.46,
         ])
         expected_void_ratio_vector = np.array([
-            2.0000000000000000,
-            0.0999999999983167,
-            -0.7999999999938220,
-            -1.5000000000335000,
-            -11.9999999999168000,
+            0.600000000000000,
+            0.549999999999998,
+            0.510000000000000,
+            0.479999999999998,
+            0.460000000000006,
         ])
         actual_void_ratio_nodes = np.array([
             nd.void_ratio for nd in self.msh.nodes
@@ -2810,7 +2810,7 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
             0.503660254037844,
             0.486339745962154,
             0.475773502691896,
-            0.464226497308109,
+            0.464226497308108,
         ])
         actual_void_ratio_int_pts = np.array([
             ip.void_ratio for e in self.msh.elements for ip in e.int_pts
@@ -2827,7 +2827,7 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
             5.422629776125630E-11,
             4.757966757424490E-11,
             4.393169733182260E-11,
-            4.026418833655240E-11,
+            4.026418833655210E-11,
         ])
         actual_hyd_cond_int_pts = np.array([
             ip.hyd_cond for e in self.msh.elements for ip in e.int_pts
@@ -2847,7 +2847,7 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
             4.093792290928690E-10,
             3.592007648723560E-10,
             3.316605619219050E-10,
-            3.039728519516400E-10,
+            3.039728519516380E-10,
         ])
         actual_hyd_cond_grad_int_pts = np.array([
             ip.hyd_cond_gradient
@@ -2864,11 +2864,11 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
             1.371720913096690E+05,
             9.375936845079700E+04,
             7.369175578056780E+04,
-            5.583532328286030E+04,
-            4.732232895587810E+04,
-            3.974636884423720E+04,
+            5.583532328286050E+04,
+            4.732232895587820E+04,
+            3.974636884423710E+04,
             3.457891505553490E+04,
-            2.814031327404820E+04,
+            2.814031327404880E+04,
         ])
         actual_sigp_int_pts = np.array([
             ip.eff_stress
@@ -2886,9 +2886,9 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
             -2.121019229211170E+06,
             -1.607069788170220E+06,
             -1.362046115244570E+06,
-            -1.143992455017300E+06,
-            -9.952611792347770E+05,
-            -8.099433232125740E+05,
+            -1.143992455017290E+06,
+            -9.952611792347750E+05,
+            -8.099433232125910E+05,
         ])
         actual_dsigde_int_pts = np.array([
             ip.eff_stress_gradient
@@ -2923,12 +2923,12 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
         expected_water_flux_int_pts = np.array([
             -4.605983696099940E-12,
             -2.961668977150410E-11,
-            -4.414236745724510E-11,
-            -4.400342486575110E-11,
-            -4.628448188839970E-11,
-            -4.270685035950430E-11,
-            -4.303914014310940E-11,
-            -4.054681068966590E-11,
+            -4.414236745724500E-11,
+            -4.400342486575100E-11,
+            -4.628448188839980E-11,
+            -4.270685035950440E-11,
+            -4.303914014310920E-11,
+            -4.054681068966530E-11,
         ])
         actual_water_flux_int_pts = np.array([
             ip.water_flux_rate
