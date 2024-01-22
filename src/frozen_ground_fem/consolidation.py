@@ -1120,7 +1120,7 @@ class ConsolidationAnalysis1D(Mesh1D):
             Vector of deformed coordinates
         """
         s = self.calculate_total_settlement()
-        def_coords = np.array(self.num_nodes)
+        def_coords = np.zeros(self.num_nodes)
         def_coords[0] = self.nodes[0].z + s
         for k, e in enumerate(self.elements):
             dz = e.deformed_length

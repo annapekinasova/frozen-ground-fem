@@ -2813,6 +2813,84 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
                                delta=1e-14)
 
 
+class TestDeformedCoordsLinear(unittest.TestCase):
+    def setUp(self):
+        self.mtl = Material(
+            spec_grav_solids=2.6,
+            hyd_cond_index=0.305,
+            void_ratio_0_hyd_cond=2.6,
+            hyd_cond_mult=0.8,
+            hyd_cond_0=4.05e-4,
+            void_ratio_min=0.3,
+            void_ratio_tr=2.6,
+            void_ratio_0_comp=2.6,
+            eff_stress_0_comp=2.8,
+            comp_index_unfrozen=0.421,
+            rebound_index_unfrozen=0.08,
+        )
+        self.msh = ConsolidationAnalysis1D(
+            z_range=(0, 100),
+            num_elements=4,
+            generate=True,
+            order=1
+        )
+        initial_void_ratio_vector = np.array([
+            0.8,
+            0.55,
+            0.51,
+            0.48,
+            0.46,
+        ])
+        for nd, e0 in zip(self.msh.nodes,
+                          initial_void_ratio_vector,
+                          ):
+            nd.void_ratio = e0
+        for e in self.msh.elements:
+            for ip in e.int_pts:
+                ip.material = self.mtl
+                ip.void_ratio_0 = 0.9
+        bnd0 = ConsolidationBoundary1D(
+            nodes=(self.msh.nodes[0],),
+            bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
+            bnd_value=0.6,
+        )
+        self.msh.add_boundary(bnd0)
+        bnd1 = ConsolidationBoundary1D(
+            nodes=(self.msh.nodes[-1],),
+            bnd_type=ConsolidationBoundary1D.BoundaryType.water_flux,
+            bnd_value=-2.0e-11,
+        )
+        self.msh.add_boundary(bnd1)
+        self.msh.initialize_global_system(1.5)
+        self.msh.time_step = 1e-3
+        self.msh.initialize_time_step()
+        self.msh._void_ratio_vector[:] = np.array([
+            0.6,
+            0.51,
+            0.44,
+            0.39,
+            0.35,
+        ])
+        self.msh.update_consolidation_boundary_conditions(self.msh._t1)
+        self.msh.update_nodes()
+        self.msh.update_integration_points()
+        self.msh.update_water_flux_vector()
+        self.msh.update_stiffness_matrix()
+        self.msh.update_mass_matrix()
+        self.msh.update_weighted_matrices()
+        self.msh.iterative_correction_step()
+
+    def test_calculate_settlement(self):
+        expected = 1.0
+        actual = self.msh.calculate_total_settlement()
+        self.assertAlmostEqual(expected, actual)
+
+    def test_calculate_deformed_coords(self):
+        expected = np.ones_like(self.msh._void_ratio_vector)
+        actual = self.msh.calculate_deformed_coords()
+        self.assertTrue(np.allclose(expected, actual))
+
+
 # class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
 #     def setUp(self):
 #         self.mtl = Material(
