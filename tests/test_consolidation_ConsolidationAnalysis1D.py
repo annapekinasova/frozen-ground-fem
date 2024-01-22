@@ -2886,7 +2886,13 @@ class TestDeformedCoordsLinear(unittest.TestCase):
         self.assertAlmostEqual(expected, actual)
 
     def test_calculate_deformed_coords(self):
-        expected = np.ones_like(self.msh._void_ratio_vector)
+        expected = np.array([
+            20.1315789473684,
+            40.8552631578947,
+            60.9868421052631,
+            80.6578947368421,
+            100.0000000000000,
+        ])
         actual = self.msh.calculate_deformed_coords()
         self.assertTrue(np.allclose(expected, actual))
 
