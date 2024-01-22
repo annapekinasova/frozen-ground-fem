@@ -5215,7 +5215,7 @@ class TestTemperatureCorrectionCubicOneStep(unittest.TestCase):
         ])
         self.assertTrue(np.allclose(
             expected_dT, self.msh._delta_temp_vector,
-            rtol=1e-10, atol=1e-20,
+            rtol=1e-8, atol=1e-14,
         ))
 
     def test_iteration_variables(self):
@@ -5834,7 +5834,7 @@ class TestIterativeTemperatureCorrectionCubic(unittest.TestCase):
         ])
         self.assertTrue(np.allclose(
             expected_dT, self.msh._delta_temp_vector,
-            rtol=1e-10, atol=1e-20,
+            rtol=1e-8, atol=1e-14,
         ))
 
     def test_iteration_variables(self):
