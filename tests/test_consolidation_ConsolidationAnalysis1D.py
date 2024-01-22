@@ -682,6 +682,37 @@ class TestUpdateBoundaries(unittest.TestCase):
                 self.assertEqual(fx, 0.0)
 
 
+class TestUpdateNodes(unittest.TestCase):
+    def setUp(self):
+        self.msh = ConsolidationAnalysis1D((0, 100), generate=True, order=1)
+        self.msh._void_ratio_vector[:] = np.linspace(
+            2.0, 22.0, self.msh.num_nodes)
+        self.msh._void_ratio_vector_0[:] = np.linspace(
+            1.0, 11.0, self.msh.num_nodes)
+        self.msh.time_step = 0.25
+        self.msh.update_nodes()
+
+    def test_initial_node_values(self):
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.void_ratio, 2.0 * (k+1))
+
+    def test_repeat_update_nodes(self):
+        self.msh.update_nodes()
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.void_ratio, 2.0 * (k+1))
+
+    def test_change_void_ratio_vectors_update_nodes(self):
+        self.msh._void_ratio_vector[:] = np.linspace(
+            4.0, 44.0, self.msh.num_nodes)
+        self.msh._void_ratio_vector_0[:] = np.linspace(
+            2.0, 22.0, self.msh.num_nodes)
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.void_ratio, 2.0 * (k+1))
+        self.msh.update_nodes()
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.void_ratio, 4.0 * (k+1))
+
+
 class TestUpdateGlobalMatricesLinearConstant(unittest.TestCase):
     def setUp(self):
         self.mtl = Material(
@@ -979,365 +1010,6 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
         self.assertTrue(np.allclose(
             expected_M, self.msh._mass_matrix,
         ))
-
-
-# class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
-#     def setUp(self):
-#         self.mtl = Material(
-#             spec_heat_cap_solids=741.0,
-#             spec_grav_solids=2.65,
-#         )
-#         self.msh = ConsolidationAnalysis1D((0, 100), generate=True)
-#         for e in self.msh.elements:
-#             for ip in e.int_pts:
-#                 ip.material = self.mtl
-#                 ip.deg_sat_water = 0.8
-#                 ip.void_ratio = 0.35
-#                 ip.void_ratio_0 = 0.3
-#                 ip.water_flux_rate = -1.5e-8
-#
-#     def test_initial_stiffness_matrix(self):
-#         expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-#         self.assertTrue(np.allclose(self.msh._stiffness_matrix_0, expected))
-#         self.assertTrue(np.allclose(self.msh._stiffness_matrix, expected))
-#
-#     def test_initial_mass_matrix(self):
-#         expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-#         self.assertTrue(np.allclose(self.msh._mass_matrix_0, expected))
-#         self.assertTrue(np.allclose(self.msh._mass_matrix, expected))
-#
-#     def test_update_stiffness_matrix(self):
-#         expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-#         h00 = 0.7465991018961040
-#         h11 = 2.0906373785075500
-#         h33 = 0.6858746574516590
-#         h10 = -0.8713876864303850
-#         h20 = 0.2431123389801100
-#         h30 = -0.0575993100013845
-#         h21 = -1.3758296977239400
-#         h01 = -0.9579200197637180
-#         h02 = 0.2795470056467770
-#         h03 = -0.0682260877791622
-#         h12 = -1.4987966977239400
-#         d0 = np.ones((self.msh.num_nodes,)) * (h00 + h33)
-#         d0[0] = h00
-#         d0[-1] = h33
-#         d0[1::3] = h11
-#         d0[2::3] = h11
-#         dm1 = np.ones((self.msh.num_nodes - 1,)) * h10
-#         dm1[1::3] = h21
-#         dm2 = np.ones((self.msh.num_nodes - 2,)) * h20
-#         dm2[2::3] = 0.0
-#         dm3 = np.zeros((self.msh.num_nodes - 3,))
-#         dm3[0::3] = h30
-#         dp1 = np.ones((self.msh.num_nodes - 1,)) * h01
-#         dp1[1::3] = h12
-#         dp2 = np.ones((self.msh.num_nodes - 2,)) * h02
-#         dp2[2::3] = 0.0
-#         dp3 = np.zeros((self.msh.num_nodes - 3,))
-#         dp3[0::3] = h03
-#         expected1 = np.diag(d0)
-#         expected1 += np.diag(dm1, -1) + np.diag(dp1, 1)
-#         expected1 += np.diag(dm2, -2) + np.diag(dp2, 2)
-#         expected1 += np.diag(dm3, -3) + np.diag(dp3, 3)
-#         self.msh.update_stiffness_matrix()
-#         self.assertTrue(np.allclose(self.msh._stiffness_matrix_0, expected0))
-#         self.assertTrue(np.allclose(self.msh._stiffness_matrix, expected1))
-#
-#     def test_update_mass_matrix(self):
-#         expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-#         c00 = 1.84687971781305e6
-#         c11 = 9.34982857142857e6
-#         c10 = 1.42844603174603e6
-#         c20 = -5.19434920634924e5
-#         c30 = 2.74146208112873e5
-#         c21 = -1.16872857142856e6
-#         d0 = np.ones((self.msh.num_nodes,)) * 2.0 * c00
-#         d0[0] = c00
-#         d0[-1] = c00
-#         d0[1::3] = c11
-#         d0[2::3] = c11
-#         d1 = np.ones((self.msh.num_nodes - 1,)) * c10
-#         d1[1::3] = c21
-#         d2 = np.ones((self.msh.num_nodes - 2,)) * c20
-#         d2[2::3] = 0.0
-#         d3 = np.zeros((self.msh.num_nodes - 3,))
-#         d3[0::3] = c30
-#         expected1 = np.diag(d0)
-#         expected1 += np.diag(d1, -1) + np.diag(d1, 1)
-#         expected1 += np.diag(d2, -2) + np.diag(d2, 2)
-#         expected1 += np.diag(d3, -3) + np.diag(d3, 3)
-#         self.msh.update_mass_matrix()
-#         self.assertTrue(np.allclose(
-#             self.msh._mass_matrix_0, expected0))
-#         self.assertTrue(np.allclose(
-#             self.msh._mass_matrix, expected1))
-#
-#
-# class TestUpdateIntegrationPointsCubic(unittest.TestCase):
-#     def setUp(self):
-#         self.mtl = Material(
-#             spec_heat_cap_solids=741.0,
-#             spec_grav_solids=2.65,
-#             deg_sat_water_alpha=1.20e4,
-#             deg_sat_water_beta=0.35,
-#             water_flux_b1=0.08,
-#             water_flux_b2=4.0,
-#             water_flux_b3=1.0e-5,
-#             seg_pot_0=2.0e-9,
-#         )
-#         self.msh = ConsolidationAnalysis1D(
-#             z_range=(0, 100),
-#             num_elements=4,
-#             generate=True,
-#         )
-#         self.msh._void_ratio_vector[:] = np.array([
-#             -2.000000000000000,
-#             -9.157452320220460,
-#             -10.488299785319000,
-#             -7.673205119057850,
-#             -3.379831977359920,
-#             0.186084957826655,
-#             1.975912628300400,
-#             2.059737589813890,
-#             1.158320034961550,
-#             0.100523127786268,
-#             -0.548750924584512,
-#             -0.609286860003055,
-#             -0.205841501790609,
-#         ])
-#         self.msh._void_ratio_rate_vector[:] = np.array([
-#             -0.02000000000000000,
-#             -0.09157452320220460,
-#             -0.10488299785319000,
-#             -0.07673205119057850,
-#             -0.03379831977359920,
-#             0.00186084957826655,
-#             0.01975912628300400,
-#             0.02059737589813890,
-#             0.01158320034961550,
-#             0.00100523127786268,
-#             -0.00548750924584512,
-#             -0.00609286860003055,
-#             -0.00205841501790609,
-#         ])
-#         self.msh.update_nodes()
-#         for e in self.msh.elements:
-#             for ip in e.int_pts:
-#                 ip.material = self.mtl
-#                 ip.void_ratio = 0.35
-#                 ip.void_ratio_0 = 0.3
-#                 ip.tot_stress = 1.2e5
-#         self.msh.update_integration_points()
-#
-#     def test_void_ratio_distribution(self):
-#         expected_void_ratio_int_pts = np.array([
-#             -3.422539664476490,
-#             -7.653704430301370,
-#             -10.446160239424800,
-#             -9.985642548540930,
-#             -8.257070581278590,
-#             -7.064308307087920,
-#             -4.672124032386330,
-#             -1.440401917815120,
-#             0.974681570235134,
-#             1.870711258948380,
-#             2.078338922559240,
-#             2.177366336413890,
-#             1.680380179180770,
-#             0.811005133641826,
-#             0.227782988247163,
-#             -0.031120907462955,
-#             -0.417466130765087,
-#             -0.644813855455235,
-#             -0.528772037813549,
-#             -0.285997082550321,
-#         ])
-#         actual_void_ratio_int_pts = np.array([
-#             ip.void_ratio for e in self.msh.elements for ip in e.int_pts
-#         ])
-#         self.assertTrue(np.allclose(actual_void_ratio_int_pts,
-#                                     expected_void_ratio_int_pts))
-#
-#     def test_void_ratio_rate_distribution(self):
-#         expected_void_ratio_rate_int_pts = np.array([
-#             -0.034225396644765,
-#             -0.076537044303014,
-#             -0.104461602394248,
-#             -0.099856425485409,
-#             -0.082570705812786,
-#             -0.070643083070879,
-#             -0.046721240323863,
-#             -0.014404019178151,
-#             0.009746815702351,
-#             0.018707112589484,
-#             0.020783389225592,
-#             0.021773663364139,
-#             0.016803801791808,
-#             0.008110051336418,
-#             0.002277829882472,
-#             -0.000311209074630,
-#             -0.004174661307651,
-#             -0.006448138554552,
-#             -0.005287720378135,
-#             -0.002859970825503,
-#         ])
-#         actual_void_ratio_rate_int_pts = np.array([
-#             ip.void_ratio_rate for e in self.msh.elements for ip in e.int_pts
-#         ])
-#         self.assertTrue(np.allclose(actual_void_ratio_rate_int_pts,
-#                                     expected_void_ratio_rate_int_pts))
-#
-#     def test_void_ratio_gradient_distribution(self):
-#         expected_void_ratio_gradient_int_pts = np.array([
-#             -1.15093426984199,
-#             -0.70037674599536,
-#             -0.15129838219301,
-#             0.26620714324995,
-#             0.47571152668668,
-#             0.52108465163990,
-#             0.51343382134772,
-#             0.43315319751340,
-#             0.27077898886023,
-#             0.11272541074531,
-#             0.07267706952532,
-#             -0.02454456350281,
-#             -0.11231442240250,
-#             -0.13519566470900,
-#             -0.11353558171063,
-#             -0.10632645781291,
-#             -0.06254104067706,
-#             -0.00664052813362,
-#             0.03949323637823,
-#             0.06538510258090,
-#         ])
-#         actual_void_ratio_gradient_int_pts = np.array([
-#             ip.void_ratio_gradient
-#             for e in self.msh.elements for ip in e.int_pts
-#         ])
-#         self.assertTrue(np.allclose(actual_void_ratio_gradient_int_pts,
-#                                     expected_void_ratio_gradient_int_pts))
-#
-#     def test_deg_sat_water_distribution(self):
-#         expected_deg_sat_water_int_pts = np.array([
-#             0.044857035897862,
-#             0.028960004408085,
-#             0.024424941557965,
-#             0.025036878560037,
-#             0.027783692446551,
-#             0.030254882699662,
-#             0.037889208517624,
-#             0.071616670181262,
-#             1.000000000000000,
-#             1.000000000000000,
-#             1.000000000000000,
-#             1.000000000000000,
-#             1.000000000000000,
-#             1.000000000000000,
-#             1.000000000000000,
-#             0.531172122610449,
-#             0.139509906472742,
-#             0.110434834954165,
-#             0.122871924439420,
-#             0.170874577744838,
-#         ])
-#         actual_deg_sat_water_int_pts = np.array([
-#             ip.deg_sat_water for e in self.msh.elements for ip in e.int_pts
-#         ])
-#         self.assertTrue(np.allclose(actual_deg_sat_water_int_pts,
-#                                     expected_deg_sat_water_int_pts))
-#
-#     def test_deg_sat_water_void_ratio_grad_distribution(self):
-#         expected_deg_sat_water_void_ratio_grad_int_pts = np.array([
-#             0.007100952173750,
-#             0.002066569970404,
-#             0.001283854149754,
-#             0.001375496464083,
-#             0.001839863406448,
-#             0.002336484783824,
-#             0.004404228952282,
-#             0.026828796529360,
-#             0.000000000000000,
-#             0.000000000000000,
-#             0.000000000000000,
-#             0.000000000000000,
-#             0.000000000000000,
-#             0.000000000000000,
-#             0.000000000000000,
-#             7.683274447247210,
-#             0.179434281070916,
-#             0.092158984082347,
-#             0.124931329787761,
-#             0.319815963223536,
-#         ])
-#         actual_deg_sat_water_void_ratio_grad_int_pts = np.array([
-#             ip.deg_sat_water_void_ratio_gradient
-#             for e in self.msh.elements for ip in e.int_pts
-#         ])
-#         self.assertTrue(np.allclose(actual_deg_sat_water_void_ratio_grad_int_pts,
-#                                     expected_deg_sat_water_void_ratio_grad_int_pts))
-#
-#     def test_water_flux_distribution(self):
-#         expected_water_flux_int_pts = np.array([
-#             1.8071264681E-15,
-#             5.0412534775E-23,
-#             1.5503621786E-28,
-#             -1.7186479754E-27,
-#             -3.0723442020E-24,
-#             -3.9524301404E-22,
-#             -5.4976497868E-18,
-#             -1.8328498927E-12,
-#             0.0000000000E+00,
-#             0.0000000000E+00,
-#             0.0000000000E+00,
-#             0.0000000000E+00,
-#             0.0000000000E+00,
-#             0.0000000000E+00,
-#             0.0000000000E+00,
-#             1.0956257621E-10,
-#             1.5160234947E-11,
-#             6.5849524657E-13,
-#             -6.1857084254E-12,
-#             -2.6451092292E-11,
-#         ])
-#         actual_water_flux_int_pts = np.array([
-#             ip.water_flux_rate
-#             for e in self.msh.elements for ip in e.int_pts
-#         ])
-#         self.assertTrue(np.allclose(actual_water_flux_int_pts,
-#                                     expected_water_flux_int_pts,
-#                                     atol=1e-30))
-
-
-class TestUpdateNodes(unittest.TestCase):
-    def setUp(self):
-        self.msh = ConsolidationAnalysis1D((0, 100), generate=True, order=1)
-        self.msh._void_ratio_vector[:] = np.linspace(
-            2.0, 22.0, self.msh.num_nodes)
-        self.msh._void_ratio_vector_0[:] = np.linspace(
-            1.0, 11.0, self.msh.num_nodes)
-        self.msh.time_step = 0.25
-        self.msh.update_nodes()
-
-    def test_initial_node_values(self):
-        for k, nd in enumerate(self.msh.nodes):
-            self.assertAlmostEqual(nd.void_ratio, 2.0 * (k+1))
-
-    def test_repeat_update_nodes(self):
-        self.msh.update_nodes()
-        for k, nd in enumerate(self.msh.nodes):
-            self.assertAlmostEqual(nd.void_ratio, 2.0 * (k+1))
-
-    def test_change_void_ratio_vectors_update_nodes(self):
-        self.msh._void_ratio_vector[:] = np.linspace(
-            4.0, 44.0, self.msh.num_nodes)
-        self.msh._void_ratio_vector_0[:] = np.linspace(
-            2.0, 22.0, self.msh.num_nodes)
-        for k, nd in enumerate(self.msh.nodes):
-            self.assertAlmostEqual(nd.void_ratio, 2.0 * (k+1))
-        self.msh.update_nodes()
-        for k, nd in enumerate(self.msh.nodes):
-            self.assertAlmostEqual(nd.void_ratio, 4.0 * (k+1))
 
 
 class TestInitializeGlobalSystemLinear(unittest.TestCase):
@@ -3141,6 +2813,334 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
                                delta=1e-14)
 
 
+# class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
+#     def setUp(self):
+#         self.mtl = Material(
+#             spec_heat_cap_solids=741.0,
+#             spec_grav_solids=2.65,
+#         )
+#         self.msh = ConsolidationAnalysis1D((0, 100), generate=True)
+#         for e in self.msh.elements:
+#             for ip in e.int_pts:
+#                 ip.material = self.mtl
+#                 ip.deg_sat_water = 0.8
+#                 ip.void_ratio = 0.35
+#                 ip.void_ratio_0 = 0.3
+#                 ip.water_flux_rate = -1.5e-8
+#
+#     def test_initial_stiffness_matrix(self):
+#         expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+#         self.assertTrue(np.allclose(self.msh._stiffness_matrix_0, expected))
+#         self.assertTrue(np.allclose(self.msh._stiffness_matrix, expected))
+#
+#     def test_initial_mass_matrix(self):
+#         expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+#         self.assertTrue(np.allclose(self.msh._mass_matrix_0, expected))
+#         self.assertTrue(np.allclose(self.msh._mass_matrix, expected))
+#
+#     def test_update_stiffness_matrix(self):
+#         expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+#         h00 = 0.7465991018961040
+#         h11 = 2.0906373785075500
+#         h33 = 0.6858746574516590
+#         h10 = -0.8713876864303850
+#         h20 = 0.2431123389801100
+#         h30 = -0.0575993100013845
+#         h21 = -1.3758296977239400
+#         h01 = -0.9579200197637180
+#         h02 = 0.2795470056467770
+#         h03 = -0.0682260877791622
+#         h12 = -1.4987966977239400
+#         d0 = np.ones((self.msh.num_nodes,)) * (h00 + h33)
+#         d0[0] = h00
+#         d0[-1] = h33
+#         d0[1::3] = h11
+#         d0[2::3] = h11
+#         dm1 = np.ones((self.msh.num_nodes - 1,)) * h10
+#         dm1[1::3] = h21
+#         dm2 = np.ones((self.msh.num_nodes - 2,)) * h20
+#         dm2[2::3] = 0.0
+#         dm3 = np.zeros((self.msh.num_nodes - 3,))
+#         dm3[0::3] = h30
+#         dp1 = np.ones((self.msh.num_nodes - 1,)) * h01
+#         dp1[1::3] = h12
+#         dp2 = np.ones((self.msh.num_nodes - 2,)) * h02
+#         dp2[2::3] = 0.0
+#         dp3 = np.zeros((self.msh.num_nodes - 3,))
+#         dp3[0::3] = h03
+#         expected1 = np.diag(d0)
+#         expected1 += np.diag(dm1, -1) + np.diag(dp1, 1)
+#         expected1 += np.diag(dm2, -2) + np.diag(dp2, 2)
+#         expected1 += np.diag(dm3, -3) + np.diag(dp3, 3)
+#         self.msh.update_stiffness_matrix()
+#         self.assertTrue(np.allclose(self.msh._stiffness_matrix_0, expected0))
+#         self.assertTrue(np.allclose(self.msh._stiffness_matrix, expected1))
+#
+#     def test_update_mass_matrix(self):
+#         expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+#         c00 = 1.84687971781305e6
+#         c11 = 9.34982857142857e6
+#         c10 = 1.42844603174603e6
+#         c20 = -5.19434920634924e5
+#         c30 = 2.74146208112873e5
+#         c21 = -1.16872857142856e6
+#         d0 = np.ones((self.msh.num_nodes,)) * 2.0 * c00
+#         d0[0] = c00
+#         d0[-1] = c00
+#         d0[1::3] = c11
+#         d0[2::3] = c11
+#         d1 = np.ones((self.msh.num_nodes - 1,)) * c10
+#         d1[1::3] = c21
+#         d2 = np.ones((self.msh.num_nodes - 2,)) * c20
+#         d2[2::3] = 0.0
+#         d3 = np.zeros((self.msh.num_nodes - 3,))
+#         d3[0::3] = c30
+#         expected1 = np.diag(d0)
+#         expected1 += np.diag(d1, -1) + np.diag(d1, 1)
+#         expected1 += np.diag(d2, -2) + np.diag(d2, 2)
+#         expected1 += np.diag(d3, -3) + np.diag(d3, 3)
+#         self.msh.update_mass_matrix()
+#         self.assertTrue(np.allclose(
+#             self.msh._mass_matrix_0, expected0))
+#         self.assertTrue(np.allclose(
+#             self.msh._mass_matrix, expected1))
+#
+#
+# class TestUpdateIntegrationPointsCubic(unittest.TestCase):
+#     def setUp(self):
+#         self.mtl = Material(
+#             spec_heat_cap_solids=741.0,
+#             spec_grav_solids=2.65,
+#             deg_sat_water_alpha=1.20e4,
+#             deg_sat_water_beta=0.35,
+#             water_flux_b1=0.08,
+#             water_flux_b2=4.0,
+#             water_flux_b3=1.0e-5,
+#             seg_pot_0=2.0e-9,
+#         )
+#         self.msh = ConsolidationAnalysis1D(
+#             z_range=(0, 100),
+#             num_elements=4,
+#             generate=True,
+#         )
+#         self.msh._void_ratio_vector[:] = np.array([
+#             -2.000000000000000,
+#             -9.157452320220460,
+#             -10.488299785319000,
+#             -7.673205119057850,
+#             -3.379831977359920,
+#             0.186084957826655,
+#             1.975912628300400,
+#             2.059737589813890,
+#             1.158320034961550,
+#             0.100523127786268,
+#             -0.548750924584512,
+#             -0.609286860003055,
+#             -0.205841501790609,
+#         ])
+#         self.msh._void_ratio_rate_vector[:] = np.array([
+#             -0.02000000000000000,
+#             -0.09157452320220460,
+#             -0.10488299785319000,
+#             -0.07673205119057850,
+#             -0.03379831977359920,
+#             0.00186084957826655,
+#             0.01975912628300400,
+#             0.02059737589813890,
+#             0.01158320034961550,
+#             0.00100523127786268,
+#             -0.00548750924584512,
+#             -0.00609286860003055,
+#             -0.00205841501790609,
+#         ])
+#         self.msh.update_nodes()
+#         for e in self.msh.elements:
+#             for ip in e.int_pts:
+#                 ip.material = self.mtl
+#                 ip.void_ratio = 0.35
+#                 ip.void_ratio_0 = 0.3
+#                 ip.tot_stress = 1.2e5
+#         self.msh.update_integration_points()
+#
+#     def test_void_ratio_distribution(self):
+#         expected_void_ratio_int_pts = np.array([
+#             -3.422539664476490,
+#             -7.653704430301370,
+#             -10.446160239424800,
+#             -9.985642548540930,
+#             -8.257070581278590,
+#             -7.064308307087920,
+#             -4.672124032386330,
+#             -1.440401917815120,
+#             0.974681570235134,
+#             1.870711258948380,
+#             2.078338922559240,
+#             2.177366336413890,
+#             1.680380179180770,
+#             0.811005133641826,
+#             0.227782988247163,
+#             -0.031120907462955,
+#             -0.417466130765087,
+#             -0.644813855455235,
+#             -0.528772037813549,
+#             -0.285997082550321,
+#         ])
+#         actual_void_ratio_int_pts = np.array([
+#             ip.void_ratio for e in self.msh.elements for ip in e.int_pts
+#         ])
+#         self.assertTrue(np.allclose(actual_void_ratio_int_pts,
+#                                     expected_void_ratio_int_pts))
+#
+#     def test_void_ratio_rate_distribution(self):
+#         expected_void_ratio_rate_int_pts = np.array([
+#             -0.034225396644765,
+#             -0.076537044303014,
+#             -0.104461602394248,
+#             -0.099856425485409,
+#             -0.082570705812786,
+#             -0.070643083070879,
+#             -0.046721240323863,
+#             -0.014404019178151,
+#             0.009746815702351,
+#             0.018707112589484,
+#             0.020783389225592,
+#             0.021773663364139,
+#             0.016803801791808,
+#             0.008110051336418,
+#             0.002277829882472,
+#             -0.000311209074630,
+#             -0.004174661307651,
+#             -0.006448138554552,
+#             -0.005287720378135,
+#             -0.002859970825503,
+#         ])
+#         actual_void_ratio_rate_int_pts = np.array([
+#             ip.void_ratio_rate for e in self.msh.elements for ip in e.int_pts
+#         ])
+#         self.assertTrue(np.allclose(actual_void_ratio_rate_int_pts,
+#                                     expected_void_ratio_rate_int_pts))
+#
+#     def test_void_ratio_gradient_distribution(self):
+#         expected_void_ratio_gradient_int_pts = np.array([
+#             -1.15093426984199,
+#             -0.70037674599536,
+#             -0.15129838219301,
+#             0.26620714324995,
+#             0.47571152668668,
+#             0.52108465163990,
+#             0.51343382134772,
+#             0.43315319751340,
+#             0.27077898886023,
+#             0.11272541074531,
+#             0.07267706952532,
+#             -0.02454456350281,
+#             -0.11231442240250,
+#             -0.13519566470900,
+#             -0.11353558171063,
+#             -0.10632645781291,
+#             -0.06254104067706,
+#             -0.00664052813362,
+#             0.03949323637823,
+#             0.06538510258090,
+#         ])
+#         actual_void_ratio_gradient_int_pts = np.array([
+#             ip.void_ratio_gradient
+#             for e in self.msh.elements for ip in e.int_pts
+#         ])
+#         self.assertTrue(np.allclose(actual_void_ratio_gradient_int_pts,
+#                                     expected_void_ratio_gradient_int_pts))
+#
+#     def test_deg_sat_water_distribution(self):
+#         expected_deg_sat_water_int_pts = np.array([
+#             0.044857035897862,
+#             0.028960004408085,
+#             0.024424941557965,
+#             0.025036878560037,
+#             0.027783692446551,
+#             0.030254882699662,
+#             0.037889208517624,
+#             0.071616670181262,
+#             1.000000000000000,
+#             1.000000000000000,
+#             1.000000000000000,
+#             1.000000000000000,
+#             1.000000000000000,
+#             1.000000000000000,
+#             1.000000000000000,
+#             0.531172122610449,
+#             0.139509906472742,
+#             0.110434834954165,
+#             0.122871924439420,
+#             0.170874577744838,
+#         ])
+#         actual_deg_sat_water_int_pts = np.array([
+#             ip.deg_sat_water for e in self.msh.elements for ip in e.int_pts
+#         ])
+#         self.assertTrue(np.allclose(actual_deg_sat_water_int_pts,
+#                                     expected_deg_sat_water_int_pts))
+#
+#     def test_deg_sat_water_void_ratio_grad_distribution(self):
+#         expected_deg_sat_water_void_ratio_grad_int_pts = np.array([
+#             0.007100952173750,
+#             0.002066569970404,
+#             0.001283854149754,
+#             0.001375496464083,
+#             0.001839863406448,
+#             0.002336484783824,
+#             0.004404228952282,
+#             0.026828796529360,
+#             0.000000000000000,
+#             0.000000000000000,
+#             0.000000000000000,
+#             0.000000000000000,
+#             0.000000000000000,
+#             0.000000000000000,
+#             0.000000000000000,
+#             7.683274447247210,
+#             0.179434281070916,
+#             0.092158984082347,
+#             0.124931329787761,
+#             0.319815963223536,
+#         ])
+#         actual_deg_sat_water_void_ratio_grad_int_pts = np.array([
+#             ip.deg_sat_water_void_ratio_gradient
+#             for e in self.msh.elements for ip in e.int_pts
+#         ])
+#         self.assertTrue(np.allclose(actual_deg_sat_water_void_ratio_grad_int_pts,
+#                                     expected_deg_sat_water_void_ratio_grad_int_pts))
+#
+#     def test_water_flux_distribution(self):
+#         expected_water_flux_int_pts = np.array([
+#             1.8071264681E-15,
+#             5.0412534775E-23,
+#             1.5503621786E-28,
+#             -1.7186479754E-27,
+#             -3.0723442020E-24,
+#             -3.9524301404E-22,
+#             -5.4976497868E-18,
+#             -1.8328498927E-12,
+#             0.0000000000E+00,
+#             0.0000000000E+00,
+#             0.0000000000E+00,
+#             0.0000000000E+00,
+#             0.0000000000E+00,
+#             0.0000000000E+00,
+#             0.0000000000E+00,
+#             1.0956257621E-10,
+#             1.5160234947E-11,
+#             6.5849524657E-13,
+#             -6.1857084254E-12,
+#             -2.6451092292E-11,
+#         ])
+#         actual_water_flux_int_pts = np.array([
+#             ip.water_flux_rate
+#             for e in self.msh.elements for ip in e.int_pts
+#         ])
+#         self.assertTrue(np.allclose(actual_water_flux_int_pts,
+#                                     expected_water_flux_int_pts,
+#                                     atol=1e-30))
+#
+#
 # class TestInitializeGlobalSystemCubic(unittest.TestCase):
 #     def setUp(self):
 #         self.mtl = Material(
