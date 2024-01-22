@@ -2881,7 +2881,7 @@ class TestDeformedCoordsLinear(unittest.TestCase):
         self.msh.iterative_correction_step()
 
     def test_calculate_settlement(self):
-        expected = 1.0
+        expected = 20.1315789473684
         actual = self.msh.calculate_total_settlement()
         self.assertAlmostEqual(expected, actual)
 
