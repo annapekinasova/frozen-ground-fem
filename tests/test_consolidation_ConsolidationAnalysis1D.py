@@ -2958,10 +2958,35 @@ class TestUpdateIntegrationPointsCubic(unittest.TestCase):
              0.614272901437460,
              0.610951417714685,],
         ])
-        for e, e0s in zip(self.msh.elements, initial_void_ratio_int_pts):
-            for ip, e0 in zip(e.int_pts, e0s):
+        initial_ppc_int_pts = np.array([
+            [5.77166646474166E+04,
+             8.41992188496132E+04,
+             1.35781869341622E+05,
+             1.93431234985906E+05,
+             2.24842014584614E+05,],
+            [2.35882598526983E+05,
+             2.48386046851806E+05,
+             2.44444909206464E+05,
+             2.23713285346802E+05,
+             2.06221264170372E+05,],
+            [1.97304574489730E+05,
+             1.81360323911413E+05,
+             1.63017883528454E+05,
+             1.50641118488766E+05,
+             1.45667203576232E+05,],
+            [1.44117447679089E+05,
+             1.42466076597825E+05,
+             1.42975416619767E+05,
+             1.45830873403700E+05,
+             1.48504285599951E+05,],
+        ])
+        for e, e0s, ppc0s in zip(self.msh.elements,
+                                 initial_void_ratio_int_pts,
+                                 initial_ppc_int_pts):
+            for ip, e0, ppc in zip(e.int_pts, e0s, ppc0s):
                 ip.material = self.mtl
                 ip.void_ratio_0 = e0
+                ip.pre_consol_stress = ppc
         self.msh.update_integration_points()
         self.msh.update_stiffness_matrix()
         self.msh.update_mass_matrix()
@@ -3090,7 +3115,7 @@ class TestUpdateIntegrationPointsCubic(unittest.TestCase):
         self.assertTrue(np.allclose(
             actual_water_flux_int_pts,
             expected_water_flux_int_pts,
-            atol=1e-9, rtol=1e-6,
+            atol=1e-19, rtol=1e-8,
         ))
 
     def test_eff_stress_distribution(self):
@@ -3120,7 +3145,6 @@ class TestUpdateIntegrationPointsCubic(unittest.TestCase):
             ip.eff_stress
             for e in self.msh.elements for ip in e.int_pts
         ])
-        print(actual_sigp_int_pts)
         self.assertTrue(np.allclose(
             expected_sig_int_pts,
             actual_sigp_int_pts,
@@ -3153,7 +3177,6 @@ class TestUpdateIntegrationPointsCubic(unittest.TestCase):
             ip.eff_stress_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        print(actual_dsigde_int_pts)
         self.assertTrue(np.allclose(
             expected_dsigde_int_pts,
             actual_dsigde_int_pts,
@@ -3186,7 +3209,6 @@ class TestUpdateIntegrationPointsCubic(unittest.TestCase):
             ip.pre_consol_stress
             for e in self.msh.elements for ip in e.int_pts
         ])
-        print(actual_ppc_int_pts)
         self.assertTrue(np.allclose(
             actual_ppc_int_pts,
             expected_ppc_int_pts,
@@ -3239,8 +3261,6 @@ class TestUpdateIntegrationPointsCubic(unittest.TestCase):
             [2.08936498445703E-10, -8.70617741434581E-10,
                 1.86302253771706E-09, -1.20134129472818E-09],
         ])
-        np.set_printoptions(precision=16)
-        print(self.msh._stiffness_matrix)
         self.assertTrue(np.allclose(
             expected_K, self.msh._stiffness_matrix,
             atol=1e-17, rtol=1e-7,
