@@ -946,6 +946,12 @@ class ConsolidationAnalysis1D(Mesh1D):
         t0 = float(t0)
         self._t0 = t0
         self._t1 = t0
+        # initialize preconsolidation stress
+        for e in self.elements:
+            for ip in e.int_pts:
+                e0 = ip.void_ratio_0
+                ppc0, _ = ip.material.eff_stress(e0, 0.0)
+                ip.pre_consol_stress = ppc0
         # update nodes with boundary conditions first
         self.update_consolidation_boundary_conditions(self._t0)
         # now get the void ratio from the nodes
