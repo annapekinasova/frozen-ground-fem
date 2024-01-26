@@ -269,6 +269,7 @@ class Node1D(Point1D):
     z
     temp
     void_ratio
+    void_ratio_0
     temp_rate
 
     Parameters
@@ -282,6 +283,9 @@ class Node1D(Point1D):
         The value to assign to the temperature of the node.
     void_ratio: float, optional, default=0.0
         The value to assign to the void ratio of the node.
+        Cannot be negative.
+    void_ratio_0: float, optional, default=0.0
+        The value to assign to the initial void ratio of the node.
         Cannot be negative.
     temp_rate: float, optional, default=0.0
         The value to assign to the rate of change (with time)
@@ -303,6 +307,7 @@ class Node1D(Point1D):
     _index: int
     _temp: float = 0.0
     _void_ratio: float = 0.0
+    _void_ratio_0: float = 0.0
     _temp_rate: float = 0.0
 
     def __init__(
@@ -311,12 +316,14 @@ class Node1D(Point1D):
         coord: float = 0.0,
         temp: float = 0.0,
         void_ratio: float = 0.0,
+        void_ratio_0: float = 0.0,
         temp_rate: float = 0.0,
     ):
         self.index = index
         super().__init__(coord)
         self.temp = temp
         self.void_ratio = void_ratio
+        self.void_ratio_0 = void_ratio_0
         self.temp_rate = temp_rate
 
     @property
@@ -428,6 +435,34 @@ class Node1D(Point1D):
         if value < 0.0:
             raise ValueError(f"void_ratio {value} is not positive")
         self._void_ratio = value
+
+    @property
+    def void_ratio_0(self) -> float:
+        """Initial void ratio of the node.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the initial void ratio of the :c:`Node1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value to assign is negative.
+        """
+        return self._void_ratio_0
+
+    @void_ratio_0.setter
+    def void_ratio_0(self, value: float) -> None:
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"void_ratio_0 {value} is not positive")
+        self._void_ratio_0 = value
 
 
 class IntegrationPoint1D(Point1D):
@@ -1297,6 +1332,18 @@ class Element1D:
         0.5,
         0.5,
     )
+    _int_pt_coords_linear_deformed: ClassVar[tuple[tuple[float, float]]] = (
+        (
+            0.211324865405187,
+            0.788675134594813,
+        ),
+    )
+    _int_pt_weights_linear_deformed: ClassVar[tuple[tuple[float, float]]] = (
+        (
+            0.5,
+            0.5,
+        ),
+    )
 
     _int_pt_coords_cubic: ClassVar[tuple[float, ...]] = (
         0.04691007703066802,
@@ -1312,8 +1359,42 @@ class Element1D:
         0.23931433524968324,
         0.11846344252809454,
     )
+    _int_pt_coords_cubic_deformed: ClassVar[
+        tuple[tuple[float, float], ...]
+    ] = (
+        (
+            0.070441621801729,
+            0.262891711531604,
+        ),
+        (
+            0.403774955135062,
+            0.596225044864938,
+        ),
+        (
+            0.737108288468396,
+            0.929558378198271,
+        ),
+    )
+    _int_pt_weights_cubic_deformed: ClassVar[
+        tuple[tuple[float, float], ...]
+    ] = (
+        (
+            0.5,
+            0.5,
+        ),
+        (
+            0.5,
+            0.5,
+        ),
+        (
+            0.5,
+            0.5,
+        ),
+    )
 
     _nodes: tuple[Node1D, ...]
+    _int_pts: tuple[IntegrationPoint1D, ...]
+    _int_pts_deformed: tuple[tuple[IntegrationPoint1D, ...], ...]
     _order: int = 3
 
     def __init__(
@@ -1343,6 +1424,15 @@ class Element1D:
                     Element1D._int_pt_weights_linear,
                 )
             )
+            self._int_pts_deformed = tuple(
+                tuple(
+                    IntegrationPoint1D(local_coord=xi, weight=wt)
+                    for (xi, wt) in zip(xx, ww)
+                ) for (xx, ww) in zip(
+                    Element1D._int_pt_coords_linear_deformed,
+                    Element1D._int_pt_weights_linear_deformed,
+                )
+            )
         elif self.order == 3:
             self._shape_matrix = shape_matrix_cubic
             self._gradient_matrix = gradient_matrix_cubic
@@ -1351,6 +1441,15 @@ class Element1D:
                 for (xi, wt) in zip(
                     Element1D._int_pt_coords_cubic,
                     Element1D._int_pt_weights_cubic,
+                )
+            )
+            self._int_pts_deformed = tuple(
+                tuple(
+                    IntegrationPoint1D(local_coord=xi, weight=wt)
+                    for (xi, wt) in zip(xx, ww)
+                ) for (xx, ww) in zip(
+                    Element1D._int_pt_coords_cubic_deformed,
+                    Element1D._int_pt_weights_cubic_deformed,
                 )
             )
         z_e = np.array([[self.nodes[0].z, self.nodes[-1].z]]).T
