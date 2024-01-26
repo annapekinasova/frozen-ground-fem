@@ -3839,12 +3839,12 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
         )
         self.msh.add_boundary(bnd1)
         self.msh.initialize_global_system(1.5)
-        self.msh.time_step = 1e+7
+        self.msh.time_step = 1e+9
         self.msh.initialize_time_step()
 
     def test_time_step_set(self):
         self.assertAlmostEqual(self.msh._t0, 1.5)
-        self.assertAlmostEqual(self.msh._t1, 1.5 + 1e+7)
+        self.assertAlmostEqual(self.msh._t1, 1.5 + 1e+9)
 
     def test_iteration_variables(self):
         self.assertEqual(self.msh._eps_a, 1.0)
