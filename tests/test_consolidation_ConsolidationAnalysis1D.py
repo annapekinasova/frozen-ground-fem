@@ -1044,10 +1044,10 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
                           initial_void_ratio_vector,
                           ):
             nd.void_ratio = e0
+            nd.void_ratio_0 = 0.9
         for e in self.msh.elements:
             for ip in e.int_pts:
                 ip.material = self.mtl
-                ip.void_ratio_0 = 0.9
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -1307,10 +1307,10 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
                           initial_void_ratio_vector,
                           ):
             nd.void_ratio = e0
+            nd.void_ratio_0 = 0.9
         for e in self.msh.elements:
             for ip in e.int_pts:
                 ip.material = self.mtl
-                ip.void_ratio_0 = 0.9
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -1582,10 +1582,10 @@ class TestUpdateWeightedMatricesLinear(unittest.TestCase):
                           initial_void_ratio_vector,
                           ):
             nd.void_ratio = e0
+            nd.void_ratio_0 = 0.9
         for e in self.msh.elements:
             for ip in e.int_pts:
                 ip.material = self.mtl
-                ip.void_ratio_0 = 0.9
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -1981,10 +1981,10 @@ class TestVoidRatioCorrectionLinearOneStep(unittest.TestCase):
                           initial_void_ratio_vector,
                           ):
             nd.void_ratio = e0
+            nd.void_ratio_0 = 0.9
         for e in self.msh.elements:
             for ip in e.int_pts:
                 ip.material = self.mtl
-                ip.void_ratio_0 = 0.9
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -2410,10 +2410,10 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
                           initial_void_ratio_vector,
                           ):
             nd.void_ratio = e0
+            nd.void_ratio_0 = 0.9
         for e in self.msh.elements:
             for ip in e.int_pts:
                 ip.material = self.mtl
-                ip.void_ratio_0 = 0.9
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -2845,10 +2845,10 @@ class TestDeformedCoordsLinear(unittest.TestCase):
                           initial_void_ratio_vector,
                           ):
             nd.void_ratio = e0
+            nd.void_ratio_0 = 0.9
         for e in self.msh.elements:
             for ip in e.int_pts:
                 ip.material = self.mtl
-                ip.void_ratio_0 = 0.9
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -2932,10 +2932,27 @@ class TestUpdateIntegrationPointsCubic(unittest.TestCase):
             0.601187375711174,
             0.590000000000000,
         ])
-        for nd, e0 in zip(self.msh.nodes,
-                          initial_void_ratio_nodes,
-                          ):
+        initial_void_ratio_0_nodes = np.array([
+            0.802254248593737,
+            0.679191704032817,
+            0.584150070553881,
+            0.530587476655649,
+            0.515981351889433,
+            0.528766176598625,
+            0.554870977120579,
+            0.582329942396731,
+            0.603536597295654,
+            0.615488027450132,
+            0.618747094408366,
+            0.615894414423534,
+            0.610069646102427,
+        ])
+        for nd, e0, e00 in zip(self.msh.nodes,
+                               initial_void_ratio_nodes,
+                               initial_void_ratio_0_nodes,
+                               ):
             nd.void_ratio = e0
+            nd.void_ratio_0 = e00
         initial_void_ratio_int_pts = np.array([
             [0.783745715060955,
              0.714698836928105,
@@ -3348,38 +3365,30 @@ class TestInitializeGlobalSystemCubic(unittest.TestCase):
             0.601187375711174,
             0.590000000000000,
         ])
-        for nd, e0 in zip(self.msh.nodes,
-                          initial_void_ratio_nodes,
-                          ):
-            nd.void_ratio = e0
-        initial_void_ratio_int_pts = np.array([
-            [0.783745715060955,
-             0.714698836928105,
-             0.627327140376931,
-             0.562625830645097,
-             0.535113117201931,],
-            [0.526348555862977,
-             0.516904981852187,
-             0.519829331413518,
-             0.536033293625736,
-             0.550919150923390,],
-            [0.559000789171861,
-             0.574407230147396,
-             0.593902490791297,
-             0.608339304393577,
-             0.614478220550266,],
-            [0.616433858525457,
-             0.618541004706861,
-             0.617888494120909,
-             0.614272901437460,
-             0.610951417714685,],
+        initial_void_ratio_0_nodes = np.array([
+            0.802254248593737,
+            0.679191704032817,
+            0.584150070553881,
+            0.530587476655649,
+            0.515981351889433,
+            0.528766176598625,
+            0.554870977120579,
+            0.582329942396731,
+            0.603536597295654,
+            0.615488027450132,
+            0.618747094408366,
+            0.615894414423534,
+            0.610069646102427,
         ])
-        for e, e0s in zip(self.msh.elements,
-                          initial_void_ratio_int_pts,
-                          ):
-            for ip, e0 in zip(e.int_pts, e0s):
+        for nd, e0, e00 in zip(self.msh.nodes,
+                               initial_void_ratio_nodes,
+                               initial_void_ratio_0_nodes,
+                               ):
+            nd.void_ratio = e0
+            nd.void_ratio_0 = e00
+        for e in self.msh.elements:
+            for ip in e.int_pts:
                 ip.material = self.mtl
-                ip.void_ratio_0 = e0
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -3794,38 +3803,30 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
             0.601187375711174,
             0.590000000000000,
         ])
-        for nd, e0 in zip(self.msh.nodes,
-                          initial_void_ratio_nodes,
-                          ):
-            nd.void_ratio = e0
-        initial_void_ratio_int_pts = np.array([
-            [0.783745715060955,
-             0.714698836928105,
-             0.627327140376931,
-             0.562625830645097,
-             0.535113117201931,],
-            [0.526348555862977,
-             0.516904981852187,
-             0.519829331413518,
-             0.536033293625736,
-             0.550919150923390,],
-            [0.559000789171861,
-             0.574407230147396,
-             0.593902490791297,
-             0.608339304393577,
-             0.614478220550266,],
-            [0.616433858525457,
-             0.618541004706861,
-             0.617888494120909,
-             0.614272901437460,
-             0.610951417714685,],
+        initial_void_ratio_0_nodes = np.array([
+            0.802254248593737,
+            0.679191704032817,
+            0.584150070553881,
+            0.530587476655649,
+            0.515981351889433,
+            0.528766176598625,
+            0.554870977120579,
+            0.582329942396731,
+            0.603536597295654,
+            0.615488027450132,
+            0.618747094408366,
+            0.615894414423534,
+            0.610069646102427,
         ])
-        for e, e0s in zip(self.msh.elements,
-                          initial_void_ratio_int_pts,
-                          ):
-            for ip, e0 in zip(e.int_pts, e0s):
+        for nd, e0, e00 in zip(self.msh.nodes,
+                               initial_void_ratio_nodes,
+                               initial_void_ratio_0_nodes,
+                               ):
+            nd.void_ratio = e0
+            nd.void_ratio_0 = e00
+        for e in self.msh.elements:
+            for ip in e.int_pts:
                 ip.material = self.mtl
-                ip.void_ratio_0 = e0
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -4219,6 +4220,87 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
 
 # class TestUpdateWeightedMatricesCubic(unittest.TestCase):
 #     def setUp(self):
+#         self.mtl = Material(
+#             spec_grav_solids=2.6,
+#             hyd_cond_index=0.305,
+#             void_ratio_0_hyd_cond=2.6,
+#             hyd_cond_mult=0.8,
+#             hyd_cond_0=4.05e-4,
+#             void_ratio_min=0.3,
+#             void_ratio_tr=2.6,
+#             void_ratio_0_comp=2.6,
+#             eff_stress_0_comp=2.8,
+#             comp_index_unfrozen=0.421,
+#             rebound_index_unfrozen=0.08,
+#         )
+#         self.msh = ConsolidationAnalysis1D(
+#             z_range=(0, 100),
+#             num_elements=4,
+#             generate=True,
+#         )
+#         initial_void_ratio_nodes = np.array([
+#             0.590000000000000,
+#             0.453709862962504,
+#             0.406155164180154,
+#             0.424671706540645,
+#             0.478492470445428,
+#             0.539861660549467,
+#             0.590000000000000,
+#             0.620410440103828,
+#             0.631021327658944,
+#             0.626889728596653,
+#             0.614880692927267,
+#             0.601187375711174,
+#             0.590000000000000,
+#         ])
+#         for nd, e0 in zip(self.msh.nodes,
+#                           initial_void_ratio_nodes,
+#                           ):
+#             nd.void_ratio = e0
+#         initial_void_ratio_int_pts = np.array([
+#             [0.783745715060955,
+#              0.714698836928105,
+#              0.627327140376931,
+#              0.562625830645097,
+#              0.535113117201931,],
+#             [0.526348555862977,
+#              0.516904981852187,
+#              0.519829331413518,
+#              0.536033293625736,
+#              0.550919150923390,],
+#             [0.559000789171861,
+#              0.574407230147396,
+#              0.593902490791297,
+#              0.608339304393577,
+#              0.614478220550266,],
+#             [0.616433858525457,
+#              0.618541004706861,
+#              0.617888494120909,
+#              0.614272901437460,
+#              0.610951417714685,],
+#         ])
+#         for e, e0s in zip(self.msh.elements,
+#                           initial_void_ratio_int_pts,
+#                           ):
+#             for ip, e0 in zip(e.int_pts, e0s):
+#                 ip.material = self.mtl
+#                 ip.void_ratio_0 = e0
+#         bnd0 = ConsolidationBoundary1D(
+#             nodes=(self.msh.nodes[0],),
+#             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
+#             bnd_value=0.59,
+#         )
+#         self.msh.add_boundary(bnd0)
+#         bnd1 = ConsolidationBoundary1D(
+#             nodes=(self.msh.nodes[-1],),
+#             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
+#             bnd_value=0.59,
+#         )
+#         self.msh.add_boundary(bnd1)
+#         self.msh.initialize_global_system(1.5)
+#         self.msh.time_step = 1e+9
+#         self.msh.initialize_time_step()
+#
 #         self.mtl = Material(
 #             spec_heat_cap_solids=741.0,
 #             spec_grav_solids=2.65,
