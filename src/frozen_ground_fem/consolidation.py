@@ -197,6 +197,32 @@ class ConsolidationElement1D(Element1D):
                 * e_ratio
                 * ((Gs - 1.0) * gam_w / (1.0 + e0) - dsig_de * de_dZ)
             )
+        for iipp in self._int_pts_deformed:
+            for ip in iipp:
+                N = self._shape_matrix(ip.local_coord)
+                ep = (N @ ee)[0]
+                ip.void_ratio = ep
+
+    def calculate_deformed_coord_offsets(self) -> npt.NDArray[np.floating]:
+        """Calculates the deformed coordinate offset distances
+        relative to the first node of the element.
+        """
+        dc = np.zeros(len(self.nodes))
+        for k, (nd0, iipp) in enumerate(
+            zip(
+                self.nodes[:-1],
+                self._int_pts_deformed,
+            )
+        ):
+            nd1 = self.nodes[k+1]
+            jac = nd1.z - nd0.z
+            ddcc = 0.0
+            for ip in iipp:
+                ee = ip.void_ratio
+                ee0 = ip.void_ratio_0
+                ddcc += (1.0 + ee) / (1.0 + ee0) * ip.weight
+            dc[k+1] = dc[k] + ddcc * jac
+        return dc
 
 
 class ConsolidationBoundary1D(Boundary1D):
@@ -946,12 +972,20 @@ class ConsolidationAnalysis1D(Mesh1D):
         t0 = float(t0)
         self._t0 = t0
         self._t1 = t0
-        # initialize preconsolidation stress
+        # initialize initial void ratio
+        # and preconsolidation stress
         for e in self.elements:
+            ee0 = np.array([nd.void_ratio_0 for nd in e.nodes])
             for ip in e.int_pts:
-                e0 = ip.void_ratio_0
+                N = e._shape_matrix(ip.local_coord)
+                e0 = (N @ ee0)[0]
+                ip.void_ratio_0 = e0
                 ppc0, _ = ip.material.eff_stress(e0, 0.0)
                 ip.pre_consol_stress = ppc0
+            for iipp in e._int_pts_deformed:
+                for ip in iipp:
+                    N = e._shape_matrix(ip.local_coord)
+                    ip.void_ratio_0 = (N @ ee0)[0]
         # update nodes with boundary conditions first
         self.update_consolidation_boundary_conditions(self._t0)
         # now get the void ratio from the nodes
@@ -1129,6 +1163,8 @@ class ConsolidationAnalysis1D(Mesh1D):
         def_coords = np.zeros(self.num_nodes)
         def_coords[0] = self.nodes[0].z + s
         for k, e in enumerate(self.elements):
-            dz = e.deformed_length
-            def_coords[k + 1] = def_coords[k] + dz
+            kk0 = k * e.order
+            kk1 = kk0 + e.order + 1
+            ddcc = e.calculate_deformed_coord_offsets()
+            def_coords[kk0:kk1] = def_coords[kk0] + ddcc
         return def_coords
