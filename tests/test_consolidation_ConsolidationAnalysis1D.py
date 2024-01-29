@@ -3720,6 +3720,27 @@ class TestInitializeGlobalSystemCubic(unittest.TestCase):
         actual = self.msh.calculate_total_settlement()
         self.assertAlmostEqual(expected, actual)
 
+    def test_calculate_deformed_coords(self):
+        expected = np.array([
+            2.84971751573783,
+            10.10193918312510,
+            17.38583989564510,
+            24.95575711969480,
+            32.90437075408170,
+            41.17532936190790,
+            49.64556242438820,
+            58.18107658063250,
+            66.69005362206340,
+            75.12468060779240,
+            83.47575953432560,
+            91.75911912707220,
+            100.00000000000000,
+        ])
+        actual = self.msh.calculate_deformed_coords()
+        self.assertTrue(np.allclose(
+            expected, actual,
+        ))
+
     def test_global_stiffness_matrix(self):
         expected_K = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
         expected_K[0:4, 0:4] = np.array([
@@ -4156,6 +4177,27 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
         expected = 2.849717515737840
         actual = self.msh.calculate_total_settlement()
         self.assertAlmostEqual(expected, actual)
+
+    def test_calculate_deformed_coords(self):
+        expected = np.array([
+            2.84971751573783,
+            10.10193918312510,
+            17.38583989564510,
+            24.95575711969480,
+            32.90437075408170,
+            41.17532936190790,
+            49.64556242438820,
+            58.18107658063250,
+            66.69005362206340,
+            75.12468060779240,
+            83.47575953432560,
+            91.75911912707220,
+            100.00000000000000,
+        ])
+        actual = self.msh.calculate_deformed_coords()
+        self.assertTrue(np.allclose(
+            expected, actual,
+        ))
 
     def test_global_stiffness_matrix(self):
         expected_K = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
