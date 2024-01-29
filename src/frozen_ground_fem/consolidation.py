@@ -1167,4 +1167,5 @@ class ConsolidationAnalysis1D(Mesh1D):
             kk1 = kk0 + e.order + 1
             ddcc = e.calculate_deformed_coord_offsets()
             def_coords[kk0:kk1] = def_coords[kk0] + ddcc
+        def_coords[-1] = self.nodes[-1].z
         return def_coords
