@@ -2997,6 +2997,32 @@ class TestUpdateIntegrationPointsCubic(unittest.TestCase):
              1.45830873403700E+05,
              1.48504285599951E+05,],
         ])
+        initial_void_ratio_int_pts_deform = np.reshape([
+            0.774581669776811,
+            0.703315641710972,
+            0.656319129770595,
+            0.601230982260878,
+            0.568921538039961,
+            0.537781325197891,
+            0.524519137940444,
+            0.516311951220182,
+            0.516873983023993,
+            0.524480968356718,
+            0.533646230967572,
+            0.548943507921394,
+            0.561045564063720,
+            0.576947164319193,
+            0.587433503554867,
+            0.599725330730990,
+            0.606934542194310,
+            0.613882862872818,
+            0.616842056839490,
+            0.618673327726750,
+            0.618547921480358,
+            0.616850573624820,
+            0.614805527110658,
+            0.611392243254117,
+        ], (self.msh.num_elements, self.msh.elements[0].order, 2))
         for e, e0s, ppc0s in zip(self.msh.elements,
                                  initial_void_ratio_int_pts,
                                  initial_ppc_int_pts):
@@ -3004,6 +3030,11 @@ class TestUpdateIntegrationPointsCubic(unittest.TestCase):
                 ip.material = self.mtl
                 ip.void_ratio_0 = e0
                 ip.pre_consol_stress = ppc
+        for e, ee00 in zip(self.msh.elements,
+                           initial_void_ratio_int_pts_deform):
+            for iipp, e0s in zip(e._int_pts_deformed, ee00):
+                for ip, e0 in zip(iipp, e0s):
+                    ip.void_ratio_0 = e0
         self.msh.update_integration_points()
         self.msh.update_stiffness_matrix()
         self.msh.update_mass_matrix()
@@ -3235,6 +3266,27 @@ class TestUpdateIntegrationPointsCubic(unittest.TestCase):
         expected = 2.849717515737840
         actual = self.msh.calculate_total_settlement()
         self.assertAlmostEqual(expected, actual)
+
+    def test_calculate_deformed_coords(self):
+        expected = np.array([
+            2.84971751573783,
+            10.10193918312510,
+            17.38583989564510,
+            24.95575711969480,
+            32.90437075408170,
+            41.17532936190790,
+            49.64556242438820,
+            58.18107658063250,
+            66.69005362206340,
+            75.12468060779240,
+            83.47575953432560,
+            91.75911912707220,
+            100.00000000000000,
+        ])
+        actual = self.msh.calculate_deformed_coords()
+        self.assertTrue(np.allclose(
+            expected, actual,
+        ))
 
     def test_global_stiffness_matrix(self):
         expected_K = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
