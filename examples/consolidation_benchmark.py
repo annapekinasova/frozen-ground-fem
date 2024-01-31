@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import CubicSpline
 
 import frozen_ground_fem.materials as mtl
-import frozen_ground_fem.geometry as geom
 import frozen_ground_fem.consolidation as consol
 
 from frozen_ground_fem.materials import (
@@ -126,72 +125,63 @@ def main():
         print(f"qs1 = {qs1}")
 
         # generate the mesh
-        mesh = geom.Mesh1D(
+        con_static = consol.ConsolidationAnalysis1D(
             z_range=[0.0, H_layer],
             num_elements=num_elements,
             generate=True,
         )
 
         # assign material properties to integration points
-        for e in mesh.elements:
+        for e in con_static.elements:
             for ip in e.int_pts:
                 ip.material = m
 
-        # create geometric boundaries
-        # and assign them to the mesh
-        upper_boundary = geom.Boundary1D(
-            (mesh.nodes[0],),
-            (mesh.elements[0].int_pts[0],),
-        )
-        lower_boundary = geom.Boundary1D(
-            (mesh.nodes[-1],),
-            (mesh.elements[-1].int_pts[-1],),
-        )
-        mesh.add_boundary(upper_boundary)
-        mesh.add_boundary(lower_boundary)
-
-        # create consolidation analysis
-        con_static = consol.ConsolidationAnalysis1D(mesh)
-
         # initialize plotting arrays
-        z_nod = np.array([nd.z for nd in mesh.nodes])
-        z_int = np.array([ip.z for e in mesh.elements for ip in e.int_pts])
+        z_nod = np.array([nd.z for nd in con_static.nodes])
+        z_int = np.array(
+            [ip.z for e in con_static.elements for ip in e.int_pts])
         e_nod = np.zeros((len(z_nod), n_plot + 1))
         sig_p_int = np.zeros((len(z_int), n_plot + 1))
         ue_int = np.zeros_like(sig_p_int)
         hyd_cond_int = np.zeros_like(sig_p_int)
 
         # initialize void ratio and effective stress profiles
-        e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(m, qs0, z_nod)
-        e1, sig_p_1_exp, hyd_cond_1_exp = calculate_static_profile(m, qs1, z_nod)
+        e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(
+            m, qs0, z_nod)
+        e1, sig_p_1_exp, hyd_cond_1_exp = calculate_static_profile(
+            m, qs1, z_nod)
         sig_p_0_exp *= 1.0e-3
         sig_p_1_exp *= 1.0e-3
-        for k, nd in enumerate(mesh.nodes):
+        for k, nd in enumerate(con_static.nodes):
             nd.void_ratio = e0[k]
+            nd.void_ratio_0 = e0[k]
 
         # interpolate expected effective stress at integration points
         sig_p_1_spl = CubicSpline(z_nod, sig_p_1_exp)
         sig_p_1_exp_int = sig_p_1_spl(z_int)
 
-        # update void ratio conditions at the integration points
-        # (first interpolates void ratio profile from the nodes,
-        # then assign initial void ratio to int pts)
-        con_static.update_integration_points()
-        for e in con_static.elements:
-            for ip in e.int_pts:
-                ip.void_ratio_0 = ip.void_ratio
+        # # update void ratio conditions at the integration points
+        # # (first interpolates void ratio profile from the nodes,
+        # # then assign initial void ratio to int pts)
+        # con_static.update_integration_points()
+        # for e in con_static.elements:
+        #     for ip in e.int_pts:
+        #         ip.void_ratio_0 = ip.void_ratio
 
-        # create void ratio boundary conditions
-        void_ratio_boundary_0 = consol.ConsolidationBoundary1D(upper_boundary)
-        void_ratio_boundary_0.bnd_type = (
-            consol.ConsolidationBoundary1D.BoundaryType.void_ratio
+        # create boundary conditions
+        # and assign them to the mesh
+        void_ratio_boundary_0 = consol.ConsolidationBoundary1D(
+            (con_static.nodes[0],),
+            (con_static.elements[0].int_pts[0],),
+            bnd_type=consol.ConsolidationBoundary1D.BoundaryType.void_ratio,
+            bnd_value=e0[0],
         )
-        void_ratio_boundary_0.bnd_value = e0[0]
-        void_ratio_boundary_1 = consol.ConsolidationBoundary1D(lower_boundary)
-        void_ratio_boundary_1.bnd_type = (
-            consol.ConsolidationBoundary1D.BoundaryType.void_ratio
+        void_ratio_boundary_1 = consol.ConsolidationBoundary1D(
+            (con_static.nodes[-1],),
+            (con_static.elements[-1].int_pts[-1],),
+            bnd_type=consol.ConsolidationBoundary1D.BoundaryType.void_ratio,
+            bnd_value=e0[-1],
         )
-        void_ratio_boundary_1.bnd_value = e0[-1]
         con_static.add_boundary(void_ratio_boundary_0)
         con_static.add_boundary(void_ratio_boundary_1)
 
@@ -207,7 +197,7 @@ def main():
         s_con_stab = [0.0]
         t_plot = dt_plot
         k_plot = 0
-        k_stab_max = 10
+        k_stab_max = 100
         k_stab = 0
         tol_stab = 1e-8
         eps_s_stab = 2 * tol_stab
@@ -218,7 +208,8 @@ def main():
                 con_static.iterative_correction_step()
                 t_con_stab.append(con_static._t1)
                 s_con_stab.append(con_static.calculate_total_settlement())
-            eps_s_stab = np.abs((s_con_stab[-1] - s_con_stab[-2]) / s_con_stab[-1])
+            eps_s_stab = np.abs(
+                (s_con_stab[-1] - s_con_stab[-2]) / s_con_stab[-1])
             print(
                 f"t = {con_static._t1 / 60.0:0.3f} min, "
                 + f"s_con = {s_con_stab[-1] * 1e3:0.3f} mm, "
@@ -230,10 +221,10 @@ def main():
         # save stabilized profiles
         e_nod[:, k_plot] = con_static._void_ratio_vector[:]
         sig_p_int[:, k_plot] = 1.0e-3 * np.array(
-            [ip.eff_stress for e in mesh.elements for ip in e.int_pts]
+            [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
         )
         hyd_cond_int[:, k_plot] = np.array(
-            [ip.hyd_cond for e in mesh.elements for ip in e.int_pts]
+            [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
         )
 
         # update boundary conditions,
@@ -244,10 +235,13 @@ def main():
         void_ratio_boundary_0.bnd_value = e1[0]
         void_ratio_boundary_1.bnd_value = e1[-1]
         con_static._t1 = 0.0
-        for e in con_static.elements:
-            for ip in e.int_pts:
-                ip.void_ratio_0 = ip.void_ratio
-                ip.pre_consol_stress = ip.eff_stress
+        for nd in con_static.nodes:
+            nd.void_ratio_0 = nd.void_ratio
+        con_static.initialize_global_system(0.0)
+        # for e in con_static.elements:
+        #     for ip in e.int_pts:
+        #         ip.void_ratio_0 = ip.void_ratio
+        #         ip.pre_consol_stress = ip.eff_stress
 
         # run consolidation analysis
         t_con = [0.0]
@@ -270,11 +264,13 @@ def main():
             )
             e_nod[:, k_plot] = con_static._void_ratio_vector[:]
             sig_p_int[:, k_plot] = 1.0e-3 * np.array(
-                [ip.eff_stress for e in mesh.elements for ip in e.int_pts]
+                [ip.eff_stress
+                    for e in con_static.elements
+                    for ip in e.int_pts]
             )
             ue_int[:, k_plot] = sig_p_1_exp_int - sig_p_int[:, k_plot]
             hyd_cond_int[:, k_plot] = np.array(
-                [ip.hyd_cond for e in mesh.elements for ip in e.int_pts]
+                [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
             )
             k_plot += 1
             t_plot += dt_plot
@@ -301,7 +297,8 @@ def main():
         s0 = s_con[k_50 - 1]
         t1 = t_con[k_50]
         t0 = t_con[k_50 - 1]
-        t_50_05 = np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0)) * (s_50 - s0) / (s1 - s0))
+        t_50_05 = np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0))
+                                 * (s_50 - s0) / (s1 - s0))
 
         print(f"Run time = {toc - tic: 0.4f} s")
         runtime_bat[k_bat] = toc - tic
@@ -343,7 +340,9 @@ def main():
 
         plt.subplot(2, 2, 1)
         plt.plot(e_nod[:, 0], z_nod, k_plot_init, label="Initial")
-        for k_plot, k_label, k_line in zip(k_plot_list, k_plot_labels, k_plot_linetype):
+        for k_plot, k_label, k_line in zip(k_plot_list,
+                                           k_plot_labels,
+                                           k_plot_linetype):
             plt.plot(e_nod[:, k_plot], z_nod, k_line, label=k_label)
         plt.ylim((np.max(z_nod), np.min(z_nod)))
         plt.legend()
@@ -352,7 +351,9 @@ def main():
 
         plt.subplot(2, 2, 2)
         plt.semilogx(hyd_cond_int[:, 0], z_int, k_plot_init, label="Initial")
-        for k_plot, k_label, k_line in zip(k_plot_list, k_plot_labels, k_plot_linetype):
+        for k_plot, k_label, k_line in zip(k_plot_list,
+                                           k_plot_labels,
+                                           k_plot_linetype):
             plt.semilogx(hyd_cond_int[:, k_plot], z_int, k_line, label=k_label)
         plt.ylim((np.max(z_nod), np.min(z_nod)))
         # plt.legend()
@@ -360,7 +361,9 @@ def main():
 
         plt.subplot(2, 2, 3)
         plt.plot(sig_p_int[:, 0], z_int, k_plot_init, label="Initial")
-        for k_plot, k_label, k_line in zip(k_plot_list, k_plot_labels, k_plot_linetype):
+        for k_plot, k_label, k_line in zip(k_plot_list,
+                                           k_plot_labels,
+                                           k_plot_linetype):
             plt.plot(sig_p_int[:, k_plot], z_int, k_line, label=k_label)
         plt.ylim((np.max(z_nod), np.min(z_nod)))
         # plt.legend()
@@ -368,9 +371,12 @@ def main():
         plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
 
         plt.subplot(2, 2, 4)
-        for k_plot, k_label, k_line in zip(k_plot_list, k_plot_labels, k_plot_linetype):
+        for k_plot, k_label, k_line in zip(k_plot_list,
+                                           k_plot_labels,
+                                           k_plot_linetype):
             plt.plot(
-                ue_int[:, k_plot] / (qs1 - qs0) * 1e3, z_int, k_line, label=k_label
+                ue_int[:, k_plot] / (qs1 - qs0) * 1e3, z_int,
+                k_line, label=k_label,
             )
         # plt.legend()
         plt.xlabel(r"Norm Exc Pore Pres, $u_e/\Delta q$")
@@ -430,7 +436,8 @@ def calculate_static_profile(m, qs, z):
             e1[k] = e_cu0 - Ccu * np.log10(sig_p[k] / sig_cu0)
         eps_a = np.linalg.norm(e1 - e0) / np.linalg.norm(e1)
         e0[:] = e1[:]
-    hyd_cond = m.hyd_cond_0 * 10 ** ((e1 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index)
+    hyd_cond = m.hyd_cond_0 * \
+        10 ** ((e1 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index)
     return e1, sig_p, hyd_cond
 
 
