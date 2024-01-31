@@ -50,10 +50,17 @@ class TestNode1DDefaults(unittest.TestCase):
     def test_void_ratio_type(self):
         self.assertIsInstance(self.p.void_ratio, float)
 
+    def test_void_ratio_0_value(self):
+        self.assertEqual(self.p.void_ratio_0, 0.0)
+
+    def test_void_ratio_0_type(self):
+        self.assertIsInstance(self.p.void_ratio_0, float)
+
 
 class TestNode1DInitializers(unittest.TestCase):
     def setUp(self):
-        self.p = Node1D(0, 1.0, temp=-5.0, void_ratio=0.3,
+        self.p = Node1D(0, 1.0, temp=-5.0,
+                        void_ratio=0.3, void_ratio_0=0.9,
                         temp_rate=1.5)
 
     def test_index_value(self):
@@ -94,6 +101,12 @@ class TestNode1DInitializers(unittest.TestCase):
 
     def test_void_ratio_type(self):
         self.assertIsInstance(self.p.void_ratio, float)
+
+    def test_void_ratio_0_value(self):
+        self.assertEqual(self.p.void_ratio_0, 0.9)
+
+    def test_void_ratio_0_type(self):
+        self.assertIsInstance(self.p.void_ratio_0, float)
 
 
 class TestNode1DSetters(unittest.TestCase):
@@ -211,6 +224,30 @@ class TestNode1DSetters(unittest.TestCase):
     def test_set_void_ratio_invalid_str(self):
         with self.assertRaises(ValueError):
             self.p.void_ratio = "five"
+
+    def test_set_void_ratio_0_valid_float(self):
+        self.p.void_ratio_0 = 1.0
+        self.assertEqual(self.p.void_ratio_0, 1.0)
+
+    def test_set_void_ratio_0_invalid_float(self):
+        with self.assertRaises(ValueError):
+            self.p.void_ratio_0 = -0.1
+
+    def test_set_void_ratio_0_valid_int(self):
+        self.p.void_ratio_0 = 1
+        self.assertEqual(self.p.void_ratio_0, 1.0)
+
+    def test_set_void_ratio_0_valid_int_type(self):
+        self.p.void_ratio_0 = 1
+        self.assertIsInstance(self.p.void_ratio_0, float)
+
+    def test_set_void_ratio_0_valid_str(self):
+        self.p.void_ratio_0 = "1.e-1"
+        self.assertEqual(self.p.void_ratio_0, 0.1)
+
+    def test_set_void_ratio_0_invalid_str(self):
+        with self.assertRaises(ValueError):
+            self.p.void_ratio_0 = "five"
 
 
 if __name__ == "__main__":
