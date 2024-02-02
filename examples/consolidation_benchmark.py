@@ -130,6 +130,7 @@ def main():
             num_elements=num_elements,
             generate=True,
         )
+        con_static.implicit_error_tolerance = 1e-6
 
         # assign material properties to integration points
         for e in con_static.elements:
