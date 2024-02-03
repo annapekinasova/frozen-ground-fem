@@ -75,9 +75,9 @@ def main():
     hyd_cond_int = np.zeros((len(z_int), n_plot + 1))
 
     # initialize void ratio profile
-    e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(m, 1.0e4, z_nod)
+    e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(m, 1.0e5, z_nod)
     e1, sig_p_1_exp, hyd_cond_1_exp = calculate_static_profile(
-        m, 1.1e5, z_nod)
+        m, 1.1e6, z_nod)
     sig_p_0_exp *= 1.0e-3
     sig_p_1_exp *= 1.0e-3
     for k, nd in enumerate(con_static.nodes):
