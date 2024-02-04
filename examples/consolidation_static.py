@@ -29,7 +29,7 @@ def main():
     plt.rc("font", size=8)
     dt_plot = np.max([60.0 * 100, dt_sim])  # in seconds
     n_plot = int(np.floor(t_max / dt_plot) + 1)
-    n_plot_stab = 15
+    n_plot_stab = 30
     # arrow_props = {
     #     "width": 0.5,
     #     "linewidth": 0.5,
@@ -61,6 +61,13 @@ def main():
     )
     con_static.implicit_error_tolerance = 1e-6
 
+    # # initialize vectors and matrices
+    # # for adaptive step size correction
+    # void_ratio_vector_0 = np.zeros_like(con_static._void_ratio_vector_0)
+    # water_flux_vector_0 = np.zeros_like(con_static._water_flux_vector_0)
+    # stiffness_matrix_0 = np.zeros_like(con_static._stiffness_matrix_0)
+    # mass_matrix_0 = np.zeros_like(con_static._mass_matrix_0)
+
     # assign material properties to integration points
     for e in con_static.elements:
         for ip in e.int_pts:
@@ -75,9 +82,9 @@ def main():
     hyd_cond_int = np.zeros((len(z_int), n_plot + 1))
 
     # initialize void ratio profile
-    e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(m, 1.0e5, z_nod)
+    e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(m, 1.0e4, z_nod)
     e1, sig_p_1_exp, hyd_cond_1_exp = calculate_static_profile(
-        m, 1.1e6, z_nod)
+        m, 1.1e5, z_nod)
     sig_p_0_exp *= 1.0e-3
     sig_p_1_exp *= 1.0e-3
     for k, nd in enumerate(con_static.nodes):
@@ -116,6 +123,8 @@ def main():
     print("initial stabilization")
     while eps_s > tol_s and k_plot < n_plot_stab:
         while con_static._t1 < t_plot:
+            # dt_curr = con_static.time_step
+            # void_ratio_vector_0 = np.array(con_static._void_ratio_vector_0)
             con_static.initialize_time_step()
             con_static.iterative_correction_step()
             t_con_stab.append(con_static._t1)
