@@ -61,12 +61,15 @@ def main():
     )
     con_static.implicit_error_tolerance = 1e-6
 
-    # # initialize vectors and matrices
-    # # for adaptive step size correction
-    # void_ratio_vector_0 = np.zeros_like(con_static._void_ratio_vector_0)
-    # water_flux_vector_0 = np.zeros_like(con_static._water_flux_vector_0)
-    # stiffness_matrix_0 = np.zeros_like(con_static._stiffness_matrix_0)
-    # mass_matrix_0 = np.zeros_like(con_static._mass_matrix_0)
+    # initialize vectors and matrices
+    # for adaptive step size correction
+    num_int_pt_per_element = len(con_static.elements[0].int_pts)
+    void_ratio_vector_0 = np.zeros_like(con_static._void_ratio_vector)
+    void_ratio_vector_1 = np.zeros_like(con_static._void_ratio_vector)
+    void_ratio_error = np.zeros_like(con_static._void_ratio_vector)
+    void_ratio_rate = np.zeros_like(con_static._void_ratio_vector)
+    void_ratio_scale = np.zeros_like(con_static._void_ratio_vector)
+    pre_consol_stress_0 = np.zeros((num_elements, num_int_pt_per_element))
 
     # assign material properties to integration points
     for e in con_static.elements:
@@ -182,26 +185,94 @@ def main():
         nd.void_ratio_0 = nd.void_ratio
     con_static.initialize_global_system(0.0)
 
+    dt_con = [con_static.time_step]
     t_con = [0.0]
     s_con = [0.0]
     s_trz = [0.0]
     t_trz = [0.0]
     k_plot = 0
     t_plot = 0.0
+    tol_s = 1e-6
     eps_s = 1.0
     while eps_s > tol_s and k_plot < n_plot:
         k_plot += 1
         t_plot += dt_plot
         while con_static._t1 < t_plot:
+            # check if time step passes t_plot
+            dt00 = con_static.time_step
+            if con_static._t1 + con_static.time_step > t_plot:
+                con_static.time_step = t_plot - con_static._t1
+            # save system state before time step
+            t0 = con_static._t1
+            dt0 = con_static.time_step
+            void_ratio_vector_0[:] = con_static._void_ratio_vector[:]
+            for ke, e in enumerate(con_static.elements):
+                for jip, ip in enumerate(e.int_pts):
+                    pre_consol_stress_0[ke, jip] = ip.pre_consol_stress
+            # take single time step
             con_static.initialize_time_step()
             con_static.iterative_correction_step()
-            t_con.append(con_static._t1)
-            s_con.append(con_static.calculate_total_settlement())
+            # save the predictor result
+            void_ratio_vector_1[:] = con_static._void_ratio_vector[:]
+            # reset the system
+            con_static._void_ratio_vector[:] = void_ratio_vector_0[:]
+            for e, ppc_e in zip(con_static.elements, pre_consol_stress_0):
+                for ip, ppc0 in zip(e.int_pts, ppc_e):
+                    ip.pre_consol_stress = ppc0
+            con_static.update_nodes()
+            con_static.update_integration_points()
+            con_static.update_water_flux_vector()
+            con_static.update_stiffness_matrix()
+            con_static.update_mass_matrix()
+            con_static._t1 = t0
+            # take two half steps
+            con_static.time_step = 0.5 * dt0
+            con_static.initialize_time_step()
+            con_static.iterative_correction_step()
+            con_static.initialize_time_step()
+            con_static.iterative_correction_step()
+            # compute truncation error correction
+            void_ratio_error[:] = (con_static._void_ratio_vector[:]
+                                   - void_ratio_vector_1[:]) / 3.0
+            con_static._void_ratio_vector[:] += void_ratio_error[:]
+            con_static.update_nodes()
+            con_static.update_integration_points()
+            con_static.update_water_flux_vector()
+            con_static.update_stiffness_matrix()
+            con_static.update_mass_matrix()
+            # update the time step
+            void_ratio_rate[:] = (con_static._void_ratio_vector[:]
+                                  - void_ratio_vector_0[:])
+            void_ratio_scale[:] = np.max(np.vstack([
+                con_static._void_ratio_vector[:],
+                void_ratio_rate,
+            ]), axis=0)
+            err_targ = tol_s * np.linalg.norm(void_ratio_scale)
+            err_curr = np.linalg.norm(void_ratio_error)
+            # update the time step
+            dt1 = dt0 * (err_targ / err_curr) ** 0.2
+            con_static.time_step = dt1
+            # # check error tolerance, and reset if necessary
+            # if err_curr > err_targ:
+            #     con_static._void_ratio_vector[:] = void_ratio_vector_0[:]
+            #     for e, ppc_e in zip(con_static.elements, pre_consol_stress_0):
+            #         for ip, ppc0 in zip(e.int_pts, ppc_e):
+            #             ip.pre_consol_stress = ppc0
+            #     con_static.update_nodes()
+            #     con_static.update_integration_points()
+            #     con_static.update_water_flux_vector()
+            #     con_static.update_stiffness_matrix()
+            #     con_static.update_mass_matrix()
+            #     con_static._t1 = t0
+        t_con.append(con_static._t1)
+        s_con.append(con_static.calculate_total_settlement())
+        dt_con.append(dt00)
         eps_s = np.abs((s_con[-1] - s_con[-2]) / s_con[-1])
         print(
             f"t = {con_static._t1 / 60.0:0.3f} min, "
             + f"s_con = {s_con[-1] * 1e3:0.3f} mm, "
-            + f"eps_s =  {eps_s:0.4e}"
+            + f"eps_s =  {eps_s:0.4e}, "
+            + f"dt = {dt_con[-1]:0.4e} s"
         )
         e_nod[:, k_plot] = con_static._void_ratio_vector[:]
         sig_p_int[:, k_plot] = 1.0e-3 * np.array(
