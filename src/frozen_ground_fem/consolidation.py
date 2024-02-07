@@ -1131,6 +1131,37 @@ class ConsolidationAnalysis1D(Mesh1D):
             self.update_weighted_matrices()
             self.calculate_void_ratio_correction()
 
+    def solve_to(
+            self,
+            tf: float,
+            adapt_dt: bool = True,
+            dt0: float = 0.0,
+        ) -> tuple(
+            float,
+            npt.NDArray,
+            npt.NDArray,
+    ):
+        """Performs time integration until
+        specified final time tf.
+
+        Returns
+        -------
+        float
+            The time step result.
+
+        npt.NDArray
+            The array of errors.
+
+        npt.NDArray
+            The array of time increments.
+
+        Notes
+        -----
+        The method performs adaptime time step
+        algorythm as default setting.
+        """
+        pass
+
     def calculate_total_settlement(self) -> float:
         """Integrates volume change ratio
         to calculate total settlement.
