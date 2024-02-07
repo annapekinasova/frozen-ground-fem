@@ -1136,11 +1136,11 @@ class ConsolidationAnalysis1D(Mesh1D):
             tf: float,
             adapt_dt: bool = True,
             dt0: float = 0.0,
-        ) -> tuple(
+        ) -> tuple[
             float,
             npt.NDArray,
             npt.NDArray,
-    ):
+    ]:
         """Performs time integration until
         specified final time tf.
 
@@ -1169,6 +1169,14 @@ class ConsolidationAnalysis1D(Mesh1D):
             The array of (relative) errors at each time
             step over the interval up to tf.
 
+        Raises
+        ------
+        ValueError
+            If tf cannot be converted to float.
+            If tf <= current simulation time.
+            If dt0 cannot be converted to float.
+            if dt0 < 0.0.
+
         Notes
         -----
         By default, the method performs adaptive time step correction
@@ -1176,8 +1184,112 @@ class ConsolidationAnalysis1D(Mesh1D):
         on the error estimate, but steps are not repeated if error is
         exceeded for numerical efficiency. Target relative error is
         set based on the implicit_error_tolerance attribute.
+        If adaptive correction is not performed, then error is not
+        estimated and the error array that is returned is not meaningful.
         """
-        pass
+        tf = float(tf)
+        dt0 = float(dt0)
+        if tf <= self._t1:
+            raise ValueError(
+                f"Provided tf {tf} is <= current "
+                f"simulation time {self._t1}."
+            )
+        if not dt0:
+            self.time_step = dt0
+        # simplified loop if not performing
+        # adaptive correction
+        if not adapt_dt:
+            dt_list = []
+            err_list = []
+            while self._t1 < tf:
+                # check if time step passes tf
+                dt00 = self.time_step
+                if self._t1 + self.time_step > tf:
+                    self.time_step = tf - self._t1
+                # take single time step
+                self.initialize_time_step()
+                self.iterative_correction_step()
+                dt_list.append(dt00)
+                err_list.append(0.0)
+            # reset time step and return output values
+            self.time_step = dt00
+            return dt00, np.array(dt_list), np.array(err_list)
+        # initialize vectors and matrices
+        # for adaptive step size correction
+        num_int_pt_per_element = len(self.elements[0].int_pts)
+        void_ratio_vector_0 = np.zeros_like(self._void_ratio_vector)
+        void_ratio_vector_1 = np.zeros_like(self._void_ratio_vector)
+        void_ratio_error = np.zeros_like(self._void_ratio_vector)
+        void_ratio_rate = np.zeros_like(self._void_ratio_vector)
+        void_ratio_scale = np.zeros_like(self._void_ratio_vector)
+        pre_consol_stress_0 = np.zeros((
+            self.num_elements,
+            num_int_pt_per_element,
+        ))
+        dt_list = []
+        err_list = []
+        while self._t1 < tf:
+            # check if time step passes tf
+            dt00 = self.time_step
+            if self._t1 + self.time_step > tf:
+                self.time_step = tf - self._t1
+            # save system state before time step
+            t0 = self._t1
+            dt0 = self.time_step
+            void_ratio_vector_0[:] = self._void_ratio_vector[:]
+            for ke, e in enumerate(self.elements):
+                for jip, ip in enumerate(e.int_pts):
+                    pre_consol_stress_0[ke, jip] = ip.pre_consol_stress
+            # take single time step
+            self.initialize_time_step()
+            self.iterative_correction_step()
+            # save the predictor result
+            void_ratio_vector_1[:] = self._void_ratio_vector[:]
+            # reset the system
+            self._void_ratio_vector[:] = void_ratio_vector_0[:]
+            for e, ppc_e in zip(self.elements, pre_consol_stress_0):
+                for ip, ppc0 in zip(e.int_pts, ppc_e):
+                    ip.pre_consol_stress = ppc0
+            self.update_nodes()
+            self.update_integration_points()
+            self.update_water_flux_vector()
+            self.update_stiffness_matrix()
+            self.update_mass_matrix()
+            self._t1 = t0
+            # take two half steps
+            self.time_step = 0.5 * dt0
+            self.initialize_time_step()
+            self.iterative_correction_step()
+            self.initialize_time_step()
+            self.iterative_correction_step()
+            # compute truncation error correction
+            void_ratio_error[:] = (self._void_ratio_vector[:]
+                                   - void_ratio_vector_1[:]) / 3.0
+            self._void_ratio_vector[:] += void_ratio_error[:]
+            self.update_nodes()
+            self.update_integration_points()
+            self.update_water_flux_vector()
+            self.update_stiffness_matrix()
+            self.update_mass_matrix()
+            # update the time step
+            void_ratio_rate[:] = (self._void_ratio_vector[:]
+                                  - void_ratio_vector_0[:])
+            void_ratio_scale[:] = np.max(np.vstack([
+                self._void_ratio_vector[:],
+                void_ratio_rate,
+            ]), axis=0)
+            e_scale = float(np.linalg.norm(void_ratio_scale))
+            err_targ = self.eps_s * e_scale
+            err_curr = float(np.linalg.norm(void_ratio_error))
+            # update the time step
+            eps_a = err_curr / e_scale
+            dt1 = dt0 * (err_targ / err_curr) ** 0.2
+            self.time_step = dt1
+            dt_list.append(dt0)
+            err_list.append(eps_a)
+        # reset time step and return output values
+        self.time_step = dt00
+        return dt00, np.array(dt_list), np.array(err_list)
 
     def calculate_total_settlement(self) -> float:
         """Integrates volume change ratio
