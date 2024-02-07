@@ -1144,21 +1144,38 @@ class ConsolidationAnalysis1D(Mesh1D):
         """Performs time integration until
         specified final time tf.
 
+        Inputs
+        ------
+        tf : float
+            The target final time.
+        adapt_dt : bool, optional, default=True
+            Flag for adaptive time step correction.
+        dt0 : float, optional, default=0.0
+            Suggested initial time step.
+            If not provided (or default) will use
+            the current value of the time_step attribute.
+
         Returns
         -------
         float
-            The time step result.
-
-        npt.NDArray
-            The array of errors.
-
-        npt.NDArray
-            The array of time increments.
+            The time step at the second last step.
+            Last step will typically be adjusted to
+            reach the target tf, so that time step is
+            not necessarily meaningful.
+        numpy.ndnarray, shape=(nstep, )
+            The array of time steps over the interval
+            up to tf.
+        numpy.ndnarray, shape=(nstep, )
+            The array of (relative) errors at each time
+            step over the interval up to tf.
 
         Notes
         -----
-        The method performs adaptime time step
-        algorythm as default setting.
+        By default, the method performs adaptive time step correction
+        using the half-step algorithm. Correction is performed based
+        on the error estimate, but steps are not repeated if error is
+        exceeded for numerical efficiency. Target relative error is
+        set based on the implicit_error_tolerance attribute.
         """
         pass
 
