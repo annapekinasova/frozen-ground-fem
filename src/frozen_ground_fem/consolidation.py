@@ -1135,7 +1135,6 @@ class ConsolidationAnalysis1D(Mesh1D):
             self,
             tf: float,
             adapt_dt: bool = True,
-            dt0: float = 0.0,
         ) -> tuple[
             float,
             npt.NDArray,
@@ -1150,10 +1149,6 @@ class ConsolidationAnalysis1D(Mesh1D):
             The target final time.
         adapt_dt : bool, optional, default=True
             Flag for adaptive time step correction.
-        dt0 : float, optional, default=0.0
-            Suggested initial time step.
-            If not provided (or default) will use
-            the current value of the time_step attribute.
 
         Returns
         -------
@@ -1174,8 +1169,6 @@ class ConsolidationAnalysis1D(Mesh1D):
         ValueError
             If tf cannot be converted to float.
             If tf <= current simulation time.
-            If dt0 cannot be converted to float.
-            if dt0 < 0.0.
 
         Notes
         -----
@@ -1188,24 +1181,25 @@ class ConsolidationAnalysis1D(Mesh1D):
         estimated and the error array that is returned is not meaningful.
         """
         tf = float(tf)
-        dt0 = float(dt0)
         if tf <= self._t1:
             raise ValueError(
                 f"Provided tf {tf} is <= current "
                 f"simulation time {self._t1}."
             )
-        if not dt0:
-            self.time_step = dt0
+        # flag to ensure analysis completes at tf
+        # to within roundoff error
+        done = False
         # simplified loop if not performing
         # adaptive correction
         if not adapt_dt:
             dt_list = []
             err_list = []
-            while self._t1 < tf:
+            while not done and self._t1 < tf:
                 # check if time step passes tf
                 dt00 = self.time_step
                 if self._t1 + self.time_step > tf:
                     self.time_step = tf - self._t1
+                    done = True
                 # take single time step
                 self.initialize_time_step()
                 self.iterative_correction_step()
@@ -1228,11 +1222,12 @@ class ConsolidationAnalysis1D(Mesh1D):
         ))
         dt_list = []
         err_list = []
-        while self._t1 < tf:
+        while not done and self._t1 < tf:
             # check if time step passes tf
             dt00 = self.time_step
             if self._t1 + self.time_step > tf:
                 self.time_step = tf - self._t1
+                done = True
             # save system state before time step
             t0 = self._t1
             dt0 = self.time_step
@@ -1287,8 +1282,6 @@ class ConsolidationAnalysis1D(Mesh1D):
             self.time_step = dt1
             dt_list.append(dt0)
             err_list.append(eps_a)
-        # reset time step and return output values
-        self.time_step = dt00
         return dt00, np.array(dt_list), np.array(err_list)
 
     def calculate_total_settlement(self) -> float:
