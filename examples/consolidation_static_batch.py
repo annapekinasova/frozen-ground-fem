@@ -29,6 +29,9 @@ def main():
 
     # set plotting parameters
     plt.rc("font", size=8)
+    dt_plot = np.max([60.0 * 100, dt_sim_bat])  # in seconds
+    n_plot = int(np.floor(t_max bat / dt_plot) + 1)
+    n_plot_stab = 30
 
     # define the material properties
     m = mtl.Material(
@@ -107,16 +110,19 @@ def main():
         con_static = consol.ConsolidationAnalysis1D(mesh)
 
         # initialize plotting arrays
-        z_nod = np.array([nd.z for nd in mesh.nodes])
-        z_int = np.array([ip.z for e in mesh.elements for ip in e.int_pts])
-        e_nod = np.zeros((len(z_nod), n_plot + 1))
+        z_nod = np.array([nd.z for nd in con_static.nodes])
+        z_int = np.array(
+            [ip.z for e in con_static.elements for ip in e.int_pts])
+        e_nod_stab = np.zeros((len(z_nod), n_plot_stab + 1))
         sig_p_int = np.zeros((len(z_int), n_plot + 1))
         ue_int = np.zeros_like(sig_p_int)
-        hyd_cond_int = np.zeros_like(sig_p_int)
+        hyd_cond_int = np.zeros((len(z_int), n_plot + 1))
 
         # initialize void ratio and effective stress profiles
-        e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(m, qs0, z_nod)
-        e1, sig_p_1_exp, hyd_cond_1_exp = calculate_static_profile(m, qs1, z_nod)
+        e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(
+            m, qs0, z_nod)
+        e1, sig_p_1_exp, hyd_cond_1_exp = calculate_static_profile(
+            m, qs1, z_nod)
         sig_p_0_exp *= 1.0e-3
         sig_p_1_exp *= 1.0e-3
         for k, nd in enumerate(mesh.nodes):
@@ -133,31 +139,6 @@ def main():
         for e in con_static.elements:
             for ip in e.int_pts:
                 ip.void_ratio_0 = ip.void_ratio
-
-        # # compute expected Terzaghi result
-        # sig_p_trz = np.zeros((len(z_nod), n_plot + 1))
-        # e_trz = np.zeros((len(z_nod), n_plot + 1))
-        # s_trz = np.zeros(n_plot + 1)
-        # t_trz = np.zeros(n_plot + 1)
-        # H = 0.5 * (mesh.nodes[-1].z - mesh.nodes[0].z)
-        # ui = sig_p_1_exp[0] - sig_p_0_exp[0]
-        # e0t = np.average(e0)
-        # e1t = np.average(e1)
-        # de_trz = e0 - e1
-        # Gs = m.spec_grav_solids
-        # gam_w = mtl.unit_weight_water * 1e-3
-        # gam_b = (Gs - 1.0) / (1.0 + e0t) * gam_w
-        # dsig_de_0 = -m.eff_stress(e0t, sig_p_0_exp[0] * 1e3)[1] * 1e-3
-        # dsig_de_1 = -m.eff_stress(e1t, sig_p_0_exp[0] * 1e3)[1] * 1e-3
-        # dsig_de_avg = 0.5 * (dsig_de_0 + dsig_de_1)
-        # mv = 1.0 / (1.0 + e0t) / dsig_de_avg
-        # kt = np.average(hyd_cond_0_exp)
-        # cv = kt / mv / gam_w
-        # sig_p_1_trz = sig_p_1_exp[0] + gam_b * z_nod
-        # s_tot_trz = (
-        #     1e3 * (mesh.nodes[-1].z - mesh.nodes[0].z) /
-        #     (1.0 + e0t) * (e0t - e1t)
-        # )
 
         # create void ratio boundary conditions
         void_ratio_boundary_0 = consol.ConsolidationBoundary1D(upper_boundary)
@@ -183,32 +164,58 @@ def main():
         # at initial surface load
         t_con_stab = [0.0]
         s_con_stab = [0.0]
+        dt_con_stab = []
+        err_con_stab = []
         t_plot = dt_plot
         k_plot = 0
         k_stab_max = 10
+        tol_s = 1e-6
+        eps_s = 1.0
+        con_static.time_step = 3.0e+01
         print("initial stabilization")
-        for k_stab in range(k_stab_max):
-            while con_static._t1 < t_plot:
-                con_static.initialize_time_step()
-                con_static.iterative_correction_step()
-                t_con_stab.append(con_static._t1)
-                s_con_stab.append(con_static.calculate_total_settlement())
+        while eps_s > tol_s and k_plot < n_plot_stab:
+            dt00, dt_s, err_s = con_static.solve_to(t_plot, False)
+            dt_con_stab = np.hstack([dt_con_stab, dt_s])
+            err_con_stab = np.hstack([err_con_stab, err_s])
+            t_con_stab.append(con_static._t1)
+            s_con_stab.append(con_static.calculate_total_settlement())
+            eps_s = np.abs((s_con_stab[-1] - s_con_stab[-2]) / s_con_stab[-1])
             print(
-                f"t = {con_static._t1 / 60.0:0.3f} min, s_con = {s_con_stab[-1] * 1e3:0.3f} mm"
+                f"t = {con_static._t1 / 60.0:0.3f} min, "
+                + f"s_con = {s_con_stab[-1] * 1e3:0.3f} mm, "
+                + f"eps_s =  {eps_s:0.4e}, "
+                + f"dt = {dt00:0.4e} s"
             )
+            e_nod_stab[:, k_plot] = con_static._void_ratio_vector[:]
+            k_plot += 1
             t_plot += dt_plot
+        e_nod[:, 0] = e_nod_stab[:, k_plot - 1]
+        sig_p_int[:, 0] = 1.0e-3 * np.array(
+            [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
+        )
+        hyd_cond_int[:, 0] = np.array(
+            [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
+        )
 
-        # save stabilized profiles
-        e_nod[:, k_plot] = con_static._void_ratio_vector[:]
-        sig_p_int[:, k_plot] = 1.0e-3 * np.array(
-            [ip.eff_stress for e in mesh.elements for ip in e.int_pts]
-        )
-        hyd_cond_int[:, k_plot] = np.array(
-            [ip.hyd_cond for e in mesh.elements for ip in e.int_pts]
-        )
-        # sig_p_trz[:, k_plot] = sig_p_1_trz[:] - ui
-        # e_trz[:, k_plot] = e0[:]
-        # s_trz[k_plot] = 0.0
+        # for k_stab in range(k_stab_max):
+        #     while con_static._t1 < t_plot:
+        #         con_static.initialize_time_step()
+        #         con_static.iterative_correction_step()
+        #         t_con_stab.append(con_static._t1)
+        #         s_con_stab.append(con_static.calculate_total_settlement())
+        #     print(
+        #         f"t = {con_static._t1 / 60.0:0.3f} min, s_con = {s_con_stab[-1] * 1e3:0.3f} mm"
+        #     )
+        #     t_plot += dt_plot
+
+        # # save stabilized profiles
+        # e_nod[:, k_plot] = con_static._void_ratio_vector[:]
+        # sig_p_int[:, k_plot] = 1.0e-3 * np.array(
+        #     [ip.eff_stress for e in mesh.elements for ip in e.int_pts]
+        # )
+        # hyd_cond_int[:, k_plot] = np.array(
+        #     [ip.hyd_cond for e in mesh.elements for ip in e.int_pts]
+        # )
 
         # update boundary conditions,
         # reset time,
@@ -275,7 +282,8 @@ def main():
         s0 = s_con[k_50 - 1]
         t1 = t_con[k_50]
         t0 = t_con[k_50 - 1]
-        t_50_05 = np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0)) * (s_50 - s0) / (s1 - s0))
+        t_50_05 = np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0))
+                                 * (s_50 - s0) / (s1 - s0))
 
         print(f"Run time = {toc - tic: 0.4f} s")
         runtime_bat[k_bat] = toc - tic
@@ -418,7 +426,8 @@ def calculate_static_profile(m, qs, z):
             e1[k] = e_cu0 - Ccu * np.log10(sig_p[k] / sig_cu0)
         eps_a = np.linalg.norm(e1 - e0) / np.linalg.norm(e1)
         e0[:] = e1[:]
-    hyd_cond = m.hyd_cond_0 * 10 ** ((e1 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index)
+    hyd_cond = m.hyd_cond_0 * \
+        10 ** ((e1 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index)
     return e1, sig_p, hyd_cond
 
 
