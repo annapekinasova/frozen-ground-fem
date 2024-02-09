@@ -110,7 +110,9 @@ def main():
         zip(H_layer_bat, num_elements_bat, dt_sim_bat, t_max_bat)
     ):
         # compute plotting time step
-        dt_plot = 0.05 * 365 * 24 * 60 * 60  # in seconds
+        # dt_plot = 0.05 * 365 * 24 * 60 * 60  # in seconds
+        dt_plot = np.max([60.0 * 100, dt_sim_bat])  # in seconds
+        n_plot_stab = 30
         n_plot = int(np.floor(t_max / dt_plot) + 1)
         k_plot_list = [2, 40, 100, 1200]
         k_plot_labels = ["t=0.1 yr", "t=2 yr", "t=5 yr", "Final"]
@@ -142,9 +144,11 @@ def main():
         z_int = np.array(
             [ip.z for e in con_static.elements for ip in e.int_pts])
         e_nod = np.zeros((len(z_nod), n_plot + 1))
+        e_nod_stab = np.zeros((len(z_nod), n_plot_stab + 1))
         sig_p_int = np.zeros((len(z_int), n_plot + 1))
         ue_int = np.zeros_like(sig_p_int)
-        hyd_cond_int = np.zeros_like(sig_p_int)
+        hyd_cond_int = np.zeros((len(z_int), n_plot + 1))
+        # hyd_cond_int = np.zeros_like(sig_p_int)
 
         # initialize void ratio and effective stress profiles
         e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(
@@ -196,28 +200,56 @@ def main():
         # at initial surface load
         t_con_stab = [0.0]
         s_con_stab = [0.0]
+        dt_con_stab = []
+        err_con_stab = []
         t_plot = dt_plot
         k_plot = 0
         k_stab_max = 100
         k_stab = 0
-        tol_stab = 1e-8
+        tol_stab = 1e-6
+        eps_s = 1.0
+        con_static.time_step = 3.0e+01
+        # tol_stab = 1e-8
         eps_s_stab = 2 * tol_stab
         print("initial stabilization")
-        while k_stab <= k_stab_max and eps_s_stab > tol_stab:
-            while con_static._t1 < t_plot:
-                con_static.initialize_time_step()
-                con_static.iterative_correction_step()
-                t_con_stab.append(con_static._t1)
-                s_con_stab.append(con_static.calculate_total_settlement())
-            eps_s_stab = np.abs(
-                (s_con_stab[-1] - s_con_stab[-2]) / s_con_stab[-1])
+        # while k_stab <= k_stab_max and eps_s_stab > tol_stab:
+        #     while con_static._t1 < t_plot:
+        #         con_static.initialize_time_step()
+        #         con_static.iterative_correction_step()
+        #         t_con_stab.append(con_static._t1)
+        #         s_con_stab.append(con_static.calculate_total_settlement())
+        #     eps_s_stab = np.abs(
+        #         (s_con_stab[-1] - s_con_stab[-2]) / s_con_stab[-1])
+        #     print(
+        #         f"t = {con_static._t1 / 60.0:0.3f} min, "
+        #         + f"s_con = {s_con_stab[-1] * 1e3:0.3f} mm, "
+        #         + f"eps_s =  {eps_s_stab:0.4e}"
+        #     )
+        #     t_plot += dt_plot
+        #     k_stab += 1
+        while eps_s > tol_stab and k_plot < n_plot_stab:
+            dt00, dt_s, err_s = con_static.solve_to(t_plot, False)
+            dt_con_stab = np.hstack([dt_con_stab, dt_s])
+            err_con_stab = np.hstack([err_con_stab, err_s])
+            t_con_stab.append(con_static._t1)
+            s_con_stab.append(con_static.calculate_total_settlement())
+            eps_s = np.abs((s_con_stab[-1] - s_con_stab[-2]) / s_con_stab[-1])
             print(
                 f"t = {con_static._t1 / 60.0:0.3f} min, "
                 + f"s_con = {s_con_stab[-1] * 1e3:0.3f} mm, "
-                + f"eps_s =  {eps_s_stab:0.4e}"
+                + f"eps_s =  {eps_s:0.4e}, "
+                + f"dt = {dt00:0.4e} s"
             )
+            e_nod_stab[:, k_plot] = con_static._void_ratio_vector[:]
+            k_plot += 1
             t_plot += dt_plot
-            k_stab += 1
+        e_nod[:, 0] = e_nod_stab[:, k_plot - 1]
+        sig_p_int[:, 0] = 1.0e-3 * np.array(
+            [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
+        )
+        hyd_cond_int[:, 0] = np.array(
+            [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
+        )
 
         # save stabilized profiles
         e_nod[:, k_plot] = con_static._void_ratio_vector[:]
@@ -236,6 +268,7 @@ def main():
         void_ratio_boundary_0.bnd_value = e1[0]
         void_ratio_boundary_1.bnd_value = e1[-1]
         con_static._t1 = 0.0
+        con_static.time_step = dt_sim_bat
         for nd in con_static.nodes:
             nd.void_ratio_0 = nd.void_ratio
         con_static.initialize_global_system(0.0)
@@ -247,34 +280,62 @@ def main():
         # run consolidation analysis
         t_con = [0.0]
         s_con = [0.0]
+        dt_con = []
+        err_con = []
         k_plot += 1
         t_plot = dt_plot
-        tol = 1e-8
-        eps_s = 2 * tol
-        while k_plot <= n_plot and eps_s > tol:
-            while con_static._t1 < t_plot:
-                con_static.initialize_time_step()
-                con_static.iterative_correction_step()
-                t_con.append(con_static._t1)
-                s_con.append(con_static.calculate_total_settlement())
+        # tol = 1e-8
+        tol = 1e-6
+        # eps_s = 2 * tol
+        eps_s = 1.0
+        # while k_plot <= n_plot and eps_s > tol:
+        #     while con_static._t1 < t_plot:
+        #         con_static.initialize_time_step()
+        #         con_static.iterative_correction_step()
+        #         t_con.append(con_static._t1)
+        #         s_con.append(con_static.calculate_total_settlement())
+        #     eps_s = np.abs((s_con[-1] - s_con[-2]) / s_con[-1])
+        #     print(
+        #         f"t = {con_static._t1 / 60.0:0.3f} min, "
+        #         + f"s_con = {s_con[-1] * 1e3:0.3f} mm, "
+        #         + f"eps_s =  {eps_s:0.4e}"
+        #     )
+        #     e_nod[:, k_plot] = con_static._void_ratio_vector[:]
+        #     sig_p_int[:, k_plot] = 1.0e-3 * np.array(
+        #         [ip.eff_stress
+        #             for e in con_static.elements
+        #             for ip in e.int_pts]
+        #     )
+        #     ue_int[:, k_plot] = sig_p_1_exp_int - sig_p_int[:, k_plot]
+        #     hyd_cond_int[:, k_plot] = np.array(
+        #         [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
+        #     )
+        #     k_plot += 1
+        #     t_plot += dt_plot
+        #
+        # toc = time.perf_counter()
+        while eps_s > tol_stab and k_plot < n_plot:
+            k_plot += 1
+            t_plot += dt_plot
+            dt00, dt_s, err_s = con_static.solve_to(t_plot)
+            dt_con = np.hstack([dt_con, dt_s])
+            err_con = np.hstack([err_con, err_s])
+            t_con.append(con_static._t1)
+            s_con.append(con_static.calculate_total_settlement())
             eps_s = np.abs((s_con[-1] - s_con[-2]) / s_con[-1])
             print(
                 f"t = {con_static._t1 / 60.0:0.3f} min, "
                 + f"s_con = {s_con[-1] * 1e3:0.3f} mm, "
-                + f"eps_s =  {eps_s:0.4e}"
+                + f"eps_s =  {eps_s:0.4e}, "
+                + f"dt = {dt00:0.4e} s"
             )
             e_nod[:, k_plot] = con_static._void_ratio_vector[:]
             sig_p_int[:, k_plot] = 1.0e-3 * np.array(
-                [ip.eff_stress
-                    for e in con_static.elements
-                    for ip in e.int_pts]
+                [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
             )
-            ue_int[:, k_plot] = sig_p_1_exp_int - sig_p_int[:, k_plot]
             hyd_cond_int[:, k_plot] = np.array(
                 [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
             )
-            k_plot += 1
-            t_plot += dt_plot
 
         toc = time.perf_counter()
 
