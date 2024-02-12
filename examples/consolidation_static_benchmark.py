@@ -26,20 +26,48 @@ def main():
     # define simulation parameters
     # sim_params = np.loadtxt("examples/con_static_params.csv")
     H_layer = 10.0
-    num_elements = 10
+    num_elements = 15
     dt_sim_0 = 1.0e-1
     s_per_yr = 365.0 * 86400.0
     t_max = 80.0 * s_per_yr
-    qi = 4.0e4
-    qf = 4.4e5
+    qi = 40.0e3
+    qf = 440.0e3
 
     # expected output
-    t_con_exp = np.array([
-        0.0, 0.05, 0.10, 0.50, 1.0, 2.0, 3.0, 4.0, 5.0,
-        10.0, 20.0, 40.0, 60.0,
-    ]) * s_per_yr
+    t_con_exp = s_per_yr * np.array([
+        0.00,
+        0.05,
+        0.10,
+        0.50,
+        1.00,
+        2.00,
+        3.00,
+        4.00,
+        5.00,
+        10.00,
+        20.00,
+        40.00,
+        60.00,
+    ])
+    # Gs = 1.0
+    # s_con_exp = np.array([
+    #     0.000,
+    #     0.215,
+    #     0.304,
+    #     0.679,
+    #     0.961,
+    #     1.358,
+    #     1.662,
+    #     1.910,
+    #     2.113,
+    #     2.642,
+    #     2.806,
+    #     2.815,
+    #     2.815,
+    # ])
+    # Gs = 2.78
     s_con_exp = np.array([
-        0,
+        0.000,
         0.188,
         0.265,
         0.592,
@@ -53,7 +81,13 @@ def main():
         2.473,
         2.473,
     ])
-    n_plot_exp = len(t_con_exp)
+
+    t_plot_targ = np.hstack([
+        np.linspace(0.01, 0.1, 10)[:-1],
+        np.linspace(0.1, 1.0, 10)[:-1],
+        np.linspace(1.0, 60.0, 60),
+    ]) * s_per_yr
+    n_plot_targ = len(t_plot_targ)
 
     print(f"H_layer = {H_layer}")
     print(f"num_elements = {num_elements}")
@@ -62,22 +96,22 @@ def main():
 
     # set plotting parameters
     plt.rc("font", size=8)
-    dt_plot = np.max([60.0 * 1000, dt_sim_0])  # in seconds
+    dt_plot = np.max([0.5 * s_per_yr, dt_sim_0])  # in seconds
     n_plot = int(np.floor(t_max / dt_plot) + 1)
-    n_plot_stab = 100
+    n_plot_stab = 50
 
     # define the material properties
     m = Material(
         spec_grav_solids=2.78,
         hyd_cond_index=1.30,
-        hyd_cond_0=2.00e-8,
+        hyd_cond_0=2.00e-9,
         void_ratio_0_hyd_cond=4.30,
         void_ratio_min=0.30,
         void_ratio_tr=4.30,
         void_ratio_0_comp=2.70,
         comp_index_unfrozen=1.00,
         rebound_index_unfrozen=0.100,
-        eff_stress_0_comp=4.00e4,
+        eff_stress_0_comp=40.0e3,
     )
 
     # create consolidation analysis
@@ -136,24 +170,22 @@ def main():
     # (no settlement expected during this period)
     t_con_stab = [0.0]
     s_con_stab = [0.0]
-    dt_con_stab = []
-    err_con_stab = []
     t_plot = dt_plot
     k_plot = 0
     tol_s = 1e-6
     eps_s = 1.0
-    con_static.time_step = 3.0e+01
+    # con_static.time_step = 3.0e+01
+    con_static.time_step = dt_sim_0
     print("initial stabilization")
     while eps_s > tol_s and k_plot < n_plot_stab:
-        dt00, dt_s, err_s = con_static.solve_to(t_plot, False)
-        dt_con_stab = np.hstack([dt_con_stab, dt_s])
-        err_con_stab = np.hstack([err_con_stab, err_s])
+        # dt00, dt_s, err_s = con_static.solve_to(t_plot, False)
+        dt00, dt_s, err_s = con_static.solve_to(t_plot)
         t_con_stab.append(con_static._t1)
         s_con_stab.append(con_static.calculate_total_settlement())
         eps_s = np.abs((s_con_stab[-1] - s_con_stab[-2]) / s_con_stab[-1])
         print(
-            f"t = {con_static._t1 / 60.0:0.3f} min, "
-            + f"s_con = {s_con_stab[-1] * 1e3:0.3f} mm, "
+            f"t = {con_static._t1 / s_per_yr:0.3f} yr, "
+            + f"s_con = {s_con_stab[-1]:0.3f} m, "
             + f"eps_s =  {eps_s:0.4e}, "
             + f"dt = {dt00:0.4e} s"
         )
@@ -168,30 +200,30 @@ def main():
         [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
     )
 
-    # compute expected Terzaghi result
-    sig_p_trz = np.zeros((len(z_nod), n_plot + 1))
-    e_trz = np.zeros((len(z_nod), n_plot + 1))
-    H = 0.5 * (con_static.nodes[-1].z - con_static.nodes[0].z)
-    ui = sig_p_1_exp[0] - sig_p_0_exp[0]
-    e0t = np.average(e_nod[:, 0])
-    # e0t = np.average(e0)
-    e1t = np.average(e1)
-    de_trz = e0 - e1
-    Gs = m.spec_grav_solids
-    gam_w = unit_weight_water * 1e-3
-    gam_b = (Gs - 1.0) / (1.0 + e0t) * gam_w
-    sig_0 = m.eff_stress(e0t, sig_p_0_exp[0] * 1e3)[0] * 1e-3
-    sig_1 = m.eff_stress(e1t, sig_p_0_exp[0] * 1e3)[0] * 1e-3
-    dsig_de_avg = (sig_1 - sig_0) / (e0t - e1t)
-    mv = 1.0 / (1.0 + e0t) / dsig_de_avg
-    kt = np.average(hyd_cond_0_exp)
-    cv = kt / mv / gam_w
-    sig_p_1_trz = sig_p_1_exp[0] + gam_b * z_nod
-    s_tot_trz = 1e3 * (con_static.nodes[-1].z -
-                       con_static.nodes[0].z) / (1.0 + e0t) * (e0t - e1t)
-
-    sig_p_trz[:, 0] = sig_p_1_trz[:] - ui
-    e_trz[:, 0] = e0[:]
+    # # compute expected Terzaghi result
+    # sig_p_trz = np.zeros((len(z_nod), n_plot + 1))
+    # e_trz = np.zeros((len(z_nod), n_plot + 1))
+    # H = 0.5 * (con_static.nodes[-1].z - con_static.nodes[0].z)
+    # ui = sig_p_1_exp[0] - sig_p_0_exp[0]
+    # e0t = np.average(e_nod[:, 0])
+    # # e0t = np.average(e0)
+    # e1t = np.average(e1)
+    # de_trz = e0 - e1
+    # Gs = m.spec_grav_solids
+    # gam_w = unit_weight_water * 1e-3
+    # gam_b = (Gs - 1.0) / (1.0 + e0t) * gam_w
+    # sig_0 = m.eff_stress(e0t, sig_p_0_exp[0] * 1e3)[0] * 1e-3
+    # sig_1 = m.eff_stress(e1t, sig_p_0_exp[0] * 1e3)[0] * 1e-3
+    # dsig_de_avg = (sig_1 - sig_0) / (e0t - e1t)
+    # mv = 1.0 / (1.0 + e0t) / dsig_de_avg
+    # kt = np.average(hyd_cond_0_exp)
+    # cv = kt / mv / gam_w
+    # sig_p_1_trz = sig_p_1_exp[0] + gam_b * z_nod
+    # s_tot_trz = 1e3 * (con_static.nodes[-1].z -
+    #                    con_static.nodes[0].z) / (1.0 + e0t) * (e0t - e1t)
+    #
+    # sig_p_trz[:, 0] = sig_p_1_trz[:] - ui
+    # e_trz[:, 0] = e0[:]
 
     # # set plotting times based on Terzaghi degree of consolidation
     # Utrz = np.linspace(0.05, 0.90, 18)
@@ -221,30 +253,25 @@ def main():
 
     t_con = [0.0]
     s_con = [0.0]
-    # dt_con = []
-    # err_con = []
-    s_trz = [0.0]
-    t_trz = [0.0]
+    # s_trz = [0.0]
+    # t_trz = [0.0]
     k_plot = 0
-    t_plot = t_con_exp[1]
+    t_plot = 0.0
     tol_s = 1e-6
     eps_s = 1.0
-    while eps_s > tol_s and k_plot < n_plot:
+    while (eps_s > tol_s and k_plot < n_plot) or t_plot < t_plot_targ[-1]:
         k_plot += 1
-        if k_plot < n_plot_exp:
-            t_plot = t_con_exp[k_plot]
+        if k_plot <= n_plot_targ:
+            t_plot = t_plot_targ[k_plot - 1]
         else:
             t_plot += dt_plot
         dt00, dt_s, err_s = con_static.solve_to(t_plot)
-        # dt_con = np.hstack([dt_con, dt_s])
-        # err_con = np.hstack([err_con, err_s])
         t_con.append(con_static._t1)
         s_con.append(con_static.calculate_total_settlement())
         eps_s = np.abs((s_con[-1] - s_con[-2]) / s_con[-1])
         print(
             f"t = {con_static._t1 / s_per_yr:0.3f} yr, "
             + f"s_con = {s_con[-1]:0.3f} m, "
-            + f"s_con_exp = {s_con_exp[k_plot]:0.3f} m, "
             + f"eps_s =  {eps_s:0.4e}, "
             + f"dt = {dt00:0.4e} s"
         )
@@ -255,21 +282,21 @@ def main():
         hyd_cond_int[:, k_plot] = np.array(
             [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
         )
-        ue, U_avg, Uz = terzaghi_consolidation(
-            z_nod, con_static._t1, cv, H, ui
-        )
-        sig_p_trz[:, k_plot] = sig_p_1_trz[:] - ue
-        e_trz[:, k_plot] = e0[:] - de_trz[:] * Uz[:]
-        s_trz.append(s_tot_trz * U_avg)
-        t_trz.append(t_con[-1])
+        # ue, U_avg, Uz = terzaghi_consolidation(
+        #     z_nod, con_static._t1, cv, H, ui
+        # )
+        # sig_p_trz[:, k_plot] = sig_p_1_trz[:] - ue
+        # e_trz[:, k_plot] = e0[:] - de_trz[:] * Uz[:]
+        # s_trz.append(s_tot_trz * U_avg)
+        # t_trz.append(t_con[-1])
 
     toc = time.perf_counter()
 
     # convert settlement to arrays
     t_con = np.array(t_con) / s_per_yr  # convert to yr
     s_con = np.array(s_con)
-    t_trz = np.array(t_trz) / s_per_yr
-    s_trz = np.array(s_trz) / 1.0e3  # convert to m
+    # t_trz = np.array(t_trz) / s_per_yr
+    # s_trz = np.array(s_trz) / 1.0e3  # convert to m
     t_con_exp = np.array(t_con_exp) / s_per_yr
     s_con_exp = np.array(s_con_exp)
 
@@ -292,27 +319,28 @@ def main():
     print(f"t_50_05 = {t_50_05} yr^0.5")
 
     plt.figure(figsize=(3.5, 4))
-    plt.plot(np.sqrt(t_con), s_con, "-k", label="current")
-    plt.plot(np.sqrt(t_trz), s_trz, "--k", label="Terzaghi")
-    plt.plot(np.sqrt(t_con_exp), s_con_exp, ":k", label="FoxPu2015")
-    plt.xlabel(r"Root Time, $t^{0.5}$ [$yr^{0.5}$]")
+    plt.semilogx(t_con[1:], s_con[1:], "-k", label="current")
+    # plt.semilogx(t_trz[1:], s_trz[1:], "--k", label="Terzaghi")
+    plt.semilogx(t_con_exp[1:], s_con_exp[1:], "ok", label="FoxPu2015")
+    plt.xlabel(r"Time, $t$ [$yr$]")
     plt.ylabel(r"Settlement, $s$ [$m$]")
-    # plt.ylim((31, -1))
+    plt.xlim([0.01, 100])
+    plt.ylim([3.0, 0.0])
     plt.legend()
 
-    plt.savefig("examples/con_static_benchmark_settlement.svg")
+    plt.savefig("examples/con_static_bench_settlement.svg")
 
     plt.figure(figsize=(10, 4))
 
     plt.subplot(1, 3, 1)
     plt.plot(e0, z_nod, "-k", label="init")
     plt.plot(e_nod[:, 0], z_nod, ":r", label="post-stab")
-    plt.plot(e_trz[:, 1], z_nod, "-.b", label="Terzaghi", linewidth=0.5)
-    plt.plot(e_nod[:, 1], z_nod, ":b", label="consol (act)")
-    for k_plot_plot in [2, 3, 5, 9]:
-        plt.plot(e_trz[:, k_plot_plot], z_nod, "-.b", linewidth=0.5)
-        plt.plot(e_nod[:, k_plot_plot], z_nod, ":b")
     plt.plot(e1, z_nod, "--k", label="final (exp)")
+    # plt.plot(e_trz[:, 1], z_nod, "-.b", label="Terzaghi", linewidth=0.5)
+    plt.plot(e_nod[:, 1], z_nod, ":b", label="current")
+    for k_plot_plot in [10, 20, 23, 78]:
+        # plt.plot(e_trz[:, k_plot_plot], z_nod, "-.b", linewidth=0.5)
+        plt.plot(e_nod[:, k_plot_plot], z_nod, ":b")
     plt.legend()
     plt.xlabel(r"Void Ratio, $e$")
     plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
@@ -321,11 +349,11 @@ def main():
     plt.plot(sig_p_0_exp, z_nod, "-k", label="init")
     plt.plot(sig_p_int[:, 0], z_int, ":r", label="post-stab")
     plt.plot(sig_p_1_exp, z_nod, "--k", label="final (exp)")
-    plt.plot(sig_p_int[:, 1], z_int, ":b", label="consol (act)")
-    plt.plot(sig_p_trz[:, 1], z_nod, "-.b", label="Terzaghi", linewidth=0.5)
-    for k_plot_plot in [2, 3, 5, 9]:
+    plt.plot(sig_p_int[:, 1], z_int, ":b", label="current")
+    # plt.plot(sig_p_trz[:, 1], z_nod, "-.b", label="Terzaghi", linewidth=0.5)
+    for k_plot_plot in [10, 20, 23, 78]:
         plt.plot(sig_p_int[:, k_plot_plot], z_int, ":b")
-        plt.plot(sig_p_trz[:, k_plot_plot], z_nod, "-.b", linewidth=0.5)
+        # plt.plot(sig_p_trz[:, k_plot_plot], z_nod, "-.b", linewidth=0.5)
     plt.xlabel(r"Eff Stress, $\sigma^\prime$ [$kPa$]")
 
     plt.subplot(1, 3, 3)
@@ -333,7 +361,7 @@ def main():
     plt.semilogx(hyd_cond_int[:, 0], z_int, ":r", label="post-stab")
     plt.semilogx(hyd_cond_1_exp, z_nod, "--k", label="final (exp)")
     plt.semilogx(hyd_cond_int[:, 1], z_int, ":b", label="consol (act)")
-    for k_plot_plot in [2, 3, 5, 9]:
+    for k_plot_plot in [10, 20, 23, 78]:
         plt.semilogx(hyd_cond_int[:, k_plot_plot], z_int, ":b")
     plt.xlabel(r"Hyd Cond, $k$ [$m/s$]")
 
