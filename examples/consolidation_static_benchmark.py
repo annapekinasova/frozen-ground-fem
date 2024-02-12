@@ -22,87 +22,29 @@ from frozen_ground_fem.consolidation import (
 )
 
 
-def main():
-    # define simulation parameters
-    # sim_params = np.loadtxt("examples/con_static_params.csv")
-    H_layer = 10.0
-    num_elements = 15
-    dt_sim_0 = 1.0e-1
-    s_per_yr = 365.0 * 86400.0
-    t_max = 80.0 * s_per_yr
-    qi = 40.0e3
-    qf = 440.0e3
-
-    # expected output
-    t_con_exp = s_per_yr * np.array([
-        0.00,
-        0.05,
-        0.10,
-        0.50,
-        1.00,
-        2.00,
-        3.00,
-        4.00,
-        5.00,
-        10.00,
-        20.00,
-        40.00,
-        60.00,
-    ])
-    # Gs = 1.0
-    # s_con_exp = np.array([
-    #     0.000,
-    #     0.215,
-    #     0.304,
-    #     0.679,
-    #     0.961,
-    #     1.358,
-    #     1.662,
-    #     1.910,
-    #     2.113,
-    #     2.642,
-    #     2.806,
-    #     2.815,
-    #     2.815,
-    # ])
-    # Gs = 2.78
-    s_con_exp = np.array([
-        0.000,
-        0.188,
-        0.265,
-        0.592,
-        0.835,
-        1.178,
-        1.439,
-        1.651,
-        1.826,
-        2.296,
-        2.462,
-        2.473,
-        2.473,
-    ])
-
-    t_plot_targ = np.hstack([
-        np.linspace(0.01, 0.1, 10)[:-1],
-        np.linspace(0.1, 1.0, 10)[:-1],
-        np.linspace(1.0, 60.0, 60),
-    ]) * s_per_yr
-    n_plot_targ = len(t_plot_targ)
-
-    print(f"H_layer = {H_layer}")
+def solve_consolidation_benchmark(
+    Gs: float,
+    H_layer: float,
+    num_elements: int,
+    dt_sim_0: float,
+    t_max: float,
+    qi: float,
+    qf: float,
+    ppc0: float = 0.0,
+    tol: float = 1e-6,
+    stabilize: bool = True,
+    s_per_yr: float = 3.1536E+07,
+):
+    print(f"Gs = {Gs}")
+    print(f"H_layer = {H_layer} m")
     print(f"num_elements = {num_elements}")
-    print(f"dt_sim_0 = {dt_sim_0}")
-    print(f"t_max = {t_max}")
-
-    # set plotting parameters
-    plt.rc("font", size=8)
-    dt_plot = np.max([0.5 * s_per_yr, dt_sim_0])  # in seconds
-    n_plot = int(np.floor(t_max / dt_plot) + 1)
-    n_plot_stab = 50
+    print(f"dt_sim_0 = {dt_sim_0} s")
+    print(f"t_max = {t_max} s = {t_max / s_per_yr} yr")
+    print(f"tol = {tol:0.4e}")
 
     # define the material properties
     m = Material(
-        spec_grav_solids=2.78,
+        spec_grav_solids=Gs,
         hyd_cond_index=1.30,
         hyd_cond_0=2.00e-9,
         void_ratio_0_hyd_cond=4.30,
@@ -114,6 +56,22 @@ def main():
         eff_stress_0_comp=40.0e3,
     )
 
+    # define plotting time increments
+    t_plot_targ = np.hstack([
+        0.0,
+        np.linspace(0.01, 0.1, 10)[:-1],
+        np.linspace(0.1, 1.0, 10)[:-1],
+        np.linspace(1.0, 60.0, 60),
+    ]) * s_per_yr
+    n_plot_targ = len(t_plot_targ)
+    dt_plot = np.max([0.5 * s_per_yr, dt_sim_0])
+    t_plot_extra = t_max - t_plot_targ[-1]
+    n_plot = (
+        n_plot_targ +
+        int(np.floor(t_plot_extra / dt_plot) + 1)
+    )
+    n_stab_max = 500
+
     # create consolidation analysis
     # and generate the mesh
     con_static = ConsolidationAnalysis1D(
@@ -121,18 +79,19 @@ def main():
         num_elements=num_elements,
         generate=True,
     )
-    con_static.implicit_error_tolerance = 1e-6
+    con_static.implicit_error_tolerance = tol
 
     # assign material properties to integration points
     for e in con_static.elements:
         for ip in e.int_pts:
             ip.material = m
+            ip.pre_consol_stress = ppc0
 
     # initialize plotting arrays
     z_nod = np.array([nd.z for nd in con_static.nodes])
     z_int = np.array([ip.z for e in con_static.elements for ip in e.int_pts])
     e_nod = np.zeros((len(z_nod), n_plot + 1))
-    e_nod_stab = np.zeros((len(z_nod), n_plot_stab + 1))
+    e_nod_stab = np.zeros_like(z_nod)
     sig_p_int = np.zeros((len(z_int), n_plot + 1))
     hyd_cond_int = np.zeros((len(z_int), n_plot + 1))
 
@@ -160,39 +119,14 @@ def main():
     con_static.add_boundary(void_ratio_boundary_0)
     con_static.add_boundary(void_ratio_boundary_1)
 
-    # initialize global matrices and vectors
-    con_static.time_step = dt_sim_0  # in seconds
-    con_static.initialize_global_system(t0=0.0)
-
+    # start simulation time
     tic = time.perf_counter()
 
-    # stabilize at initial void ratio profile
-    # (no settlement expected during this period)
-    t_con_stab = [0.0]
-    s_con_stab = [0.0]
-    t_plot = dt_plot
-    k_plot = 0
-    tol_s = 1e-6
-    eps_s = 1.0
-    # con_static.time_step = 3.0e+01
+    # initialize global matrices and vectors
+    print(f"initialize system, qi = {qi} Pa")
     con_static.time_step = dt_sim_0
-    print("initial stabilization")
-    while eps_s > tol_s and k_plot < n_plot_stab:
-        # dt00, dt_s, err_s = con_static.solve_to(t_plot, False)
-        dt00, dt_s, err_s = con_static.solve_to(t_plot)
-        t_con_stab.append(con_static._t1)
-        s_con_stab.append(con_static.calculate_total_settlement())
-        eps_s = np.abs((s_con_stab[-1] - s_con_stab[-2]) / s_con_stab[-1])
-        print(
-            f"t = {con_static._t1 / s_per_yr:0.3f} yr, "
-            + f"s_con = {s_con_stab[-1]:0.3f} m, "
-            + f"eps_s =  {eps_s:0.4e}, "
-            + f"dt = {dt00:0.4e} s"
-        )
-        e_nod_stab[:, k_plot] = con_static._void_ratio_vector[:]
-        k_plot += 1
-        t_plot += dt_plot
-    e_nod[:, 0] = e_nod_stab[:, k_plot - 1]
+    con_static.initialize_global_system(t0=0.0)
+    e_nod[:, 0] = e0[:]
     sig_p_int[:, 0] = 1.0e-3 * np.array(
         [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
     )
@@ -200,49 +134,37 @@ def main():
         [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
     )
 
-    # # compute expected Terzaghi result
-    # sig_p_trz = np.zeros((len(z_nod), n_plot + 1))
-    # e_trz = np.zeros((len(z_nod), n_plot + 1))
-    # H = 0.5 * (con_static.nodes[-1].z - con_static.nodes[0].z)
-    # ui = sig_p_1_exp[0] - sig_p_0_exp[0]
-    # e0t = np.average(e_nod[:, 0])
-    # # e0t = np.average(e0)
-    # e1t = np.average(e1)
-    # de_trz = e0 - e1
-    # Gs = m.spec_grav_solids
-    # gam_w = unit_weight_water * 1e-3
-    # gam_b = (Gs - 1.0) / (1.0 + e0t) * gam_w
-    # sig_0 = m.eff_stress(e0t, sig_p_0_exp[0] * 1e3)[0] * 1e-3
-    # sig_1 = m.eff_stress(e1t, sig_p_0_exp[0] * 1e3)[0] * 1e-3
-    # dsig_de_avg = (sig_1 - sig_0) / (e0t - e1t)
-    # mv = 1.0 / (1.0 + e0t) / dsig_de_avg
-    # kt = np.average(hyd_cond_0_exp)
-    # cv = kt / mv / gam_w
-    # sig_p_1_trz = sig_p_1_exp[0] + gam_b * z_nod
-    # s_tot_trz = 1e3 * (con_static.nodes[-1].z -
-    #                    con_static.nodes[0].z) / (1.0 + e0t) * (e0t - e1t)
-    #
-    # sig_p_trz[:, 0] = sig_p_1_trz[:] - ui
-    # e_trz[:, 0] = e0[:]
+    if stabilize:
+        print(f"initial stabilization at qi = {qi} Pa")
+        t_con_stab = [0.0]
+        s_con_stab = [0.0]
+        t_plot = dt_plot
+        k_stab = 0
+        eps_s = 1.0
+        while eps_s > tol and k_stab < n_stab_max:
+            dt00, dt_s, err_s = con_static.solve_to(t_plot)
+            t_con_stab.append(con_static._t1)
+            s_con_stab.append(con_static.calculate_total_settlement())
+            eps_s = np.abs((s_con_stab[-1] - s_con_stab[-2]) / s_con_stab[-1])
+            print(
+                f"t = {con_static._t1 / s_per_yr:0.3f} yr, "
+                + f"s_con = {s_con_stab[-1]:0.3f} m, "
+                + f"eps_s =  {eps_s:0.4e}, "
+                + f"dt = {dt00:0.4e} s"
+            )
+            e_nod_stab[:] = con_static._void_ratio_vector[:]
+            k_stab += 1
+            t_plot += dt_plot
+        e_nod[:, 0] = e_nod_stab[:]
+        sig_p_int[:, 0] = 1.0e-3 * np.array(
+            [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
+        )
+        hyd_cond_int[:, 0] = np.array(
+            [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
+        )
 
-    # # set plotting times based on Terzaghi degree of consolidation
-    # Utrz = np.linspace(0.05, 0.90, 18)
-    # Tv = []
-    # t_plot_trz = []
-    # for U in Utrz:
-    #     if U < 0.60:
-    #         Tv.append(0.25 * np.pi * U ** 2)
-    #     else:
-    #         Tv.append(
-    #             -0.933 * np.log10(1.0 - U) - 0.085
-    #         )
-    #     t_plot_trz.append(Tv[-1] * H ** 2 / cv)
-    # n_plot_trz = len(Utrz)
-
-    # update boundary conditions
-    # (this corresponds to an application of
-    # a surface load increment)
-    print("apply static load increment")
+    # update boundary conditions for surface load increment
+    print(f"apply static load increment, dq = {qf - qi} Pa")
     void_ratio_boundary_0.bnd_value = e1[0]
     void_ratio_boundary_1.bnd_value = e1[-1]
     con_static._t1 = 0.0
@@ -253,16 +175,13 @@ def main():
 
     t_con = [0.0]
     s_con = [0.0]
-    # s_trz = [0.0]
-    # t_trz = [0.0]
     k_plot = 0
     t_plot = 0.0
-    tol_s = 1e-6
     eps_s = 1.0
-    while (eps_s > tol_s and k_plot < n_plot) or t_plot < t_plot_targ[-1]:
+    while (eps_s > tol and k_plot < n_plot) or t_plot < t_plot_targ[-1]:
         k_plot += 1
-        if k_plot <= n_plot_targ:
-            t_plot = t_plot_targ[k_plot - 1]
+        if k_plot < n_plot_targ:
+            t_plot = t_plot_targ[k_plot]
         else:
             t_plot += dt_plot
         dt00, dt_s, err_s = con_static.solve_to(t_plot)
@@ -282,23 +201,13 @@ def main():
         hyd_cond_int[:, k_plot] = np.array(
             [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
         )
-        # ue, U_avg, Uz = terzaghi_consolidation(
-        #     z_nod, con_static._t1, cv, H, ui
-        # )
-        # sig_p_trz[:, k_plot] = sig_p_1_trz[:] - ue
-        # e_trz[:, k_plot] = e0[:] - de_trz[:] * Uz[:]
-        # s_trz.append(s_tot_trz * U_avg)
-        # t_trz.append(t_con[-1])
 
     toc = time.perf_counter()
+    run_time = toc - tic
 
     # convert settlement to arrays
-    t_con = np.array(t_con) / s_per_yr  # convert to yr
+    t_con = np.array(t_con)
     s_con = np.array(s_con)
-    # t_trz = np.array(t_trz) / s_per_yr
-    # s_trz = np.array(s_trz) / 1.0e3  # convert to m
-    t_con_exp = np.array(t_con_exp) / s_per_yr
-    s_con_exp = np.array(s_con_exp)
 
     # calculate time to 50 percent settlement
     s_50 = 0.5 * s_con[-1]
@@ -311,17 +220,240 @@ def main():
     s0 = s_con[k_50 - 1]
     t1 = t_con[k_50]
     t0 = t_con[k_50 - 1]
-    t_50_05 = np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0))
-                             * (s_50 - s0) / (s1 - s0))
+    t_50 = (np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0))
+                           * (s_50 - s0) / (s1 - s0))) ** 2
 
-    print(f"Run time = {toc - tic: 0.4f} s")
+    print(f"Run time = {run_time: 0.4f} s")
     print(f"Total settlement = {s_con[-1]} m")
-    print(f"t_50_05 = {t_50_05} yr^0.5")
+    print(f"t_50 = {t_50} s = {t_50 / s_per_yr} yr")
+
+    return (
+        t_con, s_con,
+        z_nod, z_int,
+        e_nod, sig_p_int, hyd_cond_int,
+        t_50, run_time,
+    )
+
+
+def main():
+    # define simulation parameters
+    s_per_yr = 365.0 * 86400.0
+    H_layer = 10.0
+    num_elements = 15
+    dt_sim_0 = 1.0e-1
+    # tol = 1e-5
+    t_max = 80.0 * s_per_yr
+    qi = 40.0e3
+    qf = 440.0e3
+
+    # set plotting parameters
+    plt.rc("font", size=8)
+    plt.rc(
+        "lines",
+        linewidth=0.5,
+        color="black",
+        markeredgewidth=0.5,
+        markeredgecolor="black",
+        markerfacecolor="none",
+    )
+
+    # expected output
+    t_con_exp = np.array([
+        0.00,
+        0.05,
+        0.10,
+        0.50,
+        1.00,
+        2.00,
+        3.00,
+        4.00,
+        5.00,
+        10.00,
+        20.00,
+        40.00,
+        60.00,
+    ])
+    s_con_exp_Gs_1 = np.array([
+        0.000,
+        0.215,
+        0.304,
+        0.679,
+        0.961,
+        1.358,
+        1.662,
+        1.910,
+        2.113,
+        2.642,
+        2.806,
+        2.815,
+        2.815,
+    ])
+    s_con_exp_Gs_278 = np.array([
+        0.000,
+        0.188,
+        0.265,
+        0.592,
+        0.835,
+        1.178,
+        1.439,
+        1.651,
+        1.826,
+        2.296,
+        2.462,
+        2.473,
+        2.473,
+    ])
+    z_exp = np.linspace(0.0, 10.0, 11)
+    e_nod_exp_Gs_1 = np.zeros((len(z_exp), 5))
+    e_nod_exp_Gs_1[:, 0] = 2.70
+    e_nod_exp_Gs_1[:, 1] = [
+        1.659,
+        2.636,
+        2.700,
+        2.700,
+        2.700,
+        2.700,
+        2.700,
+        2.700,
+        2.700,
+        2.636,
+        1.659,
+    ]
+    e_nod_exp_Gs_1[:, 2] = [
+        1.659,
+        1.912,
+        2.167,
+        2.383,
+        2.523,
+        2.571,
+        2.523,
+        2.383,
+        2.167,
+        1.912,
+        1.659,
+    ]
+    e_nod_exp_Gs_1[:, 3] = [
+        1.659,
+        1.779,
+        1.897,
+        1.997,
+        2.066,
+        2.090,
+        2.066,
+        1.997,
+        1.897,
+        1.779,
+        1.659,
+    ]
+    e_nod_exp_Gs_1[:, 4] = 1.659
+    e_nod_exp_Gs_278 = np.zeros((len(z_exp), 5))
+    e_nod_exp_Gs_278[:, 0] = [
+        2.700,
+        2.651,
+        2.607,
+        2.566,
+        2.529,
+        2.494,
+        2.461,
+        2.430,
+        2.402,
+        2.374,
+        2.348,
+    ]
+    e_nod_exp_Gs_278[:, 1] = [
+        1.659,
+        2.585,
+        2.603,
+        2.563,
+        2.527,
+        2.493,
+        2.461,
+        2.431,
+        2.403,
+        2.323,
+        1.612,
+    ]
+    e_nod_exp_Gs_278[:, 2] = [
+        1.659,
+        1.890,
+        2.112,
+        2.283,
+        2.376,
+        2.387,
+        2.323,
+        2.196,
+        2.019,
+        1.816,
+        1.612,
+    ]
+    e_nod_exp_Gs_278[:, 3] = [
+        1.659,
+        1.765,
+        1.866,
+        1.947,
+        1.998,
+        2.008,
+        1.978,
+        1.912,
+        1.821,
+        1.718,
+        1.612,
+    ]
+    e_nod_exp_Gs_1[:, 4] = [
+        1.659,
+        1.656,
+        1.650,
+        1.645,
+        1.640,
+        1.635,
+        1.630,
+        1.626,
+        1.621,
+        1.616,
+        1.612,
+    ]
+
+    # solve neutral buoyancy case
+    (
+        t_con_Gs_1, s_con_Gs_1,
+        z_nod_Gs_1, z_int_Gs_1,
+        e_nod_Gs_1, sig_p_int_Gs_1, hyd_cond_int_Gs_1,
+        t_50_Gs_1, run_time_Gs_1,
+    ) = solve_consolidation_benchmark(
+        Gs=1.0, H_layer=H_layer, num_elements=num_elements,
+        dt_sim_0=dt_sim_0, t_max=t_max, qi=qi, qf=qf,
+        stabilize=False,  # tol=tol,
+    )
+    t_con_Gs_1_yr = t_con_Gs_1 / s_per_yr
+
+    # solve self weight case
+    (
+        t_con_Gs_278, s_con_Gs_278,
+        z_nod_Gs_278, z_int_Gs_278,
+        e_nod_Gs_278, sig_p_int_Gs_278, hyd_cond_int_Gs_278,
+        t_50_Gs_278, run_time_Gs_278,
+    ) = solve_consolidation_benchmark(
+        Gs=2.78, H_layer=H_layer, num_elements=num_elements,
+        dt_sim_0=dt_sim_0, t_max=t_max, qi=qi, qf=qf,
+        stabilize=False,  # tol=tol,
+    )
+    t_con_Gs_278_yr = t_con_Gs_278 / s_per_yr
 
     plt.figure(figsize=(3.5, 4))
-    plt.semilogx(t_con[1:], s_con[1:], "-k", label="current")
-    # plt.semilogx(t_trz[1:], s_trz[1:], "--k", label="Terzaghi")
-    plt.semilogx(t_con_exp[1:], s_con_exp[1:], "ok", label="FoxPu2015")
+    plt.semilogx(
+        t_con_Gs_1_yr[1:], s_con_Gs_1[1:], "--k", label="Gs=1.0",
+    )
+    plt.semilogx(
+        t_con_Gs_278_yr[1:], s_con_Gs_278[1:], "-k", label="Gs=2.78",
+    )
+    plt.semilogx(
+        t_con_exp[1:], s_con_exp_Gs_1[1:], label="FoxPu2015",
+        marker="x", linestyle="none",
+    )
+    plt.semilogx(
+        t_con_exp[1:], s_con_exp_Gs_278[1:],  # label="FoxPu2015",
+        marker="x", linestyle="none",
+    )
     plt.xlabel(r"Time, $t$ [$yr$]")
     plt.ylabel(r"Settlement, $s$ [$m$]")
     plt.xlim([0.01, 100])
@@ -330,40 +462,250 @@ def main():
 
     plt.savefig("examples/con_static_bench_settlement.svg")
 
-    plt.figure(figsize=(10, 4))
+    fig = plt.figure(figsize=(10, 4))
 
     plt.subplot(1, 3, 1)
-    plt.plot(e0, z_nod, "-k", label="init")
-    plt.plot(e_nod[:, 0], z_nod, ":r", label="post-stab")
-    plt.plot(e1, z_nod, "--k", label="final (exp)")
-    # plt.plot(e_trz[:, 1], z_nod, "-.b", label="Terzaghi", linewidth=0.5)
-    plt.plot(e_nod[:, 1], z_nod, ":b", label="current")
-    for k_plot_plot in [10, 20, 23, 78]:
-        # plt.plot(e_trz[:, k_plot_plot], z_nod, "-.b", linewidth=0.5)
-        plt.plot(e_nod[:, k_plot_plot], z_nod, ":b")
-    plt.legend()
+    plt.plot(
+        e_nod_Gs_1[:, 0], z_nod_Gs_1, "--k", label="Gs=1.0"
+    )
+    plt.plot(
+        e_nod_Gs_278[:, 0], z_nod_Gs_278, "-k", label="Gs=2.78"
+    )
+    plt.plot(
+        e_nod_exp_Gs_1[:, 0], z_exp, label="FoxPu2015",
+        marker="x", linestyle="none",
+    )
+    plt.plot(
+        e_nod_exp_Gs_278[:, 0], z_exp,
+        marker="x", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_1[:, 10], z_nod_Gs_1, "--k",
+    )
+    plt.plot(
+        e_nod_exp_Gs_1[:, 1], z_exp,
+        marker="x", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_1[::6, 10], z_nod_Gs_1[::6], label="t=0.1 yr",
+        marker="o", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_1[:, 20], z_nod_Gs_1, "--k",
+    )
+    plt.plot(
+        e_nod_exp_Gs_1[:, 2], z_exp,
+        marker="x", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_1[::6, 20], z_nod_Gs_1[::6], label="t=2 yr",
+        marker="s", linestyle="none",
+    )
+    plt.plot(
+        e_nod_exp_Gs_1[:, 3], z_exp,
+        marker="x", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_1[:, 23], z_nod_Gs_1, "--k",
+    )
+    plt.plot(
+        e_nod_Gs_1[::6, 23], z_nod_Gs_1[::6], label="t=5 yr",
+        marker="^", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_1[:, 78], z_nod_Gs_1, "--k",
+    )
+    plt.plot(
+        e_nod_exp_Gs_1[:, 4], z_exp,
+        marker="x", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_1[::6, 78], z_nod_Gs_1[::6], label="t=60 yr",
+        marker="D", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_278[:, 10], z_nod_Gs_278, "-k",
+    )
+    plt.plot(
+        e_nod_exp_Gs_278[:, 1], z_exp,
+        marker="x", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_278[::6, 10], z_nod_Gs_278[::6],  # label="t=0.1 yr",
+        marker="o", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_278[:, 20], z_nod_Gs_278, "-k",
+    )
+    plt.plot(
+        e_nod_exp_Gs_278[:, 2], z_exp,
+        marker="x", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_278[::6, 20], z_nod_Gs_278[::6],  # label="t=2 yr",
+        marker="s", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_278[:, 23], z_nod_Gs_278, "-k",
+    )
+    plt.plot(
+        e_nod_exp_Gs_278[:, 3], z_exp,
+        marker="x", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_278[::6, 23], z_nod_Gs_278[::6],  # label="t=5 yr",
+        marker="^", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_278[:, 78], z_nod_Gs_278, "-k",
+    )
+    plt.plot(
+        e_nod_exp_Gs_278[:, 4], z_exp,
+        marker="x", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_278[::6, 78], z_nod_Gs_278[::6],  # label="t=60 yr",
+        marker="D", linestyle="none",
+    )
+    fig.legend()
     plt.xlabel(r"Void Ratio, $e$")
     plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
+    plt.ylim((11, -1))
+    plt.xlim((1.5, 3.0))
 
     plt.subplot(1, 3, 2)
-    plt.plot(sig_p_0_exp, z_nod, "-k", label="init")
-    plt.plot(sig_p_int[:, 0], z_int, ":r", label="post-stab")
-    plt.plot(sig_p_1_exp, z_nod, "--k", label="final (exp)")
-    plt.plot(sig_p_int[:, 1], z_int, ":b", label="current")
-    # plt.plot(sig_p_trz[:, 1], z_nod, "-.b", label="Terzaghi", linewidth=0.5)
-    for k_plot_plot in [10, 20, 23, 78]:
-        plt.plot(sig_p_int[:, k_plot_plot], z_int, ":b")
-        # plt.plot(sig_p_trz[:, k_plot_plot], z_nod, "-.b", linewidth=0.5)
+    plt.plot(
+        sig_p_int_Gs_1[:, 0], z_int_Gs_1, "--k", label="Gs=1.0"
+    )
+    plt.plot(
+        sig_p_int_Gs_278[:, 0], z_int_Gs_278, "-k", label="Gs=2.78"
+    )
+    plt.plot(
+        sig_p_int_Gs_1[:, 10], z_int_Gs_1, "--k",
+    )
+    plt.plot(
+        sig_p_int_Gs_1[2::5, 10], z_int_Gs_1[2::5], label="t=0.1 yr",
+        marker="o", linestyle="none",
+    )
+    plt.plot(
+        sig_p_int_Gs_1[:, 20], z_int_Gs_1, "--k",
+    )
+    plt.plot(
+        sig_p_int_Gs_1[2::5, 20], z_int_Gs_1[2::5], label="t=2 yr",
+        marker="s", linestyle="none",
+    )
+    plt.plot(
+        sig_p_int_Gs_1[:, 23], z_int_Gs_1, "--k",
+    )
+    plt.plot(
+        sig_p_int_Gs_1[2::5, 23], z_int_Gs_1[2::5], label="t=5 yr",
+        marker="^", linestyle="none",
+    )
+    plt.plot(
+        sig_p_int_Gs_1[:, 78], z_int_Gs_1, "--k",
+    )
+    plt.plot(
+        sig_p_int_Gs_1[2::5, 78], z_int_Gs_1[2::5], label="t=60 yr",
+        marker="D", linestyle="none",
+    )
+    plt.plot(
+        sig_p_int_Gs_278[:, 10], z_int_Gs_278, "-k",
+    )
+    plt.plot(
+        sig_p_int_Gs_278[2::5, 10], z_int_Gs_278[2::5],  # label="t=0.1 yr",
+        marker="o", linestyle="none",
+    )
+    plt.plot(
+        sig_p_int_Gs_278[:, 20], z_int_Gs_278, "-k",
+    )
+    plt.plot(
+        sig_p_int_Gs_278[2::5, 20], z_int_Gs_278[2::5],  # label="t=2 yr",
+        marker="s", linestyle="none",
+    )
+    plt.plot(
+        sig_p_int_Gs_278[:, 23], z_int_Gs_278, "-k",
+    )
+    plt.plot(
+        sig_p_int_Gs_278[2::5, 23], z_int_Gs_278[2::5],  # label="t=5 yr",
+        marker="^", linestyle="none",
+    )
+    plt.plot(
+        sig_p_int_Gs_278[:, 78], z_int_Gs_278, "-k",
+    )
+    plt.plot(
+        sig_p_int_Gs_278[2::5, 78], z_int_Gs_278[2::5],  # label="t=60 yr",
+        marker="D", linestyle="none",
+    )
     plt.xlabel(r"Eff Stress, $\sigma^\prime$ [$kPa$]")
+    plt.ylim((11, -1))
+    plt.xlim((0.0, 500.0))
 
     plt.subplot(1, 3, 3)
-    plt.semilogx(hyd_cond_0_exp, z_nod, "-k", label="init")
-    plt.semilogx(hyd_cond_int[:, 0], z_int, ":r", label="post-stab")
-    plt.semilogx(hyd_cond_1_exp, z_nod, "--k", label="final (exp)")
-    plt.semilogx(hyd_cond_int[:, 1], z_int, ":b", label="consol (act)")
-    for k_plot_plot in [10, 20, 23, 78]:
-        plt.semilogx(hyd_cond_int[:, k_plot_plot], z_int, ":b")
+    plt.semilogx(
+        hyd_cond_int_Gs_1[:, 0], z_int_Gs_1, "--k", label="Gs=1.0"
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_278[:, 0], z_int_Gs_278, "-k", label="Gs=2.78"
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_1[:, 10], z_int_Gs_1, "--k",
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_1[2::5, 10], z_int_Gs_1[2::5], label="t=0.1 yr",
+        marker="o", linestyle="none",
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_1[:, 20], z_int_Gs_1, "--k",
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_1[2::5, 20], z_int_Gs_1[2::5], label="t=2 yr",
+        marker="s", linestyle="none",
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_1[:, 23], z_int_Gs_1, "--k",
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_1[2::5, 23], z_int_Gs_1[2::5], label="t=5 yr",
+        marker="^", linestyle="none",
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_1[:, 78], z_int_Gs_1, "--k",
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_1[2::5, 78], z_int_Gs_1[2::5], label="t=60 yr",
+        marker="D", linestyle="none",
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_278[:, 10], z_int_Gs_278, "-k",
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_278[2::5, 10], z_int_Gs_278[2::5],  # label="t=0.1 yr",
+        marker="o", linestyle="none",
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_278[:, 20], z_int_Gs_278, "-k",
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_278[2::5, 20], z_int_Gs_278[2::5],  # label="t=2 yr",
+        marker="s", linestyle="none",
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_278[:, 23], z_int_Gs_278, "-k",
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_278[2::5, 23], z_int_Gs_278[2::5],  # label="t=5 yr",
+        marker="^", linestyle="none",
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_278[:, 78], z_int_Gs_278, "-k",
+    )
+    plt.semilogx(
+        hyd_cond_int_Gs_278[2::5, 78], z_int_Gs_278[2::5],  # label="t=60 yr",
+        marker="D", linestyle="none",
+    )
     plt.xlabel(r"Hyd Cond, $k$ [$m/s$]")
+    plt.xlim((1e-11, 2e-10))
+    plt.ylim((11, -1))
 
     plt.savefig("examples/con_static_bench_void_sig_profiles.svg")
 
