@@ -40,6 +40,7 @@ def solve_consolidation_benchmark(
     print(f"num_elements = {num_elements}")
     print(f"dt_sim_0 = {dt_sim_0} s")
     print(f"t_max = {t_max} s = {t_max / s_per_yr} yr")
+    print(f"ppc0 = {ppc0} Pa")
     print(f"tol = {tol:0.4e}")
 
     # define the material properties
@@ -96,8 +97,12 @@ def solve_consolidation_benchmark(
     hyd_cond_int = np.zeros((len(z_int), n_plot + 1))
 
     # initialize void ratio profile
-    e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(m, qi, z_nod)
-    e1, sig_p_1_exp, hyd_cond_1_exp = calculate_static_profile(m, qf, z_nod)
+    e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(
+        z_nod, m, qi, ppc0
+    )
+    e1, sig_p_1_exp, hyd_cond_1_exp = calculate_static_profile(
+        z_nod, m, qf, ppc0
+    )
     sig_p_0_exp *= 1.0e-3
     sig_p_1_exp *= 1.0e-3
     for k, nd in enumerate(con_static.nodes):
@@ -241,10 +246,12 @@ def main():
     H_layer = 10.0
     num_elements = 15
     dt_sim_0 = 1.0e-1
-    # tol = 1e-5
     t_max = 80.0 * s_per_yr
     qi = 40.0e3
     qf = 440.0e3
+    ppc0 = 200.53e3
+    tol = 1e-6
+    stabilize = False
 
     # set plotting parameters
     plt.rc("font", size=8)
@@ -421,8 +428,8 @@ def main():
         t_50_Gs_1, run_time_Gs_1,
     ) = solve_consolidation_benchmark(
         Gs=1.0, H_layer=H_layer, num_elements=num_elements,
-        dt_sim_0=dt_sim_0, t_max=t_max, qi=qi, qf=qf,
-        stabilize=False,  # tol=tol,
+        dt_sim_0=dt_sim_0, t_max=t_max, qi=qi, qf=qf, ppc0=ppc0,
+        stabilize=stabilize, tol=tol,
     )
     t_con_Gs_1_yr = t_con_Gs_1 / s_per_yr
 
@@ -434,8 +441,8 @@ def main():
         t_50_Gs_278, run_time_Gs_278,
     ) = solve_consolidation_benchmark(
         Gs=2.78, H_layer=H_layer, num_elements=num_elements,
-        dt_sim_0=dt_sim_0, t_max=t_max, qi=qi, qf=qf,
-        stabilize=False,  # tol=tol,
+        dt_sim_0=dt_sim_0, t_max=t_max, qi=qi, qf=qf, ppc0=ppc0,
+        stabilize=stabilize, tol=tol,
     )
     t_con_Gs_278_yr = t_con_Gs_278 / s_per_yr
 
@@ -731,12 +738,14 @@ def terzaghi_consolidation(z, t, cv, H, ui):
     return ue, U_avg, Uz
 
 
-def calculate_static_profile(m, qs, z):
+def calculate_static_profile(z, m, qs=0.0, ppc=0.0):
     nnod = len(z)
     Gs = m.spec_grav_solids
     Ccu = m.comp_index_unfrozen
+    Cru = m.rebound_index_unfrozen
     sig_cu0 = m.eff_stress_0_comp
     e_cu0 = m.void_ratio_0_comp
+    e_ppc = e_cu0 - Ccu * np.log10(ppc / sig_cu0) if ppc else e_cu0
     gam_p = np.zeros(nnod)
     sig_p = np.zeros(nnod)
     sig_p[0] = qs
@@ -751,7 +760,10 @@ def calculate_static_profile(m, qs, z):
                 dz = z[k] - z[k - 1]
                 gam_p_avg = 0.5 * (gam_p[k - 1] + gam_p[k])
                 sig_p[k] = sig_p[k - 1] + gam_p_avg * dz
-            e1[k] = e_cu0 - Ccu * np.log10(sig_p[k] / sig_cu0)
+            if sig_p[k] < ppc:
+                e1[k] = e_ppc - Cru * np.log10(sig_p[k] / ppc)
+            else:
+                e1[k] = e_cu0 - Ccu * np.log10(sig_p[k] / sig_cu0)
         eps_a = np.linalg.norm(e1 - e0) / np.linalg.norm(e1)
         e0[:] = e1[:]
     hyd_cond = m.hyd_cond_0 * \
