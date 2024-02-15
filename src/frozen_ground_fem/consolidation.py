@@ -1322,3 +1322,61 @@ class ConsolidationAnalysis1D(Mesh1D):
             def_coords[kk0:kk1] = def_coords[kk0] + ddcc
         def_coords[-1] = self.nodes[-1].z
         return def_coords
+
+    def calculate_degree_consolidation(
+        self,
+        void_ratio_1: npt.ArrayLike,
+    ) -> tuple[float, npt.NDArray[np.floating]]:
+        """Compute average degree of consolidation and
+        degree of consolidation profile given
+        a final void ratio profile.
+
+        Inputs
+        ------
+        void_ratio_1 : array_like, shape=(num_nodes, )
+            The final void ratio profile at the nodes.
+
+        Returns
+        -------
+        float
+            The average degree of consolidation.
+        numpy.ndarray, shape=(num_nodes, )
+            The degree of consolidation at the nodes.
+
+        Notes
+        -----
+        Degree of consolidation Uz(Z, t) is defined as
+
+            Uz(Z, t) = (e0(Z) - e(Z, t)) / (e0(Z) - e1(Z))
+
+        where Z are the original (Lagrangian coordinates),
+        t is time,
+        e0(Z) is the initial void ratio profile,
+        e1(Z) is the final void ratio profile,
+        and e(Z, t) is the current void ratio profile.
+        Average degree of consolidation is calculated by
+        integrating Uz over the entire profile and normalizing
+        by the original height of the profile.
+        """
+        e0 = np.array([nd.void_ratio_0 for nd in self.nodes])
+        e1 = np.array(void_ratio_1)
+        et = np.array([nd.void_ratio for nd in self.nodes])
+        Uz = np.array([
+            (ee0 - eet) / (ee0 - ee1)
+            for ee0, ee1, eet in zip(e0, e1, et)
+        ])
+        order = self.elements[0].order
+        UU = 0.0
+        H = 0.0
+        for k, e in enumerate(self.elements):
+            jac = e.jacobian
+            H += jac
+            kk0 = k * order
+            kk1 = kk0 + order + 1
+            Uze = Uz[kk0:kk1]
+            for ip in e.int_pts:
+                N = e._shape_matrix(ip.local_coord)
+                Uzi = (N @ Uze)[0]
+                UU += Uzi * ip.weight * jac
+        UU /= H
+        return UU, Uz
