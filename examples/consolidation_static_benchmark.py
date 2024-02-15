@@ -10,6 +10,7 @@ from:
 """
 import time
 import numpy as np
+import numpy.typing as npt
 import matplotlib.pyplot as plt
 
 from frozen_ground_fem.materials import (
@@ -92,16 +93,17 @@ def solve_consolidation_benchmark(
     z_nod = np.array([nd.z for nd in con_static.nodes])
     z_int = np.array([ip.z for e in con_static.elements for ip in e.int_pts])
     e_nod = np.zeros((len(z_nod), n_plot + 1))
+    Uz_nod = np.zeros_like(e_nod)
     e_nod_stab = np.zeros_like(z_nod)
     sig_p_int = np.zeros((len(z_int), n_plot + 1))
     hyd_cond_int = np.zeros((len(z_int), n_plot + 1))
 
     # initialize void ratio profile
-    e0, sig_p_0_exp, hyd_cond_0_exp = calculate_static_profile(
-        z_nod, m, qi, ppc0
-    )
-    e1, sig_p_1_exp, hyd_cond_1_exp = calculate_static_profile(
-        z_nod, m, qf, ppc0
+    (
+        e0, sig_p_0_exp, hyd_cond_0_exp,
+        e1, sig_p_1_exp, hyd_cond_1_exp,
+    ) = calculate_static_profile(
+        z_nod, m, qi, (qf - qi), ppc0,
     )
     sig_p_0_exp *= 1.0e-3
     sig_p_1_exp *= 1.0e-3
@@ -153,8 +155,8 @@ def solve_consolidation_benchmark(
             eps_s = np.abs((s_con_stab[-1] - s_con_stab[-2]) / s_con_stab[-1])
             print(
                 f"t = {con_static._t1 / s_per_yr:0.3f} yr, "
-                + f"s_con = {s_con_stab[-1]:0.3f} m, "
-                + f"eps_s =  {eps_s:0.4e}, "
+                + f"s = {s_con_stab[-1]:0.3f} m, "
+                + f"eps =  {eps_s:0.4e}, "
                 + f"dt = {dt00:0.4e} s"
             )
             e_nod_stab[:] = con_static._void_ratio_vector[:]
@@ -180,6 +182,7 @@ def solve_consolidation_benchmark(
 
     t_con = [0.0]
     s_con = [0.0]
+    U_con = [0.0]
     k_plot = 0
     t_plot = 0.0
     eps_s = 1.0
@@ -192,14 +195,18 @@ def solve_consolidation_benchmark(
         dt00, dt_s, err_s = con_static.solve_to(t_plot)
         t_con.append(con_static._t1)
         s_con.append(con_static.calculate_total_settlement())
+        UU, Uz = con_static.calculate_degree_consolidation(e1)
+        U_con.append(UU)
         eps_s = np.abs((s_con[-1] - s_con[-2]) / s_con[-1])
         print(
             f"t = {con_static._t1 / s_per_yr:0.3f} yr, "
-            + f"s_con = {s_con[-1]:0.3f} m, "
-            + f"eps_s =  {eps_s:0.4e}, "
+            + f"s = {s_con[-1]:0.3f} m, "
+            + f"U = {U_con[-1]:0.4f}, "
+            + f"eps =  {eps_s:0.4e}, "
             + f"dt = {dt00:0.4e} s"
         )
         e_nod[:, k_plot] = con_static._void_ratio_vector[:]
+        Uz_nod[:, k_plot] = Uz[:]
         sig_p_int[:, k_plot] = 1.0e-3 * np.array(
             [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
         )
@@ -213,6 +220,7 @@ def solve_consolidation_benchmark(
     # convert settlement to arrays
     t_con = np.array(t_con)
     s_con = np.array(s_con)
+    U_con = np.array(U_con)
 
     # calculate time to 50 percent settlement
     s_50 = 0.5 * s_con[-1]
@@ -230,12 +238,13 @@ def solve_consolidation_benchmark(
 
     print(f"Run time = {run_time: 0.4f} s")
     print(f"Total settlement = {s_con[-1]} m")
+    print(f"Final degree of consolidation = {U_con[-1]:0.4f}")
     print(f"t_50 = {t_50} s = {t_50 / s_per_yr} yr")
 
     return (
-        t_con, s_con,
+        t_con, s_con, U_con,
         z_nod, z_int,
-        e_nod, sig_p_int, hyd_cond_int,
+        e_nod, Uz_nod, sig_p_int, hyd_cond_int,
         t_50, run_time,
     )
 
@@ -244,7 +253,7 @@ def main():
     # define simulation parameters
     s_per_yr = 365.0 * 86400.0
     H_layer = 10.0
-    num_elements = 15
+    num_elements = 20
     dt_sim_0 = 1.0e-1
     t_max = 80.0 * s_per_yr
     qi = 40.0e3
@@ -262,10 +271,12 @@ def main():
         markeredgewidth=0.5,
         markeredgecolor="black",
         markerfacecolor="none",
+        markersize=5,
     )
 
-    # expected output
-    t_con_exp = np.array([
+    # plot indices at 0.0, 0.1, 2, 5, and 60 years
+    k_plot = [0, 10, 20, 23, 78]
+    t_FP15 = np.array([
         0.00,
         0.05,
         0.10,
@@ -280,171 +291,103 @@ def main():
         40.00,
         60.00,
     ])
-    s_con_exp_Gs_1 = np.array([
-        0.000,
-        0.215,
-        0.304,
-        0.679,
-        0.961,
-        1.358,
-        1.662,
-        1.910,
-        2.113,
-        2.642,
-        2.806,
-        2.815,
-        2.815,
-    ])
-    s_con_exp_Gs_278 = np.array([
-        0.000,
-        0.188,
-        0.265,
-        0.592,
-        0.835,
-        1.178,
-        1.439,
-        1.651,
-        1.826,
-        2.296,
-        2.462,
-        2.473,
-        2.473,
-    ])
-    z_exp = np.linspace(0.0, 10.0, 11)
-    e_nod_exp_Gs_1 = np.zeros((len(z_exp), 5))
-    e_nod_exp_Gs_1[:, 0] = 2.70
-    e_nod_exp_Gs_1[:, 1] = [
-        1.659,
-        2.636,
-        2.700,
-        2.700,
-        2.700,
-        2.700,
-        2.700,
-        2.700,
-        2.700,
-        2.636,
-        1.659,
-    ]
-    e_nod_exp_Gs_1[:, 2] = [
-        1.659,
-        1.912,
-        2.167,
-        2.383,
-        2.523,
-        2.571,
-        2.523,
-        2.383,
-        2.167,
-        1.912,
-        1.659,
-    ]
-    e_nod_exp_Gs_1[:, 3] = [
-        1.659,
-        1.779,
-        1.897,
-        1.997,
-        2.066,
-        2.090,
-        2.066,
-        1.997,
-        1.897,
-        1.779,
-        1.659,
-    ]
-    e_nod_exp_Gs_1[:, 4] = 1.659
-    e_nod_exp_Gs_278 = np.zeros((len(z_exp), 5))
-    e_nod_exp_Gs_278[:, 0] = [
-        2.700,
-        2.651,
-        2.607,
-        2.566,
-        2.529,
-        2.494,
-        2.461,
-        2.430,
-        2.402,
-        2.374,
-        2.348,
-    ]
-    e_nod_exp_Gs_278[:, 1] = [
-        1.659,
-        2.585,
-        2.603,
-        2.563,
-        2.527,
-        2.493,
-        2.461,
-        2.431,
-        2.403,
-        2.323,
-        1.612,
-    ]
-    e_nod_exp_Gs_278[:, 2] = [
-        1.659,
-        1.890,
-        2.112,
-        2.283,
-        2.376,
-        2.387,
-        2.323,
-        2.196,
-        2.019,
-        1.816,
-        1.612,
-    ]
-    e_nod_exp_Gs_278[:, 3] = [
-        1.659,
-        1.765,
-        1.866,
-        1.947,
-        1.998,
-        2.008,
-        1.978,
-        1.912,
-        1.821,
-        1.718,
-        1.612,
-    ]
-    e_nod_exp_Gs_1[:, 4] = [
-        1.659,
-        1.656,
-        1.650,
-        1.645,
-        1.640,
-        1.635,
-        1.630,
-        1.626,
-        1.621,
-        1.616,
-        1.612,
-    ]
+    z_FP15 = np.linspace(0.0, 10.0, 11)
+
+    # load expected settlement
+    s_FP15 = np.loadtxt(
+        "examples/FoxPu2015_Settlement.csv",
+        delimiter=",",
+    )
+    s_FP15_Gs_1 = s_FP15[:, 0]
+    s_FP15_Gs_278 = s_FP15[:, 1]
+    s_FP15_Gs_1_OC = s_FP15[:, 2]
+    s_FP15_Gs_278_OC = s_FP15[:, 3]
+
+    # load expected degree of consolidation
+    U_FP15_Gs_1 = s_FP15[:, 4]
+    U_FP15_Gs_278 = s_FP15[:, 5]
+    U_FP15_Gs_1_OC = s_FP15[:, 6]
+    U_FP15_Gs_278_OC = s_FP15[:, 7]
+
+    # load expected void ratio profiles
+    e_FP15 = np.loadtxt(
+        "examples/FoxPu2015_VoidRatio.csv",
+        delimiter=",",
+    )
+    e_FP15_Gs_1 = e_FP15[:, 0:10:2]
+    e_FP15_Gs_278 = e_FP15[:, 1:10:2]
+    e_FP15_Gs_1_OC = e_FP15[:, 10::2]
+    e_FP15_Gs_278_OC = e_FP15[:, 11::2]
+
+    # load expected (normalized) excess pore pressure profiles
+    ue_FP15 = np.loadtxt(
+        "examples/FoxPu2015_NormExcPorePress.csv",
+        delimiter=",",
+    )
+    ue_FP15_Gs_1 = ue_FP15[:, 0:10:2]
+    ue_FP15_Gs_278 = ue_FP15[:, 1:10:2]
+    ue_FP15_Gs_1_OC = ue_FP15[:, 10::2]
+    ue_FP15_Gs_278_OC = ue_FP15[:, 11::2]
 
     # solve neutral buoyancy case
+    # normally consolidated
     (
-        t_con_Gs_1, s_con_Gs_1,
+        t_con_Gs_1, s_con_Gs_1, U_con_Gs_1,
         z_nod_Gs_1, z_int_Gs_1,
-        e_nod_Gs_1, sig_p_int_Gs_1, hyd_cond_int_Gs_1,
+        e_nod_Gs_1, Uz_nod_Gs_1,
+        sig_p_int_Gs_1, hyd_cond_int_Gs_1,
         t_50_Gs_1, run_time_Gs_1,
     ) = solve_consolidation_benchmark(
         Gs=1.0, H_layer=H_layer, num_elements=num_elements,
-        dt_sim_0=dt_sim_0, t_max=t_max, qi=qi, qf=qf, ppc0=ppc0,
+        dt_sim_0=dt_sim_0, t_max=t_max, qi=qi, qf=qf, ppc0=0.0,
         stabilize=stabilize, tol=tol,
     )
     t_con_Gs_1_yr = t_con_Gs_1 / s_per_yr
 
     # solve self weight case
+    # normally consolidated
     (
-        t_con_Gs_278, s_con_Gs_278,
+        t_con_Gs_278, s_con_Gs_278, U_con_Gs_278,
         z_nod_Gs_278, z_int_Gs_278,
-        e_nod_Gs_278, sig_p_int_Gs_278, hyd_cond_int_Gs_278,
+        e_nod_Gs_278, Uz_nod_Gs_278,
+        sig_p_int_Gs_278, hyd_cond_int_Gs_278,
         t_50_Gs_278, run_time_Gs_278,
+    ) = solve_consolidation_benchmark(
+        Gs=2.78, H_layer=H_layer, num_elements=num_elements,
+        dt_sim_0=dt_sim_0, t_max=t_max, qi=qi, qf=qf, ppc0=0.0,
+        stabilize=stabilize, tol=tol,
+    )
+    t_con_Gs_278_yr = t_con_Gs_278 / s_per_yr
+
+    # solve neutral buoyancy case
+    # overconsolidated
+    (
+        t_con_Gs_1_OC, s_con_Gs_1_OC, U_con_Gs_1_OC,
+        z_nod_Gs_1_OC, z_int_Gs_1_OC,
+        e_nod_Gs_1_OC, Uz_nod_Gs_1_OC,
+        sig_p_int_Gs_1_OC, hyd_cond_int_Gs_1_OC,
+        t_50_Gs_1_OC, run_time_Gs_1_OC,
+    ) = solve_consolidation_benchmark(
+        Gs=1.0, H_layer=H_layer, num_elements=num_elements,
+        dt_sim_0=dt_sim_0, t_max=t_max, qi=qi, qf=qf, ppc0=ppc0,
+        stabilize=stabilize, tol=tol,
+    )
+    t_con_Gs_1_OC_yr = t_con_Gs_1_OC / s_per_yr
+
+    # solve self weight case
+    # overconsolidated
+    (
+        t_con_Gs_278_OC, s_con_Gs_278_OC, U_con_Gs_278_OC,
+        z_nod_Gs_278_OC, z_int_Gs_278_OC,
+        e_nod_Gs_278_OC, Uz_nod_Gs_278_OC,
+        sig_p_int_Gs_278_OC, hyd_cond_int_Gs_278_OC,
+        t_50_Gs_278_OC, run_time_Gs_278_OC,
     ) = solve_consolidation_benchmark(
         Gs=2.78, H_layer=H_layer, num_elements=num_elements,
         dt_sim_0=dt_sim_0, t_max=t_max, qi=qi, qf=qf, ppc0=ppc0,
         stabilize=stabilize, tol=tol,
     )
-    t_con_Gs_278_yr = t_con_Gs_278 / s_per_yr
+    t_con_Gs_278_OC_yr = t_con_Gs_278_OC / s_per_yr
 
     plt.figure(figsize=(3.5, 4))
     plt.semilogx(
@@ -454,11 +397,11 @@ def main():
         t_con_Gs_278_yr[1:], s_con_Gs_278[1:], "-k", label="Gs=2.78",
     )
     plt.semilogx(
-        t_con_exp[1:], s_con_exp_Gs_1[1:], label="FoxPu2015",
+        t_FP15[1:], s_FP15_Gs_1[1:], label="FoxPu2015",
         marker="x", linestyle="none",
     )
     plt.semilogx(
-        t_con_exp[1:], s_con_exp_Gs_278[1:],  # label="FoxPu2015",
+        t_FP15[1:], s_FP15_Gs_278[1:],  # label="FoxPu2015",
         marker="x", linestyle="none",
     )
     plt.xlabel(r"Time, $t$ [$yr$]")
@@ -467,7 +410,30 @@ def main():
     plt.ylim([3.0, 0.0])
     plt.legend()
 
-    plt.savefig("examples/con_static_bench_settlement.svg")
+    plt.savefig("examples/con_static_bench_settle_NC.svg")
+
+    plt.figure(figsize=(3.5, 4))
+    plt.semilogx(
+        t_con_Gs_1_OC_yr[1:], s_con_Gs_1_OC[1:], "--k", label="Gs=1.0",
+    )
+    plt.semilogx(
+        t_con_Gs_278_OC_yr[1:], s_con_Gs_278_OC[1:], "-k", label="Gs=2.78",
+    )
+    plt.semilogx(
+        t_FP15[1:], s_FP15_Gs_1_OC[1:], label="FoxPu2015",
+        marker="x", linestyle="none",
+    )
+    plt.semilogx(
+        t_FP15[1:], s_FP15_Gs_278_OC[1:],  # label="FoxPu2015",
+        marker="x", linestyle="none",
+    )
+    plt.xlabel(r"Time, $t$ [$yr$]")
+    plt.ylabel(r"Settlement, $s$ [$m$]")
+    plt.xlim([0.01, 100])
+    plt.ylim([1.5, 0.0])
+    plt.legend()
+
+    plt.savefig("examples/con_static_bench_settle_OC.svg")
 
     fig = plt.figure(figsize=(10, 4))
 
@@ -479,96 +445,53 @@ def main():
         e_nod_Gs_278[:, 0], z_nod_Gs_278, "-k", label="Gs=2.78"
     )
     plt.plot(
-        e_nod_exp_Gs_1[:, 0], z_exp, label="FoxPu2015",
+        e_FP15_Gs_1[:, 0], z_FP15, label="FoxPu2015",
         marker="x", linestyle="none",
     )
     plt.plot(
-        e_nod_exp_Gs_278[:, 0], z_exp,
+        e_FP15_Gs_278[:, 0], z_FP15,
         marker="x", linestyle="none",
     )
-    plt.plot(
-        e_nod_Gs_1[:, 10], z_nod_Gs_1, "--k",
-    )
-    plt.plot(
-        e_nod_exp_Gs_1[:, 1], z_exp,
-        marker="x", linestyle="none",
-    )
+    for kk, kk_plot in enumerate(k_plot):
+        if not kk:
+            continue
+        plt.plot(e_nod_Gs_1[:, kk_plot], z_nod_Gs_1, "--k")
+        plt.plot(
+            e_FP15_Gs_1[:, kk], z_FP15,
+            marker="x", linestyle="none",
+        )
+        plt.plot(e_nod_Gs_278[:, kk_plot], z_nod_Gs_278, "-k")
+        plt.plot(
+            e_FP15_Gs_278[:, kk], z_FP15,
+            marker="x", linestyle="none",
+        )
     plt.plot(
         e_nod_Gs_1[::6, 10], z_nod_Gs_1[::6], label="t=0.1 yr",
         marker="o", linestyle="none",
-    )
-    plt.plot(
-        e_nod_Gs_1[:, 20], z_nod_Gs_1, "--k",
-    )
-    plt.plot(
-        e_nod_exp_Gs_1[:, 2], z_exp,
-        marker="x", linestyle="none",
     )
     plt.plot(
         e_nod_Gs_1[::6, 20], z_nod_Gs_1[::6], label="t=2 yr",
         marker="s", linestyle="none",
     )
     plt.plot(
-        e_nod_exp_Gs_1[:, 3], z_exp,
-        marker="x", linestyle="none",
-    )
-    plt.plot(
-        e_nod_Gs_1[:, 23], z_nod_Gs_1, "--k",
-    )
-    plt.plot(
         e_nod_Gs_1[::6, 23], z_nod_Gs_1[::6], label="t=5 yr",
         marker="^", linestyle="none",
-    )
-    plt.plot(
-        e_nod_Gs_1[:, 78], z_nod_Gs_1, "--k",
-    )
-    plt.plot(
-        e_nod_exp_Gs_1[:, 4], z_exp,
-        marker="x", linestyle="none",
     )
     plt.plot(
         e_nod_Gs_1[::6, 78], z_nod_Gs_1[::6], label="t=60 yr",
         marker="D", linestyle="none",
     )
     plt.plot(
-        e_nod_Gs_278[:, 10], z_nod_Gs_278, "-k",
-    )
-    plt.plot(
-        e_nod_exp_Gs_278[:, 1], z_exp,
-        marker="x", linestyle="none",
-    )
-    plt.plot(
         e_nod_Gs_278[::6, 10], z_nod_Gs_278[::6],  # label="t=0.1 yr",
         marker="o", linestyle="none",
-    )
-    plt.plot(
-        e_nod_Gs_278[:, 20], z_nod_Gs_278, "-k",
-    )
-    plt.plot(
-        e_nod_exp_Gs_278[:, 2], z_exp,
-        marker="x", linestyle="none",
     )
     plt.plot(
         e_nod_Gs_278[::6, 20], z_nod_Gs_278[::6],  # label="t=2 yr",
         marker="s", linestyle="none",
     )
     plt.plot(
-        e_nod_Gs_278[:, 23], z_nod_Gs_278, "-k",
-    )
-    plt.plot(
-        e_nod_exp_Gs_278[:, 3], z_exp,
-        marker="x", linestyle="none",
-    )
-    plt.plot(
         e_nod_Gs_278[::6, 23], z_nod_Gs_278[::6],  # label="t=5 yr",
         marker="^", linestyle="none",
-    )
-    plt.plot(
-        e_nod_Gs_278[:, 78], z_nod_Gs_278, "-k",
-    )
-    plt.plot(
-        e_nod_exp_Gs_278[:, 4], z_exp,
-        marker="x", linestyle="none",
     )
     plt.plot(
         e_nod_Gs_278[::6, 78], z_nod_Gs_278[::6],  # label="t=60 yr",
@@ -580,141 +503,211 @@ def main():
     plt.ylim((11, -1))
     plt.xlim((1.5, 3.0))
 
-    plt.subplot(1, 3, 2)
-    plt.plot(
-        sig_p_int_Gs_1[:, 0], z_int_Gs_1, "--k", label="Gs=1.0"
-    )
-    plt.plot(
-        sig_p_int_Gs_278[:, 0], z_int_Gs_278, "-k", label="Gs=2.78"
-    )
-    plt.plot(
-        sig_p_int_Gs_1[:, 10], z_int_Gs_1, "--k",
-    )
-    plt.plot(
-        sig_p_int_Gs_1[2::5, 10], z_int_Gs_1[2::5], label="t=0.1 yr",
-        marker="o", linestyle="none",
-    )
-    plt.plot(
-        sig_p_int_Gs_1[:, 20], z_int_Gs_1, "--k",
-    )
-    plt.plot(
-        sig_p_int_Gs_1[2::5, 20], z_int_Gs_1[2::5], label="t=2 yr",
-        marker="s", linestyle="none",
-    )
-    plt.plot(
-        sig_p_int_Gs_1[:, 23], z_int_Gs_1, "--k",
-    )
-    plt.plot(
-        sig_p_int_Gs_1[2::5, 23], z_int_Gs_1[2::5], label="t=5 yr",
-        marker="^", linestyle="none",
-    )
-    plt.plot(
-        sig_p_int_Gs_1[:, 78], z_int_Gs_1, "--k",
-    )
-    plt.plot(
-        sig_p_int_Gs_1[2::5, 78], z_int_Gs_1[2::5], label="t=60 yr",
-        marker="D", linestyle="none",
-    )
-    plt.plot(
-        sig_p_int_Gs_278[:, 10], z_int_Gs_278, "-k",
-    )
-    plt.plot(
-        sig_p_int_Gs_278[2::5, 10], z_int_Gs_278[2::5],  # label="t=0.1 yr",
-        marker="o", linestyle="none",
-    )
-    plt.plot(
-        sig_p_int_Gs_278[:, 20], z_int_Gs_278, "-k",
-    )
-    plt.plot(
-        sig_p_int_Gs_278[2::5, 20], z_int_Gs_278[2::5],  # label="t=2 yr",
-        marker="s", linestyle="none",
-    )
-    plt.plot(
-        sig_p_int_Gs_278[:, 23], z_int_Gs_278, "-k",
-    )
-    plt.plot(
-        sig_p_int_Gs_278[2::5, 23], z_int_Gs_278[2::5],  # label="t=5 yr",
-        marker="^", linestyle="none",
-    )
-    plt.plot(
-        sig_p_int_Gs_278[:, 78], z_int_Gs_278, "-k",
-    )
-    plt.plot(
-        sig_p_int_Gs_278[2::5, 78], z_int_Gs_278[2::5],  # label="t=60 yr",
-        marker="D", linestyle="none",
-    )
-    plt.xlabel(r"Eff Stress, $\sigma^\prime$ [$kPa$]")
-    plt.ylim((11, -1))
-    plt.xlim((0.0, 500.0))
+    # plt.subplot(1, 3, 2)
+    # plt.plot(
+    #     sig_p_int_Gs_1[:, 0], z_int_Gs_1, "--k", label="Gs=1.0"
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_278[:, 0], z_int_Gs_278, "-k", label="Gs=2.78"
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_1[:, 10], z_int_Gs_1, "--k",
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_1[2::5, 10], z_int_Gs_1[2::5], label="t=0.1 yr",
+    #     marker="o", linestyle="none",
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_1[:, 20], z_int_Gs_1, "--k",
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_1[2::5, 20], z_int_Gs_1[2::5], label="t=2 yr",
+    #     marker="s", linestyle="none",
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_1[:, 23], z_int_Gs_1, "--k",
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_1[2::5, 23], z_int_Gs_1[2::5], label="t=5 yr",
+    #     marker="^", linestyle="none",
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_1[:, 78], z_int_Gs_1, "--k",
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_1[2::5, 78], z_int_Gs_1[2::5], label="t=60 yr",
+    #     marker="D", linestyle="none",
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_278[:, 10], z_int_Gs_278, "-k",
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_278[2::5, 10], z_int_Gs_278[2::5],  # label="t=0.1 yr",
+    #     marker="o", linestyle="none",
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_278[:, 20], z_int_Gs_278, "-k",
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_278[2::5, 20], z_int_Gs_278[2::5],  # label="t=2 yr",
+    #     marker="s", linestyle="none",
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_278[:, 23], z_int_Gs_278, "-k",
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_278[2::5, 23], z_int_Gs_278[2::5],  # label="t=5 yr",
+    #     marker="^", linestyle="none",
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_278[:, 78], z_int_Gs_278, "-k",
+    # )
+    # plt.plot(
+    #     sig_p_int_Gs_278[2::5, 78], z_int_Gs_278[2::5],  # label="t=60 yr",
+    #     marker="D", linestyle="none",
+    # )
+    # plt.xlabel(r"Eff Stress, $\sigma^\prime$ [$kPa$]")
+    # plt.ylim((11, -1))
+    # plt.xlim((0.0, 500.0))
+    #
+    # plt.subplot(1, 3, 3)
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_1[:, 0], z_int_Gs_1, "--k", label="Gs=1.0"
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_278[:, 0], z_int_Gs_278, "-k", label="Gs=2.78"
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_1[:, 10], z_int_Gs_1, "--k",
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_1[2::5, 10], z_int_Gs_1[2::5], label="t=0.1 yr",
+    #     marker="o", linestyle="none",
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_1[:, 20], z_int_Gs_1, "--k",
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_1[2::5, 20], z_int_Gs_1[2::5], label="t=2 yr",
+    #     marker="s", linestyle="none",
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_1[:, 23], z_int_Gs_1, "--k",
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_1[2::5, 23], z_int_Gs_1[2::5], label="t=5 yr",
+    #     marker="^", linestyle="none",
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_1[:, 78], z_int_Gs_1, "--k",
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_1[2::5, 78], z_int_Gs_1[2::5], label="t=60 yr",
+    #     marker="D", linestyle="none",
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_278[:, 10], z_int_Gs_278, "-k",
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_278[2::5, 10], z_int_Gs_278[2::5],  # label="t=0.1 yr",
+    #     marker="o", linestyle="none",
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_278[:, 20], z_int_Gs_278, "-k",
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_278[2::5, 20], z_int_Gs_278[2::5],  # label="t=2 yr",
+    #     marker="s", linestyle="none",
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_278[:, 23], z_int_Gs_278, "-k",
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_278[2::5, 23], z_int_Gs_278[2::5],  # label="t=5 yr",
+    #     marker="^", linestyle="none",
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_278[:, 78], z_int_Gs_278, "-k",
+    # )
+    # plt.semilogx(
+    #     hyd_cond_int_Gs_278[2::5, 78], z_int_Gs_278[2::5],  # label="t=60 yr",
+    #     marker="D", linestyle="none",
+    # )
+    # plt.xlabel(r"Hyd Cond, $k$ [$m/s$]")
+    # plt.xlim((1e-11, 2e-10))
+    # plt.ylim((11, -1))
+    #
+    plt.savefig("examples/con_static_bench_void_sig_profiles_NC.svg")
 
-    plt.subplot(1, 3, 3)
-    plt.semilogx(
-        hyd_cond_int_Gs_1[:, 0], z_int_Gs_1, "--k", label="Gs=1.0"
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_278[:, 0], z_int_Gs_278, "-k", label="Gs=2.78"
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_1[:, 10], z_int_Gs_1, "--k",
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_1[2::5, 10], z_int_Gs_1[2::5], label="t=0.1 yr",
-        marker="o", linestyle="none",
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_1[:, 20], z_int_Gs_1, "--k",
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_1[2::5, 20], z_int_Gs_1[2::5], label="t=2 yr",
-        marker="s", linestyle="none",
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_1[:, 23], z_int_Gs_1, "--k",
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_1[2::5, 23], z_int_Gs_1[2::5], label="t=5 yr",
-        marker="^", linestyle="none",
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_1[:, 78], z_int_Gs_1, "--k",
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_1[2::5, 78], z_int_Gs_1[2::5], label="t=60 yr",
-        marker="D", linestyle="none",
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_278[:, 10], z_int_Gs_278, "-k",
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_278[2::5, 10], z_int_Gs_278[2::5],  # label="t=0.1 yr",
-        marker="o", linestyle="none",
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_278[:, 20], z_int_Gs_278, "-k",
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_278[2::5, 20], z_int_Gs_278[2::5],  # label="t=2 yr",
-        marker="s", linestyle="none",
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_278[:, 23], z_int_Gs_278, "-k",
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_278[2::5, 23], z_int_Gs_278[2::5],  # label="t=5 yr",
-        marker="^", linestyle="none",
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_278[:, 78], z_int_Gs_278, "-k",
-    )
-    plt.semilogx(
-        hyd_cond_int_Gs_278[2::5, 78], z_int_Gs_278[2::5],  # label="t=60 yr",
-        marker="D", linestyle="none",
-    )
-    plt.xlabel(r"Hyd Cond, $k$ [$m/s$]")
-    plt.xlim((1e-11, 2e-10))
-    plt.ylim((11, -1))
+    fig = plt.figure(figsize=(10, 4))
 
-    plt.savefig("examples/con_static_bench_void_sig_profiles.svg")
+    plt.subplot(1, 3, 1)
+    plt.plot(
+        e_nod_Gs_1_OC[:, 0], z_nod_Gs_1_OC, "--k", label="Gs=1.0"
+    )
+    plt.plot(
+        e_nod_Gs_278_OC[:, 0], z_nod_Gs_278_OC, "-k", label="Gs=2.78"
+    )
+    plt.plot(
+        e_FP15_Gs_1_OC[:, 0], z_FP15, label="FoxPu2015",
+        marker="x", linestyle="none",
+    )
+    plt.plot(
+        e_FP15_Gs_278_OC[:, 0], z_FP15,
+        marker="x", linestyle="none",
+    )
+    for kk, kk_plot in enumerate(k_plot):
+        if not kk:
+            continue
+        plt.plot(e_nod_Gs_1_OC[:, kk_plot], z_nod_Gs_1_OC, "--k")
+        plt.plot(
+            e_FP15_Gs_1_OC[:, kk], z_FP15,
+            marker="x", linestyle="none",
+        )
+        plt.plot(e_nod_Gs_278_OC[:, kk_plot], z_nod_Gs_278_OC, "-k")
+        plt.plot(
+            e_FP15_Gs_278_OC[:, kk], z_FP15,
+            marker="x", linestyle="none",
+        )
+    plt.plot(
+        e_nod_Gs_1_OC[::6, 10], z_nod_Gs_1_OC[::6], label="t=0.1 yr",
+        marker="o", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_1_OC[::6, 20], z_nod_Gs_1_OC[::6], label="t=2 yr",
+        marker="s", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_1_OC[::6, 23], z_nod_Gs_1_OC[::6], label="t=5 yr",
+        marker="^", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_1_OC[::6, 78], z_nod_Gs_1_OC[::6], label="t=60 yr",
+        marker="D", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_278_OC[::6, 10], z_nod_Gs_278_OC[::6],  # label="t=0.1 yr",
+        marker="o", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_278_OC[::6, 20], z_nod_Gs_278_OC[::6],  # label="t=2 yr",
+        marker="s", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_278_OC[::6, 23], z_nod_Gs_278_OC[::6],  # label="t=5 yr",
+        marker="^", linestyle="none",
+    )
+    plt.plot(
+        e_nod_Gs_278_OC[::6, 78], z_nod_Gs_278_OC[::6],  # label="t=60 yr",
+        marker="D", linestyle="none",
+    )
+    fig.legend()
+    plt.xlabel(r"Void Ratio, $e$")
+    plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
+    plt.ylim((11, -1))
+    plt.xlim((1.5, 2.2))
+
+    plt.savefig("examples/con_static_bench_void_sig_profiles_OC.svg")
 
 
 def terzaghi_consolidation(z, t, cv, H, ui):
@@ -738,37 +731,102 @@ def terzaghi_consolidation(z, t, cv, H, ui):
     return ue, U_avg, Uz
 
 
-def calculate_static_profile(z, m, qs=0.0, ppc=0.0):
-    nnod = len(z)
+def calculate_static_profile(
+    z: npt.ArrayLike,
+    m: Material,
+    qs: float,
+    dqs: float = 0.0,
+    ppc: float = 0.0,
+) -> tuple[npt.NDArray[np.floating]]:
+    """Calculate initial and final equilibrium profiles of
+    void ratio, effective stress, and hydraulic conductivity
+    based on surface load, self weight, consolidation curve,
+    and initial coordinates.
+
+    Inputs
+    ------
+    z : array_like, shape=(nnod, )
+        Initial coordinates of nodes.
+    m : frozen_ground_fem.materials.Material
+        Reference to material defining consolidation curve.
+    qs : float
+        Initial surface stress.
+    dqs : float
+        Increment to surface stress.
+    ppc : float
+        Pre-consolidation stress.
+
+    Returns
+    -------
+    e0 : numpy.ndarray, shape=(nnod, )
+        Initial equilibrium void ratio profile.
+    sig_p_0 : numpy.ndarray, shape=(nnod, )
+        Initial equilibrium effective stress profile.
+    hyd_cond_0 : numpy.ndarray, shape=(nnod, )
+        Initial equilibrium hydraulic conductivity profile.
+    e1 : numpy.ndarray, shape=(nnod, )
+        Final equilibrium void ratio profile.
+    sig_p_1 : numpy.ndarray, shape=(nnod, )
+        Final equilibrium effective stress profile.
+    hyd_cond_1 : numpy.ndarray, shape=(nnod, )
+        Final equilibrium hydraulic conductivity profile.
+    """
+    z = np.array(z)
+    # get material properties
     Gs = m.spec_grav_solids
     Ccu = m.comp_index_unfrozen
     Cru = m.rebound_index_unfrozen
     sig_cu0 = m.eff_stress_0_comp
     e_cu0 = m.void_ratio_0_comp
+    # calculate void ratio on NCL corresponding to ppc
     e_ppc = e_cu0 - Ccu * np.log10(ppc / sig_cu0) if ppc else e_cu0
+    # initialize solution grid
+    nnod = len(z)
     gam_p = np.zeros(nnod)
-    sig_p = np.zeros(nnod)
-    sig_p[0] = qs
+    sig_p_0 = np.zeros(nnod)
+    sig_p_0[0] = qs
     e0 = np.ones(nnod)
     e1 = np.zeros(nnod)
     eps_s = 1e-8
     eps_a = 1.0
+    # iterate to determine initial equilibrium profile
+    # for effective stress and void ratio
     while eps_a > eps_s:
         for k, e in enumerate(e0):
+            # buoyant unit weight
             gam_p[k] = (Gs - 1.0) / (1.0 + e) * unit_weight_water
+            # update effective stress
             if k:
                 dz = z[k] - z[k - 1]
                 gam_p_avg = 0.5 * (gam_p[k - 1] + gam_p[k])
-                sig_p[k] = sig_p[k - 1] + gam_p_avg * dz
-            if sig_p[k] < ppc:
-                e1[k] = e_ppc - Cru * np.log10(sig_p[k] / ppc)
+                sig_p_0[k] = sig_p_0[k - 1] + gam_p_avg * dz
+            # update void ratio
+            if sig_p_0[k] < ppc:
+                e1[k] = e_ppc - Cru * np.log10(sig_p_0[k] / ppc)
             else:
-                e1[k] = e_cu0 - Ccu * np.log10(sig_p[k] / sig_cu0)
+                e1[k] = e_cu0 - Ccu * np.log10(sig_p_0[k] / sig_cu0)
+        # check for convergence
         eps_a = np.linalg.norm(e1 - e0) / np.linalg.norm(e1)
         e0[:] = e1[:]
-    hyd_cond = m.hyd_cond_0 * \
-        10 ** ((e1 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index)
-    return e1, sig_p, hyd_cond
+    # increment stresses from initial equilibrium
+    # and update void ratio
+    # (do not iterate here because coordinates will change
+    # but mass of solids does not)
+    sig_p_1 = sig_p_0 + dqs
+    for k, e in enumerate(e1):
+        if sig_p_1[k] < ppc:
+            e1[k] = e_ppc - Cru * np.log10(sig_p_1[k] / ppc)
+        else:
+            e1[k] = e_cu0 - Ccu * np.log10(sig_p_1[k] / sig_cu0)
+    # compute the corresponding hydraulic conductivity
+    hyd_cond_0 = (m.hyd_cond_0 *
+                  10 ** ((e0 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index))
+    hyd_cond_1 = (m.hyd_cond_0 *
+                  10 ** ((e1 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index))
+    return (
+        e0, sig_p_0, hyd_cond_0,
+        e1, sig_p_1, hyd_cond_1,
+    )
 
 
 if __name__ == "__main__":
