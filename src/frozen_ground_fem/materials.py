@@ -48,13 +48,13 @@ vol_heat_cap_ice: float = 1.881e6
 
 """
 thrm_cond_water : float
-    The thermal conductivity of water in SI units, J.m^{-3}.K^{-1}
+    The thermal conductivity of water in SI units, W·m{−1}·K{−1}
 """
 thrm_cond_water: float = 0.563
 
 """
 thrm_cond_ice : float
-    The thermal conductivity of ice in SI units, J.m^{-3}.K^{-1}
+    The thermal conductivity of ice in SI units, W·m{−1}·K{−1}
 """
 thrm_cond_ice: float = 2.22
 
