@@ -1633,6 +1633,7 @@ class Mesh1D:
     _z_max: float = np.inf
     _mesh_valid: bool = False
     _grid_size: float = 0.0
+    _hbw: int = 3
     _nodes: tuple[Node1D, ...]
     _elements: tuple[Any, ...]
     _boundaries: set[Any]
@@ -1881,6 +1882,7 @@ class Mesh1D:
         order = int(order)
         if order not in [1, 3]:
             raise ValueError(f"order {order} not 1 or 3")
+        self._hbw = order
         num_elements_out = self._generate_nodes(
             num_elements * order + 1,
             order

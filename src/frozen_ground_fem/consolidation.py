@@ -16,6 +16,7 @@ from enum import Enum
 
 import numpy as np
 import numpy.typing as npt
+from scipy.linalg import solve_banded
 
 from frozen_ground_fem.materials import (
     unit_weight_water as gam_w,
@@ -499,14 +500,22 @@ class ConsolidationAnalysis1D(Mesh1D):
     _water_flux_vector_0: npt.NDArray[np.floating]
     _water_flux_vector: npt.NDArray[np.floating]
     _stiffness_matrix_0: npt.NDArray[np.floating]
+    _stiff_matrix_0_band: npt.NDArray[np.floating]
     _stiffness_matrix: npt.NDArray[np.floating]
+    _stiff_matrix_band: npt.NDArray[np.floating]
     _mass_matrix_0: npt.NDArray[np.floating]
+    _mass_matrix_0_band: npt.NDArray[np.floating]
     _mass_matrix: npt.NDArray[np.floating]
+    _mass_matrix_band: npt.NDArray[np.floating]
     _weighted_water_flux_vector: npt.NDArray[np.floating]
     _weighted_stiffness_matrix: npt.NDArray[np.floating]
+    _weighted_stiff_matrix_band: npt.NDArray[np.floating]
     _weighted_mass_matrix: npt.NDArray[np.floating]
+    _weighted_mass_matrix_band: npt.NDArray[np.floating]
     _coef_matrix_0: npt.NDArray[np.floating]
+    _coef_matrix_0_band: npt.NDArray[np.floating]
     _coef_matrix_1: npt.NDArray[np.floating]
+    _coef_matrix_1_band: npt.NDArray[np.floating]
     _residual_water_flux_vector: npt.NDArray[np.floating]
     _delta_void_ratio_vector: npt.NDArray[np.floating]
 
@@ -594,23 +603,46 @@ class ConsolidationAnalysis1D(Mesh1D):
             self._water_flux_vector = np.zeros(self.num_nodes)
             self._stiffness_matrix_0 = np.zeros(
                 (self.num_nodes, self.num_nodes))
+            self._stiff_matrix_0_band = np.zeros(
+                (2*self._hbw + 1, self.num_nodes))
             self._stiffness_matrix = np.zeros(
                 (self.num_nodes, self.num_nodes))
+            self._stiff_matrix_band = np.zeros_like(
+                self._stiff_matrix_0_band
+            )
             self._mass_matrix_0 = np.zeros(
                 (self.num_nodes, self.num_nodes))
+            self._mass_matrix_0_band = np.zeros_like(
+                self._stiff_matrix_0_band
+            )
             self._mass_matrix = np.zeros(
                 (self.num_nodes, self.num_nodes))
+            self._mass_matrix_band = np.zeros_like(
+                self._stiff_matrix_0_band
+            )
             self._weighted_water_flux_vector = np.zeros(self.num_nodes)
             self._weighted_stiffness_matrix = np.zeros(
                 (self.num_nodes, self.num_nodes)
             )
+            self._weighted_stiff_matrix_band = np.zeros_like(
+                self._stiff_matrix_0_band
+            )
             self._weighted_mass_matrix = np.zeros(
                 (self.num_nodes, self.num_nodes)
             )
+            self._weighted_mass_matrix_band = np.zeros_like(
+                self._stiff_matrix_0_band
+            )
             self._coef_matrix_0 = np.zeros(
                 (self.num_nodes, self.num_nodes))
+            self._coef_matrix_0_band = np.zeros_like(
+                self._stiff_matrix_0_band
+            )
             self._coef_matrix_1 = np.zeros(
                 (self.num_nodes, self.num_nodes))
+            self._coef_matrix_1_band = np.zeros_like(
+                self._stiff_matrix_0_band
+            )
             self._residual_water_flux_vector = np.zeros(self.num_nodes)
             self._delta_void_ratio_vector = np.zeros(self.num_nodes)
         else:
@@ -905,10 +937,15 @@ class ConsolidationAnalysis1D(Mesh1D):
         respecting connectivity of global degrees of freedom.
         """
         self._stiffness_matrix[:, :] = 0.0
+        self._stiff_matrix_band[:, :] = 0.0
         for e in self.elements:
             ind = [nd.index for nd in e.nodes]
             Ke = e.stiffness_matrix
             self._stiffness_matrix[np.ix_(ind, ind)] += Ke
+            for k in range(self._hbw + 1):
+                kmin = np.max([0, self._hbw - k])
+                kmax = kmin + self._hbw + 1
+                self._stiff_matrix_band[kmin:kmax, ind[k]] += Ke[:, k]
 
     def update_mass_matrix(self) -> None:
         """Updates the global mass matrix.
@@ -922,10 +959,15 @@ class ConsolidationAnalysis1D(Mesh1D):
         respecting connectivity of global degrees of freedom.
         """
         self._mass_matrix[:, :] = 0.0
+        self._mass_matrix_band[:, :] = 0.0
         for e in self.elements:
             ind = [nd.index for nd in e.nodes]
             Me = e.mass_matrix
             self._mass_matrix[np.ix_(ind, ind)] += Me
+            for k in range(self._hbw + 1):
+                kmin = np.max([0, self._hbw - k])
+                kmax = kmin + self._hbw + 1
+                self._mass_matrix_band[kmin:kmax, ind[k]] += Me[:, k]
 
     def update_nodes(self) -> None:
         """Updates the void ratio values at the nodes
@@ -1007,8 +1049,10 @@ class ConsolidationAnalysis1D(Mesh1D):
             if tb.bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio:
                 free_ind_list.remove(tb.nodes[0].index)
         free_ind = np.array(free_ind_list, dtype=int)
+        hbw_ind = np.array([k for k in range(2 * self._hbw + 1)], dtype=int)
         self._free_vec = np.ix_(free_ind)
         self._free_arr = np.ix_(free_ind, free_ind)
+        self._free_arr_band = np.ix_(hbw_ind, free_ind)
 
     def initialize_time_step(self) -> None:
         """Sets up the system at the beginning of a time step.
@@ -1032,7 +1076,9 @@ class ConsolidationAnalysis1D(Mesh1D):
         self._void_ratio_vector_0[:] = self._void_ratio_vector[:]
         self._water_flux_vector_0[:] = self._water_flux_vector[:]
         self._stiffness_matrix_0[:, :] = self._stiffness_matrix[:, :]
+        self._stiff_matrix_0_band[:, :] = self._stiff_matrix_band[:, :]
         self._mass_matrix_0[:, :] = self._mass_matrix[:, :]
+        self._mass_matrix_0_band[:, :] = self._mass_matrix_band[:, :]
         # update boundary conditions
         self.update_consolidation_boundary_conditions(self._t1)
         self.update_water_flux_vector()
@@ -1062,17 +1108,33 @@ class ConsolidationAnalysis1D(Mesh1D):
             self.one_minus_alpha * self._stiffness_matrix_0
             + self.alpha * self._stiffness_matrix
         )
+        self._weighted_stiff_matrix_band[:, :] = (
+            self.one_minus_alpha * self._stiff_matrix_0_band
+            + self.alpha * self._stiff_matrix_band
+        )
         self._weighted_mass_matrix[:, :] = (
             self.one_minus_alpha * self._mass_matrix_0
             + self.alpha * self._mass_matrix
+        )
+        self._weighted_mass_matrix_band[:, :] = (
+            self.one_minus_alpha * self._mass_matrix_0_band
+            + self.alpha * self._mass_matrix_band
         )
         self._coef_matrix_0[:, :] = (
             self._weighted_mass_matrix * self.over_dt
             + self.one_minus_alpha * self._weighted_stiffness_matrix
         )
+        self._coef_matrix_0_band[:, :] = (
+            self._weighted_mass_matrix_band * self.over_dt
+            + self.one_minus_alpha * self._weighted_stiff_matrix_band
+        )
         self._coef_matrix_1[:, :] = (
             self._weighted_mass_matrix * self.over_dt
             - self.alpha * self._weighted_stiffness_matrix
+        )
+        self._coef_matrix_1_band[:, :] = (
+            self._weighted_mass_matrix_band * self.over_dt
+            - self.alpha * self._weighted_stiff_matrix_band
         )
 
     def calculate_void_ratio_correction(self) -> None:
@@ -1096,8 +1158,13 @@ class ConsolidationAnalysis1D(Mesh1D):
             - self._weighted_water_flux_vector
         )
         # calculate void ratio increment
-        self._delta_void_ratio_vector[self._free_vec] = np.linalg.solve(
-            self._coef_matrix_1[self._free_arr],
+        # self._delta_void_ratio_vector[self._free_vec] = np.linalg.solve(
+        #     self._coef_matrix_1[self._free_arr],
+        #     self._residual_water_flux_vector[self._free_vec],
+        # )
+        self._delta_void_ratio_vector[self._free_vec] = solve_banded(
+            (self._hbw, self._hbw),
+            self._coef_matrix_1_band[self._free_arr_band],
             self._residual_water_flux_vector[self._free_vec],
         )
         # increment void ratio and iteration variables
