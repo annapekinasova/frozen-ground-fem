@@ -8,7 +8,8 @@ from frozen_ground_fem.thermal import (
     ThermalBoundary1D,
 )
 """
-Thermal Spin-up test example based on paper Ross et al., 2022
+Thermal Spin-up test example based on paper Ross et al.(2022)
+Arctic Science 8: 362–394 (2022) dx.doi.org/10.1139/as-2021-0013
 for cold and warm permafrost models
 with climate BC for cold (MAAT = −13 °C) and warm (MAAT = −4 °C) permafrost
 for fully saturated case with depth of 200 m
@@ -19,19 +20,23 @@ def main():
     # create thermal analysis object
     # define mesh with 50 elements
     # and cubic interpolation
+    # depth of cold permafrost is 200 m
+    # depth of warm permafrost is 100 m
     ta = ThermalAnalysis1D()
     ta.z_min = 0.0
     ta.z_max = 200.0
+    # ta.z_max = 100.0
     ta.generate_mesh(num_elements=50)
 
     # define material properties for
     # cold permafrost
     # and initialize integration points
     mtl = Material(
-        # set parameters
-        thrm_cond_solids=7.0, spec_grav_solids=2.65, spec_heat_cap_solids=741
+        thrm_cond_solids=4.116,
+        spec_grav_solids=2.65,
+        spec_heat_cap_solids=1.865E+06,
     )
-    void_ratio = 0.3
+    void_ratio = 0.3333
     for e in ta.elements:
         for ip in e.int_pts:
             ip.material = mtl
@@ -39,12 +44,17 @@ def main():
             ip.void_ratio_0 = void_ratio
 
     # set initial temperature conditions
-    T0 = -5.0
+    # with two senarios T0 = 0.0 and  -9.0 deg C for cold permafrost
+    # with two senarios T0 = 0.0 and  -1.0 deg C for warm permafrost
+    T0 = 0.0
+    # T0 = -9.0
+    # T0 = -1.0
     for nd in ta.nodes:
         nd.temp = T0
 
     # define temperature boundary curve
-    t_max = 195.0 * 8.64e4
+    # Tmax is 500 yrs = 182500 days
+    t_max = 182500.0 * 8.64e4
     omega = 2.0 * np.pi / 365 / 8.64e4
     T_mean = -10.0
     T_amp = 25.0
