@@ -25,9 +25,10 @@ def main():
     # depth of warm permafrost is 100 m
     ta = ThermalAnalysis1D()
     ta.z_min = 0.0
-    ta.z_max = 200.0
+    ta.z_max = 10.0
     # ta.z_max = 100.0
-    ta.generate_mesh(num_elements=50)
+    ta.generate_mesh(num_elements=5)
+    ta.implicit_error_tolerance = 1e-6
 
     # define material properties for
     # cold permafrost
@@ -114,37 +115,58 @@ def main():
     ta.time_step = 0.5 * 8.64e4     # 0.5 days in s
     ta.initialize_global_system(t0=0.0)
 
+    # print(ta._heat_flux_vector)
+    # print(ta.elements[-1].int_pts[-1].thrm_cond)
+    # print(ta.nodes[-1].temp)
+
     n_per_yr = 365 * 2
     temp_curve = np.zeros((ta.num_nodes, n_per_yr))
     temp_curve_0 = np.zeros((ta.num_nodes, n_per_yr))
-    t_max = 500.0 * 365.0 * 8.64e4
+    t_end = 1500.0 * 365.0 * 8.64e4
     k = 0
-    while ta._t0 < t_max:
+    while ta._t0 < t_end:
         ta.initialize_time_step()
         ta.iterative_correction_step()
-        temp_curve_0[:, k % n_per_yr] = temp_curve[:, k % n_per_yr]
-        temp_curve[:, k % n_per_yr] = ta._temp_vector[:]
+        kk = k % n_per_yr
+        temp_curve_0[:, kk] = temp_curve[:, kk]
+        temp_curve[:, kk] = ta._temp_vector[:]
         if not (k % 3650):
             dT = temp_curve[:, 0] - temp_curve_0[:, 0]
             eps_a = np.linalg.norm(dT) / np.linalg.norm(temp_curve[:, 0])
+            Tgmin = np.min(temp_curve[:, 0])
+            Tgmax = np.max(temp_curve[:, 0])
+            Tgmean = np.mean(temp_curve[:, 0])
+            dTmax = np.max(np.abs(dT))
+            dTbase = np.abs(dT[-1])
+            # print(temp_curve[::5, 0])
+            # print(ta._temp_vector[::5])
             print(
                 f"t = {ta._t0 / 8.64e4 / 365: 0.5f} years, "
-                + f"Tg,min = {np.min(ta._temp_vector): 0.5f} deg C, "
-                + f"Tg,max = {np.max(ta._temp_vector): 0.5f} deg C, "
-                + f"Tg,mean = {np.mean(ta._temp_vector): 0.5f} deg C, "
-                + f"dT,max = {np.max(np.abs(ta._temp_vector)): 0.5f} deg C, "
+                + f"Tg,min = {Tgmin: 0.5f} deg C, "
+                + f"Tg,max = {Tgmax: 0.5f} deg C, "
+                + f"Tg,mean = {Tgmean: 0.5f} deg C, "
+                + f"dT,max = {dTmax: 0.5f} deg C, "
+                + f"dT,base = {dTbase: 0.5f} deg C, "
                 + f"eps_a = {eps_a: 0.4e}"
             )
             # plt.plot(temp_curve[:, 0], z_vec, "--b", linewidth=0.5)
         elif not (k % 3650 - 365):
             dT = temp_curve[:, -365] - temp_curve_0[:, -365]
             eps_a = np.linalg.norm(dT) / np.linalg.norm(temp_curve[:, -365])
+            Tgmin = np.min(temp_curve[:, -365])
+            Tgmax = np.max(temp_curve[:, -365])
+            Tgmean = np.mean(temp_curve[:, -365])
+            dTmax = np.max(np.abs(dT))
+            dTbase = np.abs(dT[-1])
+            # print(temp_curve[::5, -365])
+            # print(ta._temp_vector[::5])
             print(
                 f"t = {ta._t0 / 8.64e4 / 365: 0.5f} years, "
-                + f"Tg,min = {np.min(ta._temp_vector): 0.5f} deg C, "
-                + f"Tg,max = {np.max(ta._temp_vector): 0.5f} deg C, "
-                + f"Tg,mean = {np.mean(ta._temp_vector): 0.5f} deg C, "
-                + f"dT,max = {np.max(np.abs(ta._temp_vector)): 0.5f} deg C, "
+                + f"Tg,min = {Tgmin: 0.5f} deg C, "
+                + f"Tg,max = {Tgmax: 0.5f} deg C, "
+                + f"Tg,mean = {Tgmean: 0.5f} deg C, "
+                + f"dT,max = {dTmax: 0.5f} deg C, "
+                + f"dT,base = {dTbase: 0.5f} deg C, "
                 + f"eps_a = {eps_a: 0.4e}"
             )
             # plt.plot(temp_curve[:, 25], z_vec, "--r", linewidth=0.5)
