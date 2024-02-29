@@ -574,6 +574,7 @@ class ThermalAnalysis1D(Mesh1D):
         -----
         Also computes and stores an inverse value
         1 / time_step
+        available as the property over_dt
         for convenience in the simulation.
         """
         return self._time_step
@@ -1064,3 +1065,146 @@ class ThermalAnalysis1D(Mesh1D):
         while self._eps_a > self.eps_s and self._iter < self.max_iterations:
             self.update_weighted_matrices()
             self.calculate_temperature_correction()
+
+    def solve_to(
+            self,
+            tf: float,
+            adapt_dt: bool = True,
+        ) -> tuple[
+            float,
+            npt.NDArray,
+            npt.NDArray,
+    ]:
+        """Performs time integration until
+        specified final time tf.
+
+        Inputs
+        ------
+        tf : float
+            The target final time.
+        adapt_dt : bool, optional, default=True
+            Flag for adaptive time step correction.
+
+        Returns
+        -------
+        float
+            The time step at the second last step.
+            Last step will typically be adjusted to
+            reach the target tf, so that time step is
+            not necessarily meaningful.
+        numpy.ndnarray, shape=(nstep, )
+            The array of time steps over the interval
+            up to tf.
+        numpy.ndnarray, shape=(nstep, )
+            The array of (relative) errors at each time
+            step over the interval up to tf.
+
+        Raises
+        ------
+        ValueError
+            If tf cannot be converted to float.
+            If tf <= current simulation time.
+
+        Notes
+        -----
+        By default, the method performs adaptive time step correction
+        using the half-step algorithm. Correction is performed based
+        on the error estimate, but steps are not repeated if error is
+        exceeded for numerical efficiency. Target relative error is
+        set based on the implicit_error_tolerance attribute.
+        If adaptive correction is not performed, then error is not
+        estimated and the error array that is returned is not meaningful.
+        """
+        tf = float(tf)
+        if tf <= self._t1:
+            raise ValueError(
+                f"Provided tf {tf} is <= current "
+                f"simulation time {self._t1}."
+            )
+        # flag to ensure analysis completes at tf
+        # to within roundoff error
+        done = False
+        # simplified loop if not performing
+        # adaptive correction
+        if not adapt_dt:
+            dt_list = []
+            err_list = []
+            while not done and self._t1 < tf:
+                # check if time step passes tf
+                dt00 = self.time_step
+                if self._t1 + self.time_step > tf:
+                    self.time_step = tf - self._t1
+                    done = True
+                # take single time step
+                self.initialize_time_step()
+                self.iterative_correction_step()
+                dt_list.append(dt00)
+                err_list.append(0.0)
+            # reset time step and return output values
+            self.time_step = dt00
+            return dt00, np.array(dt_list), np.array(err_list)
+        # initialize vectors and matrices
+        # for adaptive step size correction
+        num_int_pt_per_element = len(self.elements[0].int_pts)
+        temp_vector_0 = np.zeros_like(self._temp_vector)
+        temp_vector_1 = np.zeros_like(self._temp_vector)
+        temp_error = np.zeros_like(self._temp_vector)
+        temp_rate = np.zeros_like(self._temp_vector)
+        temp_scale = np.zeros_like(self._temp_vector)
+        dt_list = []
+        err_list = []
+        while not done and self._t1 < tf:
+            # check if time step passes tf
+            dt00 = self.time_step
+            if self._t1 + self.time_step > tf:
+                self.time_step = tf - self._t1
+                done = True
+            # save system state before time step
+            t0 = self._t1
+            dt0 = self.time_step
+            temp_vector_0[:] = self._temp_vector[:]
+            # take single time step
+            self.initialize_time_step()
+            self.iterative_correction_step()
+            # save the predictor result
+            temp_vector_1[:] = self._temp_vector[:]
+            # reset the system
+            self._temp_vector[:] = temp_vector_0[:]
+            self.update_nodes()
+            self.update_integration_points()
+            self.update_heat_flux_vector()
+            self.update_heat_flow_matrix()
+            self.update_heat_storage_matrix()
+            self._t1 = t0
+            # take two half steps
+            self.time_step = 0.5 * dt0
+            self.initialize_time_step()
+            self.iterative_correction_step()
+            self.initialize_time_step()
+            self.iterative_correction_step()
+            # compute truncation error correction
+            temp_error[:] = (self._temp_vector[:]
+                             - temp_vector_1[:]) / 3.0
+            self._temp_vector[:] += temp_error[:]
+            self.update_nodes()
+            self.update_integration_points()
+            self.update_heat_flux_vector()
+            self.update_heat_flow_matrix()
+            self.update_heat_storage_matrix()
+            # update the time step
+            temp_rate[:] = (self._temp_vector[:]
+                            - temp_vector_0[:])
+            temp_scale[:] = np.max(np.vstack([
+                self._temp_vector[:],
+                temp_rate,
+            ]), axis=0)
+            T_scale = float(np.linalg.norm(temp_scale))
+            err_targ = self.eps_s * T_scale
+            err_curr = float(np.linalg.norm(temp_error))
+            # update the time step
+            eps_a = err_curr / T_scale
+            dt1 = dt0 * (err_targ / err_curr) ** 0.2
+            self.time_step = dt1
+            dt_list.append(dt0)
+            err_list.append(eps_a)
+        return dt00, np.array(dt_list), np.array(err_list)
