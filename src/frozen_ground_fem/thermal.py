@@ -1035,7 +1035,7 @@ class ThermalAnalysis1D(Mesh1D):
         # update temp rate vector
         self._temp_rate_vector[:] = (
             self._temp_vector[:] - self._temp_vector_0[:]
-        ) / self.dt
+        ) * self.over_dt
         self._eps_a = float(
             np.linalg.norm(self._delta_temp_vector) /
             np.linalg.norm(self._temp_vector)
@@ -1145,11 +1145,10 @@ class ThermalAnalysis1D(Mesh1D):
             return dt00, np.array(dt_list), np.array(err_list)
         # initialize vectors and matrices
         # for adaptive step size correction
-        num_int_pt_per_element = len(self.elements[0].int_pts)
         temp_vector_0 = np.zeros_like(self._temp_vector)
         temp_vector_1 = np.zeros_like(self._temp_vector)
         temp_error = np.zeros_like(self._temp_vector)
-        temp_rate = np.zeros_like(self._temp_vector)
+        temp_rate_0 = np.zeros_like(self._temp_vector)
         temp_scale = np.zeros_like(self._temp_vector)
         dt_list = []
         err_list = []
@@ -1163,6 +1162,7 @@ class ThermalAnalysis1D(Mesh1D):
             t0 = self._t1
             dt0 = self.time_step
             temp_vector_0[:] = self._temp_vector[:]
+            temp_rate_0[:] = self._temp_rate_vector[:]
             # take single time step
             self.initialize_time_step()
             self.iterative_correction_step()
@@ -1170,6 +1170,7 @@ class ThermalAnalysis1D(Mesh1D):
             temp_vector_1[:] = self._temp_vector[:]
             # reset the system
             self._temp_vector[:] = temp_vector_0[:]
+            self._temp_rate_vector[:] = temp_rate_0[:]
             self.update_nodes()
             self.update_integration_points()
             self.update_heat_flux_vector()
@@ -1186,17 +1187,18 @@ class ThermalAnalysis1D(Mesh1D):
             temp_error[:] = (self._temp_vector[:]
                              - temp_vector_1[:]) / 3.0
             self._temp_vector[:] += temp_error[:]
+            self._temp_rate_vector[:] = (
+                self.over_dt * (self._temp_vector[:] - self._temp_vector_0[:])
+            )
             self.update_nodes()
             self.update_integration_points()
             self.update_heat_flux_vector()
             self.update_heat_flow_matrix()
             self.update_heat_storage_matrix()
             # update the time step
-            temp_rate[:] = (self._temp_vector[:]
-                            - temp_vector_0[:])
             temp_scale[:] = np.max(np.vstack([
                 self._temp_vector[:],
-                temp_rate,
+                self._temp_rate_vector[:] * self.time_step,
             ]), axis=0)
             T_scale = float(np.linalg.norm(temp_scale))
             err_targ = self.eps_s * T_scale
