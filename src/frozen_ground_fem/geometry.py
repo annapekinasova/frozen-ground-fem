@@ -1970,3 +1970,45 @@ class Mesh1D:
         from the mesh.
         """
         self._boundaries.clear()
+
+    def initialize_sparse_matrix_struct(self):
+        """Initialize structure for sparse matrices.
+        Uses scipy.sparse.csr_array canonical format.
+
+        Returns
+        -------
+        zeros : numpy.ndarray, shape=(nnz,)
+            A zeros array of the correct shape
+            where nnz is the number of nonzeros.
+        indices : numpy.ndarray, dtype=int32
+            An array of column indices in each row.
+        indptr : numpy.ndarray, dtype=int32
+            An array giving the range of column and data
+            indices for each row. That is, column indices
+            for row i are in indices[indptr[i] : indptr[i+1]]
+            and data for row i are in data[indptr[i] : indptr[i+1]].
+        """
+        order = self.elements[0].order
+        n = self.num_nodes
+        nmo = n - order
+        op1 = order + 1
+        nmop1 = n - op1
+        top1 = 2 * order + 1
+        indices = []
+        indptr = [0]
+        colinds = np.arange(0, top1, dtype=np.int32)
+        for k in range(n):
+            kmin = order if k >= nmo else 0
+            kmax = top1 if k and (not k % order or k >= nmo) else op1
+            for ci in colinds[kmin:kmax]:
+                indices.append(ci)
+            if k and k < nmop1 and not k % order:
+                colinds += order
+            if k and k < nmo and not k % order:
+                indptr.append(indptr[-1] + top1)
+            else:
+                indptr.append(indptr[-1] + op1)
+        indices = np.array(indices, dtype=np.int32)
+        indptr = np.array(indptr, dtype=np.int32)
+        zeros = np.zeros(indptr[-1])    # nnz comes from last indptr
+        return zeros, indices, indptr
