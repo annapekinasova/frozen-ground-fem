@@ -125,7 +125,10 @@ class ThermalElement1D(Element1D):
         C *= jac
         return C
 
-    def update_integration_points(self) -> None:
+    def update_integration_points(
+        self,
+        update_water_flux: bool = True,
+    ) -> None:
         """Updates the properties of integration points
         in the element according to changes in temperature.
 
@@ -149,18 +152,8 @@ class ThermalElement1D(Element1D):
             ip.temp_rate = dTdt
             ip.deg_sat_water = Sw
             ip.deg_sat_water_temp_gradient = dSw_dT
-            if T < 0.0:
-                qw = ip.material.water_flux(
-                    ip.void_ratio,
-                    ip.void_ratio_0,
-                    ip.temp,
-                    ip.temp_rate,
-                    ip.temp_gradient,
-                    ip.tot_stress,
-                )
-            else:
-                qw = 0.0
-            ip.water_flux_rate = qw
+            if update_water_flux:
+                ip.update_water_flux_rate()
 
 
 class ThermalBoundary1D(Boundary1D):
@@ -386,12 +379,13 @@ class ThermalAnalysis1D(Mesh1D):
     update_heat_flux_vector
     update_heat_flow_matrix
     update_heat_storage_matrix
+    update_global_matrices_and_vectors
     update_nodes
     update_integration_points
     initialize_global_system
     initialize_time_step
     update_weighted_matrices
-    calculate_temperature_correction
+    calculate_solution_vector_correction
     iterative_correction_step
 
     Parameters
@@ -456,7 +450,7 @@ class ThermalAnalysis1D(Mesh1D):
 
     @property
     def boundaries(self) -> set[ThermalBoundary1D]:
-        """The tuple of :c:`ThermalBoundary1D` contained in the mesh.
+        """The set of :c:`ThermalBoundary1D` contained in the mesh.
 
         Returns
         ------
@@ -568,8 +562,7 @@ class ThermalAnalysis1D(Mesh1D):
     def update_boundary_conditions(
             self,
             time: float) -> None:
-        """Update the thermal boundary conditions in the ThermalAnalysis1D
-        and in the parent Mesh1D.
+        """Update the thermal boundary conditions.
 
         Parameters
         ----------
@@ -667,12 +660,11 @@ class ThermalAnalysis1D(Mesh1D):
     def update_nodes(self) -> None:
         """Updates the temperature values at the nodes
         in the mesh.
-        #
-        # Notes
-        # -----
-        # This convenience method loops over nodes in the mesh
-        # and assigns the temperature from the global temperature vector
-        # in the ThermalAnalysis1D.
+
+        Notes
+        -----
+        This convenience method loops over nodes in the mesh
+        and assigns the temperature from the global temperature vector.
         """
         for nd in self.nodes:
             nd.temp = self._temp_vector[nd.index]
@@ -779,7 +771,7 @@ class ThermalAnalysis1D(Mesh1D):
         """
         # first update the global weighted matrices
         # (ensures coef_matrix_0 and coef_matrix_1)
-        self.update_weighted_matrices()
+        ThermalAnalysis1D.update_weighted_matrices(self)
         # update residual vector
         self._residual_heat_flux_vector[:] = (
             self._coef_matrix_0 @ self._temp_vector_0
@@ -867,7 +859,7 @@ class ThermalAnalysis1D(Mesh1D):
         """
         tf = self._check_tf(tf)
         if not adapt_dt:
-            return super().solve_to(tf)
+            return Mesh1D.solve_to(self, tf)
         # initialize vectors and matrices
         # for adaptive step size correction
         temp_vector_0 = np.zeros_like(self._temp_vector)

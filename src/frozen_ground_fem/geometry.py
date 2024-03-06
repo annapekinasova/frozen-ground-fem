@@ -33,6 +33,7 @@ from .materials import (
     thrm_cond_water as lam_w,
     vol_heat_cap_ice as C_i,
     vol_heat_cap_water as C_w,
+    unit_weight_water as gam_w,
 )
 
 
@@ -1297,6 +1298,32 @@ class IntegrationPoint1D(Point1D):
             )
         self._tot_stress_gradient = value
 
+    def update_water_flux_rate(
+            self,
+            de_dZ: float = 0.0) -> None:
+        if self.temp < 0.0:
+            self.water_flux_rate = self.material.water_flux(
+                self.void_ratio,
+                self.void_ratio_0,
+                self.temp,
+                self.temp_rate,
+                self.temp_gradient,
+                self.tot_stress,
+            )
+        else:
+            if not self.hyd_cond:
+                self.water_flux_rate = 0.0
+            ep = self.void_ratio
+            e0 = self.void_ratio_0
+            Gs = self.material.spec_grav_solids
+            dsig_de = self.eff_stress_gradient
+            k = self.hyd_cond
+            e_ratio = (1.0 + e0) / (1.0 + ep)
+            self.water_flux_rate = (
+                -k / gam_w * e_ratio
+                * ((Gs - 1.0) * gam_w / (1.0 + e0) - dsig_de * de_dZ)
+            )
+
 
 class Element1D:
     """Class for organizing element level information.
@@ -2305,7 +2332,6 @@ class Mesh1D:
         self.store_converged_matrices()
         self.update_boundary_conditions(self._t1)
         self.update_boundary_vectors()
-        self.update_weighted_matrices()
 
     def store_converged_matrices(self) -> None:
         pass

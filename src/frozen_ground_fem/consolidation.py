@@ -169,7 +169,10 @@ class ConsolidationElement1D(Element1D):
             L += (1.0 + e) / (1.0 + e0) * ip.weight
         return L * self.jacobian
 
-    def update_integration_points(self) -> None:
+    def update_integration_points(
+        self,
+        update_water_flux: bool = True
+    ) -> None:
         """Updates the properties of integration points
         in the element according to changes in void ratio.
         """
@@ -189,15 +192,8 @@ class ConsolidationElement1D(Element1D):
                 ip.pre_consol_stress = sig
             ip.eff_stress = sig
             ip.eff_stress_gradient = dsig_de
-            e0 = ip.void_ratio_0
-            Gs = ip.material.spec_grav_solids
-            e_ratio = (1.0 + e0) / (1.0 + ep)
-            ip.water_flux_rate = (
-                -k
-                / gam_w
-                * e_ratio
-                * ((Gs - 1.0) * gam_w / (1.0 + e0) - dsig_de * de_dZ)
-            )
+            if update_water_flux:
+                ip.update_water_flux_rate(de_dZ)
         for iipp in self._int_pts_deformed:
             for ip in iipp:
                 N = self._shape_matrix(ip.local_coord)
@@ -454,12 +450,13 @@ class ConsolidationAnalysis1D(Mesh1D):
     update_water_flux_vector
     update_stiffness_matrix
     update_mass_matrix
+    update_global_matrices_and_vectors
     update_nodes
     update_integration_points
     initialize_global_system
     initialize_time_step
     update_weighted_matrices
-    calculate_void_ratio_correction
+    calculate_solution_vector_correction
     iterative_correction_step
     calculate_total_settlement
     calculate_deformed_coords
@@ -525,7 +522,7 @@ class ConsolidationAnalysis1D(Mesh1D):
 
     @property
     def boundaries(self) -> set[ConsolidationBoundary1D]:
-        """The tuple of :c:`ConsolidationBoundary1D` contained in the mesh.
+        """The set of :c:`ConsolidationBoundary1D` contained in the mesh.
 
         Returns
         ------
@@ -736,8 +733,7 @@ class ConsolidationAnalysis1D(Mesh1D):
         Notes
         -----
         This convenience method loops over nodes in the parent mesh
-        and assigns the void ratio from the global void ratio vector
-        in the ConsolidationAnalysis1D.
+        and assigns the void ratio from the global void ratio vector.
         """
         for nd in self.nodes:
             nd.void_ratio = self._void_ratio_vector[nd.index]
@@ -862,7 +858,7 @@ class ConsolidationAnalysis1D(Mesh1D):
         """
         # first update the global weighted matrices
         # (ensures coef_matrix_0 and coef_matrix_1)
-        self.update_weighted_matrices()
+        ConsolidationAnalysis1D.update_weighted_matrices(self)
         # update residual vector
         self._residual_water_flux_vector[:] = (
             self._coef_matrix_0 @ self._void_ratio_vector_0
@@ -946,7 +942,7 @@ class ConsolidationAnalysis1D(Mesh1D):
         """
         tf = self._check_tf(tf)
         if not adapt_dt:
-            return super().solve_to(tf)
+            return Mesh1D.solve_to(self, tf)
         # initialize vectors and matrices
         # for adaptive step size correction
         num_int_pt_per_element = len(self.elements[0].int_pts)

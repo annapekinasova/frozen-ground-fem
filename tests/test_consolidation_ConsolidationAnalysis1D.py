@@ -1326,6 +1326,7 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
         self.msh.initialize_global_system(1.5)
         self.msh.time_step = 1e-3
         self.msh.initialize_time_step()
+        self.msh.update_weighted_matrices()
 
     def test_time_step_set(self):
         self.assertAlmostEqual(self.msh._t0, 1.5)
