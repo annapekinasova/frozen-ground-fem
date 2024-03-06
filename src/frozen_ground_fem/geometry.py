@@ -1514,6 +1514,9 @@ class Element1D:
         """
         return self._int_pts
 
+    def update_integration_points(self) -> None:
+        pass
+
 
 class Boundary1D:
     """Class for storing boundary condition geometry information.
@@ -1600,6 +1603,15 @@ class Mesh1D:
     num_boundaries
     boundaries
     mesh_valid
+    time_step
+    dt
+    over_dt
+    implicit_factor
+    alpha
+    one_minus_alpha
+    implicit_error_tolerance
+    eps_s
+    max_iterations
 
     Methods
     -------
@@ -1637,6 +1649,12 @@ class Mesh1D:
     _nodes: tuple[Node1D, ...]
     _elements: tuple[Any, ...]
     _boundaries: set[Any]
+    _time_step: float = 0.0
+    _inv_time_step: float = 0.0
+    _implicit_factor: float = 0.5   # Crank-Nicolson
+    _inv_implicit_factor: float = 0.5
+    _implicit_error_tolerance: float = 1e-3
+    _max_iterations: int = 100
 
     def __init__(
         self,
@@ -1838,13 +1856,19 @@ class Mesh1D:
     def mesh_valid(self, value: bool) -> None:
         value = bool(value)
         if value:
-            # TODO: check for mesh validity
             self._mesh_valid = True
+            if self.__class__ is not Mesh1D:
+                self._initialize_global_matrices_and_vectors()
         else:
             self._nodes = ()
             self._elements = ()
             self.clear_boundaries()
             self._mesh_valid = False
+
+    def _initialize_global_matrices_and_vectors(self):
+        raise NotImplementedError(
+            "Global matrix and vector initialization not implemented."
+        )
 
     def generate_mesh(
         self,
@@ -1915,6 +1939,198 @@ class Mesh1D:
             for k in range(num_elements)
         )
 
+    @property
+    def time_step(self) -> float:
+        """The time step for the transient analysis.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+            If the value to assign is negative.
+
+        Notes
+        -----
+        Also computes and stores an inverse value
+        1 / time_step
+        available as the property over_dt
+        for convenience in the simulation.
+        """
+        return self._time_step
+
+    @time_step.setter
+    def time_step(self, value: float) -> None:
+        value = float(value)
+        if value <= 0.0:
+            raise ValueError(f"invalid time_step {value}, must be positive")
+        self._time_step = value
+        self._inv_time_step = 1.0 / value
+
+    @property
+    def dt(self) -> float:
+        """An alias for time_step."""
+        return self._time_step
+
+    @property
+    def over_dt(self) -> float:
+        """The value 1 / time_step.
+
+        Returns
+        -------
+        float
+
+        Notes
+        -----
+        This value is calculated and stored
+        when time_step is set,
+        so this property call just returns the value.
+        """
+        return self._inv_time_step
+
+    @property
+    def implicit_factor(self) -> float:
+        """The implicit time stepping factor for the analysis.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to be assigned is not convertible to float
+            If the value is < 0.0 or > 1.0
+
+        Notes
+        -----
+        This parameter sets the weighting between
+        vectors and matrices at the beginning and end of the time step
+        in the implicit time stepping scheme.
+        For example, a value of 0.0 would put no weight at the beginning
+        implying a fully implicit scheme.
+        A value of 1.0 would put no weight at the end
+        implying a fully explicit scheme
+        (in this case, the iterative correction will have no effect).
+        A value of 0.5 puts equal weight at the beginning and end
+        which is the well known Crank-Nicolson scheme.
+        The default set by the __init__() method is 0.5.
+        """
+        return self._implicit_factor
+
+    @implicit_factor.setter
+    def implicit_factor(self, value: float) -> None:
+        value = float(value)
+        if value < 0.0 or value > 1.0:
+            raise ValueError(
+                f"invalid implicit_factor {value}, must be between 0.0 and 1.0"
+            )
+        self._implicit_factor = value
+        self._inv_implicit_factor = 1.0 - value
+
+    @property
+    def alpha(self) -> float:
+        """An alias for implicit_factor."""
+        return self._implicit_factor
+
+    @property
+    def one_minus_alpha(self) -> float:
+        """The value (1 - implicit_factor).
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Notes
+        -----
+        This value is calculated and stored
+        when implicit_factor is set,
+        so this property call just returns the value.
+        """
+        return self._inv_implicit_factor
+
+    @property
+    def implicit_error_tolerance(self) -> float:
+        """The error tolerance for the iterative correction
+        in the implicit time stepping scheme.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float
+            If the value to assign is negative
+        """
+        return self._implicit_error_tolerance
+
+    @implicit_error_tolerance.setter
+    def implicit_error_tolerance(self, value: float) -> None:
+        value = float(value)
+        if value <= 0.0:
+            raise ValueError(
+                f"invalid implicit_error_tolerance {value}, must be positive"
+            )
+        self._implicit_error_tolerance = value
+
+    @property
+    def eps_s(self) -> float:
+        """An alias for implicit_error_tolerance."""
+        return self._implicit_error_tolerance
+
+    @property
+    def max_iterations(self) -> int:
+        """The maximum number of iterations for iterative correction
+        in the implicit time stepping scheme.
+
+        Parameters
+        ----------
+        int
+
+        Returns
+        -------
+        int
+
+        Raises
+        ------
+        TypeError
+            If the value to be assigned is not an int.
+        ValueError
+            If the value to be assigned is negative.
+        """
+        return self._max_iterations
+
+    @max_iterations.setter
+    def max_iterations(self, value: int) -> None:
+        if not isinstance(value, int):
+            raise TypeError(f"type(max_iterations) {type(value)}"
+                            + " invalid, must be int")
+        if value <= 0:
+            raise ValueError(f"max_iterations {value}"
+                             + " invalid, must be positive")
+        self._max_iterations = value
+
     def add_boundary(self, new_boundary: Any) -> None:
         """Adds a boundary to the mesh.
 
@@ -1971,6 +2187,13 @@ class Mesh1D:
         """
         self._boundaries.clear()
 
+    def update_integration_points(self) -> None:
+        """Updates the properties of integration points
+        in the parent mesh according to changes in void ratio.
+        """
+        for e in self.elements:
+            e.update_integration_points()
+
     def initialize_sparse_matrix_struct(self):
         """Initialize structure for sparse matrices.
         Uses scipy.sparse.csr_array canonical format.
@@ -2012,3 +2235,117 @@ class Mesh1D:
         indptr = np.array(indptr, dtype=np.int32)
         zeros = np.zeros(indptr[-1])    # nnz comes from last indptr
         return zeros, indices, indptr
+
+    def initialize_global_system(self, t0: float) -> None:
+        """Sets up the global system before the first time step.
+
+        Parameters
+        ----------
+        t0 : float
+            The value of time (in seconds)
+            at the beginning of the first time step
+
+        Notes
+        -----
+        This convenience method is meant to be called once
+        at the beginning of the analysis.
+        It assumes that initial conditions have already been assigned
+        to the nodes in the mesh.
+        It initializes variables tracking the time coordinate,
+        updates the boundary conditions at the initial time,
+        assigns initial void ratio values from the nodes to the global vector,
+        updates the integration points in the parent mesh,
+        then updates all global vectors and matrices.
+        """
+        # initialize global time
+        t0 = float(t0)
+        self._t0 = t0
+        self._t1 = t0
+        # initialize system properties
+        # then update nodes with boundary conditions
+        # and then initialize global solution vectors
+        # (we assume that initial conditions have already been applied)
+        self.initialize_free_index_arrays()
+        self.initialize_integration_points()
+        self.update_boundary_conditions(self._t0)
+        self.initialize_solution_variable_vectors()
+        self.update_integration_points()
+        # now build the global matrices and vectors
+        self.update_global_matrices_and_vectors()
+        self.update_weighted_matrices()
+
+    def initialize_time_step(self) -> None:
+        """Sets up the system at the beginning of a time step.
+
+        Notes
+        -----
+        This convenience method is meant to be called once
+        at the beginning of each time step.
+        It increments time stepping variables,
+        saves global vectors and matrices from the end
+        of the previous time step,
+        updates boundary conditions
+        and global water flux vector at the end of
+        the current time step,
+        and initializes iterative correction parameters.
+        """
+        # update time coordinate
+        self._t0 = self._t1
+        self._t1 = self._t0 + self.dt
+        # initialize iteration parameters
+        self._eps_a = 1.0
+        self._iter = 0
+        self.store_converged_matrices()
+        self.update_boundary_vectors()
+        self.update_weighted_matrices()
+
+    def store_converged_matrices(self) -> None:
+        pass
+
+    def update_boundary_vectors(self) -> None:
+        pass
+
+    def update_weighted_matrices(self) -> None:
+        pass
+
+    def initialize_free_index_arrays(self) -> None:
+        pass
+
+    def initialize_integration_points(self) -> None:
+        pass
+
+    def update_nodes(self) -> None:
+        pass
+
+    def update_boundary_conditions(self, t: float) -> None:
+        pass
+
+    def initialize_solution_variable_vectors(self) -> None:
+        pass
+
+    def update_global_matrices_and_vectors(self) -> None:
+        pass
+
+    def calculate_solution_vector_correction(self) -> None:
+        pass
+
+    def iterative_correction_step(self) -> None:
+        """Performs iterative correction of the
+        global void ratio vector for a single time step.
+
+        Notes
+        -----
+        This convenience method performs an iterative correction loop
+        based on the implicit_error_tolerance and max_iterations properties.
+        It iteratively updates the global weighted matrices
+        and performs correction of the global void ratio vector.
+        """
+        while self._eps_a > self.eps_s and self._iter < self.max_iterations:
+            self.calculate_solution_vector_correction()
+            self.update_nodes()
+            self.update_integration_points()
+            self.update_global_matrices_and_vectors()
+            self.update_iteration_variables()
+
+    def update_iteration_variables(self) -> None:
+        self._iter += 1

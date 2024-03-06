@@ -622,7 +622,7 @@ class TestUpdateBoundaries(unittest.TestCase):
         t = 6307200.0
         expected_void_ratio_0 = self.f(t)
         expected_void_ratio_1 = 0.425685517452261
-        self.msh.update_consolidation_boundary_conditions(t)
+        self.msh.update_boundary_conditions(t)
         self.assertAlmostEqual(
             self.msh.nodes[0].void_ratio, expected_void_ratio_0)
         self.assertAlmostEqual(
@@ -642,7 +642,7 @@ class TestUpdateBoundaries(unittest.TestCase):
         t = 18921600.0
         expected_void_ratio_2 = self.f(t)
         expected_void_ratio_3 = 0.599452189536827
-        self.msh.update_consolidation_boundary_conditions(t)
+        self.msh.update_boundary_conditions(t)
         self.assertAlmostEqual(
             self.msh.nodes[0].void_ratio, expected_void_ratio_2)
         self.assertAlmostEqual(
@@ -662,7 +662,7 @@ class TestUpdateBoundaries(unittest.TestCase):
 
     def test_update_water_flux_vector(self):
         t = 6307200.0
-        self.msh.update_consolidation_boundary_conditions(t)
+        self.msh.update_boundary_conditions(t)
         self.msh.update_water_flux_vector()
         for k, (fx, fx0) in enumerate(zip(self.msh._water_flux_vector,
                                           self.msh._water_flux_vector_0)):
@@ -671,7 +671,7 @@ class TestUpdateBoundaries(unittest.TestCase):
                 self.assertAlmostEqual(fx, self.water_flux)
             else:
                 self.assertEqual(fx, 0.0)
-        self.msh.update_consolidation_boundary_conditions(t)
+        self.msh.update_boundary_conditions(t)
         self.msh.update_water_flux_vector()
         for k, (fx, fx0) in enumerate(zip(self.msh._water_flux_vector,
                                           self.msh._water_flux_vector_0)):
@@ -1608,7 +1608,7 @@ class TestUpdateWeightedMatricesLinear(unittest.TestCase):
             0.39,
             0.35,
         ])
-        self.msh.update_consolidation_boundary_conditions(self.msh._t1)
+        self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
         self.msh.update_water_flux_vector()
@@ -2007,14 +2007,18 @@ class TestVoidRatioCorrectionLinearOneStep(unittest.TestCase):
             0.39,
             0.35,
         ])
-        self.msh.update_consolidation_boundary_conditions(self.msh._t1)
+        self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
         self.msh.update_water_flux_vector()
         self.msh.update_stiffness_matrix()
         self.msh.update_mass_matrix()
         self.msh.update_weighted_matrices()
-        self.msh.calculate_void_ratio_correction()
+        self.msh.calculate_solution_vector_correction()
+        self.msh.update_nodes()
+        self.msh.update_integration_points()
+        self.msh.update_global_matrices_and_vectors()
+        self.msh.update_iteration_variables()
 
     def test_void_ratio_distribution_nodes(self):
         expected_void_ratio_vector_0 = np.array([
@@ -2436,7 +2440,7 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
             0.39,
             0.35,
         ])
-        self.msh.update_consolidation_boundary_conditions(self.msh._t1)
+        self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
         self.msh.update_water_flux_vector()
@@ -2871,7 +2875,7 @@ class TestDeformedCoordsLinear(unittest.TestCase):
             0.39,
             0.35,
         ])
-        self.msh.update_consolidation_boundary_conditions(self.msh._t1)
+        self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
         self.msh.update_water_flux_vector()
@@ -4401,7 +4405,7 @@ class TestUpdateWeightedMatricesCubic(unittest.TestCase):
             0.601187375711174,
             0.590000000000000,
         ])
-        self.msh.update_consolidation_boundary_conditions(self.msh._t1)
+        self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
         self.msh.update_water_flux_vector()
@@ -5181,14 +5185,18 @@ class TestVoidRatioCorrectionCubicOneStep(unittest.TestCase):
             0.601187375711174,
             0.590000000000000,
         ])
-        self.msh.update_consolidation_boundary_conditions(self.msh._t1)
+        self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
         self.msh.update_water_flux_vector()
         self.msh.update_stiffness_matrix()
         self.msh.update_mass_matrix()
         self.msh.update_weighted_matrices()
-        self.msh.calculate_void_ratio_correction()
+        self.msh.calculate_solution_vector_correction()
+        self.msh.update_nodes()
+        self.msh.update_integration_points()
+        self.msh.update_global_matrices_and_vectors()
+        self.msh.update_iteration_variables()
 
     def test_void_ratio_distribution_nodes(self):
         expected_void_ratio_vector_0 = np.array([
@@ -6009,7 +6017,7 @@ class TestIterativeVoidRatioCorrectionCubic(unittest.TestCase):
             0.601187375711174,
             0.590000000000000,
         ])
-        self.msh.update_consolidation_boundary_conditions(self.msh._t1)
+        self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
         self.msh.update_water_flux_vector()

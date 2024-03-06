@@ -450,7 +450,7 @@ class ConsolidationAnalysis1D(Mesh1D):
     add_boundary
     remove_boundary
     clear_boundaries
-    update_consolidation_boundary_conditions
+    update_boundary_conditions
     update_water_flux_vector
     update_stiffness_matrix
     update_mass_matrix
@@ -487,12 +487,6 @@ class ConsolidationAnalysis1D(Mesh1D):
     """
     _elements: tuple[ConsolidationElement1D, ...]
     _boundaries: set[ConsolidationBoundary1D]
-    _time_step: float = 0.0
-    _inv_time_step: float = 0.0
-    _implicit_factor: float = 0.5   # Crank-Nicolson
-    _inv_implicit_factor: float = 0.5
-    _implicit_error_tolerance: float = 1e-3
-    _max_iterations: int = 100
     _free_vec: tuple[npt.NDArray, ...]
     _free_arr: tuple[npt.NDArray, ...]
     _void_ratio_vector_0: npt.NDArray[np.floating]
@@ -566,277 +560,50 @@ class ConsolidationAnalysis1D(Mesh1D):
             for k in range(num_elements)
         )
 
-    @property
-    def mesh_valid(self) -> bool:
-        """Flag for valid mesh.
-
-        Parameters
-        ----------
-        bool
-
-        Returns
-        -------
-        bool
-
-        Raises
-        ------
-        ValueError
-            If the value to assign cannot be cast to bool.
-
-        Notes
-        -----
-        When assigning to False also clears mesh information
-        (e.g. nodes, elements).
-        """
-        return super().mesh_valid
-
-    @mesh_valid.setter
-    def mesh_valid(self, value: bool) -> None:
-        value = bool(value)
-        if value:
-            # TODO: check for mesh validity
-            self._mesh_valid = True
-            # initialize global vectors and matrices
-            self._void_ratio_vector_0 = np.zeros(self.num_nodes)
-            self._void_ratio_vector = np.zeros(self.num_nodes)
-            self._water_flux_vector_0 = np.zeros(self.num_nodes)
-            self._water_flux_vector = np.zeros(self.num_nodes)
-            self._stiffness_matrix_0 = np.zeros(
-                (self.num_nodes, self.num_nodes))
-            self._stiffness_matrix = np.zeros(
-                (self.num_nodes, self.num_nodes))
-            self._mass_matrix_0 = np.zeros(
-                (self.num_nodes, self.num_nodes))
-            self._mass_matrix = np.zeros(
-                (self.num_nodes, self.num_nodes))
-            self._weighted_water_flux_vector = np.zeros(self.num_nodes)
-            self._weighted_stiffness_matrix = np.zeros(
-                (self.num_nodes, self.num_nodes)
-            )
-            self._weighted_mass_matrix = np.zeros(
-                (self.num_nodes, self.num_nodes)
-            )
-            self._coef_matrix_0 = np.zeros(
-                (self.num_nodes, self.num_nodes))
-            self._coef_matrix_1 = np.zeros(
-                (self.num_nodes, self.num_nodes))
-            self._residual_water_flux_vector = np.zeros(self.num_nodes)
-            self._delta_void_ratio_vector = np.zeros(self.num_nodes)
-            # # initialize sparse matrices
-            # zeros, indices, indptr = self.initialize_sparse_matrix_struct()
-            # self._stiff_matrix_0_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-            # self._stiff_matrix_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-            # self._mass_matrix_0_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-            # self._mass_matrix_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-            # self._weighted_stiff_matrix_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-            # self._weighted_mass_matrix_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-            # self._coef_matrix_0_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-            # self._coef_matrix_1_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-        else:
-            self._nodes = ()
-            self._elements = ()
-            self.clear_boundaries()
-            self._mesh_valid = False
-
-    @property
-    def time_step(self) -> float:
-        """The time step for the transient analysis.
-
-        Parameters
-        ----------
-        float
-
-        Returns
-        -------
-        float
-
-        Raises
-        ------
-        ValueError
-            If the value to assign is not convertible to float.
-            If the value to assign is negative.
-
-        Notes
-        -----
-        Also computes and stores an inverse value
-        1 / time_step
-        available as the property over_dt
-        for convenience in the simulation.
-        """
-        return self._time_step
-
-    @time_step.setter
-    def time_step(self, value: float) -> None:
-        value = float(value)
-        if value <= 0.0:
-            raise ValueError(f"invalid time_step {value}, must be positive")
-        self._time_step = value
-        self._inv_time_step = 1.0 / value
-
-    @property
-    def dt(self) -> float:
-        """An alias for time_step."""
-        return self._time_step
-
-    @property
-    def over_dt(self) -> float:
-        """The value 1 / time_step.
-
-        Returns
-        -------
-        float
-
-        Notes
-        -----
-        This value is calculated and stored
-        when time_step is set,
-        so this property call just returns the value.
-        """
-        return self._inv_time_step
-
-    @property
-    def implicit_factor(self) -> float:
-        """The implicit time stepping factor for the analysis.
-
-        Parameters
-        ----------
-        float
-
-        Returns
-        -------
-        float
-
-        Raises
-        ------
-        ValueError
-            If the value to be assigned is not convertible to float
-            If the value is < 0.0 or > 1.0
-
-        Notes
-        -----
-        This parameter sets the weighting between
-        vectors and matrices at the beginning and end of the time step
-        in the implicit time stepping scheme.
-        For example, a value of 0.0 would put no weight at the beginning
-        implying a fully implicit scheme.
-        A value of 1.0 would put no weight at the end
-        implying a fully explicit scheme
-        (in this case, the iterative correction will have no effect).
-        A value of 0.5 puts equal weight at the beginning and end
-        which is the well known Crank-Nicolson scheme.
-        The default set by the __init__() method is 0.5.
-        """
-        return self._implicit_factor
-
-    @implicit_factor.setter
-    def implicit_factor(self, value: float) -> None:
-        value = float(value)
-        if value < 0.0 or value > 1.0:
-            raise ValueError(
-                f"invalid implicit_factor {value}, must be between 0.0 and 1.0"
-            )
-        self._implicit_factor = value
-        self._inv_implicit_factor = 1.0 - value
-
-    @property
-    def alpha(self) -> float:
-        """An alias for implicit_factor."""
-        return self._implicit_factor
-
-    @property
-    def one_minus_alpha(self) -> float:
-        """The value (1 - implicit_factor).
-
-        Parameters
-        ----------
-        float
-
-        Returns
-        -------
-        float
-
-        Notes
-        -----
-        This value is calculated and stored
-        when implicit_factor is set,
-        so this property call just returns the value.
-        """
-        return self._inv_implicit_factor
-
-    @property
-    def implicit_error_tolerance(self) -> float:
-        """The error tolerance for the iterative correction
-        in the implicit time stepping scheme.
-
-        Parameters
-        ----------
-        float
-
-        Returns
-        -------
-        float
-
-        Raises
-        ------
-        ValueError
-            If the value to assign is not convertible to float
-            If the value to assign is negative
-        """
-        return self._implicit_error_tolerance
-
-    @implicit_error_tolerance.setter
-    def implicit_error_tolerance(self, value: float) -> None:
-        value = float(value)
-        if value <= 0.0:
-            raise ValueError(
-                f"invalid implicit_error_tolerance {value}, must be positive"
-            )
-        self._implicit_error_tolerance = value
-
-    @property
-    def eps_s(self) -> float:
-        """An alias for implicit_error_tolerance."""
-        return self._implicit_error_tolerance
-
-    @property
-    def max_iterations(self) -> int:
-        """The maximum number of iterations for iterative correction
-        in the implicit time stepping scheme.
-
-        Parameters
-        ----------
-        int
-
-        Returns
-        -------
-        int
-
-        Raises
-        ------
-        TypeError
-            If the value to be assigned is not an int.
-        ValueError
-            If the value to be assigned is negative.
-        """
-        return self._max_iterations
-
-    @max_iterations.setter
-    def max_iterations(self, value: int) -> None:
-        if not isinstance(value, int):
-            raise TypeError(f"type(max_iterations) {type(value)}"
-                            + " invalid, must be int")
-        if value <= 0:
-            raise ValueError(f"max_iterations {value}"
-                             + " invalid, must be positive")
-        self._max_iterations = value
+    def _initialize_global_matrices_and_vectors(self):
+        self._void_ratio_vector_0 = np.zeros(self.num_nodes)
+        self._void_ratio_vector = np.zeros(self.num_nodes)
+        self._water_flux_vector_0 = np.zeros(self.num_nodes)
+        self._water_flux_vector = np.zeros(self.num_nodes)
+        self._stiffness_matrix_0 = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._stiffness_matrix = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._mass_matrix_0 = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._mass_matrix = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._weighted_water_flux_vector = np.zeros(self.num_nodes)
+        self._weighted_stiffness_matrix = np.zeros(
+            (self.num_nodes, self.num_nodes)
+        )
+        self._weighted_mass_matrix = np.zeros(
+            (self.num_nodes, self.num_nodes)
+        )
+        self._coef_matrix_0 = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._coef_matrix_1 = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._residual_water_flux_vector = np.zeros(self.num_nodes)
+        self._delta_void_ratio_vector = np.zeros(self.num_nodes)
+        # # sparse matrices
+        # zeros, indices, indptr = self.initialize_sparse_matrix_struct()
+        # self._stiff_matrix_0_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
+        # self._stiff_matrix_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
+        # self._mass_matrix_0_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
+        # self._mass_matrix_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
+        # self._weighted_stiff_matrix_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
+        # self._weighted_mass_matrix_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
+        # self._coef_matrix_0_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
+        # self._coef_matrix_1_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
 
     def add_boundary(self, new_boundary: ConsolidationBoundary1D) -> None:
         """Adds a boundary to the mesh.
@@ -872,7 +639,7 @@ class ConsolidationAnalysis1D(Mesh1D):
                     )
         self._boundaries.add(new_boundary)
 
-    def update_consolidation_boundary_conditions(
+    def update_boundary_conditions(
             self,
             time: float) -> None:
         """Update the boundary conditions in the ConsolidationAnalysis1D
@@ -981,38 +748,7 @@ class ConsolidationAnalysis1D(Mesh1D):
         for nd in self.nodes:
             nd.void_ratio = self._void_ratio_vector[nd.index]
 
-    def update_integration_points(self) -> None:
-        """Updates the properties of integration points
-        in the parent mesh according to changes in void ratio.
-        """
-        for e in self.elements:
-            e.update_integration_points()
-
-    def initialize_global_system(self, t0: float) -> None:
-        """Sets up the global system before the first time step.
-
-        Parameters
-        ----------
-        t0 : float
-            The value of time (in seconds)
-            at the beginning of the first time step
-
-        Notes
-        -----
-        This convenience method is meant to be called once
-        at the beginning of the analysis.
-        It assumes that initial conditions have already been assigned
-        to the nodes in the mesh.
-        It initializes variables tracking the time coordinate,
-        updates the boundary conditions at the initial time,
-        assigns initial void ratio values from the nodes to the global vector,
-        updates the integration points in the parent mesh,
-        then updates all global vectors and matrices.
-        """
-        # initialize global time
-        t0 = float(t0)
-        self._t0 = t0
-        self._t1 = t0
+    def initialize_integration_points(self) -> None:
         # initialize initial void ratio
         # and preconsolidation stress
         for e in self.elements:
@@ -1027,19 +763,14 @@ class ConsolidationAnalysis1D(Mesh1D):
                 for ip in iipp:
                     N = e._shape_matrix(ip.local_coord)
                     ip.void_ratio_0 = (N @ ee0)[0]
-        # update nodes with boundary conditions first
-        self.update_consolidation_boundary_conditions(self._t0)
+
+    def initialize_solution_variable_vectors(self) -> None:
         # now get the void ratio from the nodes
-        # (we assume that initial conditions have already been applied)
         for nd in self.nodes:
             self._void_ratio_vector[nd.index] = nd.void_ratio
             self._void_ratio_vector_0[nd.index] = nd.void_ratio
-        # now build the global matrices and vectors
-        self.update_integration_points()
-        self.update_water_flux_vector()
-        self.update_stiffness_matrix()
-        self.update_mass_matrix()
-        self.update_weighted_matrices()
+
+    def initialize_free_index_arrays(self) -> None:
         # create list of free node indices
         # that will be updated at each iteration
         # (i.e. are not fixed/Dirichlet boundary conditions)
@@ -1051,25 +782,7 @@ class ConsolidationAnalysis1D(Mesh1D):
         self._free_vec = np.ix_(free_ind)
         self._free_arr = np.ix_(free_ind, free_ind)
 
-    def initialize_time_step(self) -> None:
-        """Sets up the system at the beginning of a time step.
-
-        Notes
-        -----
-        This convenience method is meant to be called once
-        at the beginning of each time step.
-        It increments time stepping variables,
-        saves global vectors and matrices from the end
-        of the previous time step,
-        updates boundary conditions
-        and global water flux vector at the end of
-        the current time step,
-        and initializes iterative correction parameters.
-        """
-        # update time coordinate
-        self._t0 = self._t1
-        self._t1 = self._t0 + self.dt
-        # store previous converged matrices and vectors
+    def store_converged_matrices(self) -> None:
         self._void_ratio_vector_0[:] = self._void_ratio_vector[:]
         self._water_flux_vector_0[:] = self._water_flux_vector[:]
         self._stiffness_matrix_0[:, :] = self._stiffness_matrix[:, :]
@@ -1080,13 +793,15 @@ class ConsolidationAnalysis1D(Mesh1D):
         # self._mass_matrix_0_csr.data[:] = (
         #     self._mass_matrix_csr.data[:]
         # )
-        # update boundary conditions
-        self.update_consolidation_boundary_conditions(self._t1)
+
+    def update_boundary_vectors(self) -> None:
+        self.update_boundary_conditions(self._t1)
         self.update_water_flux_vector()
-        self.update_weighted_matrices()
-        # initialize iteration parameters
-        self._eps_a = 1.0
-        self._iter = 0
+
+    def update_global_matrices_and_vectors(self) -> None:
+        self.update_water_flux_vector()
+        self.update_stiffness_matrix()
+        self.update_mass_matrix()
 
     def update_weighted_matrices(self) -> None:
         """Updates global weighted matrices
@@ -1138,7 +853,7 @@ class ConsolidationAnalysis1D(Mesh1D):
         #     - self.alpha * self._weighted_stiff_matrix_csr.data
         # )
 
-    def calculate_void_ratio_correction(self) -> None:
+    def calculate_solution_vector_correction(self) -> None:
         """Performs a single iteration of void ratio correction
         in the implicit time stepping scheme.
 
@@ -1152,6 +867,9 @@ class ConsolidationAnalysis1D(Mesh1D):
         then updates the nodes, integration points,
         and the global vectors and matrices.
         """
+        # first update the global weighted matrices
+        # (ensures coef_matrix_0 and coef_matrix_1)
+        self.update_weighted_matrices()
         # update residual vector
         self._residual_water_flux_vector[:] = (
             self._coef_matrix_0 @ self._void_ratio_vector_0
@@ -1176,32 +894,13 @@ class ConsolidationAnalysis1D(Mesh1D):
         self._void_ratio_vector[self._free_vec] += (
             self._delta_void_ratio_vector[self._free_vec]
         )
+
+    def update_iteration_variables(self) -> None:
         self._eps_a = float(
             np.linalg.norm(self._delta_void_ratio_vector)
             / np.linalg.norm(self._void_ratio_vector)
         )
         self._iter += 1
-        # update global system
-        self.update_nodes()
-        self.update_integration_points()
-        self.update_water_flux_vector()
-        self.update_stiffness_matrix()
-        self.update_mass_matrix()
-
-    def iterative_correction_step(self) -> None:
-        """Performs iterative correction of the
-        global void ratio vector for a single time step.
-
-        Notes
-        -----
-        This convenience method performs an iterative correction loop
-        based on the implicit_error_tolerance and max_iterations properties.
-        It iteratively updates the global weighted matrices
-        and performs correction of the global void ratio vector.
-        """
-        while self._eps_a > self.eps_s and self._iter < self.max_iterations:
-            self.update_weighted_matrices()
-            self.calculate_void_ratio_correction()
 
     def solve_to(
             self,
@@ -1319,9 +1018,7 @@ class ConsolidationAnalysis1D(Mesh1D):
                     ip.pre_consol_stress = ppc0
             self.update_nodes()
             self.update_integration_points()
-            self.update_water_flux_vector()
-            self.update_stiffness_matrix()
-            self.update_mass_matrix()
+            self.update_global_matrices_and_vectors()
             self._t1 = t0
             # take two half steps
             self.time_step = 0.5 * dt0
@@ -1335,9 +1032,7 @@ class ConsolidationAnalysis1D(Mesh1D):
             self._void_ratio_vector[:] += void_ratio_error[:]
             self.update_nodes()
             self.update_integration_points()
-            self.update_water_flux_vector()
-            self.update_stiffness_matrix()
-            self.update_mass_matrix()
+            self.update_global_matrices_and_vectors()
             # update the time step
             void_ratio_rate[:] = (self._void_ratio_vector[:]
                                   - void_ratio_vector_0[:])
