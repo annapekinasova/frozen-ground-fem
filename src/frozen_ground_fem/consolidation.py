@@ -16,7 +16,7 @@ from enum import Enum
 
 import numpy as np
 import numpy.typing as npt
-import scipy.sparse as sps
+# import scipy.sparse as sps
 
 from frozen_ground_fem.materials import (
     unit_weight_water as gam_w,
@@ -500,22 +500,22 @@ class ConsolidationAnalysis1D(Mesh1D):
     _water_flux_vector_0: npt.NDArray[np.floating]
     _water_flux_vector: npt.NDArray[np.floating]
     _stiffness_matrix_0: npt.NDArray[np.floating]
-    _stiff_matrix_0_csr: sps.csr_array
+    # _stiff_matrix_0_csr: sps.csr_array
     _stiffness_matrix: npt.NDArray[np.floating]
-    _stiff_matrix_csr: sps.csr_array
+    # _stiff_matrix_csr: sps.csr_array
     _mass_matrix_0: npt.NDArray[np.floating]
-    _mass_matrix_0_csr: sps.csr_array
+    # _mass_matrix_0_csr: sps.csr_array
     _mass_matrix: npt.NDArray[np.floating]
-    _mass_matrix_csr: sps.csr_array
+    # _mass_matrix_csr: sps.csr_array
     _weighted_water_flux_vector: npt.NDArray[np.floating]
     _weighted_stiffness_matrix: npt.NDArray[np.floating]
-    _weighted_stiff_matrix_csr: sps.csr_array
+    # _weighted_stiff_matrix_csr: sps.csr_array
     _weighted_mass_matrix: npt.NDArray[np.floating]
-    _weighted_mass_matrix_csr: sps.csr_array
+    # _weighted_mass_matrix_csr: sps.csr_array
     _coef_matrix_0: npt.NDArray[np.floating]
-    _coef_matrix_0_csr: sps.csr_array
+    # _coef_matrix_0_csr: sps.csr_array
     _coef_matrix_1: npt.NDArray[np.floating]
-    _coef_matrix_1_csr: sps.csr_array
+    # _coef_matrix_1_csr: sps.csr_array
     _residual_water_flux_vector: npt.NDArray[np.floating]
     _delta_void_ratio_vector: npt.NDArray[np.floating]
 
@@ -622,24 +622,24 @@ class ConsolidationAnalysis1D(Mesh1D):
                 (self.num_nodes, self.num_nodes))
             self._residual_water_flux_vector = np.zeros(self.num_nodes)
             self._delta_void_ratio_vector = np.zeros(self.num_nodes)
-            # initialize sparse matrices
-            zeros, indices, indptr = self.initialize_sparse_matrix_struct()
-            self._stiff_matrix_0_csr = sps.csr_array(
-                (zeros, indices, indptr))
-            self._stiff_matrix_csr = sps.csr_array(
-                (zeros, indices, indptr))
-            self._mass_matrix_0_csr = sps.csr_array(
-                (zeros, indices, indptr))
-            self._mass_matrix_csr = sps.csr_array(
-                (zeros, indices, indptr))
-            self._weighted_stiff_matrix_csr = sps.csr_array(
-                (zeros, indices, indptr))
-            self._weighted_mass_matrix_csr = sps.csr_array(
-                (zeros, indices, indptr))
-            self._coef_matrix_0_csr = sps.csr_array(
-                (zeros, indices, indptr))
-            self._coef_matrix_1_csr = sps.csr_array(
-                (zeros, indices, indptr))
+            # # initialize sparse matrices
+            # zeros, indices, indptr = self.initialize_sparse_matrix_struct()
+            # self._stiff_matrix_0_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
+            # self._stiff_matrix_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
+            # self._mass_matrix_0_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
+            # self._mass_matrix_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
+            # self._weighted_stiff_matrix_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
+            # self._weighted_mass_matrix_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
+            # self._coef_matrix_0_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
+            # self._coef_matrix_1_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
         else:
             self._nodes = ()
             self._elements = ()
@@ -932,17 +932,17 @@ class ConsolidationAnalysis1D(Mesh1D):
         respecting connectivity of global degrees of freedom.
         """
         self._stiffness_matrix[:, :] = 0.0
-        self._stiff_matrix_csr.data[:] = 0.0
-        osqm1 = (self.elements[0].order + 1) ** 2 - 1
-        imin = 0
-        imax = osqm1 + 1
+        # self._stiff_matrix_csr.data[:] = 0.0
+        # osqm1 = (self.elements[0].order + 1) ** 2 - 1
+        # imin = 0
+        # imax = osqm1 + 1
         for e in self.elements:
             ind = [nd.index for nd in e.nodes]
             Ke = e.stiffness_matrix
             self._stiffness_matrix[np.ix_(ind, ind)] += Ke
-            self._stiffness_matrix_csr.data[imin:imax] += Ke.flatten()
-            imin += osqm1
-            imax += osqm1
+            # self._stiffness_matrix_csr.data[imin:imax] += Ke.flatten()
+            # imin += osqm1
+            # imax += osqm1
 
     def update_mass_matrix(self) -> None:
         """Updates the global mass matrix.
@@ -956,17 +956,17 @@ class ConsolidationAnalysis1D(Mesh1D):
         respecting connectivity of global degrees of freedom.
         """
         self._mass_matrix[:, :] = 0.0
-        self._mass_matrix_csr.data[:] = 0.0
-        osqm1 = (self.elements[0].order + 1) ** 2 - 1
-        imin = 0
-        imax = osqm1 + 1
+        # self._mass_matrix_csr.data[:] = 0.0
+        # osqm1 = (self.elements[0].order + 1) ** 2 - 1
+        # imin = 0
+        # imax = osqm1 + 1
         for e in self.elements:
             ind = [nd.index for nd in e.nodes]
             Me = e.mass_matrix
             self._mass_matrix[np.ix_(ind, ind)] += Me
-            self._mass_matrix_csr.data[imin:imax] += Me.flatten()
-            imin += osqm1
-            imax += osqm1
+            # self._mass_matrix_csr.data[imin:imax] += Me.flatten()
+            # imin += osqm1
+            # imax += osqm1
 
     def update_nodes(self) -> None:
         """Updates the void ratio values at the nodes
@@ -1074,12 +1074,12 @@ class ConsolidationAnalysis1D(Mesh1D):
         self._water_flux_vector_0[:] = self._water_flux_vector[:]
         self._stiffness_matrix_0[:, :] = self._stiffness_matrix[:, :]
         self._mass_matrix_0[:, :] = self._mass_matrix[:, :]
-        self._stiff_matrix_0_csr.data[:] = (
-            self._stiff_matrix_csr.data[:]
-        )
-        self._mass_matrix_0_scr[:] = (
-            self._mass_matrix_csr[:]
-        )
+        # self._stiff_matrix_0_csr.data[:] = (
+        #     self._stiff_matrix_csr.data[:]
+        # )
+        # self._mass_matrix_0_csr.data[:] = (
+        #     self._mass_matrix_csr.data[:]
+        # )
         # update boundary conditions
         self.update_consolidation_boundary_conditions(self._t1)
         self.update_water_flux_vector()
@@ -1109,34 +1109,34 @@ class ConsolidationAnalysis1D(Mesh1D):
             self.one_minus_alpha * self._stiffness_matrix_0
             + self.alpha * self._stiffness_matrix
         )
-        self._weighted_stiff_matrix_csr.data[:] = (
-            self.one_minus_alpha * self._stiff_matrix_0_csr.data
-            + self.alpha * self._stiff_matrix_csr.data
-        )
+        # self._weighted_stiff_matrix_csr.data[:] = (
+        #     self.one_minus_alpha * self._stiff_matrix_0_csr.data
+        #     + self.alpha * self._stiff_matrix_csr.data
+        # )
         self._weighted_mass_matrix[:, :] = (
             self.one_minus_alpha * self._mass_matrix_0
             + self.alpha * self._mass_matrix
         )
-        self._weighted_mass_matrix_csr.data[:] = (
-            self.one_minus_alpha * self._mass_matrix_0_csr.data
-            + self.alpha * self._mass_matrix_csr.data
-        )
+        # self._weighted_mass_matrix_csr.data[:] = (
+        #     self.one_minus_alpha * self._mass_matrix_0_csr.data
+        #     + self.alpha * self._mass_matrix_csr.data
+        # )
         self._coef_matrix_0[:, :] = (
             self._weighted_mass_matrix * self.over_dt
             + self.one_minus_alpha * self._weighted_stiffness_matrix
         )
-        self._coef_matrix_0_csr.data[:] = (
-            self._weighted_mass_matrix_csr.data * self.over_dt
-            + self.one_minus_alpha * self._weighted_stiff_matrix_csr.data
-        )
+        # self._coef_matrix_0_csr.data[:] = (
+        #     self._weighted_mass_matrix_csr.data * self.over_dt
+        #     + self.one_minus_alpha * self._weighted_stiff_matrix_csr.data
+        # )
         self._coef_matrix_1[:, :] = (
             self._weighted_mass_matrix * self.over_dt
             - self.alpha * self._weighted_stiffness_matrix
         )
-        self._coef_matrix_1_csr.data[:] = (
-            self._weighted_mass_matrix_csr.data * self.over_dt
-            - self.alpha * self._weighted_stiff_matrix_csr.data
-        )
+        # self._coef_matrix_1_csr.data[:] = (
+        #     self._weighted_mass_matrix_csr.data * self.over_dt
+        #     - self.alpha * self._weighted_stiff_matrix_csr.data
+        # )
 
     def calculate_void_ratio_correction(self) -> None:
         """Performs a single iteration of void ratio correction
