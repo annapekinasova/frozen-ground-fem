@@ -15,7 +15,7 @@ from enum import Enum
 
 import numpy as np
 import numpy.typing as npt
-import scipy.sparse as sps
+# import scipy.sparse as sps
 
 from .materials import (
     vol_heat_cap_water as Cw,
@@ -430,22 +430,22 @@ class ThermalAnalysis1D(Mesh1D):
     _heat_flux_vector_0: npt.NDArray[np.floating]
     _heat_flux_vector: npt.NDArray[np.floating]
     _heat_flow_matrix_0: npt.NDArray[np.floating]
-    _heat_flow_matrix_0_csr: sps.csr_array
+    # _heat_flow_matrix_0_csr: sps.csr_array
     _heat_flow_matrix: npt.NDArray[np.floating]
-    _heat_flow_matrix_csr: sps.csr_array
+    # _heat_flow_matrix_csr: sps.csr_array
     _heat_storage_matrix_0: npt.NDArray[np.floating]
-    _heat_storage_matrix_0_csr: sps.csr_array
+    # _heat_storage_matrix_0_csr: sps.csr_array
     _heat_storage_matrix: npt.NDArray[np.floating]
-    _heat_storage_matrix_csr: sps.csr_array
+    # _heat_storage_matrix_csr: sps.csr_array
     _weighted_heat_flux_vector: npt.NDArray[np.floating]
     _weighted_heat_flow_matrix: npt.NDArray[np.floating]
-    _weighted_heat_flow_matrix_csr: sps.csr_array
+    # _weighted_heat_flow_matrix_csr: sps.csr_array
     _weighted_heat_storage_matrix: npt.NDArray[np.floating]
-    _weighted_heat_storage_matrix_csr: sps.csr_array
+    # _weighted_heat_storage_matrix_csr: sps.csr_array
     _coef_matrix_0: npt.NDArray[np.floating]
-    _coef_matrix_0_csr: sps.csr_array
+    # _coef_matrix_0_csr: sps.csr_array
     _coef_matrix_1: npt.NDArray[np.floating]
-    _coef_matrix_1_csr: sps.csr_array
+    # _coef_matrix_1_csr: sps.csr_array
     _residual_heat_flux_vector: npt.NDArray[np.floating]
     _delta_temp_vector: npt.NDArray[np.floating]
     _temp_rate_vector: npt.NDArray[np.floating]
@@ -553,24 +553,24 @@ class ThermalAnalysis1D(Mesh1D):
             self._residual_heat_flux_vector = np.zeros(self.num_nodes)
             self._delta_temp_vector = np.zeros(self.num_nodes)
             self._temp_rate_vector = np.zeros(self.num_nodes)
-            # initialize sparse matrices
-            zeros, indices, indptr = self.initialize_sparse_matrix_struct()
-            self._heat_flow_matrix_0_csr = sps.csr_array(
-                (zeros, indices, indptr))
-            self._heat_flow_matrix_csr = sps.csr_array(
-                (zeros, indices, indptr))
-            self._heat_storage_matrix_0_csr = sps.csr_array(
-                (zeros, indices, indptr))
-            self._heat_storage_matrix_csr = sps.csr_array(
-                (zeros, indices, indptr))
-            self._weighted_heat_flow_matrix_csr = sps.csr_array(
-                (zeros, indices, indptr))
-            self._weighted_heat_storage_matrix_csr = sps.csr_array(
-                (zeros, indices, indptr))
-            self._coef_matrix_0_csr = sps.csr_array(
-                (zeros, indices, indptr))
-            self._coef_matrix_1_csr = sps.csr_array(
-                (zeros, indices, indptr))
+            # # initialize sparse matrices
+            # zeros, indices, indptr = self.initialize_sparse_matrix_struct()
+            # self._heat_flow_matrix_0_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
+            # self._heat_flow_matrix_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
+            # self._heat_storage_matrix_0_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
+            # self._heat_storage_matrix_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
+            # self._weighted_heat_flow_matrix_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
+            # self._weighted_heat_storage_matrix_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
+            # self._coef_matrix_0_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
+            # self._coef_matrix_1_csr = sps.csr_array(
+            #     (zeros, indices, indptr))
         else:
             self._nodes = ()
             self._elements = ()
@@ -868,17 +868,17 @@ class ThermalAnalysis1D(Mesh1D):
         respecting connectivity of global degrees of freedom.
         """
         self._heat_flow_matrix[:, :] = 0.0
-        self._heat_flow_matrix_csr.data[:] = 0.0
-        osqm1 = (self.elements[0].order + 1) ** 2 - 1
-        imin = 0
-        imax = osqm1 + 1
+        # self._heat_flow_matrix_csr.data[:] = 0.0
+        # osqm1 = (self.elements[0].order + 1) ** 2 - 1
+        # imin = 0
+        # imax = osqm1 + 1
         for e in self.elements:
             ind = np.array([nd.index for nd in e.nodes], dtype=int)
             He = e.heat_flow_matrix
             self._heat_flow_matrix[np.ix_(ind, ind)] += He
-            self._heat_flow_matrix_csr.data[imin:imax] += He.flatten()
-            imin += osqm1
-            imax += osqm1
+            # self._heat_flow_matrix_csr.data[imin:imax] += He.flatten()
+            # imin += osqm1
+            # imax += osqm1
 
     def update_heat_storage_matrix(self) -> None:
         """Updates the global heat storage matrix.
@@ -892,17 +892,17 @@ class ThermalAnalysis1D(Mesh1D):
         respecting connectivity of global degrees of freedom.
         """
         self._heat_storage_matrix[:, :] = 0.0
-        self._heat_storage_matrix_csr.data[:] = 0.0
-        osqm1 = (self.elements[0].order + 1) ** 2 - 1
-        imin = 0
-        imax = osqm1 + 1
+        # self._heat_storage_matrix_csr.data[:] = 0.0
+        # osqm1 = (self.elements[0].order + 1) ** 2 - 1
+        # imin = 0
+        # imax = osqm1 + 1
         for e in self.elements:
             ind = np.array([nd.index for nd in e.nodes], dtype=int)
             Ce = e.heat_storage_matrix
             self._heat_storage_matrix[np.ix_(ind, ind)] += Ce
-            self._heat_storage_matrix_csr.data[imin:imax] += Ce.flatten()
-            imin += osqm1
-            imax += osqm1
+            # self._heat_storage_matrix_csr.data[imin:imax] += Ce.flatten()
+            # imin += osqm1
+            # imax += osqm1
 
     def update_nodes(self) -> None:
         """Updates the temperature values at the nodes
@@ -998,12 +998,12 @@ class ThermalAnalysis1D(Mesh1D):
         self._heat_flux_vector_0[:] = self._heat_flux_vector[:]
         self._heat_flow_matrix_0[:, :] = self._heat_flow_matrix[:, :]
         self._heat_storage_matrix_0[:, :] = self._heat_storage_matrix[:, :]
-        self._heat_flow_matrix_0_csr.data[:] = (
-            self._heat_flow_matrix_csr.data[:]
-        )
-        self._heat_storage_matrix_0_csr.data[:] = (
-            self._heat_storage_matrix_csr.data[:]
-        )
+        # self._heat_flow_matrix_0_csr.data[:] = (
+        #     self._heat_flow_matrix_csr.data[:]
+        # )
+        # self._heat_storage_matrix_0_csr.data[:] = (
+        #     self._heat_storage_matrix_csr.data[:]
+        # )
         # update boundary conditions
         self.update_thermal_boundary_conditions(self._t1)
         self.update_heat_flux_vector()
@@ -1035,34 +1035,34 @@ class ThermalAnalysis1D(Mesh1D):
             self.one_minus_alpha * self._heat_flow_matrix_0
             + self.alpha * self._heat_flow_matrix
         )
-        self._weighted_heat_flow_matrix_csr.data[:] = (
-            self.one_minus_alpha * self._heat_flow_matrix_0_csr.data
-            + self.alpha * self._heat_flow_matrix_csr.data
-        )
+        # self._weighted_heat_flow_matrix_csr.data[:] = (
+        #     self.one_minus_alpha * self._heat_flow_matrix_0_csr.data
+        #     + self.alpha * self._heat_flow_matrix_csr.data
+        # )
         self._weighted_heat_storage_matrix[:, :] = (
             self.one_minus_alpha * self._heat_storage_matrix_0
             + self.alpha * self._heat_storage_matrix
         )
-        self._weighted_heat_storage_matrix_csr.data[:] = (
-            self.one_minus_alpha * self._heat_storage_matrix_0_csr.data
-            + self.alpha * self._heat_storage_matrix_csr.data
-        )
+        # self._weighted_heat_storage_matrix_csr.data[:] = (
+        #     self.one_minus_alpha * self._heat_storage_matrix_0_csr.data
+        #     + self.alpha * self._heat_storage_matrix_csr.data
+        # )
         self._coef_matrix_0[:, :] = (
             self._weighted_heat_storage_matrix * self.over_dt
             - self.one_minus_alpha * self._weighted_heat_flow_matrix
         )
-        self._coef_matrix_0_csr.data[:] = (
-            self._weighted_heat_storage_matrix_csr.data * self.over_dt
-            - self.one_minus_alpha * self._weighted_heat_flow_matrix_csr.data
-        )
+        # self._coef_matrix_0_csr.data[:] = (
+        #     self._weighted_heat_storage_matrix_csr.data * self.over_dt
+        #     - self.one_minus_alpha * self._weighted_heat_flow_matrix_csr.data
+        # )
         self._coef_matrix_1[:, :] = (
             self._weighted_heat_storage_matrix * self.over_dt
             + self.alpha * self._weighted_heat_flow_matrix
         )
-        self._coef_matrix_1_csr.data[:] = (
-            self._weighted_heat_storage_matrix_csr.data * self.over_dt
-            + self.alpha * self._weighted_heat_flow_matrix_csr.data
-        )
+        # self._coef_matrix_1_csr.data[:] = (
+        #     self._weighted_heat_storage_matrix_csr.data * self.over_dt
+        #     + self.alpha * self._weighted_heat_flow_matrix_csr.data
+        # )
 
     def calculate_temperature_correction(self) -> None:
         """Performs a single iteration of temperature correction
