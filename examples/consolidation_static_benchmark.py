@@ -274,13 +274,13 @@ def main():
     # define simulation parameters
     s_per_yr = 365.0 * 86400.0
     H_layer = 10.0
-    num_elements = 20
+    num_elements = 10
     dt_sim_0 = 1.0e-1
     t_max = 80.0 * s_per_yr
     qi = 40.0e3
     qf = 440.0e3
     ppc0 = 200.52773e3
-    tol = 1e-6
+    tol = 1e-5
     stabilize = False
 
     # set plotting parameters
