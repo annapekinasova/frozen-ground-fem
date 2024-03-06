@@ -487,8 +487,6 @@ class ConsolidationAnalysis1D(Mesh1D):
     """
     _elements: tuple[ConsolidationElement1D, ...]
     _boundaries: set[ConsolidationBoundary1D]
-    _free_vec: tuple[npt.NDArray, ...]
-    _free_arr: tuple[npt.NDArray, ...]
     _void_ratio_vector_0: npt.NDArray[np.floating]
     _void_ratio_vector: npt.NDArray[np.floating]
     _water_flux_vector_0: npt.NDArray[np.floating]
@@ -506,10 +504,6 @@ class ConsolidationAnalysis1D(Mesh1D):
     # _weighted_stiff_matrix_csr: sps.csr_array
     _weighted_mass_matrix: npt.NDArray[np.floating]
     # _weighted_mass_matrix_csr: sps.csr_array
-    _coef_matrix_0: npt.NDArray[np.floating]
-    # _coef_matrix_0_csr: sps.csr_array
-    _coef_matrix_1: npt.NDArray[np.floating]
-    # _coef_matrix_1_csr: sps.csr_array
     _residual_water_flux_vector: npt.NDArray[np.floating]
     _delta_void_ratio_vector: npt.NDArray[np.floating]
 
@@ -560,7 +554,7 @@ class ConsolidationAnalysis1D(Mesh1D):
             for k in range(num_elements)
         )
 
-    def _initialize_global_matrices_and_vectors(self):
+    def initialize_global_matrices_and_vectors(self):
         self._void_ratio_vector_0 = np.zeros(self.num_nodes)
         self._void_ratio_vector = np.zeros(self.num_nodes)
         self._water_flux_vector_0 = np.zeros(self.num_nodes)
@@ -795,7 +789,6 @@ class ConsolidationAnalysis1D(Mesh1D):
         # )
 
     def update_boundary_vectors(self) -> None:
-        self.update_boundary_conditions(self._t1)
         self.update_water_flux_vector()
 
     def update_global_matrices_and_vectors(self) -> None:
@@ -951,34 +944,9 @@ class ConsolidationAnalysis1D(Mesh1D):
         If adaptive correction is not performed, then error is not
         estimated and the error array that is returned is not meaningful.
         """
-        tf = float(tf)
-        if tf <= self._t1:
-            raise ValueError(
-                f"Provided tf {tf} is <= current "
-                f"simulation time {self._t1}."
-            )
-        # flag to ensure analysis completes at tf
-        # to within roundoff error
-        done = False
-        # simplified loop if not performing
-        # adaptive correction
+        tf = self._check_tf(tf)
         if not adapt_dt:
-            dt_list = []
-            err_list = []
-            while not done and self._t1 < tf:
-                # check if time step passes tf
-                dt00 = self.time_step
-                if self._t1 + self.time_step > tf:
-                    self.time_step = tf - self._t1
-                    done = True
-                # take single time step
-                self.initialize_time_step()
-                self.iterative_correction_step()
-                dt_list.append(dt00)
-                err_list.append(0.0)
-            # reset time step and return output values
-            self.time_step = dt00
-            return dt00, np.array(dt_list), np.array(err_list)
+            return super().solve_to(tf)
         # initialize vectors and matrices
         # for adaptive step size correction
         num_int_pt_per_element = len(self.elements[0].int_pts)
@@ -993,6 +961,7 @@ class ConsolidationAnalysis1D(Mesh1D):
         ))
         dt_list = []
         err_list = []
+        done = False
         while not done and self._t1 < tf:
             # check if time step passes tf
             dt00 = self.time_step

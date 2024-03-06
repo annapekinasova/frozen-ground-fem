@@ -382,7 +382,7 @@ class ThermalAnalysis1D(Mesh1D):
     add_boundary
     remove_boundary
     clear_boundaries
-    update_thermal_boundary_conditions
+    update_boundary_conditions
     update_heat_flux_vector
     update_heat_flow_matrix
     update_heat_storage_matrix
@@ -417,14 +417,6 @@ class ThermalAnalysis1D(Mesh1D):
     """
     _elements: tuple[ThermalElement1D, ...]
     _boundaries: set[ThermalBoundary1D]
-    _time_step: float = 0.0
-    _inv_time_step: float = 0.0
-    _implicit_factor: float = 0.5   # Crank-Nicolson
-    _inv_implicit_factor: float = 0.5
-    _implicit_error_tolerance: float = 1e-3
-    _max_iterations: int = 100
-    _free_vec: tuple[npt.NDArray, ...]
-    _free_arr: tuple[npt.NDArray, ...]
     _temp_vector_0: npt.NDArray[np.floating]
     _temp_vector: npt.NDArray[np.floating]
     _heat_flux_vector_0: npt.NDArray[np.floating]
@@ -442,10 +434,6 @@ class ThermalAnalysis1D(Mesh1D):
     # _weighted_heat_flow_matrix_csr: sps.csr_array
     _weighted_heat_storage_matrix: npt.NDArray[np.floating]
     # _weighted_heat_storage_matrix_csr: sps.csr_array
-    _coef_matrix_0: npt.NDArray[np.floating]
-    # _coef_matrix_0_csr: sps.csr_array
-    _coef_matrix_1: npt.NDArray[np.floating]
-    # _coef_matrix_1_csr: sps.csr_array
     _residual_heat_flux_vector: npt.NDArray[np.floating]
     _delta_temp_vector: npt.NDArray[np.floating]
     _temp_rate_vector: npt.NDArray[np.floating]
@@ -497,278 +485,50 @@ class ThermalAnalysis1D(Mesh1D):
             for k in range(num_elements)
         )
 
-    @property
-    def mesh_valid(self) -> bool:
-        """Flag for valid mesh.
-
-        Parameters
-        ----------
-        bool
-
-        Returns
-        -------
-        bool
-
-        Raises
-        ------
-        ValueError
-            If the value to assign cannot be cast to bool.
-
-        Notes
-        -----
-        When assigning to False also clears mesh information
-        (e.g. nodes, elements).
-        """
-        return super().mesh_valid
-
-    @mesh_valid.setter
-    def mesh_valid(self, value: bool) -> None:
-        value = bool(value)
-        if value:
-            # TODO: check for mesh validity
-            self._mesh_valid = True
-            # initialize global vectors and matrices
-            self._temp_vector_0 = np.zeros(self.num_nodes)
-            self._temp_vector = np.zeros(self.num_nodes)
-            self._heat_flux_vector_0 = np.zeros(self.num_nodes)
-            self._heat_flux_vector = np.zeros(self.num_nodes)
-            self._heat_flow_matrix_0 = np.zeros(
-                (self.num_nodes, self.num_nodes))
-            self._heat_flow_matrix = np.zeros(
-                (self.num_nodes, self.num_nodes))
-            self._heat_storage_matrix_0 = np.zeros(
-                (self.num_nodes, self.num_nodes)
-            )
-            self._heat_storage_matrix = np.zeros(
-                (self.num_nodes, self.num_nodes))
-            self._weighted_heat_flux_vector = np.zeros(self.num_nodes)
-            self._weighted_heat_flow_matrix = np.zeros(
-                (self.num_nodes, self.num_nodes))
-            self._weighted_heat_storage_matrix = np.zeros(
-                (self.num_nodes, self.num_nodes))
-            self._coef_matrix_0 = np.zeros(
-                (self.num_nodes, self.num_nodes))
-            self._coef_matrix_1 = np.zeros(
-                (self.num_nodes, self.num_nodes))
-            self._residual_heat_flux_vector = np.zeros(self.num_nodes)
-            self._delta_temp_vector = np.zeros(self.num_nodes)
-            self._temp_rate_vector = np.zeros(self.num_nodes)
-            # # initialize sparse matrices
-            # zeros, indices, indptr = self.initialize_sparse_matrix_struct()
-            # self._heat_flow_matrix_0_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-            # self._heat_flow_matrix_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-            # self._heat_storage_matrix_0_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-            # self._heat_storage_matrix_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-            # self._weighted_heat_flow_matrix_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-            # self._weighted_heat_storage_matrix_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-            # self._coef_matrix_0_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-            # self._coef_matrix_1_csr = sps.csr_array(
-            #     (zeros, indices, indptr))
-        else:
-            self._nodes = ()
-            self._elements = ()
-            self.clear_boundaries()
-            self._mesh_valid = False
-
-    @property
-    def time_step(self) -> float:
-        """The time step for the transient analysis.
-
-        Parameters
-        ----------
-        float
-
-        Returns
-        -------
-        float
-
-        Raises
-        ------
-        ValueError
-            If the value to assign is not convertible to float.
-            If the value to assign is negative.
-
-        Notes
-        -----
-        Also computes and stores an inverse value
-        1 / time_step
-        available as the property over_dt
-        for convenience in the simulation.
-        """
-        return self._time_step
-
-    @time_step.setter
-    def time_step(self, value):
-        value = float(value)
-        if value <= 0.0:
-            raise ValueError(f"invalid time_step {value}, must be positive")
-        self._time_step = value
-        self._inv_time_step = 1.0 / value
-
-    @property
-    def dt(self) -> float:
-        """An alias for time_step."""
-        return self._time_step
-
-    @property
-    def over_dt(self) -> float:
-        """The value 1 / time_step.
-
-        Returns
-        -------
-        float
-
-        Notes
-        -----
-        This value is calculated and stored
-        when time_step is set,
-        so this property call just returns the value.
-        """
-        return self._inv_time_step
-
-    @property
-    def implicit_factor(self) -> float:
-        """The implicit time stepping factor for the analysis.
-
-        Parameters
-        ----------
-        float
-
-        Returns
-        -------
-        float
-
-        Raises
-        ------
-        ValueError
-            If the value to be assigned is not convertible to float
-            If the value is < 0.0 or > 1.0
-
-        Notes
-        -----
-        This parameter sets the weighting between
-        vectors and matrices at the beginning and end of the time step
-        in the implicit time stepping scheme.
-        For example, a value of 0.0 would put no weight at the beginning
-        implying a fully implicit scheme.
-        A value of 1.0 would put no weight at the end
-        implying a fully explicit scheme
-        (in this case, the iterative correction will have no effect).
-        A value of 0.5 puts equal weight at the beginning and end
-        which is the well known Crank-Nicolson scheme.
-        The default set by the __init__() method is 0.5.
-        """
-        return self._implicit_factor
-
-    @implicit_factor.setter
-    def implicit_factor(self, value: float) -> None:
-        value = float(value)
-        if value < 0.0 or value > 1.0:
-            raise ValueError(
-                f"invalid implicit_factor {value}, must be between 0.0 and 1.0"
-            )
-        self._implicit_factor = value
-        self._inv_implicit_factor = 1.0 - value
-
-    @property
-    def alpha(self) -> float:
-        """An alias for implicit_factor."""
-        return self._implicit_factor
-
-    @property
-    def one_minus_alpha(self) -> float:
-        """The value (1 - implicit_factor).
-
-        Parameters
-        ----------
-        float
-
-        Returns
-        -------
-        float
-
-        Notes
-        -----
-        This value is calculated and stored
-        when implicit_factor is set,
-        so this property call just returns the value.
-        """
-        return self._inv_implicit_factor
-
-    @property
-    def implicit_error_tolerance(self) -> float:
-        """The error tolerance for the iterative correction
-        in the implicit time stepping scheme.
-
-        Parameters
-        ----------
-        float
-
-        Returns
-        -------
-        float
-
-        Raises
-        ------
-        ValueError
-            If the value to assign is not convertible to float
-            If the value to assign is negative
-        """
-        return self._implicit_error_tolerance
-
-    @implicit_error_tolerance.setter
-    def implicit_error_tolerance(self, value: float) -> None:
-        value = float(value)
-        if value <= 0.0:
-            raise ValueError(
-                f"invalid implicit_error_tolerance {value}, must be positive"
-            )
-        self._implicit_error_tolerance = value
-
-    @property
-    def eps_s(self) -> float:
-        """An alias for implicit_error_tolerance."""
-        return self._implicit_error_tolerance
-
-    @property
-    def max_iterations(self) -> int:
-        """The maximum number of iterations for iterative correction
-        in the implicit time stepping scheme.
-
-        Parameters
-        ----------
-        int
-
-        Returns
-        -------
-        int
-
-        Raises
-        ------
-        TypeError
-            If the value to be assigned is not an int.
-        ValueError
-            If the value to be assigned is negative.
-        """
-        return self._max_iterations
-
-    @max_iterations.setter
-    def max_iterations(self, value: int) -> None:
-        if not isinstance(value, int):
-            raise TypeError(
-                f"type(max_iterations) {type(value)} invalid, " + "must be int"
-            )
-        if value <= 0:
-            raise ValueError(f"max_iterations {value} invalid,"
-                             + " must be positive")
-        self._max_iterations = value
+    def initialize_global_matrices_and_vectors(self):
+        self._temp_vector_0 = np.zeros(self.num_nodes)
+        self._temp_vector = np.zeros(self.num_nodes)
+        self._heat_flux_vector_0 = np.zeros(self.num_nodes)
+        self._heat_flux_vector = np.zeros(self.num_nodes)
+        self._heat_flow_matrix_0 = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._heat_flow_matrix = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._heat_storage_matrix_0 = np.zeros(
+            (self.num_nodes, self.num_nodes)
+        )
+        self._heat_storage_matrix = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._weighted_heat_flux_vector = np.zeros(self.num_nodes)
+        self._weighted_heat_flow_matrix = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._weighted_heat_storage_matrix = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._coef_matrix_0 = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._coef_matrix_1 = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._residual_heat_flux_vector = np.zeros(self.num_nodes)
+        self._delta_temp_vector = np.zeros(self.num_nodes)
+        self._temp_rate_vector = np.zeros(self.num_nodes)
+        # # initialize sparse matrices
+        # zeros, indices, indptr = self.initialize_sparse_matrix_struct()
+        # self._heat_flow_matrix_0_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
+        # self._heat_flow_matrix_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
+        # self._heat_storage_matrix_0_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
+        # self._heat_storage_matrix_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
+        # self._weighted_heat_flow_matrix_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
+        # self._weighted_heat_storage_matrix_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
+        # self._coef_matrix_0_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
+        # self._coef_matrix_1_csr = sps.csr_array(
+        #     (zeros, indices, indptr))
 
     def add_boundary(self, new_boundary: ThermalBoundary1D) -> None:
         """Adds a boundary to the mesh.
@@ -805,7 +565,7 @@ class ThermalAnalysis1D(Mesh1D):
                     )
         self._boundaries.add(new_boundary)
 
-    def update_thermal_boundary_conditions(
+    def update_boundary_conditions(
             self,
             time: float) -> None:
         """Update the thermal boundary conditions in the ThermalAnalysis1D
@@ -918,52 +678,13 @@ class ThermalAnalysis1D(Mesh1D):
             nd.temp = self._temp_vector[nd.index]
             nd.temp_rate = self._temp_rate_vector[nd.index]
 
-    def update_integration_points(self) -> None:
-        """Updates the properties of integration points
-        in the mesh according to changes in temperature.
-        """
-        for e in self.elements:
-            e.update_integration_points()
-
-    def initialize_global_system(self, t0: float) -> None:
-        """Sets up the global system before the first time step.
-
-        Parameters
-        ----------
-        t0 : float
-            The value of time (in seconds)
-            at the beginning of the first time step
-
-        Notes
-        -----
-        This convenience method is meant to be called once
-        at the beginning of the analysis.
-        It assumes that initial conditions have already been assigned
-        to the nodes in the mesh.
-        It initializes variables tracking the time coordinate,
-        updates the thermal boundary conditions at the initial time,
-        assigns initial temperature values from the nodes to the global time
-        vector,
-        updates the integration points in the mesh,
-        then updates all global vectors and matrices.
-        """
-        # initialize global time
-        t0 = float(t0)
-        self._t0 = t0
-        self._t1 = t0
-        # update nodes with boundary conditions first
-        self.update_thermal_boundary_conditions(self._t0)
-        # now get the temperatures from the nodes
-        # (we assume that initial conditions have already been applied)
+    def initialize_solution_variable_vectors(self) -> None:
         for nd in self.nodes:
             self._temp_vector[nd.index] = nd.temp
             self._temp_vector_0[nd.index] = nd.temp
             self._temp_rate_vector[nd.index] = nd.temp_rate
-        # now build the global matrices and vectors
-        self.update_integration_points()
-        self.update_heat_flux_vector()
-        self.update_heat_flow_matrix()
-        self.update_heat_storage_matrix()
+
+    def initialize_free_index_arrays(self) -> None:
         # create list of free node indices
         # that will be updated at each iteration
         # (i.e. are not fixed/Dirichlet boundary conditions)
@@ -975,45 +696,23 @@ class ThermalAnalysis1D(Mesh1D):
         self._free_vec = np.ix_(free_ind)
         self._free_arr = np.ix_(free_ind, free_ind)
 
-    def initialize_time_step(self) -> None:
-        """Sets up the system at the beginning of a time step.
-
-        Notes
-        -----
-        This convenience method is meant to be called once
-        at the beginning of each time step.
-        It increments time stepping variables,
-        saves global vectors and matrices from the end
-        of the previous time step,
-        updates thermal boundary conditions
-        and global heat flux vector at the end of
-        the current time step,
-        and initializes iterative correction parameters.
-        """
-        # update time coordinate
-        self._t0 = self._t1
-        self._t1 = self._t0 + self.dt
-        # store previous converged matrices and vectors
+    def store_converged_matrices(self) -> None:
         self._temp_vector_0[:] = self._temp_vector[:]
         self._heat_flux_vector_0[:] = self._heat_flux_vector[:]
         self._heat_flow_matrix_0[:, :] = self._heat_flow_matrix[:, :]
         self._heat_storage_matrix_0[:, :] = self._heat_storage_matrix[:, :]
-        # self._heat_flow_matrix_0_csr.data[:] = (
-        #     self._heat_flow_matrix_csr.data[:]
-        # )
-        # self._heat_storage_matrix_0_csr.data[:] = (
-        #     self._heat_storage_matrix_csr.data[:]
-        # )
-        # update boundary conditions
-        self.update_thermal_boundary_conditions(self._t1)
+
+    def update_boundary_vectors(self) -> None:
         self.update_heat_flux_vector()
         self._weighted_heat_flux_vector[:] = (
             self.one_minus_alpha * self._heat_flux_vector_0
             + self.alpha * self._heat_flux_vector
         )
-        # initialize iteration parameters
-        self._eps_a = 1.0
-        self._iter = 0
+
+    def update_global_matrices_and_vectors(self) -> None:
+        self.update_heat_flux_vector()
+        self.update_heat_flow_matrix()
+        self.update_heat_storage_matrix()
 
     def update_weighted_matrices(self) -> None:
         """Updates global weighted matrices
@@ -1064,7 +763,7 @@ class ThermalAnalysis1D(Mesh1D):
         #     + self.alpha * self._weighted_heat_flow_matrix_csr.data
         # )
 
-    def calculate_temperature_correction(self) -> None:
+    def calculate_solution_vector_correction(self) -> None:
         """Performs a single iteration of temperature correction
         in the implicit time stepping scheme.
 
@@ -1078,6 +777,9 @@ class ThermalAnalysis1D(Mesh1D):
         then updates the nodes, integration points,
         and the global heat flux and heat storage matrices.
         """
+        # first update the global weighted matrices
+        # (ensures coef_matrix_0 and coef_matrix_1)
+        self.update_weighted_matrices()
         # update residual vector
         self._residual_heat_flux_vector[:] = (
             self._coef_matrix_0 @ self._temp_vector_0
@@ -1106,35 +808,13 @@ class ThermalAnalysis1D(Mesh1D):
         self._temp_rate_vector[:] = (
             self._temp_vector[:] - self._temp_vector_0[:]
         ) * self.over_dt
+
+    def update_iteration_variables(self) -> None:
         self._eps_a = float(
             np.linalg.norm(self._delta_temp_vector) /
             np.linalg.norm(self._temp_vector)
         )
         self._iter += 1
-        # update global system
-        self.update_nodes()
-        self.update_integration_points()
-        self.update_heat_flux_vector()
-        self.update_heat_flow_matrix()
-        self.update_heat_storage_matrix()
-
-    def iterative_correction_step(self) -> None:
-        """Performs iterative correction of the
-        global temperature vector for a single time step.
-
-        Notes
-        -----
-        This convenience method performs an iterative correction loop
-        based on the implicit_error_tolerance and max_iterations properties.
-        It iteratively updates the global weighted matrices
-        and performs correction of the global temperature vector.
-        This method does not update the global heat flux vector
-        since it assumes this is updated only once at the beginning
-        of a new time step by initialize_time_step().
-        """
-        while self._eps_a > self.eps_s and self._iter < self.max_iterations:
-            self.update_weighted_matrices()
-            self.calculate_temperature_correction()
 
     def solve_to(
             self,
@@ -1185,34 +865,9 @@ class ThermalAnalysis1D(Mesh1D):
         If adaptive correction is not performed, then error is not
         estimated and the error array that is returned is not meaningful.
         """
-        tf = float(tf)
-        if tf <= self._t1:
-            raise ValueError(
-                f"Provided tf {tf} is <= current "
-                f"simulation time {self._t1}."
-            )
-        # flag to ensure analysis completes at tf
-        # to within roundoff error
-        done = False
-        # simplified loop if not performing
-        # adaptive correction
+        tf = self._check_tf(tf)
         if not adapt_dt:
-            dt_list = []
-            err_list = []
-            while not done and self._t1 < tf:
-                # check if time step passes tf
-                dt00 = self.time_step
-                if self._t1 + self.time_step > tf:
-                    self.time_step = tf - self._t1
-                    done = True
-                # take single time step
-                self.initialize_time_step()
-                self.iterative_correction_step()
-                dt_list.append(dt00)
-                err_list.append(0.0)
-            # reset time step and return output values
-            self.time_step = dt00
-            return dt00, np.array(dt_list), np.array(err_list)
+            return super().solve_to(tf)
         # initialize vectors and matrices
         # for adaptive step size correction
         temp_vector_0 = np.zeros_like(self._temp_vector)
@@ -1222,6 +877,7 @@ class ThermalAnalysis1D(Mesh1D):
         temp_scale = np.zeros_like(self._temp_vector)
         dt_list = []
         err_list = []
+        done = False
         while not done and self._t1 < tf:
             # check if time step passes tf
             dt00 = self.time_step
@@ -1243,9 +899,7 @@ class ThermalAnalysis1D(Mesh1D):
             self._temp_rate_vector[:] = temp_rate_0[:]
             self.update_nodes()
             self.update_integration_points()
-            self.update_heat_flux_vector()
-            self.update_heat_flow_matrix()
-            self.update_heat_storage_matrix()
+            self.update_global_matrices_and_vectors()
             self._t1 = t0
             # take two half steps
             self.time_step = 0.5 * dt0
@@ -1262,9 +916,7 @@ class ThermalAnalysis1D(Mesh1D):
             )
             self.update_nodes()
             self.update_integration_points()
-            self.update_heat_flux_vector()
-            self.update_heat_flow_matrix()
-            self.update_heat_storage_matrix()
+            self.update_global_matrices_and_vectors()
             # update the time step
             temp_scale[:] = np.max(np.vstack([
                 self._temp_vector[:],

@@ -1655,6 +1655,12 @@ class Mesh1D:
     _inv_implicit_factor: float = 0.5
     _implicit_error_tolerance: float = 1e-3
     _max_iterations: int = 100
+    _free_vec: tuple[npt.NDArray, ...]
+    _free_arr: tuple[npt.NDArray, ...]
+    _coef_matrix_0: npt.NDArray[np.floating]
+    # _coef_matrix_0_csr: sps.csr_array
+    _coef_matrix_1: npt.NDArray[np.floating]
+    # _coef_matrix_1_csr: sps.csr_array
 
     def __init__(
         self,
@@ -1858,14 +1864,14 @@ class Mesh1D:
         if value:
             self._mesh_valid = True
             if self.__class__ is not Mesh1D:
-                self._initialize_global_matrices_and_vectors()
+                self.initialize_global_matrices_and_vectors()
         else:
             self._nodes = ()
             self._elements = ()
             self.clear_boundaries()
             self._mesh_valid = False
 
-    def _initialize_global_matrices_and_vectors(self):
+    def initialize_global_matrices_and_vectors(self):
         raise NotImplementedError(
             "Global matrix and vector initialization not implemented."
         )
@@ -2295,7 +2301,9 @@ class Mesh1D:
         # initialize iteration parameters
         self._eps_a = 1.0
         self._iter = 0
+        # setup global matrices and vectors
         self.store_converged_matrices()
+        self.update_boundary_conditions(self._t1)
         self.update_boundary_vectors()
         self.update_weighted_matrices()
 
@@ -2349,3 +2357,69 @@ class Mesh1D:
 
     def update_iteration_variables(self) -> None:
         self._iter += 1
+
+    def _check_tf(self, tf: float) -> float:
+        tf = float(tf)
+        if tf <= self._t1:
+            raise ValueError(
+                f"Provided tf {tf} is <= current "
+                f"simulation time {self._t1}."
+            )
+        return tf
+
+    def solve_to(
+            self,
+            tf: float,
+        ) -> tuple[
+            float,
+            npt.NDArray,
+            npt.NDArray,
+    ]:
+        """Performs time integration until
+        specified final time tf.
+
+        Inputs
+        ------
+        tf : float
+            The target final time.
+        adapt_dt : bool, optional, default=True
+            Flag for adaptive time step correction.
+
+        Returns
+        -------
+        float
+            The time step at the second last step.
+            Last step will typically be adjusted to
+            reach the target tf, so that time step is
+            not necessarily meaningful.
+        numpy.ndnarray, shape=(nstep, )
+            The array of time steps over the interval
+            up to tf.
+        numpy.ndnarray, shape=(nstep, )
+            The array of (relative) errors at each time
+            step over the interval up to tf.
+
+        Raises
+        ------
+        ValueError
+            If tf cannot be converted to float.
+            If tf <= current simulation time.
+        """
+        tf = self._check_tf(tf)
+        dt_list = []
+        err_list = []
+        done = False
+        while not done and self._t1 < tf:
+            # check if time step passes tf
+            dt00 = self.time_step
+            if self._t1 + self.time_step > tf:
+                self.time_step = tf - self._t1
+                done = True
+            # take single time step
+            self.initialize_time_step()
+            self.iterative_correction_step()
+            dt_list.append(dt00)
+            err_list.append(0.0)
+        # reset time step and return output values
+        self.time_step = dt00
+        return dt00, np.array(dt_list), np.array(err_list)

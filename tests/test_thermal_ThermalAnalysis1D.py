@@ -636,7 +636,7 @@ class TestUpdateBoundaries(unittest.TestCase):
         t = 1.314e7
         expected_temp_0 = self.f(t)
         expected_temp_1 = 15.0
-        self.msh.update_thermal_boundary_conditions(t)
+        self.msh.update_boundary_conditions(t)
         self.assertAlmostEqual(self.msh.nodes[0].temp, expected_temp_0)
         self.assertAlmostEqual(self.msh.nodes[0].temp, expected_temp_1)
         self.assertAlmostEqual(self.msh._temp_vector[0], expected_temp_0)
@@ -652,7 +652,7 @@ class TestUpdateBoundaries(unittest.TestCase):
         t = 3.5478e7
         expected_temp_2 = self.f(t)
         expected_temp_3 = -14.3185165257814
-        self.msh.update_thermal_boundary_conditions(t)
+        self.msh.update_boundary_conditions(t)
         self.assertAlmostEqual(self.msh.nodes[0].temp, expected_temp_2)
         self.assertAlmostEqual(self.msh.nodes[0].temp, expected_temp_3)
         self.assertAlmostEqual(self.msh._temp_vector[0], expected_temp_2)
@@ -668,7 +668,7 @@ class TestUpdateBoundaries(unittest.TestCase):
 
     def test_update_heat_flux_vector(self):
         t = 1.314e7
-        self.msh.update_thermal_boundary_conditions(t)
+        self.msh.update_boundary_conditions(t)
         self.msh.update_heat_flux_vector()
         for k, (fx, fx0) in enumerate(zip(self.msh._heat_flux_vector,
                                           self.msh._heat_flux_vector_0)):
@@ -679,7 +679,7 @@ class TestUpdateBoundaries(unittest.TestCase):
                 self.assertAlmostEqual(fx, self.flux_geotherm)
             else:
                 self.assertEqual(fx, 0.0)
-        self.msh.update_thermal_boundary_conditions(t)
+        self.msh.update_boundary_conditions(t)
         self.msh.update_heat_flux_vector()
         for k, (fx, fx0) in enumerate(zip(self.msh._heat_flux_vector,
                                           self.msh._heat_flux_vector_0)):
@@ -1940,7 +1940,7 @@ class TestUpdateWeightedMatricesLinear(unittest.TestCase):
             700,
             6000,
         ])
-        self.msh.update_thermal_boundary_conditions(self.msh._t1)
+        self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
         self.msh.update_heat_flux_vector()
@@ -2345,14 +2345,18 @@ class TestTemperatureCorrectionLinearOneStep(unittest.TestCase):
             700,
             6000,
         ])
-        self.msh.update_thermal_boundary_conditions(self.msh._t1)
+        self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
         self.msh.update_heat_flux_vector()
         self.msh.update_heat_flow_matrix()
         self.msh.update_heat_storage_matrix()
         self.msh.update_weighted_matrices()
-        self.msh.calculate_temperature_correction()
+        self.msh.calculate_solution_vector_correction()
+        self.msh.update_nodes()
+        self.msh.update_integration_points()
+        self.msh.update_global_matrices_and_vectors()
+        self.msh.update_iteration_variables()
 
     def test_temperature_distribution_nodes(self):
         expected_temp_vector_0 = np.array([
@@ -2666,7 +2670,7 @@ class TestIterativeTemperatureCorrectionLinear(unittest.TestCase):
             700,
             6000,
         ])
-        self.msh.update_thermal_boundary_conditions(self.msh._t1)
+        self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
         self.msh.update_heat_flux_vector()
@@ -3921,7 +3925,7 @@ class TestUpdateWeightedMatricesCubic(unittest.TestCase):
             -6.09286859998282E-03,
             -2.05841501790816E-03,
         ])
-        self.msh.update_thermal_boundary_conditions(self.msh._t1)
+        self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
         self.msh.update_heat_flux_vector()
@@ -4697,14 +4701,18 @@ class TestTemperatureCorrectionCubicOneStep(unittest.TestCase):
             -6.09286859998282E-03,
             -2.05841501790816E-03,
         ])
-        self.msh.update_thermal_boundary_conditions(self.msh._t1)
+        self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
         self.msh.update_heat_flux_vector()
         self.msh.update_heat_flow_matrix()
         self.msh.update_heat_storage_matrix()
         self.msh.update_weighted_matrices()
-        self.msh.calculate_temperature_correction()
+        self.msh.calculate_solution_vector_correction()
+        self.msh.update_nodes()
+        self.msh.update_integration_points()
+        self.msh.update_global_matrices_and_vectors()
+        self.msh.update_iteration_variables()
 
     def test_temperature_distribution_nodes(self):
         expected_temp_vector_0 = np.array([
@@ -5330,7 +5338,7 @@ class TestIterativeTemperatureCorrectionCubic(unittest.TestCase):
             -6.09286859998282E-03,
             -2.05841501790816E-03,
         ])
-        self.msh.update_thermal_boundary_conditions(self.msh._t1)
+        self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
         self.msh.update_heat_flux_vector()
