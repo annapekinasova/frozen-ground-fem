@@ -500,7 +500,7 @@ class ConsolidationAnalysis1D(Mesh1D):
     _water_flux_vector_0: npt.NDArray[np.floating]
     _water_flux_vector: npt.NDArray[np.floating]
     _stiffness_matrix_0: npt.NDArray[np.floating]
-    _stiff_matrix_0_csr: sps.csr._array
+    _stiff_matrix_0_csr: sps.csr_array
     _stiffness_matrix: npt.NDArray[np.floating]
     _stiff_matrix_csr: sps.csr_array
     _mass_matrix_0: npt.NDArray[np.floating]
@@ -623,7 +623,7 @@ class ConsolidationAnalysis1D(Mesh1D):
             self._residual_water_flux_vector = np.zeros(self.num_nodes)
             self._delta_void_ratio_vector = np.zeros(self.num_nodes)
             # initialize sparse matrices
-            zeros, indices, indptr = self._initialize_sparse_matrix_struct()
+            zeros, indices, indptr = self.initialize_sparse_matrix_struct()
             self._stiff_matrix_0_csr = sps.csr_array(
                 (zeros, indices, indptr))
             self._stiff_matrix_csr = sps.csr_array(
