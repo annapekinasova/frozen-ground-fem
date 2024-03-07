@@ -20,7 +20,7 @@ import numpy.typing as npt
 
 from frozen_ground_fem.materials import (
     unit_weight_water as gam_w,
-    spec_grav_ice,
+    spec_grav_ice as Gi,
 )
 
 from frozen_ground_fem.geometry import (
@@ -140,7 +140,7 @@ class ConsolidationElement1D(Element1D):
             M += (
                 N.T
                 @ (
-                    (ip.deg_sat_water + spec_grav_ice * ip.deg_sat_ice)
+                    (ip.deg_sat_water + Gi * ip.deg_sat_ice)
                     / (1.0 + ip.void_ratio_0)
                     * N
                 )
@@ -177,6 +177,8 @@ class ConsolidationElement1D(Element1D):
         in the element according to changes in void ratio.
         """
         ee = np.array([nd.void_ratio for nd in self.nodes])
+        ss = np.array([nd.tot_stress for nd in self.nodes])
+        TT = np.array([nd.temp for nd in self.nodes])
         for ip in self.int_pts:
             N = self._shape_matrix(ip.local_coord)
             B = self._gradient_matrix(ip.local_coord, self.jacobian)
@@ -192,6 +194,19 @@ class ConsolidationElement1D(Element1D):
                 ip.pre_consol_stress = sig
             ip.eff_stress = sig
             ip.eff_stress_gradient = dsig_de
+            sp = (N @ ss)[0]
+            T = (N @ TT)[0]
+            ip.tot_stress = sp
+            # TODO: Where do we update the reference values
+            # for void ratio and total stess?
+            if T < 0.0:
+                e_f0 = ip.void_ratio_0_ref_frozen
+                sig_f0 = ip.tot_stress_0_ref_frozen
+                sig, dsig_de = ip.material.tot_stress(
+                    T, ep, e_f0, sig_f0,
+                )
+                ip.loc_stress = sig
+                ip.tot_stress_gradient = dsig_de
             if update_water_flux:
                 ip.update_water_flux_rate(de_dZ)
         for iipp in self._int_pts_deformed:
@@ -220,6 +235,32 @@ class ConsolidationElement1D(Element1D):
                 ddcc += (1.0 + ee) / (1.0 + ee0) * ip.weight
             dc[k+1] = dc[k] + ddcc * jac
         return dc
+
+    def calculate_total_stress_increments(self) -> npt.NDArray[np.floating]:
+        """Calculates the total stress increments
+        relative to the first node of the element.
+        """
+        dsig = np.zeros(len(self.nodes))
+        for k, (nd0, iipp) in enumerate(
+            zip(
+                self.nodes[:-1],
+                self._int_pts_deformed,
+            )
+        ):
+            nd1 = self.nodes[k+1]
+            jac = nd1.z - nd0.z
+            ddss = 0.0
+            for ip in iipp:
+                ee = ip.void_ratio
+                ee0 = ip.void_ratio_0
+                Sw = ip.deg_sat_water
+                Si = ip.deg_sat_ice
+                Gs = ip.material.spec_grav_solids
+                ddss += (
+                    (Gs + ee * (Sw + Gi * Si)) / (1 + ee0)
+                ) * gam_w * ip.weight
+            dsig[k+1] = dsig[k] + ddss * jac
+        return dsig
 
 
 class ConsolidationBoundary1D(Boundary1D):
@@ -1054,6 +1095,12 @@ class ConsolidationAnalysis1D(Mesh1D):
             def_coords[kk0:kk1] = def_coords[kk0] + ddcc
         def_coords[-1] = self.nodes[-1].z
         return def_coords
+
+    def update_stress_distribution(self) -> None:
+        """Updates effective and total stresses
+        at the nodes.
+        """
+        pass
 
     def calculate_degree_consolidation(
         self,

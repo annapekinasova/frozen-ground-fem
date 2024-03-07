@@ -269,9 +269,11 @@ class Node1D(Point1D):
     coords
     z
     temp
+    temp_rate
     void_ratio
     void_ratio_0
-    temp_rate
+    eff_stress
+    tot_stress
 
     Parameters
     ----------
@@ -291,6 +293,12 @@ class Node1D(Point1D):
     temp_rate: float, optional, default=0.0
         The value to assign to the rate of change (with time)
         of temperature of the node.
+    eff_stress: float, optional, default=0.0
+        The value to assign to the effective stress
+        of the node.
+    tot_stress: float, optional, default=0.0
+        The value to assign to the total stress
+        of the node.
 
     Raises
     ------
@@ -304,6 +312,8 @@ class Node1D(Point1D):
         If void_ratio is not convertible to float.
         If void_ratio is negative.
         If temp_rate cannot be converted to float.
+        If eff_stress cannot be converted to float.
+        If tot_stress cannot be converted to float.
     """
     _index: int
     _temp: float = 0.0
@@ -319,6 +329,8 @@ class Node1D(Point1D):
         void_ratio: float = 0.0,
         void_ratio_0: float = 0.0,
         temp_rate: float = 0.0,
+        eff_stress: float = 0.0,
+        tot_stress: float = 0.0,
     ):
         self.index = index
         super().__init__(coord)
@@ -326,6 +338,8 @@ class Node1D(Point1D):
         self.void_ratio = void_ratio
         self.void_ratio_0 = void_ratio_0
         self.temp_rate = temp_rate
+        self.eff_stress = eff_stress
+        self.tot_stress = tot_stress
 
     @property
     def temp(self) -> float:
@@ -465,6 +479,52 @@ class Node1D(Point1D):
             raise ValueError(f"void_ratio_0 {value} is not positive")
         self._void_ratio_0 = value
 
+    @property
+    def eff_stress(self) -> float:
+        """Effective stress of the node.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+        """
+        return self._eff_stress
+
+    @eff_stress.setter
+    def eff_stress(self, value: float) -> None:
+        self._eff_stress = float(value)
+
+    @property
+    def tot_stress(self) -> float:
+        """Total (overburden) stress of the node.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+        """
+        return self._tot_stress
+
+    @tot_stress.setter
+    def tot_stress(self, value: float) -> None:
+        self._tot_stress = float(value)
+
 
 class IntegrationPoint1D(Point1D):
     """Class for storing the properties of an integration point.
@@ -498,6 +558,7 @@ class IntegrationPoint1D(Point1D):
     tot_stress_0_ref_frozen
     tot_stress
     tot_stress_gradient
+    loc_stress
 
     Parameters
     ----------
@@ -553,10 +614,13 @@ class IntegrationPoint1D(Point1D):
     tot_stress_0_ref_frozen: float, optional, default=0.0
         Reference total stress for frozen void ratio - total stress curve.
     tot_stress: float, optional, default=0.0
-        Total stress of the integration point.
+        Total (overburden) stress of the integration point.
     tot_stress_gradient: float, optional, default=0.0
         Total stress gradient (with respect to void ratio)
         of the integration point. Should be not positive.
+    loc_stress: float, optional, default=0.0
+        Local (overburden + void ratio increment) stress
+        of the integration point.
 
     Raises
     ------
@@ -592,6 +656,7 @@ class IntegrationPoint1D(Point1D):
         If tot_stress is not convertible to float.
         If tot_stress_gradient is not convertible to float.
         If tot_stress_gradient is positive.
+        If loc_stress is not convertible to float.
     """
     _local_coord: float = 0.0
     _weight: float = 0.0
@@ -615,6 +680,7 @@ class IntegrationPoint1D(Point1D):
     _tot_stress_0_ref_frozen: float = 0.0
     _tot_stress: float = 0.0
     _tot_stress_gradient: float = 0.0
+    _loc_stress: float = 0.0
     _material: Material
 
     def __init__(
@@ -640,6 +706,7 @@ class IntegrationPoint1D(Point1D):
         tot_stress_0_ref_frozen: float = 0.0,
         tot_stress: float = 0.0,
         tot_stress_gradient: float = 0.0,
+        loc_stress: float = 0.0,
     ):
         super().__init__(coord)
         self.local_coord = local_coord
@@ -662,6 +729,7 @@ class IntegrationPoint1D(Point1D):
         self.tot_stress_0_ref_frozen = tot_stress_0_ref_frozen
         self.tot_stress = tot_stress
         self.tot_stress_gradient = tot_stress_gradient
+        self.loc_stress = loc_stress
 
     @property
     def local_coord(self) -> float:
@@ -1246,7 +1314,7 @@ class IntegrationPoint1D(Point1D):
 
     @property
     def tot_stress(self) -> float:
-        """Total stress of the integration point.
+        """Total (overburden) stress of the integration point.
 
         Parameters
         ----------
@@ -1266,6 +1334,30 @@ class IntegrationPoint1D(Point1D):
     @tot_stress.setter
     def tot_stress(self, value: float) -> None:
         self._tot_stress = float(value)
+
+    @property
+    def loc_stress(self) -> float:
+        """Local (overburden + void ratio increment)
+        stress of the integration point.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+        """
+        return self._loc_stress
+
+    @loc_stress.setter
+    def loc_stress(self, value: float) -> None:
+        self._loc_stress = float(value)
 
     @property
     def tot_stress_gradient(self) -> float:
