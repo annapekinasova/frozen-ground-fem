@@ -273,6 +273,7 @@ class Node1D(Point1D):
     void_ratio
     void_ratio_0
     tot_stress
+    z_def
 
     Parameters
     ----------
@@ -309,6 +310,7 @@ class Node1D(Point1D):
         If void_ratio is negative.
         If temp_rate cannot be converted to float.
         If tot_stress cannot be converted to float.
+        If z_def cannot be converted to float.
     """
     _index: int
     _temp: float = 0.0
@@ -316,6 +318,7 @@ class Node1D(Point1D):
     _void_ratio_0: float = 0.0
     _temp_rate: float = 0.0
     _tot_stress: float = 0.0
+    _z_def: float = 0.0
 
     def __init__(
         self,
@@ -334,6 +337,7 @@ class Node1D(Point1D):
         self.void_ratio_0 = void_ratio_0
         self.temp_rate = temp_rate
         self.tot_stress = tot_stress
+        self.z_def = coord
 
     @property
     def temp(self) -> float:
@@ -495,6 +499,31 @@ class Node1D(Point1D):
     @tot_stress.setter
     def tot_stress(self, value: float) -> None:
         self._tot_stress = float(value)
+
+    @property
+    def z_def(self) -> float:
+        """Deformed coordinate of the node.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the deformed coordinate of the :c:`Node1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+        """
+        return self._z_def
+
+    @z_def.setter
+    def z_def(self, value: float) -> None:
+        value = float(value)
+        self._z_def = value
 
 
 class IntegrationPoint1D(Point1D):

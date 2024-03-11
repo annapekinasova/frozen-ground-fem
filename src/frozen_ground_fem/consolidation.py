@@ -285,7 +285,7 @@ class ConsolidationElement1D(Element1D):
 
 
 class ConsolidationBoundary1D(Boundary1D):
-    """Class for storing and updating boundary conditions
+    """Class for storing and updating hydromechanical boundary conditions
     for consolidation physics.
 
     Attributes
@@ -482,6 +482,195 @@ class ConsolidationBoundary1D(Boundary1D):
         if self.bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio:
             for nd in self.nodes:
                 nd.void_ratio = self.bnd_value
+
+    def update_value(self, time: float) -> None:
+        """Update the value of the boundary conditions.
+
+        Parameters
+        ----------
+        float
+
+        Raises
+        ------
+        ValueError
+            It time is not convertible to float
+
+        Notes
+        -----
+        This method uses the bnd_function callable property
+        to update the bnd_value property
+        If bnd_function is None
+        the time argument is ignored and nothing happens.
+        """
+        time = float(time)
+        if self.bnd_function is not None:
+            self.bnd_value = self.bnd_function(time)
+
+
+class HydraulicBoundary1D(Boundary1D):
+    """Class for storing and updating hydraulic boundary conditions
+    for consolidation physics.
+
+    Attributes
+    ----------
+    BoundaryType : enum.Enum
+        The set of possible boundary condition types
+    nodes
+    int_pts
+    bnd_type
+    bnd_value
+    bnd_function
+
+    Methods
+    -------
+    update_nodes
+    update_value
+
+    Parameters
+    ----------
+    nodes : Sequence[Node1D]
+        The :c:`Node1D` to assign to the boundary condition.
+    int_pts : Sequence[IntegrationPoint1D], optional, default=()
+        The :c:`IntegrationPoint1D` to assign to the boundary condition.
+    bnd_type : HydraulicBoundary1D.BoundaryType, optional,
+                default=BoundaryType.fixed_head
+        The type of boundary condition.
+    bnd_value : float, optional, default=0.0
+        The value of the boundary condition.
+    bnd_function : callable or None, optional, default=None
+        The function for the updates the boundary condition.
+
+    Raises
+    ------
+    TypeError
+        If nodes contains non-:c:`Node1D` objects.
+        If int_pts contains non-:c:`IntegrationPoint1D` objects.
+        If bnd_type is not a HydraulicBoundary1D.BoundaryType.
+        If bnd_function is not callable or None.
+    ValueError
+        If len(nodes) != 1.
+        If len(int_pts) > 1.
+        If bnd_value is not convertible to float.
+    """
+
+    BoundaryType = Enum(
+        "BoundaryType", ["fixed_head",]
+    )
+
+    _bnd_type: BoundaryType
+    _bnd_value: float = 0.0
+    _bnd_function: Callable | None
+
+    def __init__(
+        self,
+        nodes: Sequence[Node1D],
+        int_pts: Sequence[IntegrationPoint1D] = (),
+        bnd_type=BoundaryType.fixed_head,
+        bnd_value: float = 0.0,
+        bnd_function: Callable | None = None,
+    ):
+        super().__init__(nodes, int_pts)
+        self.bnd_type = bnd_type
+        self.bnd_value = bnd_value
+        self.bnd_function = bnd_function
+
+    @property
+    def bnd_type(self) -> BoundaryType:
+        """The type of boundary condition.
+
+        Parameters
+        ----------
+        HydraulicBoundary1D.BoundaryType
+
+        Returns
+        -------
+        HydraulicBoundary1D.BoundaryType
+
+        Raises
+        ------
+        TypeError
+            If the value to be assigned is not a
+            HydraulicBoundary1D.BoundaryType.
+        """
+        return self._bnd_type
+
+    @bnd_type.setter
+    def bnd_type(self, value: BoundaryType):
+        if not isinstance(value, HydraulicBoundary1D.BoundaryType):
+            raise TypeError(
+                f"{value} is not a HydraulicBoundary1D.BoundaryType")
+        self._bnd_type = value
+
+    @property
+    def bnd_value(self) -> float:
+        """The value of the boundary condition.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to be assigned is not convertible to float.
+
+        Notes
+        -----
+        For HydraulicBoundary1D.BoundaryType.fixed_head,
+        the value of the hydraulic head is taken relative to a datum
+        at the (fixed) elevation of the bottom node.
+        """
+        return self._bnd_value
+
+    @bnd_value.setter
+    def bnd_value(self, value: float) -> None:
+        value = float(value)
+        self._bnd_value = value
+
+    @property
+    def bnd_function(self) -> Callable[[float], float] | None:
+        """The reference to the function
+        the updates the boundary condition.
+
+        Parameters
+        ----------
+        Callable or None
+
+        Returns
+        -------
+        Callable or None
+
+        Raises
+        ------
+        TypeError
+            If the value to be assigned is not callable or None.
+
+        Notes
+        -----
+        If a callable (i.e. function or class that implements __call__)
+        reference is provided it should take one argument
+        which is a time (in seconds).
+        This function is called by the method update_value().
+        """
+        return self._bnd_function
+
+    @bnd_function.setter
+    def bnd_function(
+            self,
+            value: Callable[[float], float] | None) -> None:
+        if not (callable(value) or value is None):
+            raise TypeError(
+                f"type(value) {type(value)} is not callable or None")
+        self._bnd_function = value
+
+    def update_nodes(self) -> None:
+        """Update the boundary condition value at the nodes, if necessary.
+        """
+        pass
 
     def update_value(self, time: float) -> None:
         """Update the value of the boundary conditions.
@@ -1149,6 +1338,9 @@ class ConsolidationAnalysis1D(Mesh1D):
             def_coords[kk0:kk1] = def_coords[kk0] + ddcc
         # ensure bottom node stays fixed
         def_coords[-1] = self.nodes[-1].z
+        # assign deformed coordinates to the nodes
+        for k, zd in enumerate(def_coords):
+            self.nodes[k].z_def = zd
         return def_coords
 
     def update_total_stress_distribution(self) -> None:
@@ -1159,8 +1351,22 @@ class ConsolidationAnalysis1D(Mesh1D):
         for b in self.boundaries:
             # find first node
             if not b.nodes[0].index:
-                # get the surface load in effective stress
-                sig[0] = b.bnd_value_1
+                if (
+                    isinstance(b, ConsolidationBoundary1D)
+                    and b.bnd_type
+                        == ConsolidationBoundary1D.BoundaryType.void_ratio
+                ):
+                    # surface total stress, effective stress component
+                    sig[0] += b.bnd_value_1
+                elif (
+                    isinstance(b, HydraulicBoundary1D)
+                    and b.bnd_type
+                        == HydraulicBoundary1D.BoundaryType.fixed_head
+                ):
+                    # surface total stress, pore pressure component
+                    h = b.bnd_value
+                    z = self.nodes[-1].z - self.nodes[0].z_def
+                    sig[0] += gam_w * (h - z)
         # integrate overburden stress over elements
         for k, e in enumerate(self.elements):
             kk0 = k * e.order
