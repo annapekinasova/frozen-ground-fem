@@ -171,7 +171,9 @@ class ConsolidationElement1D(Element1D):
 
     def update_integration_points(
         self,
-        update_water_flux: bool = True
+        update_water_flux: bool = True,
+        update_res_stress: bool = False,
+        TT0: npt.ArrayLike = (),
     ) -> None:
         """Updates the properties of integration points
         in the element according to changes in void ratio.
@@ -179,27 +181,28 @@ class ConsolidationElement1D(Element1D):
         ee = np.array([nd.void_ratio for nd in self.nodes])
         ss = np.array([nd.tot_stress for nd in self.nodes])
         TT = np.array([nd.temp for nd in self.nodes])
+        TT0 = np.array(TT0) if update_res_stress else np.zeros_like(TT)
         for ip in self.int_pts:
             N = self._shape_matrix(ip.local_coord)
             B = self._gradient_matrix(ip.local_coord, self.jacobian)
+            # update void ratio interpolated from nodes
             ep = (N @ ee)[0]
             de_dZ = (B @ ee)[0]
             ip.void_ratio = ep
-            k, dk_de = ip.material.hyd_cond(ep, 1.0, False)
-            ip.hyd_cond = k
-            ip.hyd_cond_gradient = dk_de
-            ppc = ip.pre_consol_stress
-            sig, dsig_de = ip.material.eff_stress(ep, ppc)
-            if sig > ppc:
-                ip.pre_consol_stress = sig
-            ip.eff_stress = sig
-            ip.eff_stress_gradient = dsig_de
+            # update total stress interpolated from nodes
             sp = (N @ ss)[0]
-            T = (N @ TT)[0]
             ip.tot_stress = sp
-            # TODO: Where do we update the reference values
-            # for void ratio and total stess?
+            # get temperature state interpolated from nodes
+            T = (N @ TT)[0]
+            T0 = (N @ TT0)[0]
+            # soil is frozen
             if T < 0.0:
+                # set reference stress and void ratio for frozen state
+                if T0 >= 0.0:
+                    ip.void_ratio_0_ref_frozen = ep
+                    ip.tot_stress_0_ref_frozen = sp
+                # update local stress state
+                # and total stress gradient (for stiffness matrix)
                 e_f0 = ip.void_ratio_0_ref_frozen
                 sig_f0 = ip.tot_stress_0_ref_frozen
                 sig, dsig_de = ip.material.tot_stress(
@@ -207,6 +210,24 @@ class ConsolidationElement1D(Element1D):
                 )
                 ip.loc_stress = sig
                 ip.tot_stress_gradient = dsig_de
+            # soil is unfrozen
+            else:
+                # update residual stress and pre-consolidation stress
+                # if thawed on this step
+                if update_res_stress and T0 < 0.0:
+                    ppc = ip.material.res_stress(ep)
+                    ip.pre_consol_stress = ppc
+                # update effective stress
+                ppc = ip.pre_consol_stress
+                sig, dsig_de = ip.material.eff_stress(ep, ppc)
+                if sig > ppc:
+                    ip.pre_consol_stress = sig
+                ip.eff_stress = sig
+                ip.eff_stress_gradient = dsig_de
+                # update hydraulic conductivity and water flux
+                k, dk_de = ip.material.hyd_cond(ep, 1.0, False)
+                ip.hyd_cond = k
+                ip.hyd_cond_gradient = dk_de
             if update_water_flux:
                 ip.update_water_flux_rate(de_dZ)
         for iipp in self._int_pts_deformed:
@@ -276,6 +297,7 @@ class ConsolidationBoundary1D(Boundary1D):
     bnd_type
     bnd_value
     bnd_function
+    bnd_value_1
 
     Methods
     -------
@@ -295,6 +317,9 @@ class ConsolidationBoundary1D(Boundary1D):
         The value of the boundary condition.
     bnd_function : callable or None, optional, default=None
         The function for the updates the boundary condition.
+    bnd_value_1 : float, optional, default=0.0
+        A secondary value of the boundary condition.
+        Used to store effective stress for void ratio boundary condition.
 
     Raises
     ------
@@ -316,6 +341,7 @@ class ConsolidationBoundary1D(Boundary1D):
     _bnd_type: BoundaryType
     _bnd_value: float = 0.0
     _bnd_function: Callable | None
+    _bnd_value_1: float = 0.0
 
     def __init__(
         self,
@@ -324,11 +350,13 @@ class ConsolidationBoundary1D(Boundary1D):
         bnd_type=BoundaryType.water_flux,
         bnd_value: float = 0.0,
         bnd_function: Callable | None = None,
+        bnd_value_1: float = 0.0,
     ):
         super().__init__(nodes, int_pts)
         self.bnd_type = bnd_type
         self.bnd_value = bnd_value
         self.bnd_function = bnd_function
+        self.bnd_value_1 = bnd_value_1
 
     @property
     def bnd_type(self) -> BoundaryType:
@@ -416,6 +444,30 @@ class ConsolidationBoundary1D(Boundary1D):
             raise TypeError(
                 f"type(value) {type(value)} is not callable or None")
         self._bnd_function = value
+
+    @property
+    def bnd_value_1(self) -> float:
+        """The secondary value of the boundary condition.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to be assigned is not convertible to float.
+        """
+        return self._bnd_value_1
+
+    @bnd_value_1.setter
+    def bnd_value_1(self, value: float) -> None:
+        value = float(value)
+        self._bnd_value_1 = value
 
     def update_nodes(self) -> None:
         """Update the boundary condition value at the nodes.
@@ -1085,22 +1137,39 @@ class ConsolidationAnalysis1D(Mesh1D):
         numpy.ndarray, shape = (mesh.num_nodes, )
             Vector of deformed coordinates
         """
+        # initialize top node with settlement
         s = self.calculate_total_settlement()
         def_coords = np.zeros(self.num_nodes)
         def_coords[0] = self.nodes[0].z + s
+        # integrate over elements to get deformed coords
         for k, e in enumerate(self.elements):
             kk0 = k * e.order
             kk1 = kk0 + e.order + 1
             ddcc = e.calculate_deformed_coord_offsets()
             def_coords[kk0:kk1] = def_coords[kk0] + ddcc
+        # ensure bottom node stays fixed
         def_coords[-1] = self.nodes[-1].z
         return def_coords
 
-    def update_stress_distribution(self) -> None:
-        """Updates effective and total stresses
-        at the nodes.
+    def update_total_stress_distribution(self) -> None:
+        """Updates total stresses at the nodes.
         """
-        pass
+        # initialize total stress at surface
+        sig = np.zeros(self.num_nodes)
+        for b in self.boundaries:
+            # find first node
+            if not b.nodes[0].index:
+                # get the surface load in effective stress
+                sig[0] = b.bnd_value_1
+        # integrate overburden stress over elements
+        for k, e in enumerate(self.elements):
+            kk0 = k * e.order
+            kk1 = kk0 + e.order + 1
+            ddss = e.calculate_total_stress_increments()
+            sig[kk0:kk1] = sig[kk0] + ddss
+        # assign total stresses to the nodes
+        for k, ss in enumerate(sig):
+            self.nodes[k].tot_stress = ss
 
     def calculate_degree_consolidation(
         self,

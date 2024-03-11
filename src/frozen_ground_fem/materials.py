@@ -98,6 +98,7 @@ class Material:
     comp_index_unfrozen
     rebound_index_unfrozen
     eff_stress_0_comp
+    residual_index
     comp_index_frozen_a1
     comp_index_frozen_a2
     comp_index_frozen_a3
@@ -108,6 +109,7 @@ class Material:
     hyd_cond
     water_flux
     eff_stress
+    res_stress
     comp_index_frozen
     tot_stress
 
@@ -277,6 +279,7 @@ class Material:
     _comp_index_unfrozen: float = 1.0
     _rebound_index_unfrozen: float = 1.0
     _eff_stress_0_comp: float = 0.0
+    _residual_index: float = 0.0
     _comp_index_frozen_a1: float = 0.0
     _comp_index_frozen_a2: float = 0.0
     _comp_index_frozen_a3: float = 0.0
@@ -1030,6 +1033,17 @@ class Material:
         self._rebound_index_unfrozen = value
 
     @property
+    def residual_index(self) -> float:
+        """Residual stress line index. Slope in the e-log p' space.
+
+        Returns
+        -------
+        float
+            Value of the residual stress index.
+        """
+        return self._residual_index
+
+    @property
     def comp_index_frozen_a1(self) -> float:
         """Material parameter a1(constant)
            for calculation of frozen compression or rebound index.
@@ -1291,6 +1305,45 @@ class Material:
         sig_p = ppc * 10 ** ((e_ru0 - e) / Cru)
         dsig_de = -sig_p * _LOG_10 / Cru
         return sig_p, dsig_de
+
+    def res_stress(self, e: float) -> float:
+        """Calculate post-thaw modified pre-consolidation stress
+        on the normal consolidation line (NCL)
+        consistent with the residual stress line (RSL).
+
+        Inputs
+        ------
+        e : float
+            The initial post-thaw void ratio.
+
+        Returns
+        -------
+        float
+            The modified pre-consolidation stress
+            on the NCL for the given void ratio
+            and corresponding residual stress.
+        """
+        # get consolidation curve parameters
+        e_sep = self.void_ratio_sep
+        e_cu0 = self.void_ratio_0_comp
+        sig_cu0 = self.eff_stress_0_comp
+        Ccu = self.comp_index_unfrozen
+        Cru = self.rebound_index_unfrozen
+        # check for initialization of residual stress line index
+        if not self.residual_index:
+            e_min = self.void_ratio_min
+            log_sig_max = np.log10(sig_cu0) + (e_cu0 - e_min) / Ccu
+            self._residual_index = (e_sep - e_min) / log_sig_max
+        # compute residual stress on the RSL
+        Crsl = self.residual_index
+        sig_p = 10 ** ((e_sep - e) / Crsl)
+        # compute corrected pre-consolidation stress on the NCL
+        ppc = 10 ** (
+            ((e_cu0 - e) + (
+                Ccu * np.log10(sig_cu0) - Cru * np.log10(sig_p)
+            )) / (Ccu - Cru)
+        )
+        return ppc
 
     def comp_index_frozen(self, temp: float) -> float:
         """Compression and rebound index

@@ -272,7 +272,6 @@ class Node1D(Point1D):
     temp_rate
     void_ratio
     void_ratio_0
-    eff_stress
     tot_stress
 
     Parameters
@@ -293,9 +292,6 @@ class Node1D(Point1D):
     temp_rate: float, optional, default=0.0
         The value to assign to the rate of change (with time)
         of temperature of the node.
-    eff_stress: float, optional, default=0.0
-        The value to assign to the effective stress
-        of the node.
     tot_stress: float, optional, default=0.0
         The value to assign to the total stress
         of the node.
@@ -312,7 +308,6 @@ class Node1D(Point1D):
         If void_ratio is not convertible to float.
         If void_ratio is negative.
         If temp_rate cannot be converted to float.
-        If eff_stress cannot be converted to float.
         If tot_stress cannot be converted to float.
     """
     _index: int
@@ -320,6 +315,7 @@ class Node1D(Point1D):
     _void_ratio: float = 0.0
     _void_ratio_0: float = 0.0
     _temp_rate: float = 0.0
+    _tot_stress: float = 0.0
 
     def __init__(
         self,
@@ -329,7 +325,6 @@ class Node1D(Point1D):
         void_ratio: float = 0.0,
         void_ratio_0: float = 0.0,
         temp_rate: float = 0.0,
-        eff_stress: float = 0.0,
         tot_stress: float = 0.0,
     ):
         self.index = index
@@ -338,7 +333,6 @@ class Node1D(Point1D):
         self.void_ratio = void_ratio
         self.void_ratio_0 = void_ratio_0
         self.temp_rate = temp_rate
-        self.eff_stress = eff_stress
         self.tot_stress = tot_stress
 
     @property
@@ -478,29 +472,6 @@ class Node1D(Point1D):
         if value < 0.0:
             raise ValueError(f"void_ratio_0 {value} is not positive")
         self._void_ratio_0 = value
-
-    @property
-    def eff_stress(self) -> float:
-        """Effective stress of the node.
-
-        Parameters
-        ----------
-        float
-
-        Returns
-        -------
-        float
-
-        Raises
-        ------
-        ValueError
-            If the value to assign is not convertible to float.
-        """
-        return self._eff_stress
-
-    @eff_stress.setter
-    def eff_stress(self, value: float) -> None:
-        self._eff_stress = float(value)
 
     @property
     def tot_stress(self) -> float:
