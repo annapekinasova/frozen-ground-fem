@@ -272,13 +272,13 @@ class ConsolidationElement1D(Element1D):
             jac = nd1.z - nd0.z
             ddss = 0.0
             for ip in iipp:
-                ee = ip.void_ratio
+                # ee = ip.void_ratio
                 ee0 = ip.void_ratio_0
                 Sw = ip.deg_sat_water
                 Si = ip.deg_sat_ice
                 Gs = ip.material.spec_grav_solids
                 ddss += (
-                    (Gs + ee * (Sw + Gi * Si)) / (1 + ee0)
+                    (Gs + ee0 * (Sw + Gi * Si)) / (1 + ee0)
                 ) * gam_w * ip.weight
             dsig[k+1] = dsig[k] + ddss * jac
         return dsig
@@ -1469,8 +1469,8 @@ class ConsolidationAnalysis1D(Mesh1D):
         # initialize hydraulic boundary condition values
         # for interpolating hydraulic head
         nhb = self.num_hyd_boundaries
-        z0 = self.nodes[0].z
-        z1 = self.nodes[-1].z
+        z0 = self.nodes[0].z_def
+        z1 = self.nodes[-1].z_def
         if not nhb:
             h0 = z1 - z0
             dhdz = 0.0
@@ -1483,12 +1483,13 @@ class ConsolidationAnalysis1D(Mesh1D):
             dhdz = (h1 - h0) / (z1 - z0)
         # update pore pressure at the integration points
         for e in self.elements:
-            zz = [nd.z for nd in e.nodes]
+            zz = [nd.z_def for nd in e.nodes]
             for ip in e.int_pts:
                 N = e._shape_matrix(ip.local_coord)
                 z = (N @ zz)[0]
+                zh = z1 - z
                 h = h0 + dhdz * (z - z0)
-                uh = (h - z) * gam_w
+                uh = (h - zh) * gam_w
                 uu = ip.tot_stress - ip.eff_stress
                 ue = uu - uh
                 ip.pore_pressure = uu
