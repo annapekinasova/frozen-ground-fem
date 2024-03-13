@@ -711,6 +711,8 @@ class ConsolidationAnalysis1D(Mesh1D):
     elements
     num_boundaries
     boundaries
+    num_hyd_boundaries
+    hyd_boundaries
     mesh_valid
     time_step
     dt
@@ -765,7 +767,8 @@ class ConsolidationAnalysis1D(Mesh1D):
         If grid_size < 0.0.
     """
     _elements: tuple[ConsolidationElement1D, ...]
-    _boundaries: set[ConsolidationBoundary1D]
+    _boundaries: set[ConsolidationBoundary1D | HydraulicBoundary1D]
+    _hyd_boundaries: tuple[HydraulicBoundary1D, ...] = ()
     _void_ratio_vector_0: npt.NDArray[np.floating]
     _void_ratio_vector: npt.NDArray[np.floating]
     _water_flux_vector_0: npt.NDArray[np.floating]
@@ -803,7 +806,7 @@ class ConsolidationAnalysis1D(Mesh1D):
         return self._elements
 
     @property
-    def boundaries(self) -> set[ConsolidationBoundary1D]:
+    def boundaries(self) -> set[ConsolidationBoundary1D | HydraulicBoundary1D]:
         """The set of :c:`ConsolidationBoundary1D` contained in the mesh.
 
         Returns
@@ -817,6 +820,26 @@ class ConsolidationAnalysis1D(Mesh1D):
         type hint.
         """
         return self._boundaries
+
+    @property
+    def num_hyd_boundaries(self) -> int:
+        """The number of :c:`HydraulicBoundary1D` contained in the mesh.
+
+        Returns
+        ------
+        int
+        """
+        return len(self.hyd_boundaries)
+
+    @property
+    def hyd_boundaries(self) -> tuple[HydraulicBoundary1D, ...]:
+        """The tuple of :c:`HydraulicBoundary1D` contained in the mesh.
+
+        Returns
+        ------
+        tuple[:c:`HydraulicBoundary1D`]
+        """
+        return self._hyd_boundaries
 
     def _generate_elements(self, num_elements: int, order: int):
         """Generate the elements in the mesh.
@@ -878,26 +901,33 @@ class ConsolidationAnalysis1D(Mesh1D):
         # self._coef_matrix_1_csr = sps.csr_array(
         #     (zeros, indices, indptr))
 
-    def add_boundary(self, new_boundary: ConsolidationBoundary1D) -> None:
+    def add_boundary(
+        self,
+        new_boundary: ConsolidationBoundary1D | HydraulicBoundary1D,
+    ) -> None:
         """Adds a boundary to the mesh.
 
         Parameters
         ----------
-        new_boundary : :c:`ConsolidationBoundary1D`
+        new_boundary : :c:`ConsolidationBoundary1D` | :c:`HydraulicBoundary1D`
             The boundary to add to the mesh.
 
         Raises
         ------
         TypeError
-            If new_boundary is not an instance of :c:`ConsolidationBoundary1D`.
+            If new_boundary is not an instance of :c:`ConsolidationBoundary1D`
+            or :c:`HydraulicBoundary1D`.
         ValueError
-            If new_boundary does not have parent Boundary1D
-            in the parent mesh.
+            If new_boundary contains a node not in the mesh.
+            If new_boundary contains an integration point not in the mesh.
         """
-        if not isinstance(new_boundary, ConsolidationBoundary1D):
+        if not (
+            isinstance(new_boundary, ConsolidationBoundary1D)
+            or isinstance(new_boundary, HydraulicBoundary1D)
+        ):
             raise TypeError(
                 f"type(new_boundary) {type(new_boundary)} invalid, "
-                + "must be ConsolidationBoundary1D"
+                + "must be ConsolidationBoundary1D or HydraulicBoundary1D"
             )
         for nd in new_boundary.nodes:
             if nd not in self.nodes:
@@ -915,19 +945,19 @@ class ConsolidationAnalysis1D(Mesh1D):
     def update_boundary_conditions(
             self,
             time: float) -> None:
-        """Update the boundary conditions in the ConsolidationAnalysis1D
-        and in the parent Mesh1D.
+        """Update the boundary conditions in the ConsolidationAnalysis1D.
 
         Parameters
         ----------
         time : float
             The time in seconds.
-            Gets passed through to ConsolidationBoundary1D.update_value().
+            Gets passed through to the update_value()
+            method of the boundary class.
 
         Notes
         -----
         This convenience methods
-        loops over all ConsolidationBoundary1D objects in boundaries
+        loops over all Boundary1D objects in boundaries
         and calls update_value() to update the boundary value
         and then calls update_nodes() to assign the new value
         to each boundary Node1D.
@@ -1035,6 +1065,41 @@ class ConsolidationAnalysis1D(Mesh1D):
                 for ip in iipp:
                     N = e._shape_matrix(ip.local_coord)
                     ip.void_ratio_0 = (N @ ee0)[0]
+        # intialize global hydraulic boundaries
+        # which will be used to update pore pressure
+        # at the integration points
+        hyd_boundaries: list[HydraulicBoundary1D] = []
+        for b in self.boundaries:
+            if isinstance(b, HydraulicBoundary1D):
+                if not (
+                    b.nodes[0].index == 0
+                    or b.nodes[0].index == self.nodes[-1].index
+                ):
+                    raise ValueError(
+                        "Boundary conditions include "
+                        + f"node with index {b.nodes[0].index}. "
+                        + "Can only be first node (index 0) or "
+                        + f"last node (index {self.nodes[-1].index})."
+                    )
+                hyd_boundaries.append(b)
+        # Check for invalid number of hydraulic boundaries
+        # We only allow maximum of 2
+        nhb = len(hyd_boundaries)
+        if nhb > 2:
+            raise ValueError("Too many hydraulic boundaries, must be <= 2.")
+        # If there are 2 hydraulic boundaries,
+        # make sure they are not duplicates (same node)
+        # and that they are in the correct order
+        if nhb == 2:
+            b0 = hyd_boundaries[0]
+            b1 = hyd_boundaries[1]
+            if b0.nodes[0].index == b1.nodes[0].index:
+                raise ValueError("Duplicate hydraulic boundaries (same node).")
+            if b0.nodes[0].index > b1.nodes[0].index:
+                hyd_boundaries[0] = b1
+                hyd_boundaries[1] = b0
+        # assign hydraulic boundaries to the analysis property
+        self._hyd_boundaries = tuple(hyd_boundaries)
 
     def initialize_solution_variable_vectors(self) -> None:
         # now get the void ratio from the nodes
@@ -1325,6 +1390,10 @@ class ConsolidationAnalysis1D(Mesh1D):
         -------
         numpy.ndarray, shape = (mesh.num_nodes, )
             Vector of deformed coordinates
+
+        Notes
+        -----
+        Also assigns deformed coordinates to the nodes.
         """
         # initialize top node with settlement
         s = self.calculate_total_settlement()
@@ -1344,7 +1413,8 @@ class ConsolidationAnalysis1D(Mesh1D):
         return def_coords
 
     def update_total_stress_distribution(self) -> None:
-        """Updates total stresses at the nodes.
+        """Integrates bulk unit weight to calculate
+        total stress at the nodes.
         """
         # initialize total stress at surface
         sig = np.zeros(self.num_nodes)
@@ -1376,6 +1446,53 @@ class ConsolidationAnalysis1D(Mesh1D):
         # assign total stresses to the nodes
         for k, ss in enumerate(sig):
             self.nodes[k].tot_stress = ss
+
+    def update_pore_pressure_distribution(self) -> None:
+        """Updates steady state and excess pore pressure distributions
+        based on hydraulic boundary conditions and
+        total and effective stress distributions.
+
+        Notes
+        -----
+        If one HydraulicBoundary1D is provided,
+        then total hydraulic head is assumed constant.
+        If two HydraulicBoundary1D are provided,
+        a steady state hydraulic gradient is calculated
+        and used to determine total hydraulic head;
+        in this case, one HydraulicBoundary1D should be at
+        node 0 and the other at the last node.
+        If zero HydraulicBoundary1D are provided,
+        no ponding is assumed with fully saturated conditions,
+        so total hydraulic head is assumed constant at the
+        elevation head of node 0.
+        """
+        # initialize hydraulic boundary condition values
+        # for interpolating hydraulic head
+        nhb = self.num_hyd_boundaries
+        z0 = self.nodes[0].z
+        z1 = self.nodes[-1].z
+        if not nhb:
+            h0 = z1 - z0
+            dhdz = 0.0
+        elif nhb == 1:
+            h0 = self.hyd_boundaries[0].bnd_value
+            dhdz = 0.0
+        else:
+            h0 = self.hyd_boundaries[0].bnd_value
+            h1 = self.hyd_boundaries[1].bnd_value
+            dhdz = (h1 - h0) / (z1 - z0)
+        # update pore pressure at the integration points
+        for e in self.elements:
+            zz = [nd.z for nd in e.nodes]
+            for ip in e.int_pts:
+                N = e._shape_matrix(ip.local_coord)
+                z = (N @ zz)[0]
+                h = h0 + dhdz * (z - z0)
+                uh = (h - z) * gam_w
+                uu = ip.tot_stress - ip.eff_stress
+                ue = uu - uh
+                ip.pore_pressure = uu
+                ip.exc_pore_pressure = ue
 
     def calculate_degree_consolidation(
         self,

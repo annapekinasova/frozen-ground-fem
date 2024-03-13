@@ -16,6 +16,7 @@ from .thermal import (
 from .consolidation import (
     ConsolidationElement1D,
     ConsolidationBoundary1D,
+    HydraulicBoundary1D,
     ConsolidationAnalysis1D,
 )
 
@@ -203,7 +204,10 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
 
     def add_boundary(
         self,
-        new_boundary: ThermalBoundary1D | ConsolidationBoundary1D,
+        new_boundary:
+            ThermalBoundary1D
+            | ConsolidationBoundary1D
+            | HydraulicBoundary1D,
     ) -> None:
         """Adds a boundary to the mesh.
 
@@ -227,6 +231,7 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         if not (
             isinstance(new_boundary, ThermalBoundary1D)
             or isinstance(new_boundary, ConsolidationBoundary1D)
+            or isinstance(new_boundary, HydraulicBoundary1D)
         ):
             raise TypeError(
                 f"type(new_boundary) {type(new_boundary)} invalid, "
