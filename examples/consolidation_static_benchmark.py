@@ -20,6 +20,7 @@ from frozen_ground_fem.materials import (
 from frozen_ground_fem.consolidation import (
     ConsolidationAnalysis1D,
     ConsolidationBoundary1D,
+    HydraulicBoundary1D,
 )
 
 
@@ -133,6 +134,7 @@ def solve_consolidation_benchmark(
         (con_static.nodes[0],),
         bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
         bnd_value=e0[0],
+        bnd_value_1=qi,
     )
     void_ratio_boundary_1 = ConsolidationBoundary1D(
         (con_static.nodes[-1],),
@@ -141,6 +143,15 @@ def solve_consolidation_benchmark(
     )
     con_static.add_boundary(void_ratio_boundary_0)
     con_static.add_boundary(void_ratio_boundary_1)
+
+    # create hydraulic boundary conditions
+    # and assign them to the mesh
+    hyd_boundary = HydraulicBoundary1D(
+        (con_static.nodes[0], ),
+        bnd_type=HydraulicBoundary1D.BoundaryType.fixed_head,
+        bnd_value=H_layer,
+    )
+    con_static.add_boundary(hyd_boundary)
 
     # start simulation time
     tic = time.perf_counter()
@@ -190,6 +201,7 @@ def solve_consolidation_benchmark(
     # update boundary conditions for surface load increment
     print(f"apply static load increment, dq = {qf - qi} Pa")
     void_ratio_boundary_0.bnd_value = e1[0]
+    void_ratio_boundary_0.bnd_value_1 = qf
     void_ratio_boundary_1.bnd_value = e1[-1]
     con_static._t1 = 0.0
     con_static.time_step = dt_sim_0
@@ -214,11 +226,37 @@ def solve_consolidation_benchmark(
         s_con.append(con_static.calculate_total_settlement())
         UU, Uz = con_static.calculate_degree_consolidation(e1)
         U_con.append(UU)
+        ue = np.array([
+            ip.exc_pore_pressure
+            for e in con_static.elements
+            for ip in e.int_pts
+        ]) * 1.0e-3
+        u = np.array([
+            ip.pore_pressure
+            for e in con_static.elements
+            for ip in e.int_pts
+        ]) * 1.0e-3
+        sig = np.array([
+            ip.tot_stress
+            for e in con_static.elements
+            for ip in e.int_pts
+        ]) * 1.0e-3
+        sig_p = np.array([
+            ip.eff_stress
+            for e in con_static.elements
+            for ip in e.int_pts
+        ]) * 1.0e-3
+        # print(sig)
+        # print(u)
+        # print(sig_p)
+        # print(ue)
         eps_s = np.abs((s_con[-1] - s_con[-2]) / s_con[-1])
         print(
             f"t = {con_static._t1 / s_per_yr:0.3f} yr, "
             + f"s = {s_con[-1]:0.3f} m, "
             + f"U = {U_con[-1]:0.4f}, "
+            + f"ue_max = {np.max(ue):0.4f} kPa, "
+            + f"ue_mean = {np.mean(ue):0.4f} kPa, "
             + f"eps =  {eps_s:0.4e}, "
             + f"dt = {dt00:0.4e} s"
         )
@@ -227,9 +265,10 @@ def solve_consolidation_benchmark(
         sig_p_int[:, k_plot] = 1.0e-3 * np.array(
             [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
         )
-        ue_norm_int[:, k_plot] = 1.0 - (
-            sig_p_int[:, k_plot] - sig_p_int[:, 0]
-        ) / ui_kPa
+        # ue_norm_int[:, k_plot] = 1.0 - (
+        #     sig_p_int[:, k_plot] - sig_p_int[:, 0]
+        # ) / ui_kPa
+        ue_norm_int[:, k_plot] = ue[:] / ui_kPa
         hyd_cond_int[:, k_plot] = np.array(
             [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
         )

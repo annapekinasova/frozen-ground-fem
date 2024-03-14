@@ -559,6 +559,8 @@ class IntegrationPoint1D(Point1D):
     tot_stress
     tot_stress_gradient
     loc_stress
+    pore_pressure
+    exc_pore_pressure
 
     Parameters
     ----------
@@ -681,6 +683,8 @@ class IntegrationPoint1D(Point1D):
     _tot_stress: float = 0.0
     _tot_stress_gradient: float = 0.0
     _loc_stress: float = 0.0
+    _pore_pressure: float = 0.0
+    _exc_pore_pressure: float = 0.0
     _material: Material
 
     def __init__(
@@ -707,6 +711,8 @@ class IntegrationPoint1D(Point1D):
         tot_stress: float = 0.0,
         tot_stress_gradient: float = 0.0,
         loc_stress: float = 0.0,
+        pore_pressure: float = 0.0,
+        exc_pore_pressure: float = 0.0,
     ):
         super().__init__(coord)
         self.local_coord = local_coord
@@ -730,6 +736,8 @@ class IntegrationPoint1D(Point1D):
         self.tot_stress = tot_stress
         self.tot_stress_gradient = tot_stress_gradient
         self.loc_stress = loc_stress
+        self.pore_pressure = pore_pressure
+        self.exc_pore_pressure = exc_pore_pressure
 
     @property
     def local_coord(self) -> float:
@@ -1389,6 +1397,52 @@ class IntegrationPoint1D(Point1D):
                 f"value {value} for tot_stress_gradient cannot be positive."
             )
         self._tot_stress_gradient = value
+
+    @property
+    def pore_pressure(self) -> float:
+        """Pore pressure of the integration point.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+        """
+        return self._pore_pressure
+
+    @pore_pressure.setter
+    def pore_pressure(self, value: float) -> None:
+        self._pore_pressure = float(value)
+
+    @property
+    def exc_pore_pressure(self) -> float:
+        """Excess pore pressure of the integration point.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+        """
+        return self._exc_pore_pressure
+
+    @exc_pore_pressure.setter
+    def exc_pore_pressure(self, value: float) -> None:
+        self._exc_pore_pressure = float(value)
 
     def update_water_flux_rate(
             self,
@@ -2455,6 +2509,12 @@ class Mesh1D:
     def calculate_solution_vector_correction(self) -> None:
         pass
 
+    def update_total_stress_distribution(self) -> None:
+        pass
+
+    def update_pore_pressure_distribution(self) -> None:
+        pass
+
     def iterative_correction_step(self) -> None:
         """Performs iterative correction of the
         global void ratio vector for a single time step.
@@ -2469,7 +2529,9 @@ class Mesh1D:
         while self._eps_a > self.eps_s and self._iter < self.max_iterations:
             self.calculate_solution_vector_correction()
             self.update_nodes()
+            self.update_total_stress_distribution()
             self.update_integration_points()
+            self.update_pore_pressure_distribution()
             self.update_global_matrices_and_vectors()
             self.update_iteration_variables()
 
