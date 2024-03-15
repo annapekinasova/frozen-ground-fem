@@ -372,17 +372,27 @@ class ThermalAnalysis1D(Mesh1D):
     Methods
     -------
     generate_mesh
+    initialize_global_matrices_and_vectors
     add_boundary
-    remove_boundary
-    clear_boundaries
     update_boundary_conditions
     update_heat_flux_vector
     update_heat_flow_matrix
     update_heat_storage_matrix
     update_global_matrices_and_vectors
     update_nodes
+    initialize_solution_variable_vectors
+    initialize_free_index_arrays
+    store_converged_matrices
+    update_boundary_vectors
+    update_global_matrices_and_vectors
+    update_weighted_matrices
+    calculate_solution_vector_correction
+    update_iteration_variables
     update_integration_points
-    initialize_global_system
+    solve_to
+    #initialize_global_system
+    #remove_boundary
+    #clear_boundaries
     initialize_time_step
     update_weighted_matrices
     calculate_solution_vector_correction
