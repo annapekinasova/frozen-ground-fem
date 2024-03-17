@@ -104,6 +104,9 @@ def solve_consolidation_benchmark(
         for ip in e.int_pts:
             ip.material = m
             ip.pre_consol_stress = ppc0
+        for iipp in e._int_pts_deformed:
+            for ip in iipp:
+                ip.material = m
 
     # initialize plotting arrays
     z_nod = np.array([nd.z for nd in con_static.nodes])
@@ -231,32 +234,39 @@ def solve_consolidation_benchmark(
             for e in con_static.elements
             for ip in e.int_pts
         ]) * 1.0e-3
-        u = np.array([
-            ip.pore_pressure
-            for e in con_static.elements
-            for ip in e.int_pts
-        ]) * 1.0e-3
+        # u = np.array([
+        #     ip.pore_pressure
+        #     for e in con_static.elements
+        #     for ip in e.int_pts
+        # ]) * 1.0e-3
         sig = np.array([
-            ip.tot_stress
-            for e in con_static.elements
-            for ip in e.int_pts
+            nd.tot_stress
+            for nd in con_static.nodes
         ]) * 1.0e-3
-        sig_p = np.array([
-            ip.eff_stress
-            for e in con_static.elements
-            for ip in e.int_pts
-        ]) * 1.0e-3
-        # print(sig)
-        # print(u)
-        # print(sig_p)
-        # print(ue)
+        # sig_p = np.array([
+        #     ip.eff_stress
+        #     for e in con_static.elements
+        #     for ip in e.int_pts
+        # ]) * 1.0e-3
+        # ppc_ip = np.array([
+        #     ip.pre_consol_stress
+        #     for e in con_static.elements
+        #     for ip in e.int_pts
+        # ]) * 1.0e-3
         eps_s = np.abs((s_con[-1] - s_con[-2]) / s_con[-1])
         print(
             f"t = {con_static._t1 / s_per_yr:0.3f} yr, "
             + f"s = {s_con[-1]:0.3f} m, "
             + f"U = {U_con[-1]:0.4f}, "
             + f"ue_max = {np.max(ue):0.4f} kPa, "
+            # + f"ue_min = {np.min(ue):0.4f} kPa, "
             + f"ue_mean = {np.mean(ue):0.4f} kPa, "
+            + f"sig_max = {np.max(sig):0.4f} kPa, "
+            # + f"ppc_max = {np.max(ppc_ip):0.4f} kPa, "
+            # + f"ppc_min = {np.min(ppc_ip):0.4f} kPa, "
+            # + f"u_max = {np.max(u):0.4f} kPa, "
+            # + f"sig_p_max = {np.max(sig_p):0.4f} kPa, "
+            # + f"sig_p_min = {np.min(sig_p):0.4f} kPa, "
             + f"eps =  {eps_s:0.4e}, "
             + f"dt = {dt00:0.4e} s"
         )
@@ -313,13 +323,13 @@ def main():
     # define simulation parameters
     s_per_yr = 365.0 * 86400.0
     H_layer = 10.0
-    num_elements = 10
+    num_elements = 20
     dt_sim_0 = 1.0e-1
     t_max = 80.0 * s_per_yr
     qi = 40.0e3
     qf = 440.0e3
     ppc0 = 200.52773e3
-    tol = 1e-5
+    tol = 1e-6
     stabilize = False
 
     # set plotting parameters
