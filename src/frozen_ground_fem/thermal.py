@@ -154,6 +154,13 @@ class ThermalElement1D(Element1D):
             ip.deg_sat_water_temp_gradient = dSw_dT
             if update_water_flux:
                 ip.update_water_flux_rate()
+        for iipp in self._int_pts_deformed:
+            for ip in iipp:
+                N = self._shape_matrix(ip.local_coord)
+                T = (N @ Te)[0]
+                Sw = ip.material.deg_sat_water(T)[0]
+                ip.temp = T
+                ip.deg_sat_water = Sw
 
 
 class ThermalBoundary1D(Boundary1D):
