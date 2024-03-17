@@ -49,6 +49,8 @@ class ConsolidationElement1D(Element1D):
     Methods
     -------
     update_integration_points
+    calculate_deformed_coord_offsets
+    calculate_total_stress_increments
 
     Parameters
     ----------
@@ -727,23 +729,33 @@ class ConsolidationAnalysis1D(Mesh1D):
     Methods
     -------
     generate_mesh
+    _generate_elements
+    inialiaze_global_matrices_and_vectors
     add_boundary
-    remove_boundary
-    clear_boundaries
     update_boundary_conditions
     update_water_flux_vector
     update_stiffness_matrix
     update_mass_matrix
-    update_global_matrices_and_vectors
     update_nodes
+    initialize_integration_points
+    initialize_solution_variable_vectors
+    initialize_free_index_arrays
+    store_converged_matrices
+    update_boundary_vectors
+    update_global_matrices_and_vectors
     update_integration_points
-    initialize_global_system
-    initialize_time_step
     update_weighted_matrices
     calculate_solution_vector_correction
-    iterative_correction_step
+    update_iteration_variables
+    solve_to
     calculate_total_settlement
     calculate_deformed_coords
+    update_total_stress_distribution
+    calculate_degree_consolidation
+    #initialize_time_step
+    #iterative_correction_step
+    #remove_boundary
+    #clear_boundaries
 
     Parameters
     -----------

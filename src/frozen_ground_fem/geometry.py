@@ -545,6 +545,7 @@ class IntegrationPoint1D(Point1D):
     vol_ice_cont
     deg_sat_water
     deg_sat_ice
+    deg_sat_water_temp_gradient
     material
     thrm_cond
     vol_heat_cap
@@ -557,10 +558,11 @@ class IntegrationPoint1D(Point1D):
     void_ratio_0_ref_frozen
     tot_stress_0_ref_frozen
     tot_stress
-    tot_stress_gradient
     loc_stress
+    tot_stress_gradient
     pore_pressure
     exc_pore_pressure
+    update_water_flux_rate
 
     Parameters
     ----------
@@ -1476,8 +1478,8 @@ class Element1D:
 
     Attributes
     ----------
-    nodes
     order
+    nodes
     jacobian
     int_pts
 
@@ -1788,10 +1790,27 @@ class Mesh1D:
 
     Methods
     -------
+    initialize_global_matrices_and_vectors
     generate_mesh
     add_boundary
     remove_boundary
     clear_boundaries
+    initialize_sparse_matrix_struct
+    initialize_global_system
+    initialize_time_step
+    store_converged_matrices
+    update_boundary_vectors
+    update_weighted_matrices
+    initialize_free_index_arrays
+    initialize_integration_points
+    update_nodes
+    update_boundary_conditions
+    initialize_solution_variable_vectors
+    calculate_solution_vector_correction
+    update_total_stress_distribution
+    update_pore_pressure_distribution
+    update_iteration_variables
+    solve_to
 
     Parameters
     -----------
