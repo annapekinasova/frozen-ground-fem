@@ -272,13 +272,13 @@ class ConsolidationElement1D(Element1D):
             jac = nd1.z - nd0.z
             ddss = 0.0
             for ip in iipp:
-                # ee = ip.void_ratio
+                ee = ip.void_ratio
                 ee0 = ip.void_ratio_0
                 Sw = ip.deg_sat_water
                 Si = ip.deg_sat_ice
                 Gs = ip.material.spec_grav_solids
                 ddss += (
-                    (Gs + ee0 * (Sw + Gi * Si)) / (1 + ee0)
+                    (Gs + ee * (Sw + Gi * Si)) / (1 + ee0)
                 ) * gam_w * ip.weight
             dsig[k+1] = dsig[k] + ddss * jac
         return dsig
@@ -1059,8 +1059,10 @@ class ConsolidationAnalysis1D(Mesh1D):
                 N = e._shape_matrix(ip.local_coord)
                 e0 = (N @ ee0)[0]
                 ip.void_ratio_0 = e0
-                ppc0, _ = ip.material.eff_stress(e0, 0.0)
-                ip.pre_consol_stress = ppc0
+                ppc = ip.pre_consol_stress
+                ppc0, _ = ip.material.eff_stress(e0, ppc)
+                if ppc0 > ppc:
+                    ip.pre_consol_stress = ppc0
             for iipp in e._int_pts_deformed:
                 for ip in iipp:
                     N = e._shape_matrix(ip.local_coord)
