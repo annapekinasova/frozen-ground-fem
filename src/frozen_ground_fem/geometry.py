@@ -2512,6 +2512,11 @@ class Mesh1D:
     def update_total_stress_distribution(self) -> None:
         pass
 
+    def calculate_deformed_coords(self) -> npt.NDArray[np.floating]:
+        return np.array(
+            nd.z for nd in self.nodes
+        )
+
     def update_pore_pressure_distribution(self) -> None:
         pass
 
@@ -2529,8 +2534,9 @@ class Mesh1D:
         while self._eps_a > self.eps_s and self._iter < self.max_iterations:
             self.calculate_solution_vector_correction()
             self.update_nodes()
-            self.update_total_stress_distribution()
             self.update_integration_points()
+            self.calculate_deformed_coords()
+            self.update_total_stress_distribution()
             self.update_pore_pressure_distribution()
             self.update_global_matrices_and_vectors()
             self.update_iteration_variables()
