@@ -18,8 +18,8 @@ def main():
     ta = ThermalAnalysis1D()
     ta.z_min = 0.0
     ta.z_max = 30.0
-    ta.generate_mesh(num_elements=30)
-    ta.implicit_error_tolerance = 1e-6
+    ta.generate_mesh(num_elements=10)
+    # ta.implicit_error_tolerance = 1e-6
 
     # define material properties
     # and initialize integration points
@@ -28,6 +28,8 @@ def main():
         thrm_cond_solids=2.5,
         spec_grav_solids=2.65,
         spec_heat_cap_solids=cs,
+        # deg_sat_water_alpha=12.0,
+        # deg_sat_water_beta=0.35,
     )
     void_ratio = 0.35 / (1.0 - 0.35)
     for e in ta.elements:
@@ -221,7 +223,7 @@ def main():
     plt.figure(figsize=(7, 4))
     plt.plot(t_plot / s_per_day, Zt, "--k", label="frozen_ground_fem")
     plt.plot(t_Neumann, Z_Neumann, "-b", label="Neumann")
-    plt.ylim((15, 0.0))
+    # plt.ylim((15, 0.0))
     plt.legend()
     plt.xlabel("time, t [days]")
     plt.ylabel("freeze/thaw depth, Z [m]")

@@ -18,8 +18,8 @@ def main():
     ta = ThermalAnalysis1D()
     ta.z_min = 0.0
     ta.z_max = 30.0
-    ta.generate_mesh(num_elements=25)
-    ta.implicit_error_tolerance = 1e-6
+    ta.generate_mesh(num_elements=20)
+    # ta.implicit_error_tolerance = 1e-5
 
     # define material properties
     # and initialize integration points
