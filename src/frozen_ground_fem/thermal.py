@@ -114,12 +114,11 @@ class ThermalElement1D(Element1D):
         C = np.zeros_like(N.T @ N)
         jac = self.jacobian
         for ip in self.int_pts:
-            ee = ip.void_ratio
-            e_fact = ee / (1.0 + ee)
+            por = ip.porosity
             N = self._shape_matrix(ip.local_coord)
             C += (
                 (ip.vol_heat_cap
-                 + Lw * rho_i * e_fact * ip.deg_sat_water_temp_gradient)
+                 + Lw * rho_i * por * ip.deg_sat_water_temp_gradient)
                 * ip.weight
             ) * N.T @ N
         C *= jac
@@ -127,6 +126,7 @@ class ThermalElement1D(Element1D):
 
     def update_integration_points(
         self,
+        mesh,
         update_water_flux: bool = True,
     ) -> None:
         """Updates the properties of integration points
@@ -138,20 +138,26 @@ class ThermalElement1D(Element1D):
         and interpolates temperatures from corresponding nodes
         and updates degree of saturation of water accordingly.
         """
+        T0e = np.array([mesh._temp_vector_0[nd.index] for nd in self.nodes])
         Te = np.array([nd.temp for nd in self.nodes])
         dTdte = np.array([nd.temp_rate for nd in self.nodes])
         for ip in self.int_pts:
             N = self._shape_matrix(ip.local_coord)
             B = self._gradient_matrix(ip.local_coord, self.jacobian)
+            T0 = (N @ T0e)[0]
             T = (N @ Te)[0]
+            dT = T - T0
             dTdZ = (B @ Te)[0]
             dTdt = (N @ dTdte)[0]
-            Sw, dSw_dT = ip.material.deg_sat_water(T)
+            Sw0 = ip.material.deg_sat_water(T0)[0]
+            Sw = ip.material.deg_sat_water(T)[0]
+            # Sw, dSw_dT = ip.material.deg_sat_water(T)
             ip.temp = T
             ip.temp_gradient = dTdZ
             ip.temp_rate = dTdt
             ip.deg_sat_water = Sw
-            ip.deg_sat_water_temp_gradient = dSw_dT
+            # ip.deg_sat_water_temp_gradient = dSw_dT
+            ip.deg_sat_water_temp_gradient = (Sw - Sw0) / dT if dT else 0.0
             if update_water_flux:
                 ip.update_water_flux_rate()
         for iipp in self._int_pts_deformed:
@@ -686,6 +692,10 @@ class ThermalAnalysis1D(Mesh1D):
         for nd in self.nodes:
             nd.temp = self._temp_vector[nd.index]
             nd.temp_rate = self._temp_rate_vector[nd.index]
+
+    def update_integration_points(self) -> None:
+        for e in self.elements:
+            e.update_integration_points(self)
 
     def initialize_solution_variable_vectors(self) -> None:
         for nd in self.nodes:
