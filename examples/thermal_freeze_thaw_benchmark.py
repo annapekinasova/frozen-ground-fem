@@ -19,7 +19,7 @@ def main():
     ta.z_min = 0.0
     ta.z_max = 30.0
     ta.generate_mesh(num_elements=20)
-    # ta.implicit_error_tolerance = 1e-5
+    ta.implicit_error_tolerance = 1e-5
 
     # define material properties
     # and initialize integration points
@@ -221,7 +221,7 @@ def main():
     plt.figure(figsize=(7, 4))
     plt.plot(t_plot / s_per_day, Zt, "--k", label="frozen_ground_fem")
     plt.plot(t_Neumann, Z_Neumann, "-b", label="Neumann")
-    plt.ylim((2.5, 0.0))
+    plt.ylim((4.0, 0.0))
     plt.legend()
     plt.xlabel("time, t [days]")
     plt.ylabel("freeze/thaw depth, Z [m]")
