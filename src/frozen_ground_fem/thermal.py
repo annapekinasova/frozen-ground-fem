@@ -85,12 +85,9 @@ class ThermalElement1D(Element1D):
         for ip in self.int_pts:
             e = ip.void_ratio
             e0 = ip.void_ratio_0
-            e_fact = (1+e0) / (1+e)
+            e_fact = ((1+e0) / (1+e)) ** 2
             B = self._gradient_matrix(ip.local_coord, jac)
-            N = self._shape_matrix(ip.local_coord)
-            H += ((B.T * e_fact * ip.thrm_cond
-                   + N.T * ip.water_flux_rate * Cw)
-                  @ (ip.weight * e_fact * B))
+            H += (e_fact * ip.thrm_cond * ip.weight) * (B.T @ B)
         H *= jac
         return H
 
@@ -114,15 +111,41 @@ class ThermalElement1D(Element1D):
         C = np.zeros_like(N.T @ N)
         jac = self.jacobian
         for ip in self.int_pts:
-            por = ip.porosity
             N = self._shape_matrix(ip.local_coord)
-            C += (
-                (ip.vol_heat_cap
-                 + Lw * rho_i * por * ip.deg_sat_water_temp_gradient)
-                * ip.weight
-            ) * N.T @ N
+            C += (ip.vol_heat_cap * ip.weight) * (N.T @ N)
         C *= jac
         return C
+
+    @property
+    def heat_flux_vector(self) -> npt.NDArray[np.floating]:
+        """The element heat flux vector (for advection and latent heat).
+
+        Returns
+        -------
+        numpy.ndarray
+            Shape depends on order of interpolation.
+            For order=1, shape=(2, ).
+            For order=3, shape=(4, ).
+        """
+        N = self._shape_matrix(0.0)
+        Q = np.zeros(self.order + 1)
+        jac = self.jacobian
+        for ip in self.int_pts:
+            e = ip.void_ratio
+            e0 = ip.void_ratio_0
+            e_fact = (1+e0) / (1+e)
+            qw = ip.water_flux_rate
+            dTdZ = ip.temp_gradient
+            dthetai_dt = ip.vol_ice_cont_rate
+            N = self._shape_matrix(ip.local_coord).flatten()
+            Q += N * (
+                e_fact * qw * Cw * dTdZ
+                - Lw * rho_i * dthetai_dt
+            ) * ip.weight
+        Q *= jac
+        if np.any(Q):
+            print(f"{self.nodes[0].index}, {Q}")
+        return Q
 
     def update_integration_points(
         self,
@@ -495,6 +518,11 @@ class ThermalAnalysis1D(Mesh1D):
             for k in range(num_elements)
         )
 
+    def initialize_integration_points(self) -> None:
+        for e in self.elements:
+            for ip in e.int_pts:
+                ip.vol_ice_cont_0 = ip.vol_ice_cont
+
     def initialize_global_matrices_and_vectors(self):
         self._temp_vector_0 = np.zeros(self.num_nodes)
         self._temp_vector = np.zeros(self.num_nodes)
@@ -615,6 +643,10 @@ class ThermalAnalysis1D(Mesh1D):
         to the global heat flux vector.
         """
         self._heat_flux_vector[:] = 0.0
+        for e in self.elements:
+            ind = np.array([nd.index for nd in e.nodes], dtype=int)
+            Qe = e.heat_flux_vector
+            self._heat_flux_vector[np.ix_(ind)] += Qe
         for be in self.boundaries:
             if be.bnd_type == ThermalBoundary1D.BoundaryType.heat_flux:
                 self._heat_flux_vector[be.nodes[0].index] += be.bnd_value
@@ -713,6 +745,9 @@ class ThermalAnalysis1D(Mesh1D):
         self._heat_flux_vector_0[:] = self._heat_flux_vector[:]
         self._heat_flow_matrix_0[:, :] = self._heat_flow_matrix[:, :]
         self._heat_storage_matrix_0[:, :] = self._heat_storage_matrix[:, :]
+        for e in self.elements:
+            for ip in e.int_pts:
+                ip.vol_ice_cont_0 = ip.vol_ice_cont
 
     def update_boundary_vectors(self) -> None:
         self.update_heat_flux_vector()
@@ -722,6 +757,11 @@ class ThermalAnalysis1D(Mesh1D):
         )
 
     def update_global_matrices_and_vectors(self) -> None:
+        for e in self.elements:
+            for ip in e.int_pts:
+                ip.vol_ice_cont_rate = (
+                    ip.vol_ice_cont - ip.vol_ice_cont_0
+                ) / self.dt
         self.update_heat_flux_vector()
         self.update_heat_flow_matrix()
         self.update_heat_storage_matrix()
@@ -882,11 +922,16 @@ class ThermalAnalysis1D(Mesh1D):
             return Mesh1D.solve_to(self, tf)
         # initialize vectors and matrices
         # for adaptive step size correction
+        num_int_pt_per_element = len(self.elements[0].int_pts)
         temp_vector_0 = np.zeros_like(self._temp_vector)
         temp_vector_1 = np.zeros_like(self._temp_vector)
         temp_error = np.zeros_like(self._temp_vector)
         temp_rate_0 = np.zeros_like(self._temp_vector)
         temp_scale = np.zeros_like(self._temp_vector)
+        vol_ice_cont_0 = np.zeros((
+            self.num_elements,
+            num_int_pt_per_element,
+        ))
         dt_list = []
         err_list = []
         done = False
@@ -901,17 +946,36 @@ class ThermalAnalysis1D(Mesh1D):
             dt0 = self.time_step
             temp_vector_0[:] = self._temp_vector[:]
             temp_rate_0[:] = self._temp_rate_vector[:]
+            for ke, e in enumerate(self.elements):
+                for jip, ip in enumerate(e.int_pts):
+                    vol_ice_cont_0[ke, jip] = ip.vol_ice_cont_0
             # take single time step
+            if np.any(self._heat_flux_vector):
+                print(self._heat_flux_vector)
+            if np.any(self._heat_flux_vector_0):
+                print(self._heat_flux_vector_0)
+            print(self._temp_vector)
             self.initialize_time_step()
             self.iterative_correction_step()
+            if np.any(self._heat_flux_vector):
+                print(self._heat_flux_vector)
+            if np.any(self._heat_flux_vector_0):
+                print(self._heat_flux_vector_0)
             # save the predictor result
             temp_vector_1[:] = self._temp_vector[:]
             # reset the system
             self._temp_vector[:] = temp_vector_0[:]
             self._temp_rate_vector[:] = temp_rate_0[:]
+            for e, thi_e in zip(self.elements, vol_ice_cont_0):
+                for ip, thi0 in zip(e.int_pts, thi_e):
+                    ip.vol_ice_cont_0 = thi0
             self.update_nodes()
             self.update_integration_points()
             self.update_global_matrices_and_vectors()
+            if np.any(self._heat_flux_vector):
+                print(self._heat_flux_vector)
+            if np.any(self._heat_flux_vector_0):
+                print(self._heat_flux_vector_0)
             self._t1 = t0
             # take two half steps
             self.time_step = 0.5 * dt0
@@ -919,6 +983,10 @@ class ThermalAnalysis1D(Mesh1D):
             self.iterative_correction_step()
             self.initialize_time_step()
             self.iterative_correction_step()
+            if np.any(self._heat_flux_vector):
+                print(self._heat_flux_vector)
+            if np.any(self._heat_flux_vector_0):
+                print(self._heat_flux_vector_0)
             # compute truncation error correction
             temp_error[:] = (self._temp_vector[:]
                              - temp_vector_1[:]) / 3.0

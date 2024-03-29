@@ -674,6 +674,8 @@ class IntegrationPoint1D(Point1D):
     _deg_sat_ice: float = 0.0
     _deg_sat_water_temp_gradient: float = 0.0
     _vol_ice_cont: float = 0.0
+    _vol_ice_cont_0: float = 0.0
+    _vol_ice_cont_rate: float = 0.0
     _hyd_cond: float = 0.0
     _hyd_cond_gradient: float = 0.0
     _water_flux_rate: float = 0.0
@@ -948,6 +950,60 @@ class IntegrationPoint1D(Point1D):
         degree of saturation of water are updated.
         """
         return self._vol_ice_cont
+
+    @property
+    def vol_ice_cont_0(self) -> float:
+        """Previous volumetric ice content of the integration point.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.0.
+        """
+        return self._vol_ice_cont_0
+
+    @vol_ice_cont_0.setter
+    def vol_ice_cont_0(self, value: float) -> None:
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(
+                f"vol_ice_cont_0 value {value} "
+                + "is negative."
+            )
+        self._vol_ice_cont_0 = value
+
+    @property
+    def vol_ice_cont_rate(self) -> float:
+        """Time rate of change of volumetric ice content.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+        """
+        return self._vol_ice_cont_rate
+
+    @vol_ice_cont_rate.setter
+    def vol_ice_cont_rate(self, value: float) -> None:
+        value = float(value)
+        self._vol_ice_cont_rate = value
 
     @property
     def deg_sat_water(self) -> float:
