@@ -543,6 +543,7 @@ class IntegrationPoint1D(Point1D):
     temp_gradient
     porosity
     vol_ice_cont
+    vol_water_cont_temp_gradient
     deg_sat_water
     deg_sat_ice
     deg_sat_water_temp_gradient
@@ -676,6 +677,7 @@ class IntegrationPoint1D(Point1D):
     _vol_ice_cont: float = 0.0
     _vol_ice_cont_0: float = 0.0
     _vol_ice_cont_rate: float = 0.0
+    _vol_water_cont_temp_gradient: float = 0.0
     _hyd_cond: float = 0.0
     _hyd_cond_gradient: float = 0.0
     _water_flux_rate: float = 0.0
@@ -703,6 +705,7 @@ class IntegrationPoint1D(Point1D):
         temp_gradient: float = 0.0,
         deg_sat_water: float = 1.0,
         deg_sat_water_temp_gradient: float = 0.0,
+        vol_water_cont_temp_gradient: float = 0.0,
         material: Material = NULL_MATERIAL,
         hyd_cond: float = 0.0,
         hyd_cond_gradient: float = 0.0,
@@ -728,6 +731,7 @@ class IntegrationPoint1D(Point1D):
         self.temp_gradient = temp_gradient
         self.deg_sat_water = deg_sat_water
         self.deg_sat_water_temp_gradient = deg_sat_water_temp_gradient
+        self.vol_water_cont_temp_gradient = vol_water_cont_temp_gradient
         self.material = material
         self.hyd_cond = hyd_cond
         self.hyd_cond_gradient = hyd_cond_gradient
@@ -1089,6 +1093,37 @@ class IntegrationPoint1D(Point1D):
                 + "is negative"
             )
         self._deg_sat_water_temp_gradient = value
+
+    @property
+    def vol_water_cont_temp_gradient(self) -> float:
+        """Gradient of degree of saturation of water
+        with respect to temperature.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value to assign is negative.
+        """
+        return self._deg_sat_water_temp_gradient
+
+    @vol_water_cont_temp_gradient.setter
+    def vol_water_cont_temp_gradient(self, value: float) -> None:
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(
+                f"vol_water_cont_temp_gradient value {value} "
+                + "is negative"
+            )
+        self._vol_water_cont_temp_gradient = value
 
     @property
     def material(self) -> Material:
@@ -2520,9 +2555,9 @@ class Mesh1D:
         # and then initialize global solution vectors
         # (we assume that initial conditions have already been applied)
         self.initialize_free_index_arrays()
+        self.initialize_solution_variable_vectors()
         self.initialize_integration_points()
         self.update_boundary_conditions(self._t0)
-        self.initialize_solution_variable_vectors()
         self.update_integration_points()
         # now build the global matrices and vectors
         self.update_global_matrices_and_vectors()
