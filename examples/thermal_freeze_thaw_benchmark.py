@@ -3,6 +3,10 @@ import matplotlib.pyplot as plt
 
 from frozen_ground_fem.materials import (
     Material,
+    vol_heat_cap_water as Cw,
+    vol_heat_cap_ice as Ci,
+    thrm_cond_ice as lam_i,
+    thrm_cond_water as lam_w,
 )
 
 from frozen_ground_fem.thermal import (
@@ -13,13 +17,17 @@ from frozen_ground_fem.thermal import (
 
 def main():
     # create thermal analysis object
-    # define mesh with 20 elements
-    # and cubic interpolation
     ta = ThermalAnalysis1D()
     ta.z_min = 0.0
-    ta.z_max = 30.0
-    ta.generate_mesh(num_elements=20)
+    ta.z_max = 10.0
+    ta.generate_mesh(num_elements=100, order=1)
     ta.implicit_error_tolerance = 1e-5
+
+    # znod0 = np.linspace(0.0, 1.0, 101)
+    # znod1 = np.linspace(1.0, 10.0, 181)[1:]
+    # znod = np.hstack([znod0, znod1])
+    # for z, nd in zip(znod, ta.nodes):
+    #     nd.z = z
 
     # define material properties
     # and initialize integration points
@@ -37,7 +45,7 @@ def main():
             ip.void_ratio_0 = void_ratio
 
     # set initial temperature conditions
-    T0 = +5.0
+    T0 = -5.0
     for nd in ta.nodes:
         nd.temp = T0
 
@@ -48,14 +56,16 @@ def main():
         (ta.elements[0].int_pts[0],),
     )
     temp_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp
-    temp_boundary.bnd_value = -5.0
+    temp_boundary.bnd_value = +5.0
     # zero flux at bottom
     grad_boundary = ThermalBoundary1D(
         (ta.nodes[-1],),
         (ta.elements[-1].int_pts[-1],),
     )
-    grad_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
-    grad_boundary.bnd_value = 0.0
+    # grad_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
+    # grad_boundary.bnd_value = 0.0
+    grad_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp
+    grad_boundary.bnd_value = T0
 
     # assign thermal boundaries to the analysis
     ta.add_boundary(temp_boundary)
@@ -79,17 +89,37 @@ def main():
 
     # initialize global matrices and vectors
     ta.time_step = 0.1
+    adapt_dt = True
     ta.initialize_global_system(t0=0.0)
 
     # print out parameters
-    # ip = ta.elements[0].int_pts[0]
-    # print(f"Gs = {ip.material.spec_grav_solids}")
-    # print(f"Lw = {latent_heat_fusion_water} ")
+    ip = ta.elements[0].int_pts[0]
+    print(f"Cs = {ip.material.vol_heat_cap_solids}")
+    print(f"Ci = {Ci}")
+    print(f"Cw = {Cw}")
+    print(f"lam_s = {ip.material.thrm_cond_solids}")
+    print(f"lam_i = {lam_i}")
+    print(f"lam_w = {lam_w}")
+    print("top ip:")
+    print(f"C = {ip.vol_heat_cap}")
+    print(f"lam = {ip.thrm_cond}")
+    ip = ta.elements[-1].int_pts[-1]
+    print("bot ip:")
+    print(f"C = {ip.vol_heat_cap}")
+    print(f"lam = {ip.thrm_cond}")
 
     # solve to selected time points
     Zt = [0.0]
     for tf in t_plot[1:]:
-        ta.solve_to(tf)
+        ta.solve_to(tf, adapt_dt=adapt_dt)
+        # print(id(ta._temp_vector_0))
+        # print(id(ta._temp_vector))
+        # print(ta._temp_vector - ta._temp_vector_0)
+        dthw_dT_max = 0.0
+        for e in ta.elements:
+            for ip in e.int_pts:
+                if ip.vol_water_cont_temp_gradient > dthw_dT_max:
+                    dthw_dT_max = ip.vol_water_cont_temp_gradient
         # plot temp profile
         if not (tf // s_per_day) % 15:
             plt.plot(
@@ -133,7 +163,8 @@ def main():
             + f"Z = {Zte:0.4f} m, "
             + f"lam_21 = {lam_21:0.4f}, "
             + f"alpha_12 = {alpha_12:0.4f}, "
-            + f"dt = {ta.time_step / s_per_day:0.4e} days"
+            + f"dt = {ta.time_step / s_per_day:0.4e} days, "
+            + f"dthw_dT_max = {dthw_dT_max} 1/K"
         )
 
     # finalize plot labels
@@ -182,40 +213,40 @@ def main():
     ])
     Z_Neumann = np.array([
         0.0000,
-        0.1225,
-        0.1732,
-        0.2122,
-        0.2450,
-        0.2739,
-        0.3874,
-        0.4745,
-        0.5478,
-        0.6125,
-        0.6710,
-        0.7247,
-        0.7748,
-        0.8218,
-        0.8662,
-        0.9085,
-        0.9489,
-        0.9876,
-        1.0249,
-        1.0609,
-        1.0957,
-        1.1294,
-        1.1622,
-        1.1940,
-        1.2250,
-        1.2553,
-        1.2848,
-        1.3137,
-        1.3420,
-        1.3696,
-        1.3967,
-        1.4234,
-        1.4495,
-        1.4751,
-        1.5003,
+        0.1295,
+        0.1831,
+        0.2243,
+        0.2590,
+        0.2895,
+        0.4094,
+        0.5015,
+        0.5790,
+        0.6474,
+        0.7092,
+        0.7660,
+        0.8189,
+        0.8685,
+        0.9155,
+        0.9602,
+        1.0029,
+        1.0439,
+        1.0833,
+        1.1213,
+        1.1581,
+        1.1937,
+        1.2283,
+        1.2620,
+        1.2948,
+        1.3267,
+        1.3580,
+        1.3885,
+        1.4183,
+        1.4476,
+        1.4763,
+        1.5044,
+        1.5320,
+        1.5591,
+        1.5857,
     ])
 
     plt.figure(figsize=(7, 4))
