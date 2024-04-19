@@ -20,8 +20,8 @@ def main():
     ta = ThermalAnalysis1D()
     ta.z_min = 0.0
     ta.z_max = 10.0
-    ta.generate_mesh(num_elements=100, order=1)
-    ta.implicit_error_tolerance = 1e-5
+    ta.generate_mesh(num_elements=300, order=1)
+    ta.implicit_error_tolerance = 1e-4
 
     # znod0 = np.linspace(0.0, 1.0, 101)
     # znod1 = np.linspace(1.0, 10.0, 181)[1:]
@@ -45,7 +45,7 @@ def main():
             ip.void_ratio_0 = void_ratio
 
     # set initial temperature conditions
-    T0 = -5.0
+    T0 = +5.0
     for nd in ta.nodes:
         nd.temp = T0
 
@@ -56,16 +56,16 @@ def main():
         (ta.elements[0].int_pts[0],),
     )
     temp_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp
-    temp_boundary.bnd_value = +5.0
+    temp_boundary.bnd_value = -5.0
     # zero flux at bottom
     grad_boundary = ThermalBoundary1D(
         (ta.nodes[-1],),
         (ta.elements[-1].int_pts[-1],),
     )
-    # grad_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
-    # grad_boundary.bnd_value = 0.0
-    grad_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp
-    grad_boundary.bnd_value = T0
+    grad_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
+    grad_boundary.bnd_value = 0.0
+    # grad_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp
+    # grad_boundary.bnd_value = T0
 
     # assign thermal boundaries to the analysis
     ta.add_boundary(temp_boundary)
@@ -88,12 +88,17 @@ def main():
     )
 
     # initialize global matrices and vectors
-    ta.time_step = 0.1
+    ta.time_step = 0.001
     adapt_dt = True
     ta.initialize_global_system(t0=0.0)
 
+    np.set_printoptions(
+        formatter={"float_kind": lambda x: f"{x: 0.3e}"}, linewidth=2000
+    )
+
     # print out parameters
     ip = ta.elements[0].int_pts[0]
+    print(f"dz = {ta.elements[0].jacobian}")
     print(f"Cs = {ip.material.vol_heat_cap_solids}")
     print(f"Ci = {Ci}")
     print(f"Cw = {Cw}")
@@ -112,6 +117,22 @@ def main():
     Zt = [0.0]
     for tf in t_plot[1:]:
         ta.solve_to(tf, adapt_dt=adapt_dt)
+        # print(np.array(
+        #     [ip.vol_ice_cont_0 for e in ta.elements for ip in e.int_pts]
+        # ))
+        # print(np.array(
+        #     [ip.vol_ice_cont for e in ta.elements for ip in e.int_pts]
+        # ))
+        # print(np.array(
+        #     [ip.vol_water_cont_temp_gradient
+        #         for e in ta.elements for ip in e.int_pts]
+        # ))
+        # print(ta._temp_vector_0)
+        # print(ta._temp_vector)
+        # print(ta._heat_flow_matrix_0)
+        # print(ta._heat_storage_matrix_0)
+        # print(ta._heat_flow_matrix)
+        # print(ta._heat_storage_matrix)
         # print(id(ta._temp_vector_0))
         # print(id(ta._temp_vector))
         # print(ta._temp_vector - ta._temp_vector_0)
@@ -211,48 +232,87 @@ def main():
         145.00,
         150.00,
     ])
-    Z_Neumann = np.array([
-        0.0000,
-        0.1295,
-        0.1831,
-        0.2243,
-        0.2590,
-        0.2895,
-        0.4094,
-        0.5015,
-        0.5790,
-        0.6474,
-        0.7092,
-        0.7660,
-        0.8189,
-        0.8685,
-        0.9155,
-        0.9602,
-        1.0029,
-        1.0439,
-        1.0833,
-        1.1213,
-        1.1581,
-        1.1937,
-        1.2283,
-        1.2620,
-        1.2948,
-        1.3267,
-        1.3580,
-        1.3885,
-        1.4183,
-        1.4476,
-        1.4763,
-        1.5044,
-        1.5320,
-        1.5591,
-        1.5857,
-    ])
+    if T0 < 0.0:
+        Z_Neumann = np.array([
+            0.0000,
+            0.0904,
+            0.1278,
+            0.1565,
+            0.1807,
+            0.2020,
+            0.2857,
+            0.3500,
+            0.4041,
+            0.4518,
+            0.4949,
+            0.5346,
+            0.5715,
+            0.6061,
+            0.6389,
+            0.6701,
+            0.6999,
+            0.7285,
+            0.7560,
+            0.7825,
+            0.8082,
+            0.8330,
+            0.8572,
+            0.8807,
+            0.9036,
+            0.9259,
+            0.9477,
+            0.9690,
+            0.9898,
+            1.0102,
+            1.0302,
+            1.0499,
+            1.0691,
+            1.0880,
+            1.1066,
+        ])
+    else:
+        Z_Neumann = np.array([
+            0.0000,
+            0.1187,
+            0.1678,
+            0.2055,
+            0.2373,
+            0.2653,
+            0.3752,
+            0.4595,
+            0.5306,
+            0.5933,
+            0.6499,
+            0.7019,
+            0.7504,
+            0.7959,
+            0.8390,
+            0.8799,
+            0.9191,
+            0.9566,
+            0.9927,
+            1.0275,
+            1.0612,
+            1.0939,
+            1.1256,
+            1.1565,
+            1.1865,
+            1.2158,
+            1.2444,
+            1.2724,
+            1.2998,
+            1.3266,
+            1.3528,
+            1.3786,
+            1.4039,
+            1.4287,
+            1.4532,
+        ])
 
     plt.figure(figsize=(7, 4))
     plt.plot(t_plot / s_per_day, Zt, "--k", label="frozen_ground_fem")
     plt.plot(t_Neumann, Z_Neumann, "-b", label="Neumann")
-    plt.ylim((4.0, 0.0))
+    plt.ylim((1.6, 0.0))
     plt.legend()
     plt.xlabel("time, t [days]")
     plt.ylabel("freeze/thaw depth, Z [m]")
