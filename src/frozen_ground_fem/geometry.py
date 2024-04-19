@@ -1113,7 +1113,7 @@ class IntegrationPoint1D(Point1D):
             If value to assign is not convertible to float.
             If value to assign is negative.
         """
-        return self._deg_sat_water_temp_gradient
+        return self._vol_water_cont_temp_gradient
 
     @vol_water_cont_temp_gradient.setter
     def vol_water_cont_temp_gradient(self, value: float) -> None:
@@ -2557,11 +2557,11 @@ class Mesh1D:
         self.initialize_free_index_arrays()
         self.initialize_solution_variable_vectors()
         self.initialize_integration_points()
-        self.update_boundary_conditions(self._t0)
-        self.update_integration_points()
+        # self.update_integration_points()
         # now build the global matrices and vectors
         self.update_global_matrices_and_vectors()
-        self.update_weighted_matrices()
+        # self.update_weighted_matrices()
+        # self.update_boundary_conditions(self._t0)
 
     def initialize_time_step(self) -> None:
         """Sets up the system at the beginning of a time step.
@@ -2587,6 +2587,8 @@ class Mesh1D:
         # setup global matrices and vectors
         self.store_converged_matrices()
         self.update_boundary_conditions(self._t1)
+        self.update_integration_points()
+        self.update_global_matrices_and_vectors()
         self.update_boundary_vectors()
 
     def store_converged_matrices(self) -> None:
