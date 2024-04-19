@@ -173,7 +173,7 @@ class ThermalElement1D(Element1D):
             ip.temp_gradient = dTdZ
             ip.temp_rate = dTdt
             ip.deg_sat_water = Sw
-            ip.deg_sat_water_temp_gradient = dSw_dT
+            # ip.deg_sat_water_temp_gradient = dSw_dT
             if update_water_flux:
                 ip.update_water_flux_rate()
         for iipp in self._int_pts_deformed:
@@ -722,19 +722,35 @@ class ThermalAnalysis1D(Mesh1D):
     def update_integration_points(self) -> None:
         for e in self.elements:
             e.update_integration_points()
-            T0e = np.array([
-                self._temp_vector_0[nd.index]
-                for nd in e.nodes
-            ])
+            # T0e = np.array([
+            #     self._temp_vector_0[nd.index]
+            #     for nd in e.nodes
+            # ])
+            # T1e = np.array([
+            #     self._temp_vector[nd.index]
+            #     for nd in e.nodes
+            # ])
             for ip in e.int_pts:
-                N = e._shape_matrix(ip.local_coord)
-                T0 = (N @ T0e)[0]
-                T1 = ip.temp
-                thw0 = ip.porosity - ip.vol_ice_cont_0
-                thw1 = ip.porosity - ip.vol_ice_cont
-                ip.vol_water_cont_temp_gradient = (
-                    (thw1 - thw0) / (T1 - T0)
-                ) if np.abs(T1 - T0) > 0.0 else 0.0
+                # N = e._shape_matrix(ip.local_coord)
+                # T0 = (N @ T0e)[0]
+                # T1 = ip.temp
+                # thw0 = ip.porosity - ip.vol_ice_cont_0
+                # thw1 = ip.porosity - ip.vol_ice_cont
+                # if np.abs(T1 - T0) > 0.0:
+                #     ip.vol_water_cont_temp_gradient = (thw1 - thw0) / (T1 - T0)
+                # else:
+                #     ip.vol_water_cont_temp_gradient = 0.0
+                ip.vol_water_cont_temp_gradient = 0.1 * ip.porosity
+                # print(
+                #     f"{ip.z: 0.4f}, {T0}, {T1}, {T1 - T0: 0.4f}, "
+                #     + f"{np.abs(T1 - T0) > 0.0: 0.4f}, "
+                #     + f"{thw0: 0.4f}, {thw1: 0.4f}, "
+                #     + f"{thw1 - thw0: 0.4f}, "
+                #     + f"{ip.vol_water_cont_temp_gradient: 0.4e}"
+                # )
+                # ip.vol_water_cont_temp_gradient = np.abs(
+                #     ip.porosity / (T1 - T0)
+                # ) if np.abs(T1 - T0) > 0.0 else 0.0
 
     def initialize_solution_variable_vectors(self) -> None:
         for nd in self.nodes:
