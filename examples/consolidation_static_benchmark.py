@@ -474,22 +474,20 @@ def main():
     t_con_Gs_278_OC_yr = t_con_Gs_278_OC / s_per_yr
 
     # settlement and average degree of consolidation
-    plt.figure(figsize=(8.0, 10.0))
+    plt.figure(figsize=(6.7, 3.9))
 
     plt.subplot(2, 2, 1)
     plt.semilogx(
-        t_con_Gs_1_yr[1:], s_con_Gs_1[1:], "--k", label="Gs=1.0",
+        t_con_Gs_1_yr[1:], s_con_Gs_1[1:], "--b", label="Gs=1.0",
     )
     plt.semilogx(
-        t_con_Gs_278_yr[1:], s_con_Gs_278[1:], "-k", label="Gs=2.78",
+        t_con_Gs_278_yr[1:], s_con_Gs_278[1:], "-r", label="Gs=2.78",
     )
     plt.semilogx(
-        t_FP15[1:], s_FP15_Gs_1[1:], label="FoxPu2015",
-        marker="x", linestyle="none",
+        t_FP15[1:], s_FP15_Gs_1[1:], "xb", label="FoxPu2015",
     )
     plt.semilogx(
-        t_FP15[1:], s_FP15_Gs_278[1:],  # label="FoxPu2015",
-        marker="x", linestyle="none",
+        t_FP15[1:], s_FP15_Gs_278[1:], "or", label="FoxPu2015",
     )
     plt.xlabel(r"Time, $t$ [$yr$]")
     plt.ylabel(r"Settlement, $s$ [$m$]")
@@ -500,18 +498,16 @@ def main():
 
     plt.subplot(2, 2, 2)
     plt.semilogx(
-        t_con_Gs_1_OC_yr[1:], s_con_Gs_1_OC[1:], "--k", label="Gs=1.0",
+        t_con_Gs_1_OC_yr[1:], s_con_Gs_1_OC[1:], "--b", label="Gs=1.0",
     )
     plt.semilogx(
-        t_con_Gs_278_OC_yr[1:], s_con_Gs_278_OC[1:], "-k", label="Gs=2.78",
+        t_con_Gs_278_OC_yr[1:], s_con_Gs_278_OC[1:], "-r", label="Gs=2.78",
     )
     plt.semilogx(
-        t_FP15[1:], s_FP15_Gs_1_OC[1:], label="FoxPu2015",
-        marker="x", linestyle="none",
+        t_FP15[1:], s_FP15_Gs_1_OC[1:], "xb", label="FoxPu2015",
     )
     plt.semilogx(
-        t_FP15[1:], s_FP15_Gs_278_OC[1:],  # label="FoxPu2015",
-        marker="x", linestyle="none",
+        t_FP15[1:], s_FP15_Gs_278_OC[1:], "or", label="FoxPu2015",
     )
     plt.xlabel(r"Time, $t$ [$yr$]")
     plt.ylabel(r"Settlement, $s$ [$m$]")
@@ -522,18 +518,16 @@ def main():
 
     plt.subplot(2, 2, 3)
     plt.semilogx(
-        t_con_Gs_1_yr[1:], U_con_Gs_1[1:], "--k", label="Gs=1.0",
+        t_con_Gs_1_yr[1:], U_con_Gs_1[1:], "--b", label="Gs=1.0",
     )
     plt.semilogx(
-        t_con_Gs_278_yr[1:], U_con_Gs_278[1:], "-k", label="Gs=2.78",
+        t_con_Gs_278_yr[1:], U_con_Gs_278[1:], "-r", label="Gs=2.78",
     )
     plt.semilogx(
-        t_FP15[1:], U_FP15_Gs_1[1:], label="FoxPu2015",
-        marker="x", linestyle="none",
+        t_FP15[1:], U_FP15_Gs_1[1:], "xb", label="FoxPu2015",
     )
     plt.semilogx(
-        t_FP15[1:], U_FP15_Gs_278[1:],  # label="FoxPu2015",
-        marker="x", linestyle="none",
+        t_FP15[1:], U_FP15_Gs_278[1:], "or", label="FoxPu2015",
     )
     plt.xlabel(r"Time, $t$ [$yr$]")
     plt.ylabel(r"Average degree of consolidation, $U$")
@@ -543,18 +537,16 @@ def main():
 
     plt.subplot(2, 2, 4)
     plt.semilogx(
-        t_con_Gs_1_OC_yr[1:], U_con_Gs_1_OC[1:], "--k", label="Gs=1.0",
+        t_con_Gs_1_OC_yr[1:], U_con_Gs_1_OC[1:], "--b", label="Gs=1.0",
     )
     plt.semilogx(
-        t_con_Gs_278_OC_yr[1:], U_con_Gs_278_OC[1:], "-k", label="Gs=2.78",
+        t_con_Gs_278_OC_yr[1:], U_con_Gs_278_OC[1:], "-r", label="Gs=2.78",
     )
     plt.semilogx(
-        t_FP15[1:], U_FP15_Gs_1_OC[1:], label="FoxPu2015",
-        marker="x", linestyle="none",
+        t_FP15[1:], U_FP15_Gs_1_OC[1:], "xb", label="FoxPu2015",
     )
     plt.semilogx(
-        t_FP15[1:], U_FP15_Gs_278_OC[1:],  # label="FoxPu2015",
-        marker="x", linestyle="none",
+        t_FP15[1:], U_FP15_Gs_278_OC[1:], "or", label="FoxPu2015",
     )
     plt.xlabel(r"Time, $t$ [$yr$]")
     plt.ylabel(r"Average degree of consolidation, $U$")
@@ -565,14 +557,14 @@ def main():
     plt.savefig("examples/con_static_bench_settle.svg")
 
     # void ratio and normalized excess pore pressure profiles
-    fig = plt.figure(figsize=(8.0, 10.0))
+    fig = plt.figure(figsize=(6.7, 3.9))
 
     plt.subplot(2, 2, 1)
     plt.plot(
-        e_nod_Gs_1[:, 0], z_nod_Gs_1, "--k", label="Gs=1.0"
+        e_nod_Gs_1[:, 0], z_nod_Gs_1, "--b", label="Gs=1.0"
     )
     plt.plot(
-        e_nod_Gs_278[:, 0], z_nod_Gs_278, "-k", label="Gs=2.78"
+        e_nod_Gs_278[:, 0], z_nod_Gs_278, "-r", label="Gs=2.78"
     )
     plt.plot(
         e_FP15_Gs_1[:, 0], z_FP15, label="FoxPu2015",
@@ -585,8 +577,8 @@ def main():
     for kk, kk_plot in enumerate(k_plot):
         if not kk:
             continue
-        plt.plot(e_nod_Gs_1[:, kk_plot], z_nod_Gs_1, "--k")
-        plt.plot(e_nod_Gs_278[:, kk_plot], z_nod_Gs_278, "-k")
+        plt.plot(e_nod_Gs_1[:, kk_plot], z_nod_Gs_1, "--b")
+        plt.plot(e_nod_Gs_278[:, kk_plot], z_nod_Gs_278, "-r")
         plt.plot(
             e_nod_Gs_1[::6, kk_plot], z_nod_Gs_1[::6],
             label=k_plot_labels[kk],
@@ -614,10 +606,10 @@ def main():
 
     plt.subplot(2, 2, 3)
     plt.plot(
-        e_nod_Gs_1_OC[:, 0], z_nod_Gs_1_OC, "--k", label="Gs=1.0"
+        e_nod_Gs_1_OC[:, 0], z_nod_Gs_1_OC, "--b", label="Gs=1.0"
     )
     plt.plot(
-        e_nod_Gs_278_OC[:, 0], z_nod_Gs_278_OC, "-k", label="Gs=2.78"
+        e_nod_Gs_278_OC[:, 0], z_nod_Gs_278_OC, "-r", label="Gs=2.78"
     )
     plt.plot(
         e_FP15_Gs_1_OC[:, 0], z_FP15, label="FoxPu2015",
@@ -630,8 +622,8 @@ def main():
     for kk, kk_plot in enumerate(k_plot):
         if not kk:
             continue
-        plt.plot(e_nod_Gs_1_OC[:, kk_plot], z_nod_Gs_1_OC, "--k")
-        plt.plot(e_nod_Gs_278_OC[:, kk_plot], z_nod_Gs_278_OC, "-k")
+        plt.plot(e_nod_Gs_1_OC[:, kk_plot], z_nod_Gs_1_OC, "--b")
+        plt.plot(e_nod_Gs_278_OC[:, kk_plot], z_nod_Gs_278_OC, "-r")
         plt.plot(
             e_nod_Gs_1_OC[::6, kk_plot], z_nod_Gs_1_OC[::6],
             label=k_plot_labels[kk],
@@ -660,8 +652,8 @@ def main():
     for kk, kk_plot in enumerate(k_plot[:-1]):
         if not kk:
             continue
-        plt.plot(ue_norm_int_Gs_1[:, kk_plot], z_int_Gs_1, "--k")
-        plt.plot(ue_norm_int_Gs_278[:, kk_plot], z_int_Gs_278, "-k")
+        plt.plot(ue_norm_int_Gs_1[:, kk_plot], z_int_Gs_1, "--b")
+        plt.plot(ue_norm_int_Gs_278[:, kk_plot], z_int_Gs_278, "-r")
         plt.plot(
             ue_norm_int_Gs_1[::6, kk_plot], z_int_Gs_1[::6],
             label=k_plot_labels[kk],
@@ -690,8 +682,8 @@ def main():
     for kk, kk_plot in enumerate(k_plot[:-1]):
         if not kk:
             continue
-        plt.plot(ue_norm_int_Gs_1_OC[:, kk_plot], z_int_Gs_1_OC, "--k")
-        plt.plot(ue_norm_int_Gs_278_OC[:, kk_plot], z_int_Gs_278_OC, "-k")
+        plt.plot(ue_norm_int_Gs_1_OC[:, kk_plot], z_int_Gs_1_OC, "--b")
+        plt.plot(ue_norm_int_Gs_278_OC[:, kk_plot], z_int_Gs_278_OC, "-r")
         plt.plot(
             ue_norm_int_Gs_1_OC[::6, kk_plot], z_int_Gs_1_OC[::6],
             label=k_plot_labels[kk],
