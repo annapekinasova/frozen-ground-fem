@@ -112,9 +112,6 @@ class ThermalElement1D(Element1D):
         jac = self.jacobian
         for ip in self.int_pts:
             lat_heat = Lw * rho_i * ip.vol_water_cont_temp_gradient
-            # print(Lw)
-            # print(rho_i)
-            # print(ip.vol_water_cont_temp_gradient)
             N = self._shape_matrix(ip.local_coord)
             C += ip.weight * (ip.vol_heat_cap + lat_heat) * (N.T @ N)
         C *= jac
@@ -455,18 +452,12 @@ class ThermalAnalysis1D(Mesh1D):
     _heat_flux_vector_0: npt.NDArray[np.floating]
     _heat_flux_vector: npt.NDArray[np.floating]
     _heat_flow_matrix_0: npt.NDArray[np.floating]
-    # _heat_flow_matrix_0_csr: sps.csr_array
     _heat_flow_matrix: npt.NDArray[np.floating]
-    # _heat_flow_matrix_csr: sps.csr_array
     _heat_storage_matrix_0: npt.NDArray[np.floating]
-    # _heat_storage_matrix_0_csr: sps.csr_array
     _heat_storage_matrix: npt.NDArray[np.floating]
-    # _heat_storage_matrix_csr: sps.csr_array
     _weighted_heat_flux_vector: npt.NDArray[np.floating]
     _weighted_heat_flow_matrix: npt.NDArray[np.floating]
-    # _weighted_heat_flow_matrix_csr: sps.csr_array
     _weighted_heat_storage_matrix: npt.NDArray[np.floating]
-    # _weighted_heat_storage_matrix_csr: sps.csr_array
     _residual_heat_flux_vector: npt.NDArray[np.floating]
     _delta_temp_vector: npt.NDArray[np.floating]
     _temp_rate_vector: npt.NDArray[np.floating]
@@ -550,24 +541,6 @@ class ThermalAnalysis1D(Mesh1D):
         self._residual_heat_flux_vector = np.zeros(self.num_nodes)
         self._delta_temp_vector = np.zeros(self.num_nodes)
         self._temp_rate_vector = np.zeros(self.num_nodes)
-        # # initialize sparse matrices
-        # zeros, indices, indptr = self.initialize_sparse_matrix_struct()
-        # self._heat_flow_matrix_0_csr = sps.csr_array(
-        #     (zeros, indices, indptr))
-        # self._heat_flow_matrix_csr = sps.csr_array(
-        #     (zeros, indices, indptr))
-        # self._heat_storage_matrix_0_csr = sps.csr_array(
-        #     (zeros, indices, indptr))
-        # self._heat_storage_matrix_csr = sps.csr_array(
-        #     (zeros, indices, indptr))
-        # self._weighted_heat_flow_matrix_csr = sps.csr_array(
-        #     (zeros, indices, indptr))
-        # self._weighted_heat_storage_matrix_csr = sps.csr_array(
-        #     (zeros, indices, indptr))
-        # self._coef_matrix_0_csr = sps.csr_array(
-        #     (zeros, indices, indptr))
-        # self._coef_matrix_1_csr = sps.csr_array(
-        #     (zeros, indices, indptr))
 
     def add_boundary(self, new_boundary: ThermalBoundary1D) -> None:
         """Adds a boundary to the mesh.
@@ -670,17 +643,10 @@ class ThermalAnalysis1D(Mesh1D):
         respecting connectivity of global degrees of freedom.
         """
         self._heat_flow_matrix[:, :] = 0.0
-        # self._heat_flow_matrix_csr.data[:] = 0.0
-        # osqm1 = (self.elements[0].order + 1) ** 2 - 1
-        # imin = 0
-        # imax = osqm1 + 1
         for e in self.elements:
             ind = np.array([nd.index for nd in e.nodes], dtype=int)
             He = e.heat_flow_matrix
             self._heat_flow_matrix[np.ix_(ind, ind)] += He
-            # self._heat_flow_matrix_csr.data[imin:imax] += He.flatten()
-            # imin += osqm1
-            # imax += osqm1
 
     def update_heat_storage_matrix(self) -> None:
         """Updates the global heat storage matrix.
@@ -694,17 +660,10 @@ class ThermalAnalysis1D(Mesh1D):
         respecting connectivity of global degrees of freedom.
         """
         self._heat_storage_matrix[:, :] = 0.0
-        # self._heat_storage_matrix_csr.data[:] = 0.0
-        # osqm1 = (self.elements[0].order + 1) ** 2 - 1
-        # imin = 0
-        # imax = osqm1 + 1
         for e in self.elements:
             ind = np.array([nd.index for nd in e.nodes], dtype=int)
             Ce = e.heat_storage_matrix
             self._heat_storage_matrix[np.ix_(ind, ind)] += Ce
-            # self._heat_storage_matrix_csr.data[imin:imax] += Ce.flatten()
-            # imin += osqm1
-            # imax += osqm1
 
     def update_nodes(self) -> None:
         """Updates the temperature values at the nodes
@@ -722,35 +681,19 @@ class ThermalAnalysis1D(Mesh1D):
     def update_integration_points(self) -> None:
         for e in self.elements:
             e.update_integration_points()
-            # T0e = np.array([
-            #     self._temp_vector_0[nd.index]
-            #     for nd in e.nodes
-            # ])
-            # T1e = np.array([
-            #     self._temp_vector[nd.index]
-            #     for nd in e.nodes
-            # ])
+            T0e = np.array([
+                self._temp_vector_0[nd.index]
+                for nd in e.nodes
+            ])
             for ip in e.int_pts:
-                # N = e._shape_matrix(ip.local_coord)
-                # T0 = (N @ T0e)[0]
-                # T1 = ip.temp
-                # thw0 = ip.porosity - ip.vol_ice_cont_0
-                # thw1 = ip.porosity - ip.vol_ice_cont
-                # if np.abs(T1 - T0) > 0.0:
-                #     ip.vol_water_cont_temp_gradient = (thw1 - thw0) / (T1 - T0)
-                # else:
-                #     ip.vol_water_cont_temp_gradient = 0.0
-                ip.vol_water_cont_temp_gradient = 0.1 * ip.porosity
-                # print(
-                #     f"{ip.z: 0.4f}, {T0}, {T1}, {T1 - T0: 0.4f}, "
-                #     + f"{np.abs(T1 - T0) > 0.0: 0.4f}, "
-                #     + f"{thw0: 0.4f}, {thw1: 0.4f}, "
-                #     + f"{thw1 - thw0: 0.4f}, "
-                #     + f"{ip.vol_water_cont_temp_gradient: 0.4e}"
-                # )
-                # ip.vol_water_cont_temp_gradient = np.abs(
-                #     ip.porosity / (T1 - T0)
-                # ) if np.abs(T1 - T0) > 0.0 else 0.0
+                N = e._shape_matrix(ip.local_coord)
+                T0 = (N @ T0e)[0]
+                T1 = ip.temp
+                thw0 = ip.porosity - ip.vol_ice_cont_0
+                thw1 = ip.porosity - ip.vol_ice_cont
+                ip.vol_water_cont_temp_gradient = np.abs(
+                    (thw1 - thw0) / (T1 - T0)
+                ) if np.abs(T1 - T0) > 0.0 else 0.0
 
     def initialize_solution_variable_vectors(self) -> None:
         for nd in self.nodes:
@@ -787,11 +730,6 @@ class ThermalAnalysis1D(Mesh1D):
         )
 
     def update_global_matrices_and_vectors(self) -> None:
-        # for e in self.elements:
-        #     for ip in e.int_pts:
-        #         ip.vol_ice_cont_rate = (
-        #             ip.vol_ice_cont - ip.vol_ice_cont_0
-        #         ) / self.dt
         self.update_heat_flux_vector()
         self.update_heat_flow_matrix()
         self.update_heat_storage_matrix()
@@ -816,42 +754,18 @@ class ThermalAnalysis1D(Mesh1D):
             self.one_minus_alpha * self._heat_flow_matrix_0
             + self.alpha * self._heat_flow_matrix
         )
-        # self._weighted_heat_flow_matrix_csr.data[:] = (
-        #     self.one_minus_alpha * self._heat_flow_matrix_0_csr.data
-        #     + self.alpha * self._heat_flow_matrix_csr.data
-        # )
         self._weighted_heat_storage_matrix[:, :] = (
             self.one_minus_alpha * self._heat_storage_matrix_0
             + self.alpha * self._heat_storage_matrix
         )
-        # self._weighted_heat_storage_matrix_csr.data[:] = (
-        #     self.one_minus_alpha * self._heat_storage_matrix_0_csr.data
-        #     + self.alpha * self._heat_storage_matrix_csr.data
-        # )
-        # self._coef_matrix_0[:, :] = (
-        #     self._weighted_heat_storage_matrix * self.over_dt
-        #     - self.one_minus_alpha * self._weighted_heat_flow_matrix
-        # )
         self._coef_matrix_0[:, :] = (
             self.alpha * self.dt * np.linalg.solve(
                 self._heat_storage_matrix, self._heat_flow_matrix
             )
         )
-        # self._coef_matrix_0_csr.data[:] = (
-        #     self._weighted_heat_storage_matrix_csr.data * self.over_dt
-        #     - self.one_minus_alpha * self._weighted_heat_flow_matrix_csr.data
-        # )
-        # self._coef_matrix_1[:, :] = (
-        #     self._weighted_heat_storage_matrix * self.over_dt
-        #     + self.alpha * self._weighted_heat_flow_matrix
-        # )
         self._coef_matrix_1[:, :] = (
             np.eye(self.num_nodes) + self._coef_matrix_0
         )
-        # self._coef_matrix_1_csr.data[:] = (
-        #     self._weighted_heat_storage_matrix_csr.data * self.over_dt
-        #     + self.alpha * self._weighted_heat_flow_matrix_csr.data
-        # )
 
     def calculate_solution_vector_correction(self) -> None:
         """Performs a single iteration of temperature correction
@@ -870,12 +784,6 @@ class ThermalAnalysis1D(Mesh1D):
         # first update the global weighted matrices
         # (ensures coef_matrix_0 and coef_matrix_1)
         ThermalAnalysis1D.update_weighted_matrices(self)
-        # update residual vector
-        # self._residual_heat_flux_vector[:] = (
-        #     self._coef_matrix_0 @ self._temp_vector_0
-        #     - self._coef_matrix_1 @ self._temp_vector
-        #     - self._weighted_heat_flux_vector
-        # )
         self._residual_heat_flux_vector[:] = (
             self.one_minus_alpha * self.dt * np.linalg.solve(
                 self._heat_storage_matrix_0,
@@ -889,20 +797,11 @@ class ThermalAnalysis1D(Mesh1D):
             )
             - (self._temp_vector[:] - self._temp_vector_0[:])
         )
-        # self._residual_heat_flux_vector[:] = (
-        #     self._coef_matrix_0_csr @ self._temp_vector_0
-        #     - self._coef_matrix_1_csr @ self._temp_vector
-        #     - self._weighted_heat_flux_vector
-        # )
         # calculate temperature increment
         self._delta_temp_vector[self._free_vec] = np.linalg.solve(
             self._coef_matrix_1[self._free_arr],
             self._residual_heat_flux_vector[self._free_vec],
         )
-        # self._delta_temp_vector[self._free_vec] = sps.linalg.spsolve(
-        #     self._coef_matrix_1_csr[self._free_arr],
-        #     self._residual_heat_flux_vector[self._free_vec],
-        # )
         # increment temperature and iteration variables
         self._temp_vector[self._free_vec] += (
             self._delta_temp_vector[self._free_vec]
@@ -986,9 +885,6 @@ class ThermalAnalysis1D(Mesh1D):
         dt_list = []
         err_list = []
         done = False
-        # dthw_max = 0.0
-        # Sw_min = 1.0
-        # Sw_max = 0.0
         while not done and self._t1 < tf:
             # check if time step passes tf
             dt00 = self.time_step
@@ -1048,21 +944,4 @@ class ThermalAnalysis1D(Mesh1D):
             self.time_step = dt1
             dt_list.append(dt0)
             err_list.append(eps_a)
-            # print(self._temp_vector_0)
-            # print(self._temp_vector)
-            # print(self._temp_vector - self._temp_vector_0)
-        #     for e in self.elements:
-        #         for ip in e.int_pts:
-        #             dthw = ip.vol_ice_cont - ip.vol_ice_cont_0
-        #             if np.abs(dthw) > dthw_max:
-        #                 dthw_max = np.abs(dthw)
-        #             if ip.vol_ice_cont < Sw_min:
-        #                 Sw_min = ip.vol_ice_cont
-        #             if ip.vol_ice_cont > Sw_max:
-        #                 Sw_max = ip.vol_ice_cont
-        # thi = [ip.vol_ice_cont for e in self.elements for ip in e.int_pts]
-        # print(dthw_max)
-        # print(Sw_min)
-        # print(Sw_max)
-        # print(thi)
         return dt00, np.array(dt_list), np.array(err_list)
