@@ -499,7 +499,7 @@ def main():
     # e_nod_Gs_278_OC, ue_norm_int_Gs_278_OC]))
 
     # settlement and average degree of consolidation
-    plt.figure(figsize=(10.1, 5.9))
+    plt.figure(figsize=(8.1, 4.7))
 
     plt.subplot(2, 2, 1)
     plt.semilogx(
@@ -516,12 +516,12 @@ def main():
         t_FP15[1:], s_FP15_Gs_278[1:], "or", label="Gs=2.78 [FP15]",
         markeredgecolor="red",
     )
-    plt.xlabel(r"Time, $t$ [$yr$]")
+    # plt.xlabel(r"Time, $t$ [$yr$]")
     plt.ylabel(r"Settlement, $s$ [$m$]")
     plt.xlim([0.01, 100])
     plt.ylim([3.0, 0.0])
     plt.title("Normally consolidated")
-    plt.legend()
+    # plt.legend()
 
     plt.subplot(2, 2, 2)
     plt.semilogx(
@@ -538,10 +538,10 @@ def main():
         t_FP15[1:], s_FP15_Gs_278_OC[1:], "or", label="Gs=2.78 [FP15]",
         markeredgecolor="red",
     )
-    plt.xlabel(r"Time, $t$ [$yr$]")
-    plt.ylabel(r"Settlement, $s$ [$m$]")
+    # plt.xlabel(r"Time, $t$ [$yr$]")
+    # plt.ylabel(r"Settlement, $s$ [$m$]")
     plt.xlim([0.01, 100])
-    plt.ylim([1.5, 0.0])
+    plt.ylim([3.0, 0.0])
     plt.title("Overconsolidated")
     plt.legend()
 
@@ -564,7 +564,7 @@ def main():
     plt.ylabel(r"Average degree of consolidation, $U$")
     plt.xlim([0.01, 100])
     plt.ylim([0.0, 1.0])
-    plt.legend()
+    # plt.legend()
 
     plt.subplot(2, 2, 4)
     plt.semilogx(
@@ -582,30 +582,30 @@ def main():
         markeredgecolor="red",
     )
     plt.xlabel(r"Time, $t$ [$yr$]")
-    plt.ylabel(r"Average degree of consolidation, $U$")
+    # plt.ylabel(r"Average degree of consolidation, $U$")
     plt.xlim([0.01, 100])
     plt.ylim([0.0, 1.0])
-    plt.legend()
+    # plt.legend()
 
     plt.savefig("examples/con_static_bench_settle.svg")
 
     # void ratio and normalized excess pore pressure profiles
-    fig = plt.figure(figsize=(6.7, 3.9))
+    plt.figure(figsize=(8.1, 4.7))
 
     plt.subplot(2, 2, 1)
     plt.plot(
-        e_nod_Gs_1[:, 0], z_nod_Gs_1, "--b", label="Gs=1.0"
+        e_nod_Gs_1[:, 0], z_nod_Gs_1, "--b"
     )
     plt.plot(
-        e_FP15_Gs_1[:, 0], z_FP15, label="Gs=1.0 [FP15]",
+        e_FP15_Gs_1[:, 0], z_FP15,
         marker="x", linestyle="none",
         markeredgecolor="blue",
     )
     plt.plot(
-        e_nod_Gs_278[:, 0], z_nod_Gs_278, "-r", label="Gs=2.78"
+        e_nod_Gs_278[:, 0], z_nod_Gs_278, "-r"
     )
     plt.plot(
-        e_FP15_Gs_278[:, 0], z_FP15, label="Gs=2.78 [FP15]",
+        e_FP15_Gs_278[:, 0], z_FP15,
         marker="x", linestyle="none",
         markeredgecolor="red",
     )
@@ -616,7 +616,6 @@ def main():
         plt.plot(e_nod_Gs_278[:, kk_plot], z_nod_Gs_278, "-r")
         plt.plot(
             e_nod_Gs_1[::6, kk_plot], z_nod_Gs_1[::6],
-            label=k_plot_labels[kk],
             marker=k_plot_lts[kk],
             linestyle="none",
             markeredgecolor="blue",
@@ -637,21 +636,22 @@ def main():
             marker="x", linestyle="none",
             markeredgecolor="red",
         )
-    plt.xlabel(r"Void Ratio, $e$")
+    # plt.xlabel(r"Void Ratio, $e$")
     plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
     plt.ylim((11, -1))
-    plt.xlim((1.5, 3.0))
+    plt.xlim((1.5, 2.8))
+    plt.title(r"$\bf{Top:}$ NC, $\bf{Bottom:}$ OC")
 
     plt.subplot(2, 2, 3)
-    plt.plot(e_nod_Gs_1_OC[:, 0], z_nod_Gs_1_OC, "--b")
+    plt.plot(e_nod_Gs_1_OC[:, 0], z_nod_Gs_1_OC, "--b", label="Gs=1.0")
     plt.plot(
-        e_FP15_Gs_1_OC[:, 0], z_FP15,
+        e_FP15_Gs_1_OC[:, 0], z_FP15, label="Gs=1.0 [FP15]",
         marker="x", linestyle="none",
         markeredgecolor="blue",
     )
-    plt.plot(e_nod_Gs_278_OC[:, 0], z_nod_Gs_278_OC, "-r")
+    plt.plot(e_nod_Gs_278_OC[:, 0], z_nod_Gs_278_OC, "-r", label="Gs=2.78")
     plt.plot(
-        e_FP15_Gs_278_OC[:, 0], z_FP15,
+        e_FP15_Gs_278_OC[:, 0], z_FP15, label="Gs=2.78 [FP15]",
         marker="x", linestyle="none",
         markeredgecolor="red",
     )
@@ -662,6 +662,7 @@ def main():
         plt.plot(e_nod_Gs_278_OC[:, kk_plot], z_nod_Gs_278_OC, "-r")
         plt.plot(
             e_nod_Gs_1_OC[::6, kk_plot], z_nod_Gs_1_OC[::6],
+            label=k_plot_labels[kk],
             marker=k_plot_lts[kk],
             linestyle="none",
             markeredgecolor="blue",
@@ -685,7 +686,8 @@ def main():
     plt.xlabel(r"Void Ratio, $e$")
     plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
     plt.ylim((11, -1))
-    plt.xlim((1.5, 2.2))
+    plt.xlim((1.5, 2.8))
+    plt.legend()
 
     plt.subplot(2, 2, 2)
     for kk, kk_plot in enumerate(k_plot[:-1]):
@@ -715,10 +717,11 @@ def main():
             marker="x", linestyle="none",
             markeredgecolor="red",
         )
-    plt.xlabel(r"Normalized excess pore pressure, $u_e/\Delta q$")
-    plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
+    # plt.xlabel(r"Normalized excess pore pressure, $u_e/\Delta q$")
+    # plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
     plt.ylim((11, -1))
     plt.xlim((-0.1, 1.1))
+    plt.title(r"$\bf{Top:}$ NC, $\bf{Bottom:}$ OC")
 
     plt.subplot(2, 2, 4)
     for kk, kk_plot in enumerate(k_plot[:-1]):
@@ -749,10 +752,10 @@ def main():
             markeredgecolor="red",
         )
     plt.xlabel(r"Normalized excess pore pressure, $u_e/\Delta q$")
-    plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
+    # plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
     plt.ylim((11, -1))
     plt.xlim((-0.1, 1.1))
-    fig.legend()
+    # fig.legend()
 
     plt.savefig("examples/con_static_bench_profiles.svg")
 
