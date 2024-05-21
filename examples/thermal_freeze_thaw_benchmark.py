@@ -563,7 +563,7 @@ def main():
              markerfacecolor="none")
     plt.plot(T_freeze[2, :], z_nod, "^b", label="100 days",
              markerfacecolor="none")
-    plt.ylim((2.0, 0.0))
+    plt.ylim((6.0, 0.0))
     plt.legend()
     plt.xlabel("temperature, T [deg C]")
     plt.ylabel("depth, z [m]")
@@ -579,7 +579,7 @@ def main():
              markerfacecolor="none")
     plt.plot(T_thaw[2, :], z_nod, "^r", label="100 days",
              markerfacecolor="none")
-    plt.ylim((2.0, 0.0))
+    plt.ylim((6.0, 0.0))
     plt.legend()
     plt.xlabel("temperature, T [deg C]")
     plt.ylabel("depth, z [m]")
