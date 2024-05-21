@@ -46,24 +46,22 @@ class TestThermalElement1DLinear(unittest.TestCase):
         )
         self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix, expected))
 
-    def test_heat_flow_matrix_conduction_advection(self):
+    def test_heat_flux_vector_advection(self):
         m = Material(thrm_cond_solids=3.0)
         for ip in self.thrm_e.int_pts:
             ip.material = m
             ip.void_ratio = 0.35
             ip.void_ratio_0 = 0.3
-            ip.deg_sat_water = 0.8
-            ip.deg_sat_water_temp_gradient = 1.5e-2
             ip.water_flux_rate = -1.5e-8
+            ip.temp_gradient = 0.5
         e_fact = 1.30 / 1.35
-        lam = 2.0875447196636
         qw = -1.5e-8
+        dTdZ = 0.5
         jac = 2.0
         expected = (
-            lam / jac * np.array([[1.0, -1.0], [-1.0, 1.0]]) * e_fact ** 2
-            + qw * Cw * e_fact * np.array([[-0.5, 0.5], [-0.5, 0.5]])
+            - qw * Cw * dTdZ * e_fact * np.array([0.5, 0.5]) * jac
         )
-        self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix, expected))
+        self.assertTrue(np.allclose(self.thrm_e.heat_flux_vector, expected))
 
     def test_heat_storage_matrix_uninitialized(self):
         self.assertTrue(
@@ -95,10 +93,9 @@ class TestThermalElement1DLinear(unittest.TestCase):
             ip.void_ratio = 0.35
             ip.void_ratio_0 = 0.3
             ip.deg_sat_water = 0.8
-            ip.deg_sat_water_temp_gradient = 1.5e-2
-            ip.water_flux_rate = -1.5e-8
+            ip.vol_water_cont_temp_gradient = 2.5e-2
         heat_cap = 2.42402962962963e6
-        lat_heat = 1.18039638888889e6
+        lat_heat = 7.588262500e6
         jac = 2.0
         expected = (
             (heat_cap + lat_heat) * jac * np.array([[2.0, 1.0], [1.0, 2.0]])
@@ -169,7 +166,7 @@ class TestThermalElement1DLinear(unittest.TestCase):
         )
         self.assertAlmostEqual(
             self.thrm_e.int_pts[0].deg_sat_water_temp_gradient,
-            0.219419354111454,
+            0.0,
         )
         self.assertAlmostEqual(
             self.thrm_e.int_pts[1].deg_sat_water_temp_gradient,
@@ -223,35 +220,22 @@ class TestThermalElement1DCubic(unittest.TestCase):
         ) * e_fact ** 2
         self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix, expected))
 
-    def test_heat_flow_matrix_conduction_advection(self):
+    def test_heat_flux_vector_advection(self):
         m = Material(thrm_cond_solids=3.0)
         for ip in self.thrm_e.int_pts:
             ip.material = m
             ip.void_ratio = 0.35
             ip.void_ratio_0 = 0.3
-            ip.deg_sat_water = 0.8
             ip.water_flux_rate = -1.5e-8
-        lam = 2.0875447196636
+            ip.temp_gradient = 0.5
         jac = 6.0
         e_fact = 1.30 / 1.35
         qw = -1.5e-8
-        expected = (1/40) * lam / jac * np.array(
-            [
-                [148, -189, 54, -13],
-                [-189, 432, -297, 54],
-                [54, -297, 432, -189],
-                [-13, 54, -189, 148],
-            ]
-        ) * e_fact ** 2
-        expected += (1/1680) * qw * Cw * np.array(
-            [
-                [-840, 1197, -504, 147],
-                [-1197, 0, 1701, -504],
-                [504, -1701, 0, 1197],
-                [-147, 504, -1197, 840],
-            ]
+        dTdZ = 0.5
+        expected = -qw * Cw * dTdZ * jac * np.array(
+            [0.125, 0.375, 0.375, 0.125]
         ) * e_fact
-        self.assertTrue(np.allclose(self.thrm_e.heat_flow_matrix, expected))
+        self.assertTrue(np.allclose(self.thrm_e.heat_flux_vector, expected))
 
     def test_heat_storage_matrix_uninitialized(self):
         self.assertTrue(
@@ -289,10 +273,9 @@ class TestThermalElement1DCubic(unittest.TestCase):
             ip.void_ratio = 0.35
             ip.void_ratio_0 = 0.3
             ip.deg_sat_water = 0.8
-            ip.deg_sat_water_temp_gradient = 1.5e-2
-            ip.water_flux_rate = -1.5e-8
+            ip.vol_water_cont_temp_gradient = 2.5e-2
         heat_cap = 2.42402962962963e6
-        lat_heat = 1.18039638888889e6
+        lat_heat = 7.588262500e6
         jac = 6.0
         expected = (1/1680) * (heat_cap + lat_heat) * jac * np.array(
             [
@@ -437,8 +420,8 @@ class TestThermalElement1DCubic(unittest.TestCase):
             1.00000000000000,
         ])
         expected_dSw_dT = np.array([
-            0.0539532190585967,
-            0.1674525178303510,
+            0.00000000000000,
+            0.00000000000000,
             0.00000000000000,
             0.00000000000000,
             0.00000000000000,
