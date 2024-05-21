@@ -17,7 +17,6 @@ def main():
     ta.z_min = 0.0
     ta.z_max = 50.0
     ta.generate_mesh(num_elements=20)
-    # ta.implicit_error_tolerance = 1e-4
 
     # define plotting time increments
     s_per_day = 8.64e4
