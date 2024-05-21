@@ -138,7 +138,7 @@ class ThermalElement1D(Element1D):
             qw = ip.water_flux_rate
             dTdZ = ip.temp_gradient
             N = self._shape_matrix(ip.local_coord).flatten()
-            Q += N * (
+            Q -= N * (
                 e_fact * qw * Cw * dTdZ
             ) * ip.weight
         Q *= jac
@@ -170,7 +170,6 @@ class ThermalElement1D(Element1D):
             ip.temp_gradient = dTdZ
             ip.temp_rate = dTdt
             ip.deg_sat_water = Sw
-            # ip.deg_sat_water_temp_gradient = dSw_dT
             if update_water_flux:
                 ip.update_water_flux_rate()
         for iipp in self._int_pts_deformed:
@@ -623,11 +622,11 @@ class ThermalAnalysis1D(Mesh1D):
             self._heat_flux_vector[np.ix_(ind)] += Qe
         for be in self.boundaries:
             if be.bnd_type == ThermalBoundary1D.BoundaryType.heat_flux:
-                self._heat_flux_vector[be.nodes[0].index] += be.bnd_value
+                self._heat_flux_vector[be.nodes[0].index] -= be.bnd_value
             elif be.bnd_type == ThermalBoundary1D.BoundaryType.temp_grad:
                 if not be.int_pts:
                     raise AttributeError(f"boundary {be} has no int_pts")
-                self._heat_flux_vector[be.nodes[0].index] += (
+                self._heat_flux_vector[be.nodes[0].index] -= (
                     -be.int_pts[0].thrm_cond * be.bnd_value
                 )
 
