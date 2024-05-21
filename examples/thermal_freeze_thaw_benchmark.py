@@ -20,8 +20,8 @@ def main():
     ta = ThermalAnalysis1D()
     ta.z_min = 0.0
     ta.z_max = 10.0
-    ta.generate_mesh(num_elements=200, order=1)
-    ta.implicit_error_tolerance = 1e-4
+    ta.generate_mesh(num_elements=25, order=3)
+    # ta.implicit_error_tolerance = 1e-4
 
     # znod0 = np.linspace(0.0, 1.0, 101)
     # znod1 = np.linspace(1.0, 10.0, 181)[1:]
@@ -381,7 +381,7 @@ def main():
              markerfacecolor="none")
     plt.plot(t_plot / s_per_day, Zt_thaw, "sr", label="thawing",
              markerfacecolor="none")
-    plt.ylim((1.75, 0.0))
+    plt.ylim((4.0, 0.0))
     plt.legend()
     plt.xlabel("time, t [days]")
     plt.ylabel("freeze/thaw depth, Z [m]")
