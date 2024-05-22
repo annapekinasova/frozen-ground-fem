@@ -674,9 +674,9 @@ class TestUpdateBoundaries(unittest.TestCase):
                                           self.msh._heat_flux_vector_0)):
             self.assertEqual(fx0, 0.0)
             if k == 5:
-                self.assertAlmostEqual(fx, self.fixed_flux)
+                self.assertAlmostEqual(fx, -self.fixed_flux)
             elif k == self.msh.num_nodes - 1:
-                self.assertAlmostEqual(fx, self.flux_geotherm)
+                self.assertAlmostEqual(fx, -self.flux_geotherm)
             else:
                 self.assertEqual(fx, 0.0)
         self.msh.update_boundary_conditions(t)
@@ -685,9 +685,9 @@ class TestUpdateBoundaries(unittest.TestCase):
                                           self.msh._heat_flux_vector_0)):
             self.assertEqual(fx0, 0.0)
             if k == 5:
-                self.assertAlmostEqual(fx, self.fixed_flux)
+                self.assertAlmostEqual(fx, -self.fixed_flux)
             elif k == self.msh.num_nodes - 1:
-                self.assertAlmostEqual(fx, self.flux_geotherm)
+                self.assertAlmostEqual(fx, -self.flux_geotherm)
             else:
                 self.assertEqual(fx, 0.0)
 
@@ -720,13 +720,12 @@ class TestUpdateGlobalMatricesLinearConstant(unittest.TestCase):
 
     def test_update_heat_flow_matrix(self):
         expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-        k00 = 0.2239397572692170
-        k11 = 0.1632153128247730
-        d0 = np.ones((self.msh.num_nodes,)) * (k00 + k11)
+        k00 = 0.1935775350469950
+        d0 = 2 * np.ones((self.msh.num_nodes,)) * k00
         d0[0] = k00
-        d0[-1] = k11
+        d0[-1] = k00
         dp1 = -np.ones((self.msh.num_nodes - 1,)) * k00
-        dm1 = -np.ones((self.msh.num_nodes - 1,)) * k11
+        dm1 = -np.ones((self.msh.num_nodes - 1,)) * k00
         expected1 = np.diag(d0) + np.diag(dm1, -1) + np.diag(dp1, 1)
         self.msh.update_heat_flow_matrix()
         self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected0))
@@ -859,23 +858,25 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
         self.assertTrue(np.allclose(actual_deg_sat_water_int_pts,
                                     expected_deg_sat_water_int_pts))
 
-    def test_deg_sat_water_temp_grad_distribution(self):
-        expected_deg_sat_water_temp_grad_int_pts = np.array([
-            0.000000000000000,
-            0.000000000000001,
-            1.810113168088841,
-            0.100397364897923,
-            0.051013678629442,
-            0.029567794445951,
-            0.006250998062539,
-            0.001419738751606,
+    def test_vol_water_cont_temp_gradient(self):
+        expected_vol_water_cont_temp_gradient_int_pts = np.array([
+            0.00000000000000000,
+            0.00000000000000000,
+            1.96985868037600000,
+            0.37676651903183400,
+            0.24895666952857000,
+            0.17754007257781200,
+            0.06672422855669150,
+            0.02583496685516250,
         ])
-        actual_deg_sat_water_temp_grad_int_pts = np.array([
-            ip.deg_sat_water_temp_gradient
+        actual_vol_water_cont_temp_gradient_int_pts = np.array([
+            ip.vol_water_cont_temp_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_deg_sat_water_temp_grad_int_pts,
-                                    expected_deg_sat_water_temp_grad_int_pts))
+        self.assertTrue(np.allclose(
+            actual_vol_water_cont_temp_gradient_int_pts,
+            expected_vol_water_cont_temp_gradient_int_pts,
+        ))
 
     def test_water_flux_distribution(self):
         expected_water_flux_int_pts = np.array([
@@ -919,14 +920,14 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
         expected_H = np.array([
             [0.0721139528911510, -0.0721139528911510, 0.0000000000000000,
                 0.0000000000000000, 0.0000000000000000],
-            [-0.0721139528911510, 0.1675501246312030, -0.0954361717400518,
+            [-0.0721139528911510, 0.1675420790767840, -0.0954281261856329,
                 0.0000000000000000, 0.0000000000000000],
-            [0.0000000000000000, -0.0954251477242246, 0.1953877970346430,
-             -0.0999626493104180, 0.0000000000000000],
-            [0.0000000000000000, 0.0000000000000000, -0.0999646994863613,
-                0.2016437545597640, -0.1016790550734020],
-            [0.0000000000000000, 0.0000000000000000, 0.0000000000000000,
-             -0.1016790554918020, 0.1016790554918020],
+            [0.0000000000000000, -0.0954281261856329, 0.1953921854661540, -
+                0.0999640592805206, 0.0000000000000000],
+            [0.0000000000000000, 0.0000000000000000, -0.0999640592805206,
+                0.2016431146839040, -0.1016790554033840],
+            [0.0000000000000000, 0.0000000000000000, 0.0000000000000000, -
+                0.1016790554033840, 0.1016790554033840],
         ])
         self.assertTrue(np.allclose(
             expected_H, self.msh._heat_flow_matrix,
@@ -936,14 +937,14 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
         expected_C = np.array([
             [2.12040123456790E+07, 1.06020061728395E+07, 0.00000000000000E+00,
                 0.00000000000000E+00, 0.00000000000000E+00],
-            [1.06020061728395E+07, 1.15082401284593E+09, 3.21846886402014E+08,
+            [1.06020061728395E+07, 4.75157069027845E+09, 1.49253092352162E+09,
                 0.00000000000000E+00, 0.00000000000000E+00],
-            [0.00000000000000E+00, 3.21846886402014E+08, 2.06909317632500E+08,
-                2.15090157481671E+07, 0.00000000000000E+00],
-            [0.00000000000000E+00, 0.00000000000000E+00, 2.15090157481671E+07,
-                5.71758161659235E+07, 9.43574147951588E+06],
+            [0.00000000000000E+00, 1.49253092352162E+09, 1.87400276780934E+09,
+                2.77995607535567E+08, 0.00000000000000E+00],
+            [0.00000000000000E+00, 0.00000000000000E+00, 2.77995607535567E+08,
+                6.55976597222048E+08, 6.67084599390764E+07],
             [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
-                9.43574147951588E+06, 1.74614402201079E+07],
+                6.67084599390764E+07, 8.85939210208664E+07],
         ])
         self.assertTrue(np.allclose(
             expected_C, self.msh._heat_storage_matrix,
