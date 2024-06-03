@@ -859,7 +859,7 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
         self.assertTrue(np.allclose(actual_deg_sat_water_int_pts,
                                     expected_deg_sat_water_int_pts))
 
-    def test_vol_water_cont_temp_gradient(self):
+    def test_vol_water_cont_temp_gradient_distribution(self):
         expected_vol_water_cont_temp_gradient_int_pts = np.array([
             0.00000000000000000,
             0.00000000000000000,
@@ -1484,8 +1484,8 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_temperature_gradient_distribution(self):
         expected_temp_gradient_int_pts = np.array([
-            0.004,
-            0.004,
+            0.0040000,
+            0.0040000,
             -0.0360000,
             -0.0360000,
             -0.0280000,
@@ -1518,20 +1518,19 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_vol_water_cont_temp_gradient_distribution(self):
         expected_vol_water_cont_temp_gradient_int_pts = np.array([
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
+            0.000000000000000,
+            0.000000000000000,
+            0.000000000000000,
+            0.000000000000000,
+            0.000000000000000,
+            0.000000000000000,
+            0.000000000000000,
+            0.000000000000000,
         ])
         actual_vol_water_cont_temp_gradient_int_pts = np.array([
             ip.vol_water_cont_temp_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        print(actual_vol_water_cont_temp_gradient_int_pts)
         self.assertTrue(np.allclose(
             actual_vol_water_cont_temp_gradient_int_pts,
             expected_vol_water_cont_temp_gradient_int_pts,
