@@ -454,9 +454,9 @@ class ThermalAnalysis1D(Mesh1D):
     _heat_flow_matrix: npt.NDArray[np.floating]
     _heat_storage_matrix_0: npt.NDArray[np.floating]
     _heat_storage_matrix: npt.NDArray[np.floating]
-    _weighted_heat_flux_vector: npt.NDArray[np.floating]
-    _weighted_heat_flow_matrix: npt.NDArray[np.floating]
-    _weighted_heat_storage_matrix: npt.NDArray[np.floating]
+    # _weighted_heat_flux_vector: npt.NDArray[np.floating]
+    # _weighted_heat_flow_matrix: npt.NDArray[np.floating]
+    # _weighted_heat_storage_matrix: npt.NDArray[np.floating]
     _residual_heat_flux_vector: npt.NDArray[np.floating]
     _delta_temp_vector: npt.NDArray[np.floating]
     _temp_rate_vector: npt.NDArray[np.floating]
@@ -528,11 +528,11 @@ class ThermalAnalysis1D(Mesh1D):
         )
         self._heat_storage_matrix = np.zeros(
             (self.num_nodes, self.num_nodes))
-        self._weighted_heat_flux_vector = np.zeros(self.num_nodes)
-        self._weighted_heat_flow_matrix = np.zeros(
-            (self.num_nodes, self.num_nodes))
-        self._weighted_heat_storage_matrix = np.zeros(
-            (self.num_nodes, self.num_nodes))
+        # self._weighted_heat_flux_vector = np.zeros(self.num_nodes)
+        # self._weighted_heat_flow_matrix = np.zeros(
+        #     (self.num_nodes, self.num_nodes))
+        # self._weighted_heat_storage_matrix = np.zeros(
+        #     (self.num_nodes, self.num_nodes))
         self._coef_matrix_0 = np.zeros(
             (self.num_nodes, self.num_nodes))
         self._coef_matrix_1 = np.zeros(
@@ -723,10 +723,10 @@ class ThermalAnalysis1D(Mesh1D):
 
     def update_boundary_vectors(self) -> None:
         self.update_heat_flux_vector()
-        self._weighted_heat_flux_vector[:] = (
-            self.one_minus_alpha * self._heat_flux_vector_0
-            + self.alpha * self._heat_flux_vector
-        )
+        # self._weighted_heat_flux_vector[:] = (
+        #     self.one_minus_alpha * self._heat_flux_vector_0
+        #     + self.alpha * self._heat_flux_vector
+        # )
 
     def update_global_matrices_and_vectors(self) -> None:
         self.update_heat_flux_vector()
@@ -745,18 +745,18 @@ class ThermalAnalysis1D(Mesh1D):
         and coefficient matrices
         using the implicit_factor property.
         """
-        self._weighted_heat_flux_vector[:] = (
-            self.one_minus_alpha * self._heat_flux_vector_0
-            + self.alpha * self._heat_flux_vector
-        )
-        self._weighted_heat_flow_matrix[:, :] = (
-            self.one_minus_alpha * self._heat_flow_matrix_0
-            + self.alpha * self._heat_flow_matrix
-        )
-        self._weighted_heat_storage_matrix[:, :] = (
-            self.one_minus_alpha * self._heat_storage_matrix_0
-            + self.alpha * self._heat_storage_matrix
-        )
+        # self._weighted_heat_flux_vector[:] = (
+        #     self.one_minus_alpha * self._heat_flux_vector_0
+        #     + self.alpha * self._heat_flux_vector
+        # )
+        # self._weighted_heat_flow_matrix[:, :] = (
+        #     self.one_minus_alpha * self._heat_flow_matrix_0
+        #     + self.alpha * self._heat_flow_matrix
+        # )
+        # self._weighted_heat_storage_matrix[:, :] = (
+        #     self.one_minus_alpha * self._heat_storage_matrix_0
+        #     + self.alpha * self._heat_storage_matrix
+        # )
         self._coef_matrix_0[:, :] = (
             self.alpha * self.dt * np.linalg.solve(
                 self._heat_storage_matrix, self._heat_flow_matrix
