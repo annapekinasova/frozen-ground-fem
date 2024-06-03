@@ -393,17 +393,12 @@ class TestThermalAnalysis1DLinearMeshGen(unittest.TestCase):
         self.assertEqual(self.msh._temp_vector.shape, (nnod,))
         self.assertEqual(self.msh._heat_flux_vector_0.shape, (nnod,))
         self.assertEqual(self.msh._heat_flux_vector.shape, (nnod,))
-        self.assertEqual(self.msh._weighted_heat_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._residual_heat_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._delta_temp_vector.shape, (nnod,))
         self.assertEqual(self.msh._heat_flow_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_flow_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_heat_flow_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_heat_storage_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
         with self.assertRaises(AttributeError):
@@ -427,17 +422,12 @@ class TestThermalAnalysis1DLinearMeshGen(unittest.TestCase):
         self.assertEqual(self.msh._temp_vector.shape, (nnod,))
         self.assertEqual(self.msh._heat_flux_vector_0.shape, (nnod,))
         self.assertEqual(self.msh._heat_flux_vector.shape, (nnod,))
-        self.assertEqual(self.msh._weighted_heat_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._residual_heat_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._delta_temp_vector.shape, (nnod,))
         self.assertEqual(self.msh._heat_flow_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_flow_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_heat_flow_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_heat_storage_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
         with self.assertRaises(AttributeError):
@@ -466,17 +456,12 @@ class TestThermalAnalysis1DCubicMeshGen(unittest.TestCase):
         self.assertEqual(self.msh._temp_vector.shape, (nnod,))
         self.assertEqual(self.msh._heat_flux_vector_0.shape, (nnod,))
         self.assertEqual(self.msh._heat_flux_vector.shape, (nnod,))
-        self.assertEqual(self.msh._weighted_heat_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._residual_heat_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._delta_temp_vector.shape, (nnod,))
         self.assertEqual(self.msh._heat_flow_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_flow_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_heat_flow_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_heat_storage_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
         with self.assertRaises(AttributeError):
@@ -498,17 +483,12 @@ class TestThermalAnalysis1DCubicMeshGen(unittest.TestCase):
         self.assertEqual(self.msh._temp_vector.shape, (nnod,))
         self.assertEqual(self.msh._heat_flux_vector_0.shape, (nnod,))
         self.assertEqual(self.msh._heat_flux_vector.shape, (nnod,))
-        self.assertEqual(self.msh._weighted_heat_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._residual_heat_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._delta_temp_vector.shape, (nnod,))
         self.assertEqual(self.msh._heat_flow_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_flow_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_heat_flow_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_heat_storage_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
         with self.assertRaises(AttributeError):
@@ -707,6 +687,7 @@ class TestUpdateGlobalMatricesLinearConstant(unittest.TestCase):
                 ip.void_ratio = 0.35
                 ip.void_ratio_0 = 0.3
                 ip.water_flux_rate = -1.5e-8
+                ip.temp_gradient = 0.003
 
     def test_initial_heat_flow_matrix(self):
         expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
@@ -717,6 +698,11 @@ class TestUpdateGlobalMatricesLinearConstant(unittest.TestCase):
         expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
         self.assertTrue(np.allclose(self.msh._heat_storage_matrix_0, expected))
         self.assertTrue(np.allclose(self.msh._heat_storage_matrix, expected))
+
+    def test_initial_heat_flux_vector(self):
+        expected = np.zeros(self.msh.num_nodes)
+        self.assertTrue(np.allclose(self.msh._heat_flux_vector_0, expected))
+        self.assertTrue(np.allclose(self.msh._heat_flux_vector, expected))
 
     def test_update_heat_flow_matrix(self):
         expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
@@ -744,6 +730,20 @@ class TestUpdateGlobalMatricesLinearConstant(unittest.TestCase):
             self.msh._heat_storage_matrix_0, expected0))
         self.assertTrue(np.allclose(
             self.msh._heat_storage_matrix, expected1))
+
+    def test_update_heat_flux_vector(self):
+        expected0 = np.zeros(self.msh.num_nodes)
+        expected1 = np.ones(self.msh.num_nodes) * 0.0018217333333333300
+        expected1[0] = 0.0009108666666666670
+        expected1[-1] = 0.0009108666666666670
+        self.msh.update_heat_flux_vector()
+        self.assertTrue(np.allclose(
+            self.msh._heat_flux_vector_0, expected0))
+        print(self.msh._heat_flux_vector)
+        self.assertTrue(np.allclose(
+            self.msh._heat_flux_vector, expected1,
+            rtol=1e-13, atol=1e-16,
+        ))
 
 
 class TestUpdateIntegrationPointsLinear(unittest.TestCase):
@@ -789,6 +789,7 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
         self.msh.update_integration_points()
         self.msh.update_heat_flow_matrix()
         self.msh.update_heat_storage_matrix()
+        self.msh.update_heat_flux_vector()
 
     def test_temperature_distribution(self):
         expected_temp_int_pts = np.array([
@@ -922,12 +923,12 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
                 0.0000000000000000, 0.0000000000000000],
             [-0.0721139528911510, 0.1675420790767840, -0.0954281261856329,
                 0.0000000000000000, 0.0000000000000000],
-            [0.0000000000000000, -0.0954281261856329, 0.1953921854661540, -
-                0.0999640592805206, 0.0000000000000000],
+            [0.0000000000000000, -0.0954281261856329, 0.1953921854661540,
+             -0.0999640592805206, 0.0000000000000000],
             [0.0000000000000000, 0.0000000000000000, -0.0999640592805206,
                 0.2016431146839040, -0.1016790554033840],
-            [0.0000000000000000, 0.0000000000000000, 0.0000000000000000, -
-                0.1016790554033840, 0.1016790554033840],
+            [0.0000000000000000, 0.0000000000000000, 0.0000000000000000,
+             -0.1016790554033840, 0.1016790554033840],
         ])
         self.assertTrue(np.allclose(
             expected_H, self.msh._heat_flow_matrix,
@@ -950,6 +951,19 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
             expected_C, self.msh._heat_storage_matrix,
         ))
 
+    def test_global_heat_flux_vector(self):
+        expected_Phi = np.array([
+            -0.000000000000000E+00,
+            -7.240998977095220E-06,
+            -1.693636195537800E-06,
+            4.516088940272450E-07,
+            9.283918373080160E-10,
+        ])
+        self.assertTrue(np.allclose(
+            expected_Phi, self.msh._heat_flux_vector,
+            atol=1e-15, rtol=1e-6,
+        ))
+
 
 class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
     def setUp(self):
@@ -966,6 +980,7 @@ class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
                 ip.void_ratio = 0.35
                 ip.void_ratio_0 = 0.3
                 ip.water_flux_rate = -1.5e-8
+                ip.temp_gradient = 0.003
 
     def test_initial_heat_flow_matrix(self):
         expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
@@ -977,40 +992,34 @@ class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
         self.assertTrue(np.allclose(self.msh._heat_storage_matrix_0, expected))
         self.assertTrue(np.allclose(self.msh._heat_storage_matrix, expected))
 
+    def test_initial_heat_flux_vector(self):
+        expected = np.zeros(self.msh.num_nodes)
+        self.assertTrue(np.allclose(self.msh._heat_flux_vector_0, expected))
+        self.assertTrue(np.allclose(self.msh._heat_flux_vector, expected))
+
     def test_update_heat_flow_matrix(self):
         expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-        h00 = 0.7465991018961040
+        h00 = 0.7162368796738820
         h11 = 2.0906373785075500
-        h33 = 0.6858746574516590
-        h10 = -0.8713876864303850
-        h20 = 0.2431123389801100
-        h30 = -0.0575993100013845
-        h21 = -1.3758296977239400
-        h01 = -0.9579200197637180
-        h02 = 0.2795470056467770
-        h03 = -0.0682260877791622
-        h12 = -1.4987966977239400
-        d0 = np.ones((self.msh.num_nodes,)) * (h00 + h33)
+        h10 = -0.9146538530970510
+        h20 = 0.2613296723134430
+        h30 = -0.0629126988902734
+        h21 = -1.4373131977239400
+        d0 = np.ones((self.msh.num_nodes,)) * (2 * h00)
         d0[0] = h00
-        d0[-1] = h33
+        d0[-1] = h00
         d0[1::3] = h11
         d0[2::3] = h11
-        dm1 = np.ones((self.msh.num_nodes - 1,)) * h10
-        dm1[1::3] = h21
-        dm2 = np.ones((self.msh.num_nodes - 2,)) * h20
-        dm2[2::3] = 0.0
-        dm3 = np.zeros((self.msh.num_nodes - 3,))
-        dm3[0::3] = h30
-        dp1 = np.ones((self.msh.num_nodes - 1,)) * h01
-        dp1[1::3] = h12
-        dp2 = np.ones((self.msh.num_nodes - 2,)) * h02
-        dp2[2::3] = 0.0
-        dp3 = np.zeros((self.msh.num_nodes - 3,))
-        dp3[0::3] = h03
+        d1 = np.ones((self.msh.num_nodes - 1,)) * h10
+        d1[1::3] = h21
+        d2 = np.ones((self.msh.num_nodes - 2,)) * h20
+        d2[2::3] = 0.0
+        d3 = np.zeros((self.msh.num_nodes - 3,))
+        d3[0::3] = h30
         expected1 = np.diag(d0)
-        expected1 += np.diag(dm1, -1) + np.diag(dp1, 1)
-        expected1 += np.diag(dm2, -2) + np.diag(dp2, 2)
-        expected1 += np.diag(dm3, -3) + np.diag(dp3, 3)
+        expected1 += np.diag(d1, -1) + np.diag(d1, 1)
+        expected1 += np.diag(d2, -2) + np.diag(d2, 2)
+        expected1 += np.diag(d3, -3) + np.diag(d3, 3)
         self.msh.update_heat_flow_matrix()
         self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected0))
         self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected1))
@@ -1043,6 +1052,21 @@ class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
             self.msh._heat_storage_matrix_0, expected0))
         self.assertTrue(np.allclose(
             self.msh._heat_storage_matrix, expected1))
+
+    def test_update_heat_flux_vector(self):
+        expected0 = np.zeros(self.msh.num_nodes)
+        expected1 = np.ones(self.msh.num_nodes) * 0.00068315
+        expected1[3::3] = 0.000455433333333333
+        expected1[0] = 0.000227716666666667
+        expected1[-1] = 0.000227716666666667
+        self.msh.update_heat_flux_vector()
+        self.assertTrue(np.allclose(
+            self.msh._heat_flux_vector_0, expected0))
+        print(self.msh._heat_flux_vector)
+        self.assertTrue(np.allclose(
+            self.msh._heat_flux_vector, expected1,
+            rtol=1e-13, atol=1e-16
+        ))
 
 
 class TestUpdateIntegrationPointsCubic(unittest.TestCase):
@@ -1218,35 +1242,37 @@ class TestUpdateIntegrationPointsCubic(unittest.TestCase):
         self.assertTrue(np.allclose(actual_deg_sat_water_int_pts,
                                     expected_deg_sat_water_int_pts))
 
-    def test_deg_sat_water_temp_grad_distribution(self):
-        expected_deg_sat_water_temp_grad_int_pts = np.array([
-            0.007100952173750,
-            0.002066569970404,
-            0.001283854149754,
-            0.001375496464083,
-            0.001839863406448,
-            0.002336484783824,
-            0.004404228952282,
-            0.026828796529360,
-            0.000000000000000,
-            0.000000000000000,
-            0.000000000000000,
-            0.000000000000000,
-            0.000000000000000,
-            0.000000000000000,
-            0.000000000000000,
-            7.683274447247210,
-            0.179434281070916,
-            0.092158984082347,
-            0.124931329787761,
-            0.319815963223536,
+    def test_vol_water_cont_temp_gradient_distribution(self):
+        expected_vol_water_cont_temp_gradient_int_pts = np.array([
+            0.07235260409982430,
+            0.03289271388265000,
+            0.02421242458534380,
+            0.02531316492062430,
+            0.03052609000431350,
+            0.03558952835188600,
+            0.05338816551016490,
+            0.16710056507182700,
+            0.00000000000000000,
+            0.00000000000000000,
+            0.00000000000000000,
+            0.00000000000000000,
+            0.00000000000000000,
+            0.00000000000000000,
+            0.00000000000000000,
+            3.90566915045107000,
+            0.53439071533528300,
+            0.35766602066855600,
+            0.43005975899489600,
+            0.75161061396167100,
         ])
-        actual_deg_sat_water_temp_grad_int_pts = np.array([
-            ip.deg_sat_water_temp_gradient
+        actual_vol_water_cont_temp_gradient_int_pts = np.array([
+            ip.vol_water_cont_temp_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_deg_sat_water_temp_grad_int_pts,
-                                    expected_deg_sat_water_temp_grad_int_pts))
+        self.assertTrue(np.allclose(
+            actual_vol_water_cont_temp_gradient_int_pts,
+            expected_vol_water_cont_temp_gradient_int_pts,
+        ))
 
     def test_water_flux_distribution(self):
         expected_water_flux_int_pts = np.array([
@@ -1390,7 +1416,7 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_temperature_distribution_nodes(self):
         expected_temp_vector = np.array([
-            2.0,
+            0.0,
             0.1,
             -0.8,
             -1.5,
@@ -1408,8 +1434,8 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_temperature_distribution_int_pts(self):
         expected_temp_int_pts = np.array([
-            1.5984827557301400,
-            0.5015172442698560,
+            0.0211324865405187,
+            0.0788675134594813,
             -0.0901923788646684,
             -0.6098076211353320,
             -0.9479274057836310,
@@ -1458,8 +1484,8 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_temperature_gradient_distribution(self):
         expected_temp_gradient_int_pts = np.array([
-            -0.0760000,
-            -0.0760000,
+            0.004,
+            0.004,
             -0.0360000,
             -0.0360000,
             -0.0280000,
@@ -1490,23 +1516,26 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
         self.assertTrue(np.allclose(actual_deg_sat_water_int_pts,
                                     expected_deg_sat_water_int_pts))
 
-    def test_deg_sat_water_temp_grad_distribution(self):
-        expected_deg_sat_water_temp_grad_int_pts = np.array([
-            0.000000000000000,
-            0.000000000000001,
-            1.810113168088841,
-            0.100397364897923,
-            0.051013678629442,
-            0.029567794445951,
-            0.006250998062539,
-            0.001419738751606,
+    def test_vol_water_cont_temp_gradient_distribution(self):
+        expected_vol_water_cont_temp_gradient_int_pts = np.array([
+            0.00000000000000000,
+            0.00000000000000000,
+            0.00000000000000000,
+            0.00000000000000000,
+            0.00000000000000000,
+            0.00000000000000000,
+            0.00000000000000000,
+            0.00000000000000000,
         ])
-        actual_deg_sat_water_temp_grad_int_pts = np.array([
-            ip.deg_sat_water_temp_gradient
+        actual_vol_water_cont_temp_gradient_int_pts = np.array([
+            ip.vol_water_cont_temp_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_deg_sat_water_temp_grad_int_pts,
-                                    expected_deg_sat_water_temp_grad_int_pts))
+        print(actual_vol_water_cont_temp_gradient_int_pts)
+        self.assertTrue(np.allclose(
+            actual_vol_water_cont_temp_gradient_int_pts,
+            expected_vol_water_cont_temp_gradient_int_pts,
+        ))
 
     def test_water_flux_distribution(self):
         expected_water_flux_int_pts = np.array([
@@ -1549,15 +1578,15 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
     def test_global_heat_flow_matrix(self):
         expected_H = np.array([
             [0.0721139528911510, -0.0721139528911510, 0.0000000000000000,
-                0.0000000000000000, 0.0000000000000000],
-            [-0.0721139528911510, 0.1675501246312030, -0.0954361717400518,
-                0.0000000000000000, 0.0000000000000000],
-            [0.0000000000000000, -0.0954251477242246, 0.1953877970346430,
-             -0.0999626493104180, 0.0000000000000000],
-            [0.0000000000000000, 0.0000000000000000, -0.0999646994863613,
-                0.2016437545597640, -0.1016790550734020],
+                0.0000000000000000, 0.0000000000000000,],
+            [-0.0721139528911510, 0.1675420790767840, -0.0954281261856329,
+                0.0000000000000000, 0.0000000000000000,],
+            [0.0000000000000000, -0.0954281261856329, 0.1953921854661540,
+             -0.0999640592805206, 0.0000000000000000,],
+            [0.0000000000000000, 0.0000000000000000, -0.0999640592805206,
+                0.2016431146839040, -0.1016790554033840,],
             [0.0000000000000000, 0.0000000000000000, 0.0000000000000000,
-             -0.1016790554918020, 0.1016790554918020],
+             -0.1016790554033840, 0.1016790554033840,],
         ])
         self.assertTrue(np.allclose(
             expected_H, self.msh._heat_flow_matrix,
@@ -1566,23 +1595,29 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
     def test_global_heat_storage_matrix(self):
         expected_C = np.array([
             [2.12040123456790E+07, 1.06020061728395E+07, 0.00000000000000E+00,
-                0.00000000000000E+00, 0.00000000000000E+00],
-            [1.06020061728395E+07, 1.15082401284593E+09, 3.21846886402014E+08,
-                0.00000000000000E+00, 0.00000000000000E+00],
-            [0.00000000000000E+00, 3.21846886402014E+08, 2.06909317632500E+08,
-                2.15090157481671E+07, 0.00000000000000E+00],
-            [0.00000000000000E+00, 0.00000000000000E+00, 2.15090157481671E+07,
-                5.71758161659235E+07, 9.43574147951588E+06],
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [1.06020061728395E+07, 3.89011555173310E+07, 8.63025666982303E+06,
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [0.00000000000000E+00, 8.63025666982303E+06, 3.34542102448499E+07,
+                8.29817132739774E+06, 0.00000000000000E+00,],
+            [0.00000000000000E+00, 0.00000000000000E+00, 8.29817132739774E+06,
+                3.29568618779144E+07, 8.17817064124763E+06,],
             [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
-                9.43574147951588E+06, 1.74614402201079E+07],
+                8.17817064124763E+06, 1.63181792594571E+07,],
         ])
+        print(self.msh._heat_storage_matrix)
         self.assertTrue(np.allclose(
             expected_C, self.msh._heat_storage_matrix,
         ))
 
     def test_global_flux_vector(self):
-        expected_flux_vector = np.zeros(self.msh.num_nodes)
-        expected_flux_vector[-1] = -2.74983450612514 * 25.0e-3
+        expected_flux_vector = np.array([
+            -0.000000000000000E+00,
+            -7.240998977095220E-06,
+            -1.693636195537800E-06,
+            4.516088940272450E-07,
+            6.874586265312840E-02,
+        ])
         self.assertTrue(np.allclose(expected_flux_vector,
                                     self.msh._heat_flux_vector))
 
@@ -1646,19 +1681,26 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
         )
         self.msh.add_boundary(bnd1)
         self.msh.initialize_global_system(1.5)
-        self.msh.time_step = 1e-3
+        self.msh.time_step = 3.024E+05
         self.msh.initialize_time_step()
 
     def test_time_step_set(self):
         self.assertAlmostEqual(self.msh._t0, 1.5)
-        self.assertAlmostEqual(self.msh._t1, 1.501)
+        self.assertAlmostEqual(self.msh._t1, 1.5 + 3.024e5)
 
     def test_iteration_variables(self):
         self.assertEqual(self.msh._eps_a, 1.0)
         self.assertEqual(self.msh._iter, 0)
 
     def test_temperature_distribution_nodes(self):
-        expected_temp_vector = np.array([
+        expected_temp_vector_0 = np.array([
+            0.0,
+            0.1,
+            -0.8,
+            -1.5,
+            -12,
+        ])
+        expected_temp_vector_1 = np.array([
             2.0,
             0.1,
             -0.8,
@@ -1668,12 +1710,12 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
         actual_temp_nodes = np.array([
             nd.temp for nd in self.msh.nodes
         ])
-        self.assertTrue(np.allclose(expected_temp_vector,
+        self.assertTrue(np.allclose(expected_temp_vector_1,
                                     actual_temp_nodes))
-        self.assertTrue(np.allclose(expected_temp_vector,
-                                    self.msh._temp_vector))
-        self.assertTrue(np.allclose(expected_temp_vector,
+        self.assertTrue(np.allclose(expected_temp_vector_0,
                                     self.msh._temp_vector_0))
+        self.assertTrue(np.allclose(expected_temp_vector_1,
+                                    self.msh._temp_vector))
 
     def test_temperature_distribution_int_pts(self):
         expected_temp_int_pts = np.array([
@@ -1759,23 +1801,25 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
         self.assertTrue(np.allclose(actual_deg_sat_water_int_pts,
                                     expected_deg_sat_water_int_pts))
 
-    def test_deg_sat_water_temp_grad_distribution(self):
-        expected_deg_sat_water_temp_grad_int_pts = np.array([
-            0.000000000000000,
-            0.000000000000001,
-            1.810113168088841,
-            0.100397364897923,
-            0.051013678629442,
-            0.029567794445951,
-            0.006250998062539,
-            0.001419738751606,
+    def test_vol_water_cont_temp_gradient_distribution(self):
+        expected_vol_water_cont_temp_gradient_int_pts = np.array([
+            0.00000000000000,
+            0.00000000000000,
+            0.00000000000000,
+            0.00000000000000,
+            0.00000000000000,
+            0.00000000000000,
+            0.00000000000000,
+            0.00000000000000,
         ])
-        actual_deg_sat_water_temp_grad_int_pts = np.array([
-            ip.deg_sat_water_temp_gradient
+        actual_vol_water_cont_temp_gradient_int_pts = np.array([
+            ip.vol_water_cont_temp_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_deg_sat_water_temp_grad_int_pts,
-                                    expected_deg_sat_water_temp_grad_int_pts))
+        self.assertTrue(np.allclose(
+            actual_vol_water_cont_temp_gradient_int_pts,
+            expected_vol_water_cont_temp_gradient_int_pts,
+        ))
 
     def test_water_flux_distribution(self):
         expected_water_flux_int_pts = np.array([
@@ -1818,52 +1862,55 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
     def test_global_heat_flow_matrix(self):
         expected_H = np.array([
             [0.0721139528911510, -0.0721139528911510, 0.0000000000000000,
-                0.0000000000000000, 0.0000000000000000],
-            [-0.0721139528911510, 0.1675501246312030, -0.0954361717400518,
-                0.0000000000000000, 0.0000000000000000],
-            [0.0000000000000000, -0.0954251477242246, 0.1953877970346430,
-             -0.0999626493104180, 0.0000000000000000],
-            [0.0000000000000000, 0.0000000000000000, -0.0999646994863613,
-                0.2016437545597640, -0.1016790550734020],
+                0.0000000000000000, 0.0000000000000000,],
+            [-0.0721139528911510, 0.1675420790767840, -0.0954281261856329,
+                0.0000000000000000, 0.0000000000000000,],
+            [0.0000000000000000, -0.0954281261856329, 0.1953921854661540,
+             -0.0999640592805206, 0.0000000000000000,],
+            [0.0000000000000000, 0.0000000000000000, -0.0999640592805206,
+                0.2016431146839040, -0.1016790554033840,],
             [0.0000000000000000, 0.0000000000000000, 0.0000000000000000,
-             -0.1016790554918020, 0.1016790554918020],
+             -0.1016790554033840, 0.1016790554033840,],
         ])
         self.assertTrue(np.allclose(
-            expected_H, self.msh._heat_flow_matrix,
+            expected_H, self.msh._heat_flow_matrix_0,
         ))
         self.assertTrue(np.allclose(
-            expected_H, self.msh._heat_flow_matrix_0,
+            expected_H, self.msh._heat_flow_matrix,
         ))
 
     def test_global_heat_storage_matrix(self):
         expected_C = np.array([
             [2.12040123456790E+07, 1.06020061728395E+07, 0.00000000000000E+00,
-                0.00000000000000E+00, 0.00000000000000E+00],
-            [1.06020061728395E+07, 1.15082401284593E+09, 3.21846886402014E+08,
-                0.00000000000000E+00, 0.00000000000000E+00],
-            [0.00000000000000E+00, 3.21846886402014E+08, 2.06909317632500E+08,
-                2.15090157481671E+07, 0.00000000000000E+00],
-            [0.00000000000000E+00, 0.00000000000000E+00, 2.15090157481671E+07,
-                5.71758161659235E+07, 9.43574147951588E+06],
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [1.06020061728395E+07, 3.89011555173310E+07, 8.63025666982303E+06,
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [0.00000000000000E+00, 8.63025666982303E+06, 3.34542102448499E+07,
+                8.29817132739774E+06, 0.00000000000000E+00,],
+            [0.00000000000000E+00, 0.00000000000000E+00, 8.29817132739774E+06,
+                3.29568618779144E+07, 8.17817064124763E+06,],
             [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
-                9.43574147951588E+06, 1.74614402201079E+07],
+                8.17817064124763E+06, 1.63181792594571E+07,],
         ])
-        self.assertTrue(np.allclose(
-            expected_C, self.msh._heat_storage_matrix,
-        ))
         self.assertTrue(np.allclose(
             expected_C, self.msh._heat_storage_matrix_0,
         ))
+        self.assertTrue(np.allclose(
+            expected_C, self.msh._heat_storage_matrix,
+        ))
 
     def test_global_flux_vector(self):
-        expected_flux_vector = np.zeros(self.msh.num_nodes)
-        expected_flux_vector[-1] = -2.74983450612514 * 25.0e-3
-        self.assertTrue(np.allclose(expected_flux_vector,
-                                    self.msh._heat_flux_vector))
+        expected_flux_vector = np.array([
+            -0.000000000000000E+00,
+            -7.240998977095220E-06,
+            -1.693636195537800E-06,
+            4.516088940272450E-07,
+            6.874586265312840E-02,
+        ])
         self.assertTrue(np.allclose(expected_flux_vector,
                                     self.msh._heat_flux_vector_0))
         self.assertTrue(np.allclose(expected_flux_vector,
-                                    self.msh._weighted_heat_flux_vector))
+                                    self.msh._heat_flux_vector))
 
 
 class TestUpdateWeightedMatricesLinear(unittest.TestCase):
@@ -1925,7 +1972,7 @@ class TestUpdateWeightedMatricesLinear(unittest.TestCase):
         )
         self.msh.add_boundary(bnd1)
         self.msh.initialize_global_system(1.5)
-        self.msh.time_step = 1e-3
+        self.msh.time_step = 3.024E+05
         self.msh.initialize_time_step()
         self.msh._temp_vector[:] = np.array([
             2.0,
@@ -1951,7 +1998,7 @@ class TestUpdateWeightedMatricesLinear(unittest.TestCase):
 
     def test_temperature_distribution_nodes(self):
         expected_temp_vector_0 = np.array([
-            2.0,
+            0.0,
             0.1,
             -0.8,
             -1.5,
@@ -2058,23 +2105,25 @@ class TestUpdateWeightedMatricesLinear(unittest.TestCase):
         self.assertTrue(np.allclose(actual_deg_sat_water_int_pts,
                                     expected_deg_sat_water_int_pts))
 
-    def test_deg_sat_water_temp_grad_distribution(self):
-        expected_deg_sat_water_temp_grad_int_pts = np.array([
-            0.000000000000000,
-            0.000000000000000,
-            0.000000000000000,
-            7.737022063089890,
-            0.260925333912205,
-            0.086263750747031,
-            0.017548502720457,
-            0.004092516398380,
+    def test_vol_water_cont_temp_gradient_distribution(self):
+        expected_vol_water_cont_temp_gradient_int_pts = np.array([
+            0.000000000000000000,
+            0.000000000000000000,
+            0.340923364017748000,
+            0.187553330175011000,
+            0.028947898402562300,
+            0.012907964849384700,
+            0.002679172391015270,
+            0.000615976343614986,
         ])
-        actual_deg_sat_water_temp_grad_int_pts = np.array([
-            ip.deg_sat_water_temp_gradient
+        actual_vol_water_cont_temp_gradient_int_pts = np.array([
+            ip.vol_water_cont_temp_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        self.assertTrue(np.allclose(actual_deg_sat_water_temp_grad_int_pts,
-                                    expected_deg_sat_water_temp_grad_int_pts))
+        self.assertTrue(np.allclose(
+            actual_vol_water_cont_temp_gradient_int_pts,
+            expected_vol_water_cont_temp_gradient_int_pts,
+        ))
 
     def test_water_flux_distribution(self):
         expected_water_flux_int_pts = np.array([
@@ -2113,69 +2162,52 @@ class TestUpdateWeightedMatricesLinear(unittest.TestCase):
         self.assertTrue(np.allclose(actual_thrm_cond_int_pts,
                                     expected_thrm_cond_int_pts))
 
-    def test_global_heat_flow_matrix(self):
-        expected_H = np.array([
-            [0.0721139528911510, -0.0721139528911510, 0.0000000000000000,
-                0.0000000000000000, 0.0000000000000000],
-            [-0.0721139528911510, 0.1507583313920580, -0.0786443785009067,
-                0.0000000000000000, 0.0000000000000000],
-            [0.0000000000000000, -0.0786056432160232, 0.1767637295188870,
-             -0.0981580863028642, 0.0000000000000000],
-            [0.0000000000000000, 0.0000000000000000, -0.0981468970118543,
-                0.1992782620987600, -0.1011313650869050],
-            [0.0000000000000000, 0.0000000000000000, 0.0000000000000000,
-             -0.1011312105966210, 0.1011312105966210],
-        ])
-        self.assertTrue(np.allclose(
-            expected_H, self.msh._heat_flow_matrix,
-        ))
-
     def test_global_heat_flow_matrix_0(self):
         expected_H = np.array([
             [0.0721139528911510, -0.0721139528911510, 0.0000000000000000,
-                0.0000000000000000, 0.0000000000000000],
-            [-0.0721139528911510, 0.1675501246312030, -0.0954361717400518,
-                0.0000000000000000, 0.0000000000000000],
-            [0.0000000000000000, -0.0954251477242246, 0.1953877970346430,
-             -0.0999626493104180, 0.0000000000000000],
-            [0.0000000000000000, 0.0000000000000000, -0.0999646994863613,
-                0.2016437545597640, -0.1016790550734020],
+                0.0000000000000000, 0.0000000000000000,],
+            [-0.0721139528911510, 0.1675420790767840, -0.0954281261856329,
+                0.0000000000000000, 0.0000000000000000,],
+            [0.0000000000000000, -0.0954281261856329, 0.1953921854661540,
+             -0.0999640592805206, 0.0000000000000000,],
+            [0.0000000000000000, 0.0000000000000000, -0.0999640592805206,
+                0.2016431146839040, -0.1016790554033840,],
             [0.0000000000000000, 0.0000000000000000, 0.0000000000000000,
-             -0.1016790554918020, 0.1016790554918020],
+             -0.1016790554033840, 0.1016790554033840,],
         ])
         self.assertTrue(np.allclose(
             expected_H, self.msh._heat_flow_matrix_0,
         ))
 
-    def test_global_heat_flow_matrix_weighted(self):
+    def test_global_heat_flow_matrix(self):
         expected_H = np.array([
             [0.0721139528911510, -0.0721139528911510, 0.0000000000000000,
-                0.0000000000000000, 0.0000000000000000],
-            [-0.0721139528911510, 0.1591542280116300, -0.0870402751204793,
-                0.0000000000000000, 0.0000000000000000],
-            [0.0000000000000000, -0.0870153954701239, 0.1860757632767650,
-             -0.0990603678066411, 0.0000000000000000],
-            [0.0000000000000000, 0.0000000000000000, -0.0990557982491078,
-                0.2004610083292620, -0.1014052100801540],
+                0.0000000000000000, 0.0000000000000000,],
+            [-0.0721139528911510, 0.1507501456631930, -0.0786361927720423,
+                0.0000000000000000, 0.0000000000000000,],
+            [0.0000000000000000, -0.0786361927720423, 0.1767867533269640,
+             -0.0981505605549217, 0.0000000000000000,],
+            [0.0000000000000000, 0.0000000000000000, -0.0981505605549217,
+                0.1992818037997590, -0.1011312432448370,],
             [0.0000000000000000, 0.0000000000000000, 0.0000000000000000,
-             -0.1014051330442120, 0.1014051330442120],
+             -0.1011312432448370, 0.1011312432448370,],
         ])
         self.assertTrue(np.allclose(
-            expected_H, self.msh._weighted_heat_flow_matrix,
+            expected_H, self.msh._heat_flow_matrix,
         ))
 
     def test_global_heat_storage_matrix_0(self):
         expected_C = np.array([
             [2.12040123456790E+07, 1.06020061728395E+07, 0.00000000000000E+00,
-                0.00000000000000E+00, 0.00000000000000E+00],
-            [1.06020061728395E+07, 1.15082401284593E+09, 3.21846886402014E+08,
-                0.00000000000000E+00, 0.00000000000000E+00],
-            [0.00000000000000E+00, 3.21846886402014E+08, 2.06909317632500E+08,
-                2.15090157481671E+07, 0.00000000000000E+00],
-            [0.00000000000000E+00, 0.00000000000000E+00, 2.15090157481671E+07,
-                5.71758161659235E+07, 9.43574147951588E+06],
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [1.06020061728395E+07, 3.89011555173310E+07, 8.63025666982303E+06,
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [0.00000000000000E+00, 8.63025666982303E+06, 3.34542102448499E+07,
+                8.29817132739774E+06, 0.00000000000000E+00,],
+            [0.00000000000000E+00, 0.00000000000000E+00, 8.29817132739774E+06,
+                3.29568618779144E+07, 8.17817064124763E+06,],
             [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
-                9.43574147951588E+06, 1.74614402201079E+07],
+                8.17817064124763E+06, 1.63181792594571E+07,],
         ])
         self.assertTrue(np.allclose(
             expected_C, self.msh._heat_storage_matrix_0,
@@ -2184,91 +2216,87 @@ class TestUpdateWeightedMatricesLinear(unittest.TestCase):
     def test_global_heat_storage_matrix(self):
         expected_C = np.array([
             [2.12040123456790E+07, 1.06020061728395E+07, 0.00000000000000E+00,
-                0.00000000000000E+00, 0.00000000000000E+00],
-            [1.06020061728395E+07, 3.82127786353284E+08, 1.27845341703034E+09,
-                0.00000000000000E+00, 0.00000000000000E+00],
-            [0.00000000000000E+00, 1.27845341703034E+09, 4.93329220496251E+09,
-                6.53471451217525E+07, 0.00000000000000E+00],
-            [0.00000000000000E+00, 0.00000000000000E+00, 6.53471451217525E+07,
-                1.08389521552969E+08, 1.17642307395528E+07],
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [1.06020061728395E+07, 8.78602658519930E+08, 3.44200503749112E+08,
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [0.00000000000000E+00, 3.44200503749112E+08, 6.06873440461168E+08,
+                3.48953707771033E+07, 0.00000000000000E+00,],
+            [0.00000000000000E+00, 0.00000000000000E+00, 3.48953707771033E+07,
+                7.50250521945132E+07, 1.03000212013861E+07,],
             [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
-                1.17642307395528E+07, 1.96536710434876E+07],
+                1.03000212013861E+07, 1.82864440804706E+07,],
         ])
         self.assertTrue(np.allclose(
             expected_C, self.msh._heat_storage_matrix,
         ))
 
-    def test_global_heat_storage_matrix_weighted(self):
-        expected_C = np.array([
-            [2.12040123456790E+07, 1.06020061728395E+07, 0.00000000000000E+00,
-                0.00000000000000E+00, 0.00000000000000E+00],
-            [1.06020061728395E+07, 7.66475899599609E+08, 8.00150151716176E+08,
-                0.00000000000000E+00, 0.00000000000000E+00],
-            [0.00000000000000E+00, 8.00150151716176E+08, 2.57010076129751E+09,
-                4.34280804349598E+07, 0.00000000000000E+00],
-            [0.00000000000000E+00, 0.00000000000000E+00, 4.34280804349598E+07,
-                8.27826688594461E+07, 1.05999861095344E+07],
-            [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
-                1.05999861095344E+07, 1.85575556317977E+07],
-        ])
-        self.assertTrue(np.allclose(
-            expected_C, self.msh._weighted_heat_storage_matrix,
-        ))
-
     def test_global_coef_matrix_0(self):
         expected_C0 = np.array([
-            [2.1204012345643E+10, 1.0602006172876E+10, 0.0000000000000E+00,
-                0.0000000000000E+00, 0.0000000000000E+00],
-            [1.0602006172876E+10, 7.6647589959953E+11, 8.0015015171622E+11,
-                0.0000000000000E+00, 0.0000000000000E+00],
-            [0.0000000000000E+00, 8.0015015171622E+11, 2.5701007612974E+12,
-                4.3428080435009E+10, 0.0000000000000E+00],
-            [0.0000000000000E+00, 0.0000000000000E+00, 4.3428080435009E+10,
-                8.2782668859346E+10, 1.0599986109585E+10],
-            [0.0000000000000E+00, 0.0000000000000E+00, 0.0000000000000E+00,
-                1.0599986109585E+10, 1.8557555631747E+10],
+            [5.263894652352350E-04, -5.403980334474360E-04,
+                2.370573772919760E-05, -1.493205599042890E-05,
+             5.234886473432850E-06,],
+            [-2.432926732320180E-05, 5.234640374760480E-05,
+             -4.741147545839510E-05,
+                2.986411198085780E-05, -1.046977294686570E-05,],
+            [1.421074304030880E-05, -5.075229116649230E-05,
+                8.574864747653640E-05, -7.577088977750250E-05,
+             2.656379042714970E-05,],
+            [-7.163599248898670E-06, 2.558410027180900E-05,
+             -2.576091232012540E-04,
+                5.978940173930280E-04, -3.587053952146850E-04,],
+            [4.034968407044770E-06, -1.441049851236240E-05,
+                1.451008965421070E-04, -1.172965336484240E-03,
+             1.038239970047450E-03,],
         ])
         self.assertTrue(np.allclose(
             expected_C0, self.msh._coef_matrix_0,
-            rtol=1e-14, atol=1e-3,
+            rtol=1e-14, atol=1e-17,
         ))
 
     def test_global_coef_matrix_1(self):
         expected_C1 = np.array([
-            [2.12040123457151E+10, 1.06020061728035E+10, 0.00000000000000E+00,
-                0.00000000000000E+00, 0.00000000000000E+00],
-            [1.06020061728035E+10, 7.66475899599689E+11, 8.00150151716132E+11,
-                0.00000000000000E+00, 0.00000000000000E+00],
-            [0.00000000000000E+00, 8.00150151716133E+11, 2.57010076129760E+12,
-                4.34280804349103E+10, 0.00000000000000E+00],
-            [0.00000000000000E+00, 0.00000000000000E+00, 4.34280804349103E+10,
-                8.27826688595464E+10, 1.05999861094837E+10],
-            [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
-                1.05999861094837E+10, 1.85575556318484E+10],
+            [1.000526389465240E+00, -5.403980334474360E-04,
+                2.370573772919760E-05, -1.493205599042890E-05,
+             5.234886473432850E-06,],
+            [-2.432926732320180E-05, 1.000052346403750E+00,
+             -4.741147545839510E-05,
+                2.986411198085780E-05, -1.046977294686570E-05,],
+            [1.421074304030880E-05, -5.075229116649230E-05,
+                1.000085748647480E+00, -7.577088977750250E-05,
+             2.656379042714970E-05,],
+            [-7.163599248898670E-06, 2.558410027180900E-05,
+             -2.576091232012540E-04,
+                1.000597894017390E+00, -3.587053952146850E-04,],
+            [4.034968407044770E-06, -1.441049851236240E-05,
+                1.451008965421070E-04, -1.172965336484240E-03,
+             1.001038239970050E+00,],
         ])
         self.assertTrue(np.allclose(
             expected_C1, self.msh._coef_matrix_1,
-            rtol=1e-14, atol=1e-3,
+            rtol=1e-14, atol=1e-14,
         ))
 
     def test_global_flux_vector_0(self):
-        expected_flux_vector_0 = np.zeros(self.msh.num_nodes)
-        expected_flux_vector_0[-1] = -2.74983450612514 * 25.0e-3
+        expected_flux_vector_0 = np.array([
+            -0.000000000000000E+00,
+            -7.240998977095220E-06,
+            -1.693636195537800E-06,
+            4.516088940272450E-07,
+            6.874586265312840E-02,
+        ])
         self.assertTrue(np.allclose(expected_flux_vector_0,
                                     self.msh._heat_flux_vector_0))
 
     def test_global_flux_vector(self):
-        expected_flux_vector = np.zeros(self.msh.num_nodes)
-        expected_flux_vector[-1] = -2.73851722970310 * 25.0e-3
+        expected_flux_vector = np.array([
+            0.000000000000000E+00,
+            -6.548583091546750E-06,
+            -2.895509358076450E-05,
+            -2.831704596426130E-06,
+            6.846293074257740E-02,
+        ])
         self.assertTrue(np.allclose(expected_flux_vector,
                                     self.msh._heat_flux_vector))
-
-    def test_global_flux_vector_weighted(self):
-        expected_flux_vector = np.zeros(self.msh.num_nodes)
-        expected_flux_vector[-1] = -0.5 * (2.73851722970310
-                                           + 2.74983450612514) * 25.0e-3
-        self.assertTrue(np.allclose(expected_flux_vector,
-                                    self.msh._weighted_heat_flux_vector))
 
 
 class TestTemperatureCorrectionLinearOneStep(unittest.TestCase):
