@@ -976,6 +976,7 @@ class ConsolidationAnalysis1D(Mesh1D):
             if not (be.bnd_type
                     == ConsolidationBoundary1D.BoundaryType.void_ratio):
                 self._water_flux_vector[be.nodes[0].index] += be.bnd_value
+                # self._water_flux_vector[be.nodes[0].index] -= be.bnd_value
 
     def update_stiffness_matrix(self) -> None:
         """Updates the global stiffness matrix.
@@ -993,6 +994,7 @@ class ConsolidationAnalysis1D(Mesh1D):
             ind = [nd.index for nd in e.nodes]
             Ke = e.stiffness_matrix
             self._stiffness_matrix[np.ix_(ind, ind)] += Ke
+            # self._stiffness_matrix[np.ix_(ind, ind)] -= Ke
 
     def update_mass_matrix(self) -> None:
         """Updates the global mass matrix.
@@ -1141,6 +1143,12 @@ class ConsolidationAnalysis1D(Mesh1D):
             self._weighted_mass_matrix * self.over_dt
             - self.alpha * self._weighted_stiffness_matrix
         )
+        # self._coef_matrix_1[:, :] = (
+        #     np.eye(self.num_nodes)
+        #     + self.alpha * self.dt * np.linalg.solve(
+        #         self._mass_matrix, self._stiffness_matrix,
+        #     )
+        # )
 
     def calculate_solution_vector_correction(self) -> None:
         """Performs a single iteration of void ratio correction
@@ -1165,6 +1173,19 @@ class ConsolidationAnalysis1D(Mesh1D):
             - self._coef_matrix_1 @ self._void_ratio_vector
             - self._weighted_water_flux_vector
         )
+        # self._residual_water_flux_vector[:] = (
+        #     self.one_minus_alpha * self.dt * np.linalg.solve(
+        #         self._mass_matrix_0,
+        #         self._water_flux_vector_0
+        #         - self._stiffness_matrix_0 @ self._void_ratio_vector_0
+        #     )
+        #     + self.alpha * self.dt * np.linalg.solve(
+        #         self._mass_matrix,
+        #         self._water_flux_vector
+        #         - self._stiffness_matrix @ self._void_ratio_vector
+        #     )
+        #     - (self._void_ratio_vector[:] - self._void_ratio_vector_0[:])
+        # )
         # calculate void ratio increment
         self._delta_void_ratio_vector[self._free_vec] = np.linalg.solve(
             self._coef_matrix_1[self._free_arr],
