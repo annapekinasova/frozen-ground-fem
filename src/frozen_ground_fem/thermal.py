@@ -757,14 +757,17 @@ class ThermalAnalysis1D(Mesh1D):
         #     self.one_minus_alpha * self._heat_storage_matrix_0
         #     + self.alpha * self._heat_storage_matrix
         # )
-        self._coef_matrix_0[:, :] = (
-            self.alpha * self.dt * np.linalg.solve(
-                self._heat_storage_matrix, self._heat_flow_matrix
-            )
-        )
-        self._coef_matrix_1[:, :] = (
-            np.eye(self.num_nodes) + self._coef_matrix_0
-        )
+        # self._coef_matrix_0[:, :] = (
+        #     self.alpha * self.dt * np.linalg.solve(
+        #         self._heat_storage_matrix, self._heat_flow_matrix
+        #     )
+        # )
+        # self._coef_matrix_1[:, :] = (
+        #     np.eye(self.num_nodes)
+        #     + self.alpha * self.dt * np.linalg.solve(
+        #         self._heat_storage_matrix, self._heat_flow_matrix
+        #     ))
+        pass
 
     def calculate_solution_vector_correction(self) -> None:
         """Performs a single iteration of temperature correction
@@ -780,9 +783,14 @@ class ThermalAnalysis1D(Mesh1D):
         then updates the nodes, integration points,
         and the global heat flux and heat storage matrices.
         """
-        # first update the global weighted matrices
+        # first update the global coefficient matrix
         # (ensures coef_matrix_0 and coef_matrix_1)
-        ThermalAnalysis1D.update_weighted_matrices(self)
+        # ThermalAnalysis1D.update_weighted_matrices(self)
+        self._coef_matrix_1[:, :] = (
+            np.eye(self.num_nodes)
+            + self.alpha * self.dt * np.linalg.solve(
+                self._heat_storage_matrix, self._heat_flow_matrix
+            ))
         self._residual_heat_flux_vector[:] = (
             self.one_minus_alpha * self.dt * np.linalg.solve(
                 self._heat_storage_matrix_0,
@@ -797,8 +805,15 @@ class ThermalAnalysis1D(Mesh1D):
             - (self._temp_vector[:] - self._temp_vector_0[:])
         )
         # calculate temperature increment
+        # self._delta_temp_vector[self._free_vec] = np.linalg.solve(
+        #     self._coef_matrix_1[self._free_arr],
+        #     self._residual_heat_flux_vector[self._free_vec],
+        # )
         self._delta_temp_vector[self._free_vec] = np.linalg.solve(
-            self._coef_matrix_1[self._free_arr],
+            np.eye(self.num_nodes)[self._free_arr]
+            + self.alpha * self.dt * np.linalg.solve(
+                self._heat_storage_matrix, self._heat_flow_matrix
+            )[self._free_arr],
             self._residual_heat_flux_vector[self._free_vec],
         )
         # increment temperature and iteration variables
