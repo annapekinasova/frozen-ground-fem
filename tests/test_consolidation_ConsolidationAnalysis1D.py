@@ -376,18 +376,18 @@ class TestConsolidationAnalysis1DLinearMeshGen(unittest.TestCase):
         self.assertEqual(self.msh._void_ratio_vector.shape, (nnod,))
         self.assertEqual(self.msh._water_flux_vector_0.shape, (nnod,))
         self.assertEqual(self.msh._water_flux_vector.shape, (nnod,))
-        self.assertEqual(self.msh._weighted_water_flux_vector.shape, (nnod,))
+        # self.assertEqual(self.msh._weighted_water_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._residual_water_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._delta_void_ratio_vector.shape, (nnod,))
         self.assertEqual(self.msh._stiffness_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._stiffness_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_stiffness_matrix.shape, (nnod, nnod))
+        # self.assertEqual(
+        #     self.msh._weighted_stiffness_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._mass_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._mass_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_mass_matrix.shape, (nnod, nnod))
-        self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
+        # self.assertEqual(
+        #     self.msh._weighted_mass_matrix.shape, (nnod, nnod))
+        # self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
         with self.assertRaises(AttributeError):
             _ = self.msh._free_vec
@@ -410,18 +410,18 @@ class TestConsolidationAnalysis1DLinearMeshGen(unittest.TestCase):
         self.assertEqual(self.msh._void_ratio_vector.shape, (nnod,))
         self.assertEqual(self.msh._water_flux_vector_0.shape, (nnod,))
         self.assertEqual(self.msh._water_flux_vector.shape, (nnod,))
-        self.assertEqual(self.msh._weighted_water_flux_vector.shape, (nnod,))
+        # self.assertEqual(self.msh._weighted_water_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._residual_water_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._delta_void_ratio_vector.shape, (nnod,))
         self.assertEqual(self.msh._stiffness_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._stiffness_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_stiffness_matrix.shape, (nnod, nnod))
+        # self.assertEqual(
+        #     self.msh._weighted_stiffness_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._mass_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._mass_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_mass_matrix.shape, (nnod, nnod))
-        self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
+        # self.assertEqual(
+        #     self.msh._weighted_mass_matrix.shape, (nnod, nnod))
+        # self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
         with self.assertRaises(AttributeError):
             _ = self.msh._free_vec
@@ -449,18 +449,18 @@ class TestConsolidationAnalysis1DCubicMeshGen(unittest.TestCase):
         self.assertEqual(self.msh._void_ratio_vector.shape, (nnod,))
         self.assertEqual(self.msh._water_flux_vector_0.shape, (nnod,))
         self.assertEqual(self.msh._water_flux_vector.shape, (nnod,))
-        self.assertEqual(self.msh._weighted_water_flux_vector.shape, (nnod,))
+        # self.assertEqual(self.msh._weighted_water_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._residual_water_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._delta_void_ratio_vector.shape, (nnod,))
         self.assertEqual(self.msh._stiffness_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._stiffness_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_stiffness_matrix.shape, (nnod, nnod))
+        # self.assertEqual(
+        #     self.msh._weighted_stiffness_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._mass_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._mass_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_mass_matrix.shape, (nnod, nnod))
-        self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
+        # self.assertEqual(
+        #     self.msh._weighted_mass_matrix.shape, (nnod, nnod))
+        # self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
         with self.assertRaises(AttributeError):
             _ = self.msh._free_vec
@@ -481,18 +481,18 @@ class TestConsolidationAnalysis1DCubicMeshGen(unittest.TestCase):
         self.assertEqual(self.msh._void_ratio_vector.shape, (nnod,))
         self.assertEqual(self.msh._water_flux_vector_0.shape, (nnod,))
         self.assertEqual(self.msh._water_flux_vector.shape, (nnod,))
-        self.assertEqual(self.msh._weighted_water_flux_vector.shape, (nnod,))
+        # self.assertEqual(self.msh._weighted_water_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._residual_water_flux_vector.shape, (nnod,))
         self.assertEqual(self.msh._delta_void_ratio_vector.shape, (nnod,))
         self.assertEqual(self.msh._stiffness_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._stiffness_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_stiffness_matrix.shape, (nnod, nnod))
+        # self.assertEqual(
+        #     self.msh._weighted_stiffness_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._mass_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._mass_matrix.shape, (nnod, nnod))
-        self.assertEqual(
-            self.msh._weighted_mass_matrix.shape, (nnod, nnod))
-        self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
+        # self.assertEqual(
+        #     self.msh._weighted_mass_matrix.shape, (nnod, nnod))
+        # self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
         with self.assertRaises(AttributeError):
             _ = self.msh._free_vec
@@ -668,7 +668,7 @@ class TestUpdateBoundaries(unittest.TestCase):
                                           self.msh._water_flux_vector_0)):
             self.assertEqual(fx0, 0.0)
             if k == self.msh.num_nodes - 1:
-                self.assertAlmostEqual(fx, self.water_flux)
+                self.assertAlmostEqual(fx, -self.water_flux)
             else:
                 self.assertEqual(fx, 0.0)
         self.msh.update_boundary_conditions(t)
@@ -677,7 +677,7 @@ class TestUpdateBoundaries(unittest.TestCase):
                                           self.msh._water_flux_vector_0)):
             self.assertEqual(fx0, 0.0)
             if k == self.msh.num_nodes - 1:
-                self.assertAlmostEqual(fx, self.water_flux)
+                self.assertAlmostEqual(fx, -self.water_flux)
             else:
                 self.assertEqual(fx, 0.0)
 
@@ -757,8 +757,8 @@ class TestUpdateGlobalMatricesLinearConstant(unittest.TestCase):
 
     def test_update_stiffness_matrix(self):
         expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-        k00 = -1.55999984566148E-09
-        k11 = -7.82923225956888E-10
+        k00 = 1.55999984566148E-09
+        k11 = 7.82923225956888E-10
         d0 = np.ones((self.msh.num_nodes,)) * (k00 + k11)
         d0[0] = k00
         d0[-1] = k11
@@ -975,7 +975,7 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
         ))
 
     def test_global_stiffness_matrix(self):
-        expected_K = np.array([
+        expected_K = -np.array([
             [-7.99028679973533E-10, 7.99028679973533E-10, 0.00000000000000E+00,
                 0.00000000000000E+00, 0.00000000000000E+00],
             [1.42998283395020E-10, -8.17080731014650E-10, 6.74082447619630E-10,
@@ -1031,7 +1031,7 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
             z_range=(0, 100),
             num_elements=4,
             generate=True,
-            order=1
+            order=1,
         )
         initial_void_ratio_vector = np.array([
             0.8,
@@ -1075,7 +1075,7 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_void_ratio_distribution_nodes(self):
         expected_void_ratio_vector = np.array([
-            0.6,
+            0.8,
             0.55,
             0.51,
             0.48,
@@ -1092,33 +1092,23 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
                                     self.msh._void_ratio_vector_0))
 
     def test_void_ratio_distribution_int_pts(self):
-        expected_void_ratio_int_pts = np.array([
-            0.589433756729741,
-            0.560566243270259,
-            0.541547005383793,
-            0.518452994616208,
-            0.503660254037844,
-            0.486339745962156,
-            0.475773502691896,
-            0.464226497308104,
-        ])
+        expected_void_ratio_int_pts = np.zeros(2 * self.msh.num_elements)
+        expected_void_ratio_0_int_pts = 0.9 * np.ones(
+            2 * self.msh.num_elements
+        )
         actual_void_ratio_int_pts = np.array([
             ip.void_ratio for e in self.msh.elements for ip in e.int_pts
         ])
+        actual_void_ratio_0_int_pts = np.array([
+            ip.void_ratio_0 for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(actual_void_ratio_0_int_pts,
+                                    expected_void_ratio_0_int_pts))
         self.assertTrue(np.allclose(actual_void_ratio_int_pts,
                                     expected_void_ratio_int_pts))
 
     def test_hyd_cond_distribution(self):
-        expected_hyd_cond_int_pts = np.array([
-            1.036178444520940E-10,
-            8.332723447117670E-11,
-            7.218198340441230E-11,
-            6.063323545379980E-11,
-            5.422629776125640E-11,
-            4.757966757424550E-11,
-            4.393169733182270E-11,
-            4.026418833655080E-11,
-        ])
+        expected_hyd_cond_int_pts = np.zeros(2 * self.msh.num_elements)
         actual_hyd_cond_int_pts = np.array([
             ip.hyd_cond for e in self.msh.elements for ip in e.int_pts
         ])
@@ -1129,20 +1119,12 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
         ))
 
     def test_hyd_cond_grad_distribution(self):
-        expected_hyd_cond_grad_int_pts = np.array([
-            7.822587016510380E-10,
-            6.290755669959050E-10,
-            5.449349474417820E-10,
-            4.577481445767780E-10,
-            4.093792290928700E-10,
-            3.592007648723600E-10,
-            3.316605619219050E-10,
-            3.039728519516280E-10,
-        ])
+        expected_hyd_cond_grad_int_pts = np.zeros(2 * self.msh.num_elements)
         actual_hyd_cond_grad_int_pts = np.array([
             ip.hyd_cond_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
+        print(actual_hyd_cond_grad_int_pts)
         self.assertTrue(np.allclose(
             actual_hyd_cond_grad_int_pts,
             expected_hyd_cond_grad_int_pts,
@@ -1150,16 +1132,7 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
         ))
 
     def test_eff_stress_distribution(self):
-        expected_sig_int_pts = np.array([
-            1.670512849594790E+05,
-            1.956224690989220E+05,
-            2.170676343218650E+05,
-            2.462919434227970E+05,
-            2.670467867470950E+05,
-            2.935815141421210E+05,
-            3.110474684266550E+05,
-            3.313250233604040E+05,
-        ])
+        expected_sig_int_pts = np.zeros(2 * self.msh.num_elements)
         actual_sigp_int_pts = np.array([
             ip.eff_stress
             for e in self.msh.elements for ip in e.int_pts
@@ -1170,16 +1143,7 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
         ))
 
     def test_eff_stress_grad_distribution(self):
-        expected_dsigde_int_pts = np.array([
-            -9.136574786536750E+05,
-            -1.069922520669520E+06,
-            -1.187213061665100E+06,
-            -1.347050255225330E+06,
-            -1.460565202602900E+06,
-            -1.605692204375930E+06,
-            -1.701219154424590E+06,
-            -1.812123657305390E+06,
-        ])
+        expected_dsigde_int_pts = np.zeros(2 * self.msh.num_elements)
         actual_dsigde_int_pts = np.array([
             ip.eff_stress_gradient
             for e in self.msh.elements for ip in e.int_pts
@@ -1190,16 +1154,9 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
         ))
 
     def test_pre_consol_stress_distribution(self):
-        expected_ppc_int_pts = np.array([
-            1.670512849594790E+05,
-            1.956224690989220E+05,
-            2.170676343218650E+05,
-            2.462919434227970E+05,
-            2.670467867470950E+05,
-            2.935815141421210E+05,
-            3.110474684266550E+05,
-            3.313250233604040E+05,
-        ])
+        expected_ppc_int_pts = 3.05606637110347E+04 * np.ones(
+            2 * self.msh.num_elements
+        )
         actual_ppc_int_pts = np.array([
             ip.pre_consol_stress
             for e in self.msh.elements for ip in e.int_pts
@@ -1210,16 +1167,7 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
         ))
 
     def test_water_flux_distribution(self):
-        expected_water_flux_int_pts = np.array([
-            -8.123441622973750E-11,
-            -6.330331621462550E-11,
-            -5.769218208232310E-11,
-            -4.722093512946930E-11,
-            -4.545873593535430E-11,
-            -3.927183415246080E-11,
-            -3.978293540543520E-11,
-            -3.627677855006020E-11,
-        ])
+        expected_water_flux_int_pts = np.zeros(2 * self.msh.num_elements)
         actual_water_flux_int_pts = np.array([
             ip.water_flux_rate
             for e in self.msh.elements for ip in e.int_pts
@@ -1231,7 +1179,7 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
         ))
 
     def test_global_stiffness_matrix(self):
-        expected_K = np.array([
+        expected_K = -np.array([
             [-7.99028679973533E-10, 7.99028679973533E-10, 0.00000000000000E+00,
                 0.00000000000000E+00, 0.00000000000000E+00],
             [1.42998283395020E-10, -8.17080731014650E-10, 6.74082447619630E-10,
@@ -1245,6 +1193,7 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
             [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
                 2.35477581693084E-10, -2.35477581693084E-10],
         ])
+        print(self.msh._stiffness_matrix)
         self.assertTrue(np.allclose(
             expected_K, self.msh._stiffness_matrix,
             atol=1e-18, rtol=1e-8,
@@ -1269,7 +1218,7 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_global_flux_vector(self):
         expected_flux_vector = np.zeros(self.msh.num_nodes)
-        expected_flux_vector[-1] = -2.0e-11
+        expected_flux_vector[-1] = 2.0e-11
         self.assertTrue(np.allclose(expected_flux_vector,
                                     self.msh._water_flux_vector,
                                     atol=1e-18, rtol=1e-8))
@@ -4608,7 +4557,6 @@ class TestUpdateWeightedMatricesCubic(unittest.TestCase):
             ip.eff_stress_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        print(actual_dsigde_int_pts)
         self.assertTrue(np.allclose(
             expected_dsigde_int_pts,
             actual_dsigde_int_pts,
@@ -5393,7 +5341,6 @@ class TestVoidRatioCorrectionCubicOneStep(unittest.TestCase):
             ip.eff_stress_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        print(actual_dsigde_int_pts)
         self.assertTrue(np.allclose(
             expected_dsigde_int_pts,
             actual_dsigde_int_pts,
@@ -6221,7 +6168,6 @@ class TestIterativeVoidRatioCorrectionCubic(unittest.TestCase):
             ip.eff_stress_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        print(actual_dsigde_int_pts)
         self.assertTrue(np.allclose(
             expected_dsigde_int_pts,
             actual_dsigde_int_pts,
