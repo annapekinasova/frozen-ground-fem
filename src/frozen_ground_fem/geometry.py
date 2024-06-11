@@ -2556,6 +2556,7 @@ class Mesh1D:
         # (we assume that initial conditions have already been applied)
         self.initialize_free_index_arrays()
         self.initialize_solution_variable_vectors()
+        self.update_total_stress_distribution()
         self.initialize_integration_points()
         # now build the global matrices and vectors
         self.update_global_matrices_and_vectors()
