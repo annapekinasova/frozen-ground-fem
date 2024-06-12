@@ -2498,7 +2498,7 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
 
     def test_void_ratio_distribution_nodes(self):
         expected_void_ratio_vector_0 = np.array([
-            0.6,
+            0.8,
             0.55,
             0.51,
             0.48,
@@ -2506,10 +2506,10 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
         ])
         expected_void_ratio_vector = np.array([
             0.600000000000000,
-            0.549999999999998,
-            0.510000000000000,
-            0.479999999999998,
-            0.460000000000006,
+            0.550040649129255,
+            0.509990582977506,
+            0.479997370203776,
+            0.460025702147165,
         ])
         actual_void_ratio_nodes = np.array([
             nd.void_ratio for nd in self.msh.nodes
@@ -2526,14 +2526,14 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
 
     def test_void_ratio_distribution_int_pts(self):
         expected_void_ratio_int_pts = np.array([
-            0.589433756729740,
-            0.560566243270258,
-            0.541547005383791,
-            0.518452994616207,
-            0.503660254037844,
-            0.486339745962154,
-            0.475773502691896,
-            0.464226497308108,
+            0.589442346901509,
+            0.560598302227746,
+            0.541577074290268,
+            0.518454157816493,
+            0.503652271325028,
+            0.486335681856254,
+            0.475776860139796,
+            0.464246212211145,
         ])
         actual_void_ratio_int_pts = np.array([
             ip.void_ratio for e in self.msh.elements for ip in e.int_pts
@@ -2543,14 +2543,14 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
 
     def test_hyd_cond_distribution(self):
         expected_hyd_cond_int_pts = np.array([
-            1.036178444520930E-10,
-            8.332723447117580E-11,
-            7.218198340441160E-11,
-            6.063323545379960E-11,
-            5.422629776125630E-11,
-            4.757966757424490E-11,
-            4.393169733182260E-11,
-            4.026418833655210E-11,
+            1.03624564406604E-10,
+            8.33474044187805E-11,
+            7.21983708623208E-11,
+            6.06337679089101E-11,
+            5.42230299029077E-11,
+            4.75782077666920E-11,
+            4.39328108789921E-11,
+            4.02701815778508E-11,
         ])
         actual_hyd_cond_int_pts = np.array([
             ip.hyd_cond for e in self.msh.elements for ip in e.int_pts
@@ -2563,14 +2563,14 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
 
     def test_hyd_cond_grad_distribution(self):
         expected_hyd_cond_grad_int_pts = np.array([
-            7.822587016510350E-10,
-            6.290755669958980E-10,
-            5.449349474417760E-10,
-            4.577481445767770E-10,
-            4.093792290928690E-10,
-            3.592007648723560E-10,
-            3.316605619219050E-10,
-            3.039728519516380E-10,
+            7.82309433674257E-10,
+            6.29227839194853E-10,
+            5.45058663888641E-10,
+            4.57752164324974E-10,
+            4.09354558529199E-10,
+            3.59189744114618E-10,
+            3.31668968600964E-10,
+            3.04018097683025E-10,
         ])
         actual_hyd_cond_grad_int_pts = np.array([
             ip.hyd_cond_gradient
@@ -2604,14 +2604,14 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
 
     def test_eff_stress_grad_distribution(self):
         expected_dsigde_int_pts = np.array([
-            -3.948130157805790E+06,
-            -2.698611551541770E+06,
-            -2.121019229211170E+06,
-            -1.607069788170220E+06,
-            -1.362046115244570E+06,
-            -1.143992455017290E+06,
-            -9.952611792347750E+05,
-            -8.099433232125910E+05,
+            -4.80693384403266E+07,
+            -5.62527425474608E+07,
+            -6.24230397975018E+07,
+            -7.08838928508584E+07,
+            -7.68655559452977E+07,
+            -8.44878251694309E+07,
+            -8.95111771083854E+07,
+            -9.53089099808526E+07,
         ])
         actual_dsigde_int_pts = np.array([
             ip.eff_stress_gradient
