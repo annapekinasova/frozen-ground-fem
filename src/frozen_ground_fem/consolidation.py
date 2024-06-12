@@ -1026,6 +1026,10 @@ class ConsolidationAnalysis1D(Mesh1D):
             nd.void_ratio = self._void_ratio_vector[nd.index]
 
     def initialize_integration_points(self) -> None:
+        self._initialize_element_integration_points()
+        self._initialize_hydraulic_boundary_conditions()
+
+    def _initialize_element_integration_points(self) -> None:
         # initialize initial void ratio
         # and preconsolidation stress
         for e in self.elements:
@@ -1035,7 +1039,7 @@ class ConsolidationAnalysis1D(Mesh1D):
             TT = np.array([nd.temp for nd in e.nodes])
             for ip in e.int_pts:
                 N = e._shape_matrix(ip.local_coord)
-                B = self._gradient_matrix(ip.local_coord, self.jacobian)
+                B = e._gradient_matrix(ip.local_coord, e.jacobian)
                 # initialize void ratio interpolated from nodes
                 e0 = (N @ ee0)[0]
                 ep = (N @ ee)[0]
@@ -1089,6 +1093,8 @@ class ConsolidationAnalysis1D(Mesh1D):
                     N = e._shape_matrix(ip.local_coord)
                     ip.void_ratio_0 = (N @ ee0)[0]
                     ip.void_ratio = (N @ ee)[0]
+
+    def _initialize_hydraulic_boundary_conditions(self) -> None:
         # intialize global hydraulic boundaries
         # which will be used to update pore pressure
         # at the integration points
