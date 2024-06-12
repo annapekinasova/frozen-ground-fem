@@ -973,6 +973,8 @@ class ConsolidationAnalysis1D(Mesh1D):
         """
         self._water_flux_vector[:] = 0.0
         for be in self.boundaries:
+            if isinstance(be, HydraulicBoundary1D):
+                continue
             if not (be.bnd_type
                     == ConsolidationBoundary1D.BoundaryType.void_ratio):
                 # self._water_flux_vector[be.nodes[0].index] += be.bnd_value
