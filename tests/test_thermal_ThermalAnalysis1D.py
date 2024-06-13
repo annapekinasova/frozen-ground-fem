@@ -399,8 +399,6 @@ class TestThermalAnalysis1DLinearMeshGen(unittest.TestCase):
         self.assertEqual(self.msh._heat_flow_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix.shape, (nnod, nnod))
-        self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
-        self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
         with self.assertRaises(AttributeError):
             _ = self.msh._free_vec
         with self.assertRaises(AttributeError):
@@ -428,8 +426,6 @@ class TestThermalAnalysis1DLinearMeshGen(unittest.TestCase):
         self.assertEqual(self.msh._heat_flow_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix.shape, (nnod, nnod))
-        self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
-        self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
         with self.assertRaises(AttributeError):
             _ = self.msh._free_vec
         with self.assertRaises(AttributeError):
@@ -462,8 +458,6 @@ class TestThermalAnalysis1DCubicMeshGen(unittest.TestCase):
         self.assertEqual(self.msh._heat_flow_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix.shape, (nnod, nnod))
-        self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
-        self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
         with self.assertRaises(AttributeError):
             _ = self.msh._free_vec
         with self.assertRaises(AttributeError):
@@ -489,8 +483,6 @@ class TestThermalAnalysis1DCubicMeshGen(unittest.TestCase):
         self.assertEqual(self.msh._heat_flow_matrix.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix_0.shape, (nnod, nnod))
         self.assertEqual(self.msh._heat_storage_matrix.shape, (nnod, nnod))
-        self.assertEqual(self.msh._coef_matrix_0.shape, (nnod, nnod))
-        self.assertEqual(self.msh._coef_matrix_1.shape, (nnod, nnod))
         with self.assertRaises(AttributeError):
             _ = self.msh._free_vec
         with self.assertRaises(AttributeError):
@@ -1909,7 +1901,7 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
                                     self.msh._heat_flux_vector))
 
 
-class TestUpdateWeightedMatricesLinear(unittest.TestCase):
+class TestUpdateGlobalMatricesLinear(unittest.TestCase):
     def setUp(self):
         self.mtl = Material(
             thrm_cond_solids=3.0,
@@ -1987,10 +1979,7 @@ class TestUpdateWeightedMatricesLinear(unittest.TestCase):
         self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
-        self.msh.update_heat_flux_vector()
-        self.msh.update_heat_flow_matrix()
-        self.msh.update_heat_storage_matrix()
-        self.msh.update_weighted_matrices()
+        self.msh.update_global_matrices_and_vectors()
 
     def test_temperature_distribution_nodes(self):
         expected_temp_vector_0 = np.array([
@@ -2327,10 +2316,7 @@ class TestTemperatureCorrectionLinearOneStep(unittest.TestCase):
         self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
-        self.msh.update_heat_flux_vector()
-        self.msh.update_heat_flow_matrix()
-        self.msh.update_heat_storage_matrix()
-        self.msh.update_weighted_matrices()
+        self.msh.update_global_matrices_and_vectors()
         self.msh.calculate_solution_vector_correction()
         self.msh.update_nodes()
         self.msh.update_integration_points()
@@ -2590,10 +2576,7 @@ class TestIterativeTemperatureCorrectionLinear(unittest.TestCase):
         self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
-        self.msh.update_heat_flux_vector()
-        self.msh.update_heat_flow_matrix()
-        self.msh.update_heat_storage_matrix()
-        self.msh.update_weighted_matrices()
+        self.msh.update_global_matrices_and_vectors()
         self.msh.iterative_correction_step()
 
     def test_temperature_distribution_nodes(self):
@@ -3664,7 +3647,7 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
         ))
 
 
-class TestUpdateWeightedMatricesCubic(unittest.TestCase):
+class TestUpdateGlobalMatricesCubic(unittest.TestCase):
     def setUp(self):
         self.mtl = Material(
             thrm_cond_solids=3.0,
@@ -3773,10 +3756,7 @@ class TestUpdateWeightedMatricesCubic(unittest.TestCase):
         self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
-        self.msh.update_heat_flux_vector()
-        self.msh.update_heat_flow_matrix()
-        self.msh.update_heat_storage_matrix()
-        self.msh.update_weighted_matrices()
+        self.msh.update_global_matrices_and_vectors()
 
     def test_temperature_distribution_nodes(self):
         expected_temp_vector_0 = np.array([
@@ -4384,10 +4364,7 @@ class TestTemperatureCorrectionCubicOneStep(unittest.TestCase):
         self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
-        self.msh.update_heat_flux_vector()
-        self.msh.update_heat_flow_matrix()
-        self.msh.update_heat_storage_matrix()
-        self.msh.update_weighted_matrices()
+        self.msh.update_global_matrices_and_vectors()
         self.msh.calculate_solution_vector_correction()
         self.msh.update_nodes()
         self.msh.update_integration_points()
@@ -4852,10 +4829,7 @@ class TestIterativeTemperatureCorrectionCubic(unittest.TestCase):
         self.msh.update_boundary_conditions(self.msh._t1)
         self.msh.update_nodes()
         self.msh.update_integration_points()
-        self.msh.update_heat_flux_vector()
-        self.msh.update_heat_flow_matrix()
-        self.msh.update_heat_storage_matrix()
-        self.msh.update_weighted_matrices()
+        self.msh.update_global_matrices_and_vectors()
         self.msh.iterative_correction_step()
 
     def test_temperature_distribution_nodes(self):
