@@ -1891,7 +1891,6 @@ class Mesh1D:
     initialize_time_step
     store_converged_matrices
     update_boundary_vectors
-    update_weighted_matrices
     initialize_free_index_arrays
     initialize_integration_points
     update_nodes
@@ -1940,10 +1939,6 @@ class Mesh1D:
     _max_iterations: int = 100
     _free_vec: tuple[npt.NDArray, ...]
     _free_arr: tuple[npt.NDArray, ...]
-    _coef_matrix_0: npt.NDArray[np.floating]
-    # _coef_matrix_0_csr: sps.csr_array
-    _coef_matrix_1: npt.NDArray[np.floating]
-    # _coef_matrix_1_csr: sps.csr_array
 
     def __init__(
         self,
@@ -2595,9 +2590,6 @@ class Mesh1D:
     def update_boundary_vectors(self) -> None:
         pass
 
-    def update_weighted_matrices(self) -> None:
-        pass
-
     def initialize_free_index_arrays(self) -> None:
         pass
 
@@ -2638,7 +2630,7 @@ class Mesh1D:
         -----
         This convenience method performs an iterative correction loop
         based on the implicit_error_tolerance and max_iterations properties.
-        It iteratively updates the global weighted matrices
+        It iteratively updates the global matrices
         and performs correction of the global void ratio vector.
         """
         while self._eps_a > self.eps_s and self._iter < self.max_iterations:
