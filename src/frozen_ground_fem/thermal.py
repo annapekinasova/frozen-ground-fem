@@ -15,7 +15,6 @@ from enum import Enum
 
 import numpy as np
 import numpy.typing as npt
-# import scipy.sparse as sps
 
 from .materials import (
     vol_heat_cap_water as Cw,
@@ -397,31 +396,27 @@ class ThermalAnalysis1D(Mesh1D):
     Methods
     -------
     generate_mesh
-    initialize_global_matrices_and_vectors
     add_boundary
+    remove_boundary
+    clear_boundaries
+    initialize_solution_variable_vectors
+    initialize_free_index_arrays
+    initialize_global_matrices_and_vectors
+    initialize_global_system
+    initialize_time_step
     update_boundary_conditions
+    update_boundary_vectors
+    update_nodes
+    update_integration_points
     update_heat_flux_vector
     update_heat_flow_matrix
     update_heat_storage_matrix
     update_global_matrices_and_vectors
-    update_nodes
-    initialize_solution_variable_vectors
-    initialize_free_index_arrays
     store_converged_matrices
-    update_boundary_vectors
-    update_global_matrices_and_vectors
-    update_weighted_matrices
-    calculate_solution_vector_correction
-    update_iteration_variables
-    update_integration_points
-    solve_to
-    #initialize_global_system
-    #remove_boundary
-    #clear_boundaries
-    initialize_time_step
-    update_weighted_matrices
     calculate_solution_vector_correction
     iterative_correction_step
+    update_iteration_variables
+    solve_to
 
     Parameters
     -----------
@@ -454,9 +449,6 @@ class ThermalAnalysis1D(Mesh1D):
     _heat_flow_matrix: npt.NDArray[np.floating]
     _heat_storage_matrix_0: npt.NDArray[np.floating]
     _heat_storage_matrix: npt.NDArray[np.floating]
-    # _weighted_heat_flux_vector: npt.NDArray[np.floating]
-    # _weighted_heat_flow_matrix: npt.NDArray[np.floating]
-    # _weighted_heat_storage_matrix: npt.NDArray[np.floating]
     _residual_heat_flux_vector: npt.NDArray[np.floating]
     _delta_temp_vector: npt.NDArray[np.floating]
     _temp_rate_vector: npt.NDArray[np.floating]
@@ -527,15 +519,6 @@ class ThermalAnalysis1D(Mesh1D):
             (self.num_nodes, self.num_nodes)
         )
         self._heat_storage_matrix = np.zeros(
-            (self.num_nodes, self.num_nodes))
-        # self._weighted_heat_flux_vector = np.zeros(self.num_nodes)
-        # self._weighted_heat_flow_matrix = np.zeros(
-        #     (self.num_nodes, self.num_nodes))
-        # self._weighted_heat_storage_matrix = np.zeros(
-        #     (self.num_nodes, self.num_nodes))
-        self._coef_matrix_0 = np.zeros(
-            (self.num_nodes, self.num_nodes))
-        self._coef_matrix_1 = np.zeros(
             (self.num_nodes, self.num_nodes))
         self._residual_heat_flux_vector = np.zeros(self.num_nodes)
         self._delta_temp_vector = np.zeros(self.num_nodes)
@@ -723,51 +706,11 @@ class ThermalAnalysis1D(Mesh1D):
 
     def update_boundary_vectors(self) -> None:
         self.update_heat_flux_vector()
-        # self._weighted_heat_flux_vector[:] = (
-        #     self.one_minus_alpha * self._heat_flux_vector_0
-        #     + self.alpha * self._heat_flux_vector
-        # )
 
     def update_global_matrices_and_vectors(self) -> None:
         self.update_heat_flux_vector()
         self.update_heat_flow_matrix()
         self.update_heat_storage_matrix()
-
-    def update_weighted_matrices(self) -> None:
-        """Updates global weighted matrices
-        according to implicit time stepping factor.
-
-        Notes
-        -----
-        This convenience method updates
-        the weighted heat flow matrix,
-        the weighted heat storage matrix,
-        and coefficient matrices
-        using the implicit_factor property.
-        """
-        # self._weighted_heat_flux_vector[:] = (
-        #     self.one_minus_alpha * self._heat_flux_vector_0
-        #     + self.alpha * self._heat_flux_vector
-        # )
-        # self._weighted_heat_flow_matrix[:, :] = (
-        #     self.one_minus_alpha * self._heat_flow_matrix_0
-        #     + self.alpha * self._heat_flow_matrix
-        # )
-        # self._weighted_heat_storage_matrix[:, :] = (
-        #     self.one_minus_alpha * self._heat_storage_matrix_0
-        #     + self.alpha * self._heat_storage_matrix
-        # )
-        # self._coef_matrix_0[:, :] = (
-        #     self.alpha * self.dt * np.linalg.solve(
-        #         self._heat_storage_matrix, self._heat_flow_matrix
-        #     )
-        # )
-        # self._coef_matrix_1[:, :] = (
-        #     np.eye(self.num_nodes)
-        #     + self.alpha * self.dt * np.linalg.solve(
-        #         self._heat_storage_matrix, self._heat_flow_matrix
-        #     ))
-        pass
 
     def calculate_solution_vector_correction(self) -> None:
         """Performs a single iteration of temperature correction
@@ -777,20 +720,10 @@ class ThermalAnalysis1D(Mesh1D):
         -----
         This convenience method
         updates the global residual heat flux vector,
-        calculates the temperature correction
-        using the global weighted matrices,
-        applies the correction to the global temperature vector,
-        then updates the nodes, integration points,
-        and the global heat flux and heat storage matrices.
+        calculates the temperature correction,
+        and applies the correction to the global temperature vector.
         """
-        # first update the global coefficient matrix
-        # (ensures coef_matrix_0 and coef_matrix_1)
-        # ThermalAnalysis1D.update_weighted_matrices(self)
-        self._coef_matrix_1[:, :] = (
-            np.eye(self.num_nodes)
-            + self.alpha * self.dt * np.linalg.solve(
-                self._heat_storage_matrix, self._heat_flow_matrix
-            ))
+        # update the residual vector
         self._residual_heat_flux_vector[:] = (
             self.one_minus_alpha * self.dt * np.linalg.solve(
                 self._heat_storage_matrix_0,
@@ -805,10 +738,6 @@ class ThermalAnalysis1D(Mesh1D):
             - (self._temp_vector[:] - self._temp_vector_0[:])
         )
         # calculate temperature increment
-        # self._delta_temp_vector[self._free_vec] = np.linalg.solve(
-        #     self._coef_matrix_1[self._free_arr],
-        #     self._residual_heat_flux_vector[self._free_vec],
-        # )
         self._delta_temp_vector[self._free_vec] = np.linalg.solve(
             np.eye(self.num_nodes)[self._free_arr]
             + self.alpha * self.dt * np.linalg.solve(
