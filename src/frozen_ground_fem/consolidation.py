@@ -180,7 +180,6 @@ class ConsolidationElement1D(Element1D):
         in the element according to changes in void ratio.
         """
         ee = np.array([nd.void_ratio for nd in self.nodes])
-        ss = np.array([nd.tot_stress for nd in self.nodes])
         TT = np.array([nd.temp for nd in self.nodes])
         TT0 = np.array(TT0) if update_res_stress else np.zeros_like(TT)
         for ip in self.int_pts:
@@ -190,9 +189,6 @@ class ConsolidationElement1D(Element1D):
             ep = (N @ ee)[0]
             de_dZ = (B @ ee)[0]
             ip.void_ratio = ep
-            # update total stress interpolated from nodes
-            sp = (N @ ss)[0]
-            ip.tot_stress = sp
             # get temperature state interpolated from nodes
             T = (N @ TT)[0]
             T0 = (N @ TT0)[0]
@@ -201,7 +197,7 @@ class ConsolidationElement1D(Element1D):
                 # set reference stress and void ratio for frozen state
                 if T0 >= 0.0:
                     ip.void_ratio_0_ref_frozen = ep
-                    ip.tot_stress_0_ref_frozen = sp
+                    ip.tot_stress_0_ref_frozen = ip.tot_stress
                 # update local stress state
                 # and total stress gradient (for stiffness matrix)
                 e_f0 = ip.void_ratio_0_ref_frozen
@@ -743,7 +739,6 @@ class ConsolidationAnalysis1D(Mesh1D):
     update_boundary_vectors
     update_global_matrices_and_vectors
     update_integration_points
-    update_weighted_matrices
     calculate_solution_vector_correction
     update_iteration_variables
     solve_to
@@ -751,10 +746,11 @@ class ConsolidationAnalysis1D(Mesh1D):
     calculate_deformed_coords
     update_total_stress_distribution
     calculate_degree_consolidation
-    #initialize_time_step
-    #iterative_correction_step
-    #remove_boundary
-    #clear_boundaries
+    initialize_time_step
+    iterative_correction_step
+    add_boundary
+    remove_boundary
+    clear_boundaries
 
     Parameters
     -----------
@@ -788,9 +784,6 @@ class ConsolidationAnalysis1D(Mesh1D):
     _stiffness_matrix: npt.NDArray[np.floating]
     _mass_matrix_0: npt.NDArray[np.floating]
     _mass_matrix: npt.NDArray[np.floating]
-    # _weighted_water_flux_vector: npt.NDArray[np.floating]
-    # _weighted_stiffness_matrix: npt.NDArray[np.floating]
-    # _weighted_mass_matrix: npt.NDArray[np.floating]
     _residual_water_flux_vector: npt.NDArray[np.floating]
     _delta_void_ratio_vector: npt.NDArray[np.floating]
 
@@ -873,17 +866,6 @@ class ConsolidationAnalysis1D(Mesh1D):
         self._mass_matrix_0 = np.zeros(
             (self.num_nodes, self.num_nodes))
         self._mass_matrix = np.zeros(
-            (self.num_nodes, self.num_nodes))
-        # self._weighted_water_flux_vector = np.zeros(self.num_nodes)
-        # self._weighted_stiffness_matrix = np.zeros(
-        #     (self.num_nodes, self.num_nodes)
-        # )
-        # self._weighted_mass_matrix = np.zeros(
-        #     (self.num_nodes, self.num_nodes)
-        # )
-        # self._coef_matrix_0 = np.zeros(
-        #     (self.num_nodes, self.num_nodes))
-        self._coef_matrix_1 = np.zeros(
             (self.num_nodes, self.num_nodes))
         self._residual_water_flux_vector = np.zeros(self.num_nodes)
         self._delta_void_ratio_vector = np.zeros(self.num_nodes)
@@ -977,7 +959,6 @@ class ConsolidationAnalysis1D(Mesh1D):
                 continue
             if not (be.bnd_type
                     == ConsolidationBoundary1D.BoundaryType.void_ratio):
-                # self._water_flux_vector[be.nodes[0].index] += be.bnd_value
                 self._water_flux_vector[be.nodes[0].index] -= be.bnd_value
 
     def update_stiffness_matrix(self) -> None:
@@ -995,7 +976,6 @@ class ConsolidationAnalysis1D(Mesh1D):
         for e in self.elements:
             ind = [nd.index for nd in e.nodes]
             Ke = e.stiffness_matrix
-            # self._stiffness_matrix[np.ix_(ind, ind)] += Ke
             self._stiffness_matrix[np.ix_(ind, ind)] -= Ke
 
     def update_mass_matrix(self) -> None:
@@ -1165,69 +1145,18 @@ class ConsolidationAnalysis1D(Mesh1D):
         self.update_stiffness_matrix()
         self.update_mass_matrix()
 
-    def update_weighted_matrices(self) -> None:
-        """Updates global weighted matrices
-        according to implicit time stepping factor.
-
-        Notes
-        -----
-        This convenience method updates
-        the weighted water flux vector,
-        the weighted stiffness matrix,
-        the weighted mass matrix,
-        and coefficient matrices
-        using the implicit_factor property.
-        """
-        # self._weighted_water_flux_vector[:] = (
-        #     self.one_minus_alpha * self._water_flux_vector_0
-        #     + self.alpha * self._water_flux_vector
-        # )
-        # self._weighted_stiffness_matrix[:, :] = (
-        #     self.one_minus_alpha * self._stiffness_matrix_0
-        #     + self.alpha * self._stiffness_matrix
-        # )
-        # self._weighted_mass_matrix[:, :] = (
-        #     self.one_minus_alpha * self._mass_matrix_0
-        #     + self.alpha * self._mass_matrix
-        # )
-        # self._coef_matrix_0[:, :] = (
-        #     self._weighted_mass_matrix * self.over_dt
-        #     + self.one_minus_alpha * self._weighted_stiffness_matrix
-        # )
-        # self._coef_matrix_1[:, :] = (
-        #     self._weighted_mass_matrix * self.over_dt
-        #     - self.alpha * self._weighted_stiffness_matrix
-        # )
-        self._coef_matrix_1[:, :] = (
-            np.eye(self.num_nodes)
-            + self.alpha * self.dt * np.linalg.solve(
-                self._mass_matrix, self._stiffness_matrix,
-            )
-        )
-
     def calculate_solution_vector_correction(self) -> None:
         """Performs a single iteration of void ratio correction
         in the implicit time stepping scheme.
 
         Notes
         -----
-        This convenience method
+        This method
         updates the global residual water flux vector,
-        calculates the void ratio correction
-        using the global weighted matrices,
-        applies the correction to the global void ratio vector,
-        then updates the nodes, integration points,
-        and the global vectors and matrices.
+        calculates the void ratio correction,
+        and applies the correction to the global void ratio vector.
         """
-        # first update the global weighted matrices
-        # (ensures coef_matrix_0 and coef_matrix_1)
-        ConsolidationAnalysis1D.update_weighted_matrices(self)
         # update residual vector
-        # self._residual_water_flux_vector[:] = (
-        #     self._coef_matrix_0 @ self._void_ratio_vector_0
-        #     - self._coef_matrix_1 @ self._void_ratio_vector
-        #     - self._weighted_water_flux_vector
-        # )
         self._residual_water_flux_vector[:] = (
             self.one_minus_alpha * self.dt * np.linalg.solve(
                 self._mass_matrix_0,
@@ -1243,7 +1172,10 @@ class ConsolidationAnalysis1D(Mesh1D):
         )
         # calculate void ratio increment
         self._delta_void_ratio_vector[self._free_vec] = np.linalg.solve(
-            self._coef_matrix_1[self._free_arr],
+            np.eye(self.num_nodes)[self._free_arr]
+            + self.alpha * self.dt * np.linalg.solve(
+                self._mass_matrix, self._stiffness_matrix
+            )[self._free_arr],
             self._residual_water_flux_vector[self._free_vec],
         )
         # increment void ratio and iteration variables
@@ -1466,6 +1398,12 @@ class ConsolidationAnalysis1D(Mesh1D):
         # assign total stresses to the nodes
         for k, ss in enumerate(sig):
             self.nodes[k].tot_stress = ss
+        # update total stresses at the integration points
+        for e in self.elements:
+            ss = np.array([nd.tot_stress for nd in e.nodes])
+            for ip in e.int_pts:
+                N = e._shape_matrix(ip.local_coord)
+                ip.tot_stress = (N @ ss)[0]
 
     def update_pore_pressure_distribution(self) -> None:
         """Updates steady state and excess pore pressure distributions
