@@ -169,6 +169,12 @@ class ThermalElement1D(Element1D):
             ip.temp_gradient = dTdZ
             ip.temp_rate = dTdt
             ip.deg_sat_water = Sw
+            T0 = ip.temp__0
+            thw0 = ip.vol_water_cont__0
+            thw1 = ip.vol_water_cont
+            ip.vol_water_cont_temp_gradient = np.abs(
+                (thw1 - thw0) / (T - T0)
+            ) if np.abs(T - T0) > 0.0 else 0.0
             if update_water_flux:
                 ip.update_water_flux_rate()
         for iipp in self._int_pts_deformed:
@@ -504,7 +510,8 @@ class ThermalAnalysis1D(Mesh1D):
         for e in self.elements:
             e.update_integration_points()
             for ip in e.int_pts:
-                ip.vol_ice_cont_0 = ip.vol_ice_cont
+                ip.temp__0 = ip.temp
+                ip.vol_water_cont__0 = ip.vol_water_cont
 
     def initialize_global_matrices_and_vectors(self):
         self._temp_vector_0 = np.zeros(self.num_nodes)
@@ -663,19 +670,19 @@ class ThermalAnalysis1D(Mesh1D):
     def update_integration_points(self) -> None:
         for e in self.elements:
             e.update_integration_points()
-            T0e = np.array([
-                self._temp_vector_0[nd.index]
-                for nd in e.nodes
-            ])
-            for ip in e.int_pts:
-                N = e._shape_matrix(ip.local_coord)
-                T0 = (N @ T0e)[0]
-                T1 = ip.temp
-                thw0 = ip.porosity - ip.vol_ice_cont_0
-                thw1 = ip.porosity - ip.vol_ice_cont
-                ip.vol_water_cont_temp_gradient = np.abs(
-                    (thw1 - thw0) / (T1 - T0)
-                ) if np.abs(T1 - T0) > 0.0 else 0.0
+            # T0e = np.array([
+            #     self._temp_vector_0[nd.index]
+            #     for nd in e.nodes
+            # ])
+            # for ip in e.int_pts:
+            #     N = e._shape_matrix(ip.local_coord)
+            #     T0 = (N @ T0e)[0]
+            #     T1 = ip.temp
+            #     thw0 = ip.porosity - ip.vol_ice_cont_0
+            #     thw1 = ip.porosity - ip.vol_ice_cont
+            #     ip.vol_water_cont_temp_gradient = np.abs(
+            #         (thw1 - thw0) / (T1 - T0)
+            #     ) if np.abs(T1 - T0) > 0.0 else 0.0
 
     def initialize_solution_variable_vectors(self) -> None:
         for nd in self.nodes:
@@ -702,7 +709,8 @@ class ThermalAnalysis1D(Mesh1D):
         self._heat_storage_matrix_0[:, :] = self._heat_storage_matrix[:, :]
         for e in self.elements:
             for ip in e.int_pts:
-                ip._vol_ice_cont_0 = ip._vol_ice_cont
+                ip.temp__0 = ip.temp
+                ip.vol_water_cont__0 = ip.vol_water_cont
 
     def update_boundary_vectors(self) -> None:
         self.update_heat_flux_vector()
@@ -821,7 +829,11 @@ class ThermalAnalysis1D(Mesh1D):
         temp_error = np.zeros_like(self._temp_vector)
         temp_rate_0 = np.zeros_like(self._temp_vector)
         temp_scale = np.zeros_like(self._temp_vector)
-        vol_ice_cont_0 = np.zeros((
+        vol_water_cont__0 = np.zeros((
+            self.num_elements,
+            num_int_pt_per_element,
+        ))
+        temp__0 = np.zeros((
             self.num_elements,
             num_int_pt_per_element,
         ))
@@ -841,7 +853,8 @@ class ThermalAnalysis1D(Mesh1D):
             temp_rate_0[:] = self._temp_rate_vector[:]
             for ke, e in enumerate(self.elements):
                 for jip, ip in enumerate(e.int_pts):
-                    vol_ice_cont_0[ke, jip] = ip.vol_ice_cont_0
+                    temp__0[ke, jip] = ip.temp
+                    vol_water_cont__0[ke, jip] = ip.vol_water_cont
             # take single time step
             self.initialize_time_step()
             self.iterative_correction_step()
@@ -850,9 +863,14 @@ class ThermalAnalysis1D(Mesh1D):
             # reset the system
             self._temp_vector[:] = temp_vector_0[:]
             self._temp_rate_vector[:] = temp_rate_0[:]
-            for e, thi_e in zip(self.elements, vol_ice_cont_0):
-                for ip, thi0 in zip(e.int_pts, thi_e):
-                    ip.vol_ice_cont_0 = thi0
+            for e, T0e, thw0_e in zip(
+                self.elements,
+                temp__0,
+                vol_water_cont__0,
+            ):
+                for ip, T0, thw0 in zip(e.int_pts, T0e, thw0_e):
+                    ip.temp__0 = T0
+                    ip.vol_water_cont__0 = thw0
             self.update_nodes()
             self.update_integration_points()
             self.update_global_matrices_and_vectors()
