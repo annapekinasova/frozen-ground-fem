@@ -220,6 +220,13 @@ class ConsolidationElement1D(Element1D):
                 if sig > ppc:
                     ip.pre_consol_stress = sig
                 ip.eff_stress = sig
+                # e0 = ip.void_ratio__0
+                # sig0 = ip.eff_stress__0
+                # ip.eff_stress_gradient = (
+                #     (sig - sig0) / (ep - e0)
+                #     if np.abs(ep - e0) > 0.0
+                #     else dsig_de
+                # )
                 ip.eff_stress_gradient = dsig_de
                 # update hydraulic conductivity and water flux
                 k, dk_de = ip.material.hyd_cond(ep, 1.0, False)
@@ -1028,6 +1035,7 @@ class ConsolidationAnalysis1D(Mesh1D):
                 de_dZ = (B @ ee)[0]
                 ip.void_ratio_0 = e0
                 ip.void_ratio = ep
+                # ip.void_ratio__0 = ep
                 # initialize pre-consolidation stress
                 ppc = ip.pre_consol_stress
                 ppc0, _ = ip.material.eff_stress(e0, ppc)
@@ -1064,6 +1072,7 @@ class ConsolidationAnalysis1D(Mesh1D):
                     if sig > ppc:
                         ip.pre_consol_stress = sig
                     ip.eff_stress = sig
+                    # ip.eff_stress__0 = sig
                     ip.eff_stress_gradient = dsig_de
                     # update hydraulic conductivity and water flux
                     k, dk_de = ip.material.hyd_cond(ep, 1.0, False)
@@ -1136,6 +1145,12 @@ class ConsolidationAnalysis1D(Mesh1D):
         self._water_flux_vector_0[:] = self._water_flux_vector[:]
         self._stiffness_matrix_0[:, :] = self._stiffness_matrix[:, :]
         self._mass_matrix_0[:, :] = self._mass_matrix[:, :]
+        # for e in self.elements:
+        #     for ip in e.int_pts:
+        #         ip.void_ratio__0 = ip.void_ratio
+        #         ip.eff_stress__0 = ip.eff_stress
+        #         if ip.eff_stress > ip.pre_consol_stress:
+        #             ip.pre_consol_stress = ip.eff_stress
 
     def update_boundary_vectors(self) -> None:
         self.update_water_flux_vector()
@@ -1250,10 +1265,18 @@ class ConsolidationAnalysis1D(Mesh1D):
         void_ratio_error = np.zeros_like(self._void_ratio_vector)
         void_ratio_rate = np.zeros_like(self._void_ratio_vector)
         void_ratio_scale = np.zeros_like(self._void_ratio_vector)
-        pre_consol_stress_0 = np.zeros((
+        pre_consol_stress__0 = np.zeros((
             self.num_elements,
             num_int_pt_per_element,
         ))
+        # void_ratio__0 = np.zeros((
+        #     self.num_elements,
+        #     num_int_pt_per_element,
+        # ))
+        # eff_stress__0 = np.zeros((
+        #     self.num_elements,
+        #     num_int_pt_per_element,
+        # ))
         dt_list = []
         err_list = []
         done = False
@@ -1269,7 +1292,9 @@ class ConsolidationAnalysis1D(Mesh1D):
             void_ratio_vector_0[:] = self._void_ratio_vector[:]
             for ke, e in enumerate(self.elements):
                 for jip, ip in enumerate(e.int_pts):
-                    pre_consol_stress_0[ke, jip] = ip.pre_consol_stress
+                    pre_consol_stress__0[ke, jip] = ip.pre_consol_stress
+                    # void_ratio__0[ke, jip] = ip.void_ratio
+                    # eff_stress__0[ke, jip] = ip.eff_stress
             # take single time step
             self.initialize_time_step()
             self.iterative_correction_step()
@@ -1277,9 +1302,31 @@ class ConsolidationAnalysis1D(Mesh1D):
             void_ratio_vector_1[:] = self._void_ratio_vector[:]
             # reset the system
             self._void_ratio_vector[:] = void_ratio_vector_0[:]
-            for e, ppc_e in zip(self.elements, pre_consol_stress_0):
-                for ip, ppc0 in zip(e.int_pts, ppc_e):
+            for (
+                e,
+                ppc0_e,
+                # ee0_e,
+                # sigp0_e
+            ) in zip(
+                self.elements,
+                pre_consol_stress__0,
+                # void_ratio__0,
+                # eff_stress__0,
+            ):
+                for (
+                    ip,
+                    ppc0,
+                    # ee0,
+                    # sigp0
+                ) in zip(
+                    e.int_pts,
+                    ppc0_e,
+                    # ee0_e,
+                    # sigp0_e,
+                ):
                     ip.pre_consol_stress = ppc0
+                    # ip.void_ratio__0 = ee0
+                    # ip.eff_stress__0 = sigp0
             self.update_nodes()
             self.update_integration_points()
             self.update_global_matrices_and_vectors()
