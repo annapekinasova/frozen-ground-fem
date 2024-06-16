@@ -405,12 +405,20 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         temp_error = np.zeros_like(self._temp_vector)
         temp_rate_0 = np.zeros_like(self._temp_vector)
         temp_scale = np.zeros_like(self._temp_vector)
+        vol_water_cont__0 = np.zeros((
+            self.num_elements,
+            num_int_pt_per_element,
+        ))
+        temp__0 = np.zeros((
+            self.num_elements,
+            num_int_pt_per_element,
+        ))
         void_ratio_vector_0 = np.zeros_like(self._void_ratio_vector)
         void_ratio_vector_1 = np.zeros_like(self._void_ratio_vector)
         void_ratio_error = np.zeros_like(self._void_ratio_vector)
         void_ratio_rate = np.zeros_like(self._void_ratio_vector)
         void_ratio_scale = np.zeros_like(self._void_ratio_vector)
-        pre_consol_stress_0 = np.zeros((
+        pre_consol_stress__0 = np.zeros((
             self.num_elements,
             num_int_pt_per_element,
         ))
@@ -431,7 +439,9 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             void_ratio_vector_0[:] = self._void_ratio_vector[:]
             for ke, e in enumerate(self.elements):
                 for jip, ip in enumerate(e.int_pts):
-                    pre_consol_stress_0[ke, jip] = ip.pre_consol_stress
+                    temp__0[ke, jip] = ip.temp
+                    vol_water_cont__0[ke, jip] = ip.vol_water_cont
+                    pre_consol_stress__0[ke, jip] = ip.pre_consol_stress
             # take single time step
             self.initialize_time_step()
             self.iterative_correction_step()
@@ -442,8 +452,20 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             self._temp_vector[:] = temp_vector_0[:]
             self._temp_rate_vector[:] = temp_rate_0[:]
             self._void_ratio_vector[:] = void_ratio_vector_0[:]
-            for e, ppc_e in zip(self.elements, pre_consol_stress_0):
-                for ip, ppc0 in zip(e.int_pts, ppc_e):
+            for e, T0e, thw0_e, ppc0_e in zip(
+                self.elements,
+                temp__0,
+                vol_water_cont__0,
+                pre_consol_stress__0,
+            ):
+                for ip, T0, thw0, ppc0 in zip(
+                    e.int_pts,
+                    T0e,
+                    thw0_e,
+                    ppc0_e,
+                ):
+                    ip.temp__0 = T0
+                    ip.vol_water_cont__0 = thw0
                     ip.pre_consol_stress = ppc0
             self.update_nodes()
             self.update_integration_points()
