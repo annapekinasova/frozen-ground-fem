@@ -537,12 +537,15 @@ class IntegrationPoint1D(Point1D):
     local_coord
     weight
     void_ratio
+    void_ratio__0
     void_ratio_0
     temp
+    temp__0
     temp_rate
     temp_gradient
     porosity
-    vol_ice_cont
+    vol_water_cont
+    vol_water_cont__0
     vol_water_cont_temp_gradient
     deg_sat_water
     deg_sat_ice
@@ -555,6 +558,7 @@ class IntegrationPoint1D(Point1D):
     water_flux_rate
     pre_consol_stress
     eff_stress
+    eff_stress__0
     eff_stress_gradient
     void_ratio_0_ref_frozen
     tot_stress_0_ref_frozen
@@ -666,23 +670,26 @@ class IntegrationPoint1D(Point1D):
     _local_coord: float = 0.0
     _weight: float = 0.0
     _void_ratio: float = 0.0
+    _void_ratio__0: float = 0.0
     _porosity: float = 0.0
     _void_ratio_0: float = 0.0
     _temp: float = 0.0
+    _temp__0: float = 0.0
     _temp_rate: float = 0.0
     _temp_gradient: float = 0.0
     _deg_sat_water: float = 1.0
     _deg_sat_ice: float = 0.0
     _deg_sat_water_temp_gradient: float = 0.0
-    _vol_ice_cont: float = 0.0
-    _vol_ice_cont_0: float = 0.0
-    _vol_ice_cont_rate: float = 0.0
+    _vol_water_cont: float = 0.0
+    _vol_water_cont__0: float = 0.0
+    # _vol_ice_cont_rate: float = 0.0
     _vol_water_cont_temp_gradient: float = 0.0
     _hyd_cond: float = 0.0
     _hyd_cond_gradient: float = 0.0
     _water_flux_rate: float = 0.0
     _pre_consol_stress: float = 0.0
     _eff_stress: float = 0.0
+    _eff_stress__0: float = 0.0
     _eff_stress_gradient: float = 0.0
     _void_ratio_0_ref_frozen: float = 0.0
     _tot_stress_0_ref_frozen: float = 0.0
@@ -829,8 +836,41 @@ class IntegrationPoint1D(Point1D):
         self._vol_ice_cont = self.porosity * self.deg_sat_ice
 
     @property
+    def void_ratio__0(self) -> float:
+        """Previous void ratio of the integration point
+        (e.g. at the beginning of a time step).
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value to assign is negative.
+
+        Notes
+        -----
+        Also updates porosity and volumetric ice content.
+        """
+        return self._void_ratio__0
+
+    @void_ratio__0.setter
+    def void_ratio__0(self, value: float) -> None:
+        value = float(value)
+        if value < 0.0:
+            raise ValueError(f"void_ratio {value} is not positive")
+        self._void_ratio__0 = value
+
+    @property
     def void_ratio_0(self) -> float:
-        """Initial void ratio of the integration point.
+        """Initial (reference) void ratio of the integration point
+        (e.g. prior to settlement analysis).
 
         Parameters
         ----------
@@ -877,6 +917,30 @@ class IntegrationPoint1D(Point1D):
     @temp.setter
     def temp(self, value: float) -> None:
         self._temp = float(value)
+
+    @property
+    def temp__0(self) -> float:
+        """Previous temperature at the integration point
+        (e.g. at the beginning of a time step).
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+        """
+        return self._temp__0
+
+    @temp__0.setter
+    def temp__0(self, value: float) -> None:
+        self._temp__0 = float(value)
 
     @property
     def temp_rate(self) -> float:
@@ -940,8 +1004,8 @@ class IntegrationPoint1D(Point1D):
         return self._porosity
 
     @property
-    def vol_ice_cont(self) -> float:
-        """Volumetric ice content of the integration point.
+    def vol_water_cont(self) -> float:
+        """Volumetric water content of the integration point.
 
         Returns
         -------
@@ -949,15 +1013,16 @@ class IntegrationPoint1D(Point1D):
 
         Notes
         ------
-        Volumetric ice content is not intended to be set directly.
+        Volumetric water content is not intended to be set directly.
         It is updated when void ratio or
         degree of saturation of water are updated.
         """
-        return self._vol_ice_cont
+        return self._vol_water_cont
 
     @property
-    def vol_ice_cont_0(self) -> float:
-        """Previous volumetric ice content of the integration point.
+    def vol_water_cont__0(self) -> float:
+        """Previous volumetric water content of the integration point
+        (e.g. at the beginning of a time step).
 
         Parameters
         ----------
@@ -973,41 +1038,41 @@ class IntegrationPoint1D(Point1D):
             If value to assign is not convertible to float.
             If value < 0.0.
         """
-        return self._vol_ice_cont_0
+        return self._vol_water_cont__0
 
-    @vol_ice_cont_0.setter
-    def vol_ice_cont_0(self, value: float) -> None:
+    @vol_water_cont__0.setter
+    def vol_water_cont__0(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
             raise ValueError(
-                f"vol_ice_cont_0 value {value} "
+                f"vol_water_cont__0 value {value} "
                 + "is negative."
             )
-        self._vol_ice_cont_0 = value
+        self._vol_water_cont__0 = value
 
-    @property
-    def vol_ice_cont_rate(self) -> float:
-        """Time rate of change of volumetric ice content.
-
-        Parameters
-        ----------
-        float
-
-        Returns
-        -------
-        float
-
-        Raises
-        ------
-        ValueError
-            If value to assign is not convertible to float.
-        """
-        return self._vol_ice_cont_rate
-
-    @vol_ice_cont_rate.setter
-    def vol_ice_cont_rate(self, value: float) -> None:
-        value = float(value)
-        self._vol_ice_cont_rate = value
+    # @property
+    # def vol_ice_cont_rate(self) -> float:
+    #     """Time rate of change of volumetric ice content.
+    #
+    #     Parameters
+    #     ----------
+    #     float
+    #
+    #     Returns
+    #     -------
+    #     float
+    #
+    #     Raises
+    #     ------
+    #     ValueError
+    #         If value to assign is not convertible to float.
+    #     """
+    #     return self._vol_ice_cont_rate
+    #
+    # @vol_ice_cont_rate.setter
+    # def vol_ice_cont_rate(self, value: float) -> None:
+    #     value = float(value)
+    #     self._vol_ice_cont_rate = value
 
     @property
     def deg_sat_water(self) -> float:
@@ -1030,7 +1095,7 @@ class IntegrationPoint1D(Point1D):
         Notes
         -----
         Also updates degree of saturation of ice (assuming full saturation)
-        and volumetric ice content.
+        and volumetric water content.
         """
         return self._deg_sat_water
 
@@ -1044,7 +1109,7 @@ class IntegrationPoint1D(Point1D):
             )
         self._deg_sat_water = value
         self._deg_sat_ice = 1.0 - value
-        self._vol_ice_cont = self.porosity * self._deg_sat_ice
+        self._vol_water_cont = self.porosity * self._deg_sat_water
 
     @property
     def deg_sat_ice(self) -> float:
@@ -1173,8 +1238,8 @@ class IntegrationPoint1D(Point1D):
         """
         lam_s = self.material.thrm_cond_solids
         por = self.porosity
-        th_i = self.vol_ice_cont
-        th_w = por - th_i
+        th_w = self.vol_water_cont
+        th_i = por - th_w
         return (lam_s ** (1 - por)) * (lam_i**th_i) * (lam_w**th_w)
 
     @property
@@ -1198,8 +1263,8 @@ class IntegrationPoint1D(Point1D):
         """
         C_s = self.material.vol_heat_cap_solids
         por = self.porosity
-        th_i = self.vol_ice_cont
-        th_w = por - th_i
+        th_w = self.vol_water_cont
+        th_i = por - th_w
         return ((1 - por) * C_s) + (th_i * C_i) + (th_w * C_w)
 
     @property
@@ -1328,6 +1393,30 @@ class IntegrationPoint1D(Point1D):
     @eff_stress.setter
     def eff_stress(self, value: float) -> None:
         self._eff_stress = float(value)
+
+    @property
+    def eff_stress__0(self) -> float:
+        """Previous effective stress of the integration point
+        (e.g. at the beginning of a time step).
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+        """
+        return self._eff_stress__0
+
+    @eff_stress__0.setter
+    def eff_stress__0(self, value: float) -> None:
+        self._eff_stress__0 = float(value)
 
     @property
     def eff_stress_gradient(self) -> float:
