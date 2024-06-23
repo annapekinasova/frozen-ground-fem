@@ -53,12 +53,12 @@ class TestIntegrationPoint1DDefaults(unittest.TestCase):
     def test_deg_sat_water_value(self):
         self.assertAlmostEqual(self.p.deg_sat_water, 1.0)
         self.assertAlmostEqual(self.p.deg_sat_ice, 0.0)
-        self.assertAlmostEqual(self.p.vol_ice_cont, 0.0)
+        self.assertAlmostEqual(self.p.vol_water_cont, 0.0)
 
     def test_deg_sat_water_type(self):
         self.assertIsInstance(self.p.deg_sat_water, float)
         self.assertIsInstance(self.p.deg_sat_ice, float)
-        self.assertIsInstance(self.p.vol_ice_cont, float)
+        self.assertIsInstance(self.p.vol_water_cont, float)
 
     def test_deg_sat_water_temp_gradient_value(self):
         self.assertAlmostEqual(self.p.deg_sat_water_temp_gradient, 0.0)
@@ -228,13 +228,13 @@ class TestIntegrationPoint1DInitializers(unittest.TestCase):
         self.assertEqual(self.p.deg_sat_water, 0.2)
         expected_deg_sat_ice = 0.8
         self.assertAlmostEqual(self.p.deg_sat_ice, expected_deg_sat_ice)
-        expected_vol_ice_cont = 0.5 * 0.8 / 1.5
-        self.assertAlmostEqual(self.p.vol_ice_cont, expected_vol_ice_cont)
+        expected_vol_water_cont = 0.5 * 0.2 / 1.5
+        self.assertAlmostEqual(self.p.vol_water_cont, expected_vol_water_cont)
 
     def test_deg_sat_water_type(self):
         self.assertIsInstance(self.p.deg_sat_water, float)
         self.assertIsInstance(self.p.deg_sat_ice, float)
-        self.assertIsInstance(self.p.vol_ice_cont, float)
+        self.assertIsInstance(self.p.vol_water_cont, float)
 
     def test_deg_sat_water_temp_gradient_value(self):
         self.assertEqual(self.p.deg_sat_water_temp_gradient, 12.5)
@@ -483,22 +483,21 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         self.p.deg_sat_water = 0.2
         self.assertEqual(self.p.deg_sat_water, 0.2)
         ee = self.p.void_ratio
-        expected_vol_ice_cont = (ee / (1+ee)) * 0.8
-        self.assertAlmostEqual(self.p.vol_ice_cont, expected_vol_ice_cont)
+        expected_vol_water_cont = (ee / (1+ee)) * 0.2
+        self.assertAlmostEqual(self.p.vol_water_cont, expected_vol_water_cont)
 
     def test_set_deg_sat_water_valid_float_edge_0(self):
         self.p.deg_sat_water = 0.0
         self.assertEqual(self.p.deg_sat_water, 0.0)
-        ee = self.p.void_ratio
-        expected_vol_ice_cont = (ee / (1+ee)) * 1.0
-        self.assertAlmostEqual(self.p.vol_ice_cont, expected_vol_ice_cont)
+        expected_vol_water_cont = 0.0
+        self.assertAlmostEqual(self.p.vol_water_cont, expected_vol_water_cont)
 
     def test_set_deg_sat_water_valid_float_edge_1(self):
         self.p.deg_sat_water = 1.0
         self.assertEqual(self.p.deg_sat_water, 1.0)
         ee = self.p.void_ratio
-        expected_vol_ice_cont = (ee / (1+ee)) * 0.0
-        self.assertAlmostEqual(self.p.vol_ice_cont, expected_vol_ice_cont)
+        expected_vol_water_cont = (ee / (1+ee)) * 1.0
+        self.assertAlmostEqual(self.p.vol_water_cont, expected_vol_water_cont)
 
     def test_set_deg_sat_water_invalid_float_negative(self):
         with self.assertRaises(ValueError):
@@ -512,8 +511,8 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         self.p.deg_sat_water = 0
         self.assertEqual(self.p.deg_sat_water, 0.0)
         ee = self.p.void_ratio
-        expected_vol_ice_cont = (ee / (1+ee)) * 1.0
-        self.assertAlmostEqual(self.p.vol_ice_cont, expected_vol_ice_cont)
+        expected_vol_water_cont = (ee / (1+ee)) * 0.0
+        self.assertAlmostEqual(self.p.vol_water_cont, expected_vol_water_cont)
 
     def test_set_deg_sat_water_valid_int_type(self):
         self.p.deg_sat_water = 0
@@ -523,8 +522,8 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         self.p.deg_sat_water = "1.e-1"
         self.assertEqual(self.p.deg_sat_water, 1.0e-1)
         ee = self.p.void_ratio
-        expected_vol_ice_cont = (ee / (1+ee)) * 0.9
-        self.assertAlmostEqual(self.p.vol_ice_cont, expected_vol_ice_cont)
+        expected_vol_water_cont = (ee / (1+ee)) * 0.1
+        self.assertAlmostEqual(self.p.vol_water_cont, expected_vol_water_cont)
 
     def test_set_deg_sat_water_invalid_str(self):
         with self.assertRaises(ValueError):

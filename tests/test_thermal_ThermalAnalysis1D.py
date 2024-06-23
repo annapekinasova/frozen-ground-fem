@@ -777,6 +777,7 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
                 ip.void_ratio = 0.35
                 ip.void_ratio_0 = 0.3
                 ip.tot_stress = 1.2e5
+                ip.vol_water_cont__0 = ip.porosity
         self.msh.update_integration_points()
         self.msh.update_heat_flow_matrix()
         self.msh.update_heat_storage_matrix()
@@ -865,6 +866,7 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
             ip.vol_water_cont_temp_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
+        print(actual_vol_water_cont_temp_gradient_int_pts)
         self.assertTrue(np.allclose(
             actual_vol_water_cont_temp_gradient_int_pts,
             expected_vol_water_cont_temp_gradient_int_pts,
@@ -1114,6 +1116,7 @@ class TestUpdateIntegrationPointsCubic(unittest.TestCase):
                 ip.void_ratio = 0.35
                 ip.void_ratio_0 = 0.3
                 ip.tot_stress = 1.2e5
+                ip.vol_water_cont__0 = ip.porosity
         self.msh.update_integration_points()
 
     def test_temperature_distribution(self):
@@ -1521,6 +1524,7 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
             ip.vol_water_cont_temp_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
+        print(actual_vol_water_cont_temp_gradient_int_pts)
         self.assertTrue(np.allclose(
             actual_vol_water_cont_temp_gradient_int_pts,
             expected_vol_water_cont_temp_gradient_int_pts,
