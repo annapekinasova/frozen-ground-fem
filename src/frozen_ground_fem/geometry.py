@@ -682,7 +682,6 @@ class IntegrationPoint1D(Point1D):
     _deg_sat_water_temp_gradient: float = 0.0
     _vol_water_cont: float = 0.0
     _vol_water_cont__0: float = 0.0
-    # _vol_ice_cont_rate: float = 0.0
     _vol_water_cont_temp_gradient: float = 0.0
     _hyd_cond: float = 0.0
     _hyd_cond_gradient: float = 0.0
@@ -833,7 +832,7 @@ class IntegrationPoint1D(Point1D):
             raise ValueError(f"void_ratio {value} is not positive")
         self._void_ratio = value
         self._porosity = value / (1.0 + value)
-        self._vol_ice_cont = self.porosity * self.deg_sat_ice
+        self._vol_water_cont = self.porosity * self.deg_sat_water
 
     @property
     def void_ratio__0(self) -> float:
