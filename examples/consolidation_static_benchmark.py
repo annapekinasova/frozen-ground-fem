@@ -225,6 +225,8 @@ def solve_consolidation_benchmark(
         else:
             t_plot += dt_plot
         dt00, dt_s, err_s = con_static.solve_to(t_plot)
+        toc = time.perf_counter()
+        run_time = toc - tic
         t_con.append(con_static._t1)
         s_con.append(con_static.calculate_total_settlement())
         UU, Uz = con_static.calculate_degree_consolidation(e1)
@@ -234,50 +236,21 @@ def solve_consolidation_benchmark(
             for e in con_static.elements
             for ip in e.int_pts
         ]) * 1.0e-3
-        # u = np.array([
-        #     ip.pore_pressure
-        #     for e in con_static.elements
-        #     for ip in e.int_pts
-        # ]) * 1.0e-3
-        sig = np.array([
-            nd.tot_stress
-            for nd in con_static.nodes
-        ]) * 1.0e-3
-        # sig_p = np.array([
-        #     ip.eff_stress
-        #     for e in con_static.elements
-        #     for ip in e.int_pts
-        # ]) * 1.0e-3
-        # ppc_ip = np.array([
-        #     ip.pre_consol_stress
-        #     for e in con_static.elements
-        #     for ip in e.int_pts
-        # ]) * 1.0e-3
         eps_s = np.abs((s_con[-1] - s_con[-2]) / s_con[-1])
         print(
             f"t = {con_static._t1 / s_per_yr:0.3f} yr, "
             + f"s = {s_con[-1]:0.3f} m, "
             + f"U = {U_con[-1]:0.4f}, "
-            + f"ue_max = {np.max(ue):0.4f} kPa, "
-            # + f"ue_min = {np.min(ue):0.4f} kPa, "
             + f"ue_mean = {np.mean(ue):0.4f} kPa, "
-            + f"sig_max = {np.max(sig):0.4f} kPa, "
-            # + f"ppc_max = {np.max(ppc_ip):0.4f} kPa, "
-            # + f"ppc_min = {np.min(ppc_ip):0.4f} kPa, "
-            # + f"u_max = {np.max(u):0.4f} kPa, "
-            # + f"sig_p_max = {np.max(sig_p):0.4f} kPa, "
-            # + f"sig_p_min = {np.min(sig_p):0.4f} kPa, "
             + f"eps =  {eps_s:0.4e}, "
-            + f"dt = {dt00:0.4e} s"
+            + f"dt = {dt00:0.4e} s, "
+            + f"run_time = {run_time:0.4f} s"
         )
         e_nod[:, k_plot] = con_static._void_ratio_vector[:]
         Uz_nod[:, k_plot] = Uz[:]
         sig_p_int[:, k_plot] = 1.0e-3 * np.array(
             [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
         )
-        # ue_norm_int[:, k_plot] = 1.0 - (
-        #     sig_p_int[:, k_plot] - sig_p_int[:, 0]
-        # ) / ui_kPa
         ue_norm_int[:, k_plot] = ue[:] / ui_kPa
         hyd_cond_int[:, k_plot] = np.array(
             [ip.hyd_cond for e in con_static.elements for ip in e.int_pts]
@@ -329,7 +302,7 @@ def main():
     qi = 40.0e3
     qf = 440.0e3
     ppc0 = 200.52773e3
-    tol = 1e-6
+    tol = 1e-4
     stabilize = False
 
     # set plotting parameters
@@ -339,12 +312,11 @@ def main():
         linewidth=0.5,
         color="black",
         markeredgewidth=0.5,
-        # markeredgecolor="black",
         markerfacecolor="none",
         markersize=4,
     )
 
-    # plot indices at 0.0, 0.1, 2, 5, and 60 years
+    # define plot labels
     k_plot = [0, 10, 20, 23, 78]
     k_plot_labels = [
         "Initial",
@@ -428,12 +400,6 @@ def main():
     )
     t_con_Gs_1_yr = t_con_Gs_1 / s_per_yr
 
-    # np.savetxt("examples/con_static_bench_settle_Gs_1.txt",
-    #            np.array([t_con_Gs_1, s_con_Gs_1]).T)
-    # np.savetxt("examples/con_static_bench_profiles_Gs_1.txt",
-    #            np.hstack([np.reshape(z_nod_Gs_1, (len(z_nod_Gs_1), 1)),
-    #                       e_nod_Gs_1, ue_norm_int_Gs_1]))
-
     # solve self weight case
     # normally consolidated
     (
@@ -448,12 +414,6 @@ def main():
         stabilize=stabilize, tol=tol,
     )
     t_con_Gs_278_yr = t_con_Gs_278 / s_per_yr
-
-    # np.savetxt("examples/con_static_bench_settle_Gs_278.txt",
-    #            np.array([t_con_Gs_278, s_con_Gs_278]).T)
-    # np.savetxt("examples/con_static_bench_profiles_Gs_278.txt",
-    #            np.hstack([np.reshape(z_nod_Gs_278, (len(z_nod_Gs_278), 1)),
-    #                       e_nod_Gs_278, ue_norm_int_Gs_278]))
 
     # solve neutral buoyancy case
     # overconsolidated
@@ -470,12 +430,6 @@ def main():
     )
     t_con_Gs_1_OC_yr = t_con_Gs_1_OC / s_per_yr
 
-    # np.savetxt("examples/con_static_bench_settle_Gs_1_OC.txt",
-    #            np.array([t_con_Gs_1_OC, s_con_Gs_1_OC]).T)
-    # np.savetxt("examples/con_static_bench_profiles_Gs_1_OC.txt",
-    #            np.hstack([np.reshape(z_nod_Gs_1_OC, (len(z_nod_Gs_1_OC), 1)),
-    #                       e_nod_Gs_1_OC, ue_norm_int_Gs_1_OC]))
-
     # solve self weight case
     # overconsolidated
     (
@@ -490,13 +444,6 @@ def main():
         stabilize=stabilize, tol=tol,
     )
     t_con_Gs_278_OC_yr = t_con_Gs_278_OC / s_per_yr
-
-    # np.savetxt("examples/con_static_bench_settle_Gs_278_OC.txt",
-    #            np.array([t_con_Gs_278_OC, s_con_Gs_278_OC]).T)
-    # np.savetxt("examples/con_static_bench_profiles_Gs_278_OC.txt",
-    #            np.hstack([np.reshape(z_nod_Gs_278_OC,
-    #                                  (len(z_nod_Gs_278_OC), 1)),
-    # e_nod_Gs_278_OC, ue_norm_int_Gs_278_OC]))
 
     # settlement and average degree of consolidation
     plt.figure(figsize=(8.1, 4.7))
@@ -516,12 +463,10 @@ def main():
         t_FP15[1:], s_FP15_Gs_278[1:], "or", label="Gs=2.78 [FP15]",
         markeredgecolor="red",
     )
-    # plt.xlabel(r"Time, $t$ [$yr$]")
     plt.ylabel(r"Settlement, $s$ [$m$]")
     plt.xlim([0.01, 100])
     plt.ylim([3.0, 0.0])
     plt.title("Normally consolidated")
-    # plt.legend()
 
     plt.subplot(2, 2, 2)
     plt.semilogx(
@@ -538,8 +483,6 @@ def main():
         t_FP15[1:], s_FP15_Gs_278_OC[1:], "or", label="Gs=2.78 [FP15]",
         markeredgecolor="red",
     )
-    # plt.xlabel(r"Time, $t$ [$yr$]")
-    # plt.ylabel(r"Settlement, $s$ [$m$]")
     plt.xlim([0.01, 100])
     plt.ylim([3.0, 0.0])
     plt.title("Overconsolidated")
@@ -564,7 +507,6 @@ def main():
     plt.ylabel(r"Average degree of consolidation, $U$")
     plt.xlim([0.01, 100])
     plt.ylim([0.0, 1.0])
-    # plt.legend()
 
     plt.subplot(2, 2, 4)
     plt.semilogx(
@@ -582,10 +524,8 @@ def main():
         markeredgecolor="red",
     )
     plt.xlabel(r"Time, $t$ [$yr$]")
-    # plt.ylabel(r"Average degree of consolidation, $U$")
     plt.xlim([0.01, 100])
     plt.ylim([0.0, 1.0])
-    # plt.legend()
 
     plt.savefig("examples/con_static_bench_settle.svg")
 
@@ -636,7 +576,6 @@ def main():
             marker="x", linestyle="none",
             markeredgecolor="red",
         )
-    # plt.xlabel(r"Void Ratio, $e$")
     plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
     plt.ylim((11, -1))
     plt.xlim((1.5, 2.8))
@@ -717,8 +656,6 @@ def main():
             marker="x", linestyle="none",
             markeredgecolor="red",
         )
-    # plt.xlabel(r"Normalized excess pore pressure, $u_e/\Delta q$")
-    # plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
     plt.ylim((11, -1))
     plt.xlim((-0.1, 1.1))
     plt.title(r"$\bf{Top:}$ NC, $\bf{Bottom:}$ OC")
@@ -752,10 +689,8 @@ def main():
             markeredgecolor="red",
         )
     plt.xlabel(r"Normalized excess pore pressure, $u_e/\Delta q$")
-    # plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
     plt.ylim((11, -1))
     plt.xlim((-0.1, 1.1))
-    # fig.legend()
 
     plt.savefig("examples/con_static_bench_profiles.svg")
 
