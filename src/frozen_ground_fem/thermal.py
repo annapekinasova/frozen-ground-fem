@@ -374,7 +374,7 @@ class ThermalBoundary1D(Boundary1D):
 
 
 class ThermalAnalysis1D(Mesh1D):
-    """Class for simulating thermal physics
+    """Cjass for simulating thermal physics
     on a mesh of :c:`ThermalElement1D`.
 
     Attributes
@@ -491,6 +491,41 @@ class ThermalAnalysis1D(Mesh1D):
         """
         return self._boundaries
 
+    def add_boundary(self, new_boundary: ThermalBoundary1D) -> None:
+        """Adds a boundary to the mesh.
+
+        Parameters
+        ----------
+        new_boundary : :c:`ThermalBoundary1D`
+            The boundary to add to the mesh.
+
+        Raises
+        ------
+        TypeError
+            If new_boundary is not an instance of :c:`ThermalBoundary1D`.
+        ValueError
+            If new_boundary contains a :c:`Node1D` not in the mesh.
+            If new_boundary contains an :c:`IntegrationPoint1D`
+                not in the mesh.
+        """
+        if not isinstance(new_boundary, ThermalBoundary1D):
+            raise TypeError(
+                f"type(new_boundary) {type(new_boundary)} invalid, "
+                + "must be ThermalBoundary1D"
+            )
+        for nd in new_boundary.nodes:
+            if nd not in self.nodes:
+                raise ValueError(f"new_boundary contains node {nd}"
+                                 + " not in mesh")
+        if new_boundary.int_pts:
+            int_pts = tuple(ip for e in self.elements for ip in e.int_pts)
+            for ip in new_boundary.int_pts:
+                if ip not in int_pts:
+                    raise ValueError(
+                        f"new_boundary contains int_pt {ip} not in mesh"
+                    )
+        self._boundaries.add(new_boundary)
+
     def _generate_elements(self, num_elements: int, order: int):
         """Generate the elements in the mesh.
 
@@ -531,40 +566,33 @@ class ThermalAnalysis1D(Mesh1D):
         self._delta_temp_vector = np.zeros(self.num_nodes)
         self._temp_rate_vector = np.zeros(self.num_nodes)
 
-    def add_boundary(self, new_boundary: ThermalBoundary1D) -> None:
-        """Adds a boundary to the mesh.
+    def initialize_free_index_arrays(self) -> None:
+        # create list of free node indices
+        # that will be updated at each iteration
+        # (i.e. are not fixed/Dirichlet boundary conditions)
+        free_ind_list = [nd.index for nd in self.nodes]
+        for tb in self.boundaries:
+            if tb.bnd_type == ThermalBoundary1D.BoundaryType.temp:
+                free_ind_list.remove(tb.nodes[0].index)
+        free_ind = np.array(free_ind_list, dtype=int)
+        self._free_vec = np.ix_(free_ind)
+        self._free_arr = np.ix_(free_ind, free_ind)
 
-        Parameters
-        ----------
-        new_boundary : :c:`ThermalBoundary1D`
-            The boundary to add to the mesh.
+    def initialize_solution_variable_vectors(self) -> None:
+        for nd in self.nodes:
+            self._temp_vector[nd.index] = nd.temp
+            self._temp_vector_0[nd.index] = nd.temp
+            self._temp_rate_vector[nd.index] = nd.temp_rate
 
-        Raises
-        ------
-        TypeError
-            If new_boundary is not an instance of :c:`ThermalBoundary1D`.
-        ValueError
-            If new_boundary contains a :c:`Node1D` not in the mesh.
-            If new_boundary contains an :c:`IntegrationPoint1D`
-                not in the mesh.
-        """
-        if not isinstance(new_boundary, ThermalBoundary1D):
-            raise TypeError(
-                f"type(new_boundary) {type(new_boundary)} invalid, "
-                + "must be ThermalBoundary1D"
-            )
-        for nd in new_boundary.nodes:
-            if nd not in self.nodes:
-                raise ValueError(f"new_boundary contains node {nd}"
-                                 + " not in mesh")
-        if new_boundary.int_pts:
-            int_pts = tuple(ip for e in self.elements for ip in e.int_pts)
-            for ip in new_boundary.int_pts:
-                if ip not in int_pts:
-                    raise ValueError(
-                        f"new_boundary contains int_pt {ip} not in mesh"
-                    )
-        self._boundaries.add(new_boundary)
+    def store_converged_matrices(self) -> None:
+        self._temp_vector_0[:] = self._temp_vector[:]
+        self._heat_flux_vector_0[:] = self._heat_flux_vector[:]
+        self._heat_flow_matrix_0[:, :] = self._heat_flow_matrix[:, :]
+        self._heat_storage_matrix_0[:, :] = self._heat_storage_matrix[:, :]
+        for e in self.elements:
+            for ip in e.int_pts:
+                ip.temp__0 = ip.temp
+                ip.vol_water_cont__0 = ip.vol_water_cont
 
     def update_boundary_conditions(
             self,
@@ -594,6 +622,19 @@ class ThermalAnalysis1D(Mesh1D):
             if tb.bnd_type == ThermalBoundary1D.BoundaryType.temp:
                 for nd in tb.nodes:
                     self._temp_vector[nd.index] = nd.temp
+
+    def update_nodes(self) -> None:
+        """Updates the temperature values at the nodes
+        in the mesh.
+
+        Notes
+        -----
+        This convenience method loops over nodes in the mesh
+        and assigns the temperature from the global temperature vector.
+        """
+        for nd in self.nodes:
+            nd.temp = self._temp_vector[nd.index]
+            nd.temp_rate = self._temp_rate_vector[nd.index]
 
     def update_heat_flux_vector(self) -> None:
         """Updates the global heat flux vector.
@@ -654,71 +695,13 @@ class ThermalAnalysis1D(Mesh1D):
             Ce = e.heat_storage_matrix
             self._heat_storage_matrix[np.ix_(ind, ind)] += Ce
 
-    def update_nodes(self) -> None:
-        """Updates the temperature values at the nodes
-        in the mesh.
-
-        Notes
-        -----
-        This convenience method loops over nodes in the mesh
-        and assigns the temperature from the global temperature vector.
-        """
-        for nd in self.nodes:
-            nd.temp = self._temp_vector[nd.index]
-            nd.temp_rate = self._temp_rate_vector[nd.index]
-
-    def update_integration_points(self) -> None:
-        for e in self.elements:
-            e.update_integration_points()
-            # T0e = np.array([
-            #     self._temp_vector_0[nd.index]
-            #     for nd in e.nodes
-            # ])
-            # for ip in e.int_pts:
-            #     N = e._shape_matrix(ip.local_coord)
-            #     T0 = (N @ T0e)[0]
-            #     T1 = ip.temp
-            #     thw0 = ip.porosity - ip.vol_ice_cont_0
-            #     thw1 = ip.porosity - ip.vol_ice_cont
-            #     ip.vol_water_cont_temp_gradient = np.abs(
-            #         (thw1 - thw0) / (T1 - T0)
-            #     ) if np.abs(T1 - T0) > 0.0 else 0.0
-
-    def initialize_solution_variable_vectors(self) -> None:
-        for nd in self.nodes:
-            self._temp_vector[nd.index] = nd.temp
-            self._temp_vector_0[nd.index] = nd.temp
-            self._temp_rate_vector[nd.index] = nd.temp_rate
-
-    def initialize_free_index_arrays(self) -> None:
-        # create list of free node indices
-        # that will be updated at each iteration
-        # (i.e. are not fixed/Dirichlet boundary conditions)
-        free_ind_list = [nd.index for nd in self.nodes]
-        for tb in self.boundaries:
-            if tb.bnd_type == ThermalBoundary1D.BoundaryType.temp:
-                free_ind_list.remove(tb.nodes[0].index)
-        free_ind = np.array(free_ind_list, dtype=int)
-        self._free_vec = np.ix_(free_ind)
-        self._free_arr = np.ix_(free_ind, free_ind)
-
-    def store_converged_matrices(self) -> None:
-        self._temp_vector_0[:] = self._temp_vector[:]
-        self._heat_flux_vector_0[:] = self._heat_flux_vector[:]
-        self._heat_flow_matrix_0[:, :] = self._heat_flow_matrix[:, :]
-        self._heat_storage_matrix_0[:, :] = self._heat_storage_matrix[:, :]
-        for e in self.elements:
-            for ip in e.int_pts:
-                ip.temp__0 = ip.temp
-                ip.vol_water_cont__0 = ip.vol_water_cont
-
-    def update_boundary_vectors(self) -> None:
-        self.update_heat_flux_vector()
-
     def update_global_matrices_and_vectors(self) -> None:
         self.update_heat_flux_vector()
         self.update_heat_flow_matrix()
         self.update_heat_storage_matrix()
+
+    def update_boundary_vectors(self) -> None:
+        self.update_heat_flux_vector()
 
     def calculate_solution_vector_correction(self) -> None:
         """Performs a single iteration of temperature correction

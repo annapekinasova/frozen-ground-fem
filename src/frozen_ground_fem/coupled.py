@@ -183,25 +183,6 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         """
         return self._boundaries
 
-    def _generate_elements(self, num_elements: int, order: int):
-        """Generate the elements in the mesh.
-
-        Notes
-        -----
-        Overrides Mesh1D._generate_elements()
-        to generate CoupledElement1D objects.
-        """
-        self._elements = tuple(
-            CoupledElement1D(tuple(self.nodes[order * k + j]
-                                   for j in range(order + 1)),
-                             order)
-            for k in range(num_elements)
-        )
-
-    def initialize_global_matrices_and_vectors(self):
-        ThermalAnalysis1D.initialize_global_matrices_and_vectors(self)
-        ConsolidationAnalysis1D.initialize_global_matrices_and_vectors(self)
-
     def add_boundary(
         self,
         new_boundary:
@@ -249,6 +230,45 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
                         f"new_boundary contains int_pt {ip} not in mesh"
                     )
         self._boundaries.add(new_boundary)
+
+    def _generate_elements(self, num_elements: int, order: int):
+        """Generate the elements in the mesh.
+
+        Notes
+        -----
+        Overrides Mesh1D._generate_elements()
+        to generate CoupledElement1D objects.
+        """
+        self._elements = tuple(
+            CoupledElement1D(tuple(self.nodes[order * k + j]
+                                   for j in range(order + 1)),
+                             order)
+            for k in range(num_elements)
+        )
+
+    def initialize_integration_points(self) -> None:
+        ThermalAnalysis1D.initialize_integration_points(self)
+        ConsolidationAnalysis1D.initialize_integration_points(self)
+
+    def initialize_global_matrices_and_vectors(self):
+        ThermalAnalysis1D.initialize_global_matrices_and_vectors(self)
+        ConsolidationAnalysis1D.initialize_global_matrices_and_vectors(self)
+
+    def initialize_free_index_arrays(self) -> None:
+        ThermalAnalysis1D.initialize_free_index_arrays(self)
+        self._free_vec_thrm = tuple(self._free_vec)
+        self._free_arr_thrm = tuple(self._free_arr)
+        ConsolidationAnalysis1D.initialize_free_index_arrays(self)
+        self._free_vec_cnsl = tuple(self._free_vec)
+        self._free_arr_cnsl = tuple(self._free_arr)
+
+    def initialize_solution_variable_vectors(self) -> None:
+        ThermalAnalysis1D.initialize_solution_variable_vectors(self)
+        ConsolidationAnalysis1D.initialize_solution_variable_vectors(self)
+
+    def store_converged_matrices(self) -> None:
+        ThermalAnalysis1D.store_converged_matrices(self)
+        ConsolidationAnalysis1D.store_converged_matrices(self)
 
     def update_boundary_conditions(
             self,
@@ -301,36 +321,20 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             nd.temp_rate = self._temp_rate_vector[nd.index]
             nd.void_ratio = self._void_ratio_vector[nd.index]
 
-    def initialize_solution_variable_vectors(self) -> None:
-        ThermalAnalysis1D.initialize_solution_variable_vectors(self)
-        ConsolidationAnalysis1D.initialize_solution_variable_vectors(self)
-
-    def initialize_integration_points(self) -> None:
-        ThermalAnalysis1D.initialize_integration_points(self)
-        ConsolidationAnalysis1D.initialize_integration_points(self)
-
-    def initialize_free_index_arrays(self) -> None:
-        ThermalAnalysis1D.initialize_free_index_arrays(self)
-        self._free_vec_thrm = tuple(self._free_vec)
-        self._free_arr_thrm = tuple(self._free_arr)
-        ConsolidationAnalysis1D.initialize_free_index_arrays(self)
-        self._free_vec_cnsl = tuple(self._free_vec)
-        self._free_arr_cnsl = tuple(self._free_arr)
-
-    def store_converged_matrices(self) -> None:
-        ThermalAnalysis1D.store_converged_matrices(self)
-        ConsolidationAnalysis1D.store_converged_matrices(self)
+    def update_global_matrices_and_vectors(self) -> None:
+        ThermalAnalysis1D.update_global_matrices_and_vectors(self)
+        ConsolidationAnalysis1D.update_global_matrices_and_vectors(self)
 
     def update_boundary_vectors(self) -> None:
         ThermalAnalysis1D.update_boundary_vectors(self)
         ConsolidationAnalysis1D.update_boundary_vectors(self)
 
-    def update_global_matrices_and_vectors(self) -> None:
-        ThermalAnalysis1D.update_global_matrices_and_vectors(self)
-        ConsolidationAnalysis1D.update_global_matrices_and_vectors(self)
-
     def calculate_solution_vector_correction(self) -> None:
+        self._free_vec = self._free_vec_thrm
+        self._free_arr = self._free_arr_thrm
         ThermalAnalysis1D.calculate_solution_vector_correction(self)
+        self._free_vec = self._free_vec_cnsl
+        self._free_arr = self._free_arr_cnsl
         ConsolidationAnalysis1D.calculate_solution_vector_correction(self)
 
     def update_iteration_variables(self) -> None:

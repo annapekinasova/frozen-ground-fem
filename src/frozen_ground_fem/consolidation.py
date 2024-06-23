@@ -846,37 +846,6 @@ class ConsolidationAnalysis1D(Mesh1D):
         """
         return self._hyd_boundaries
 
-    def _generate_elements(self, num_elements: int, order: int):
-        """Generate the elements in the mesh.
-
-        Notes
-        -----
-        Overrides Mesh1D._generate_elements()
-        to generate ConsolidationElement1D objects.
-        """
-        self._elements = tuple(
-            ConsolidationElement1D(tuple(self.nodes[order * k + j]
-                                   for j in range(order + 1)),
-                                   order)
-            for k in range(num_elements)
-        )
-
-    def initialize_global_matrices_and_vectors(self):
-        self._void_ratio_vector_0 = np.zeros(self.num_nodes)
-        self._void_ratio_vector = np.zeros(self.num_nodes)
-        self._water_flux_vector_0 = np.zeros(self.num_nodes)
-        self._water_flux_vector = np.zeros(self.num_nodes)
-        self._stiffness_matrix_0 = np.zeros(
-            (self.num_nodes, self.num_nodes))
-        self._stiffness_matrix = np.zeros(
-            (self.num_nodes, self.num_nodes))
-        self._mass_matrix_0 = np.zeros(
-            (self.num_nodes, self.num_nodes))
-        self._mass_matrix = np.zeros(
-            (self.num_nodes, self.num_nodes))
-        self._residual_water_flux_vector = np.zeros(self.num_nodes)
-        self._delta_void_ratio_vector = np.zeros(self.num_nodes)
-
     def add_boundary(
         self,
         new_boundary: ConsolidationBoundary1D | HydraulicBoundary1D,
@@ -918,101 +887,20 @@ class ConsolidationAnalysis1D(Mesh1D):
                     )
         self._boundaries.add(new_boundary)
 
-    def update_boundary_conditions(
-            self,
-            time: float) -> None:
-        """Update the boundary conditions in the ConsolidationAnalysis1D.
-
-        Parameters
-        ----------
-        time : float
-            The time in seconds.
-            Gets passed through to the update_value()
-            method of the boundary class.
+    def _generate_elements(self, num_elements: int, order: int):
+        """Generate the elements in the mesh.
 
         Notes
         -----
-        This convenience methods
-        loops over all Boundary1D objects in boundaries
-        and calls update_value() to update the boundary value
-        and then calls update_nodes() to assign the new value
-        to each boundary Node1D.
-        For Dirichlet (void ratio) boundary conditions,
-        the value is then assigned to the global temperature vector
-        in the ConsolidationAnalysis1D object.
+        Overrides Mesh1D._generate_elements()
+        to generate ConsolidationElement1D objects.
         """
-        for tb in self.boundaries:
-            tb.update_value(time)
-            tb.update_nodes()
-            if tb.bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio:
-                for nd in tb.nodes:
-                    self._void_ratio_vector[nd.index] = nd.void_ratio
-
-    def update_water_flux_vector(self) -> None:
-        """Updates the global water flux vector.
-
-        Notes
-        -----
-        This convenience method clears the global water flux vector,
-        then loops over elements integrating
-        the element water flux vectors,
-        then loops over the boundaries and
-        assigns values for fixed flux and water flux type boundaries
-        to the global water flux vector.
-        """
-        self._water_flux_vector[:] = 0.0
-        for be in self.boundaries:
-            if isinstance(be, HydraulicBoundary1D):
-                continue
-            if not (be.bnd_type
-                    == ConsolidationBoundary1D.BoundaryType.void_ratio):
-                self._water_flux_vector[be.nodes[0].index] -= be.bnd_value
-
-    def update_stiffness_matrix(self) -> None:
-        """Updates the global stiffness matrix.
-
-        Notes
-        -----
-        This convenience method first clears the global stiffness matrix
-        then loops over the elements
-        to get the element stiffness matrices
-        and sums them into the global stiffness matrix
-        respecting connectivity of global degrees of freedom.
-        """
-        self._stiffness_matrix[:, :] = 0.0
-        for e in self.elements:
-            ind = [nd.index for nd in e.nodes]
-            Ke = e.stiffness_matrix
-            self._stiffness_matrix[np.ix_(ind, ind)] -= Ke
-
-    def update_mass_matrix(self) -> None:
-        """Updates the global mass matrix.
-
-        Notes
-        -----
-        This convenience method clears the global mass matrix
-        then loops over the elements
-        to get the element mass matrices
-        and sums them into the global mass matrix
-        respecting connectivity of global degrees of freedom.
-        """
-        self._mass_matrix[:, :] = 0.0
-        for e in self.elements:
-            ind = [nd.index for nd in e.nodes]
-            Me = e.mass_matrix
-            self._mass_matrix[np.ix_(ind, ind)] += Me
-
-    def update_nodes(self) -> None:
-        """Updates the void ratio values at the nodes
-        in the mesh.
-
-        Notes
-        -----
-        This convenience method loops over nodes in the parent mesh
-        and assigns the void ratio from the global void ratio vector.
-        """
-        for nd in self.nodes:
-            nd.void_ratio = self._void_ratio_vector[nd.index]
+        self._elements = tuple(
+            ConsolidationElement1D(tuple(self.nodes[order * k + j]
+                                   for j in range(order + 1)),
+                                   order)
+            for k in range(num_elements)
+        )
 
     def initialize_integration_points(self) -> None:
         self._initialize_element_integration_points()
@@ -1122,11 +1010,21 @@ class ConsolidationAnalysis1D(Mesh1D):
         # assign hydraulic boundaries to the analysis property
         self._hyd_boundaries = tuple(hyd_boundaries)
 
-    def initialize_solution_variable_vectors(self) -> None:
-        # now get the void ratio from the nodes
-        for nd in self.nodes:
-            self._void_ratio_vector[nd.index] = nd.void_ratio
-            self._void_ratio_vector_0[nd.index] = nd.void_ratio
+    def initialize_global_matrices_and_vectors(self):
+        self._void_ratio_vector_0 = np.zeros(self.num_nodes)
+        self._void_ratio_vector = np.zeros(self.num_nodes)
+        self._water_flux_vector_0 = np.zeros(self.num_nodes)
+        self._water_flux_vector = np.zeros(self.num_nodes)
+        self._stiffness_matrix_0 = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._stiffness_matrix = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._mass_matrix_0 = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._mass_matrix = np.zeros(
+            (self.num_nodes, self.num_nodes))
+        self._residual_water_flux_vector = np.zeros(self.num_nodes)
+        self._delta_void_ratio_vector = np.zeros(self.num_nodes)
 
     def initialize_free_index_arrays(self) -> None:
         # create list of free node indices
@@ -1140,6 +1038,11 @@ class ConsolidationAnalysis1D(Mesh1D):
         self._free_vec = np.ix_(free_ind)
         self._free_arr = np.ix_(free_ind, free_ind)
 
+    def initialize_solution_variable_vectors(self) -> None:
+        for nd in self.nodes:
+            self._void_ratio_vector[nd.index] = nd.void_ratio
+            self._void_ratio_vector_0[nd.index] = nd.void_ratio
+
     def store_converged_matrices(self) -> None:
         self._void_ratio_vector_0[:] = self._void_ratio_vector[:]
         self._water_flux_vector_0[:] = self._water_flux_vector[:]
@@ -1152,13 +1055,109 @@ class ConsolidationAnalysis1D(Mesh1D):
         #         if ip.eff_stress > ip.pre_consol_stress:
         #             ip.pre_consol_stress = ip.eff_stress
 
-    def update_boundary_vectors(self) -> None:
-        self.update_water_flux_vector()
+    def update_boundary_conditions(
+            self,
+            time: float) -> None:
+        """Update the boundary conditions in the ConsolidationAnalysis1D.
+
+        Parameters
+        ----------
+        time : float
+            The time in seconds.
+            Gets passed through to the update_value()
+            method of the boundary class.
+
+        Notes
+        -----
+        This convenience methods
+        loops over all Boundary1D objects in boundaries
+        and calls update_value() to update the boundary value
+        and then calls update_nodes() to assign the new value
+        to each boundary Node1D.
+        For Dirichlet (void ratio) boundary conditions,
+        the value is then assigned to the global temperature vector
+        in the ConsolidationAnalysis1D object.
+        """
+        for tb in self.boundaries:
+            tb.update_value(time)
+            tb.update_nodes()
+            if tb.bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio:
+                for nd in tb.nodes:
+                    self._void_ratio_vector[nd.index] = nd.void_ratio
+
+    def update_nodes(self) -> None:
+        """Updates the void ratio values at the nodes
+        in the mesh.
+
+        Notes
+        -----
+        This convenience method loops over nodes in the parent mesh
+        and assigns the void ratio from the global void ratio vector.
+        """
+        for nd in self.nodes:
+            nd.void_ratio = self._void_ratio_vector[nd.index]
+
+    def update_water_flux_vector(self) -> None:
+        """Updates the global water flux vector.
+
+        Notes
+        -----
+        This convenience method clears the global water flux vector,
+        then loops over elements integrating
+        the element water flux vectors,
+        then loops over the boundaries and
+        assigns values for fixed flux and water flux type boundaries
+        to the global water flux vector.
+        """
+        self._water_flux_vector[:] = 0.0
+        for be in self.boundaries:
+            if isinstance(be, HydraulicBoundary1D):
+                continue
+            if not (be.bnd_type
+                    == ConsolidationBoundary1D.BoundaryType.void_ratio):
+                self._water_flux_vector[be.nodes[0].index] -= be.bnd_value
+
+    def update_stiffness_matrix(self) -> None:
+        """Updates the global stiffness matrix.
+
+        Notes
+        -----
+        This convenience method first clears the global stiffness matrix
+        then loops over the elements
+        to get the element stiffness matrices
+        and sums them into the global stiffness matrix
+        respecting connectivity of global degrees of freedom.
+        """
+        self._stiffness_matrix[:, :] = 0.0
+        for e in self.elements:
+            ind = [nd.index for nd in e.nodes]
+            Ke = e.stiffness_matrix
+            self._stiffness_matrix[np.ix_(ind, ind)] -= Ke
+
+    def update_mass_matrix(self) -> None:
+        """Updates the global mass matrix.
+
+        Notes
+        -----
+        This convenience method clears the global mass matrix
+        then loops over the elements
+        to get the element mass matrices
+        and sums them into the global mass matrix
+        respecting connectivity of global degrees of freedom.
+        """
+        self._mass_matrix[:, :] = 0.0
+        for e in self.elements:
+            ind = [nd.index for nd in e.nodes]
+            Me = e.mass_matrix
+            self._mass_matrix[np.ix_(ind, ind)] += Me
 
     def update_global_matrices_and_vectors(self) -> None:
         self.update_water_flux_vector()
         self.update_stiffness_matrix()
         self.update_mass_matrix()
+
+    def update_boundary_vectors(self) -> None:
+        self.update_water_flux_vector()
 
     def calculate_solution_vector_correction(self) -> None:
         """Performs a single iteration of void ratio correction

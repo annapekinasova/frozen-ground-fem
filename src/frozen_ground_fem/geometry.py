@@ -1975,7 +1975,6 @@ class Mesh1D:
     add_boundary
     remove_boundary
     clear_boundaries
-    initialize_sparse_matrix_struct
     initialize_global_system
     initialize_time_step
     store_converged_matrices
@@ -2201,6 +2200,62 @@ class Mesh1D:
         """
         return self._boundaries
 
+    def add_boundary(self, new_boundary: Any) -> None:
+        """Adds a boundary to the mesh.
+
+        Parameters
+        ----------
+        new_boundary : :c:`Boundary1D`
+            The boundary to add to the mesh.
+
+        Raises
+        ------
+        TypeError
+            If new_boundary is not an instance of :c:`Boundary1D`.
+        ValueError
+            If new_boundary contains a :c:`Node1D` not in the mesh.
+            If new_boundary contains an :c:`IntegrationPoint1D`
+                not in the mesh.
+        """
+        if not isinstance(new_boundary, Boundary1D):
+            raise TypeError(
+                f"type(new_boundary) {type(new_boundary)} invalid, "
+                + "must be Boundary1D (or a subclass)"
+            )
+        for nd in new_boundary.nodes:
+            if nd not in self.nodes:
+                raise ValueError(f"new_boundary contains node {nd}"
+                                 + " not in mesh")
+        if new_boundary.int_pts:
+            int_pts = tuple(ip for e in self.elements for ip in e.int_pts)
+            for ip in new_boundary.int_pts:
+                if ip not in int_pts:
+                    raise ValueError(
+                        f"new_boundary contains int_pt {ip} not in mesh"
+                    )
+        self._boundaries.add(new_boundary)
+
+    def remove_boundary(self, boundary: Boundary1D) -> None:
+        """Remove an existing boundary from the mesh.
+
+        Parameters
+        ----------
+        boundary : :c:`Boundary1D`
+            The boundary to remove from the mesh.
+
+        Raises
+        ------
+        ValueError
+            If boundary is not in the mesh.
+        """
+        self._boundaries.remove(boundary)
+
+    def clear_boundaries(self) -> None:
+        """ Clears existing :c:`Boundary1D` objects
+        from the mesh.
+        """
+        self._boundaries.clear()
+
     @property
     def mesh_valid(self) -> bool:
         """Flag for valid mesh.
@@ -2230,18 +2285,12 @@ class Mesh1D:
         value = bool(value)
         if value:
             self._mesh_valid = True
-            if self.__class__ is not Mesh1D:
-                self.initialize_global_matrices_and_vectors()
+            self.initialize_global_matrices_and_vectors()
         else:
             self._nodes = ()
             self._elements = ()
             self.clear_boundaries()
             self._mesh_valid = False
-
-    def initialize_global_matrices_and_vectors(self):
-        raise NotImplementedError(
-            "Global matrix and vector initialization not implemented."
-        )
 
     def generate_mesh(
         self,
@@ -2290,7 +2339,6 @@ class Mesh1D:
         self.mesh_valid = True
 
     def _generate_nodes(self, num_nodes: int, order: int) -> int:
-
         if np.isinf(self.z_min) or np.isinf(self.z_max):
             raise ValueError("cannot generate mesh, non-finite limits")
         if np.isinf(self.grid_size):
@@ -2504,110 +2552,17 @@ class Mesh1D:
                              + " invalid, must be positive")
         self._max_iterations = value
 
-    def add_boundary(self, new_boundary: Any) -> None:
-        """Adds a boundary to the mesh.
+    def initialize_integration_points(self) -> None:
+        pass
 
-        Parameters
-        ----------
-        new_boundary : :c:`Boundary1D`
-            The boundary to add to the mesh.
+    def initialize_global_matrices_and_vectors(self):
+        pass
 
-        Raises
-        ------
-        TypeError
-            If new_boundary is not an instance of :c:`Boundary1D`.
-        ValueError
-            If new_boundary contains a :c:`Node1D` not in the mesh.
-            If new_boundary contains an :c:`IntegrationPoint1D`
-                not in the mesh.
-        """
-        if not isinstance(new_boundary, Boundary1D):
-            raise TypeError(
-                f"type(new_boundary) {type(new_boundary)} invalid, "
-                + "must be Boundary1D (or a subclass)"
-            )
-        for nd in new_boundary.nodes:
-            if nd not in self.nodes:
-                raise ValueError(f"new_boundary contains node {nd}"
-                                 + " not in mesh")
-        if new_boundary.int_pts:
-            int_pts = tuple(ip for e in self.elements for ip in e.int_pts)
-            for ip in new_boundary.int_pts:
-                if ip not in int_pts:
-                    raise ValueError(
-                        f"new_boundary contains int_pt {ip} not in mesh"
-                    )
-        self._boundaries.add(new_boundary)
+    def initialize_free_index_arrays(self) -> None:
+        pass
 
-    def remove_boundary(self, boundary: Boundary1D) -> None:
-        """Remove an existing boundary from the mesh.
-
-        Parameters
-        ----------
-        boundary : :c:`Boundary1D`
-            The boundary to remove from the mesh.
-
-        Raises
-        ------
-        ValueError
-            If boundary is not in the mesh.
-        """
-        self._boundaries.remove(boundary)
-
-    def clear_boundaries(self) -> None:
-        """ Clears existing :c:`Boundary1D` objects
-        from the mesh.
-        """
-        self._boundaries.clear()
-
-    def update_integration_points(self) -> None:
-        """Updates the properties of integration points
-        in the parent mesh according to changes in void ratio.
-        """
-        for e in self.elements:
-            e.update_integration_points()
-
-    def initialize_sparse_matrix_struct(self):
-        """Initialize structure for sparse matrices.
-        Uses scipy.sparse.csr_array canonical format.
-
-        Returns
-        -------
-        zeros : numpy.ndarray, shape=(nnz,)
-            A zeros array of the correct shape
-            where nnz is the number of nonzeros.
-        indices : numpy.ndarray, dtype=int32
-            An array of column indices in each row.
-        indptr : numpy.ndarray, dtype=int32
-            An array giving the range of column and data
-            indices for each row. That is, column indices
-            for row i are in indices[indptr[i] : indptr[i+1]]
-            and data for row i are in data[indptr[i] : indptr[i+1]].
-        """
-        order = self.elements[0].order
-        n = self.num_nodes
-        nmo = n - order
-        op1 = order + 1
-        nmop1 = n - op1
-        top1 = 2 * order + 1
-        indices = []
-        indptr = [0]
-        colinds = np.arange(0, top1, dtype=np.int32)
-        for k in range(n):
-            kmin = order if k >= nmo else 0
-            kmax = top1 if k and (not k % order or k >= nmo) else op1
-            for ci in colinds[kmin:kmax]:
-                indices.append(ci)
-            if k and k < nmop1 and not k % order:
-                colinds += order
-            if k and k < nmo and not k % order:
-                indptr.append(indptr[-1] + top1)
-            else:
-                indptr.append(indptr[-1] + op1)
-        indices = np.array(indices, dtype=np.int32)
-        indptr = np.array(indptr, dtype=np.int32)
-        zeros = np.zeros(indptr[-1])    # nnz comes from last indptr
-        return zeros, indices, indptr
+    def initialize_solution_variable_vectors(self) -> None:
+        pass
 
     def initialize_global_system(self, t0: float) -> None:
         """Sets up the global system before the first time step.
@@ -2630,19 +2585,13 @@ class Mesh1D:
         updates the integration points in the parent mesh,
         then updates all global vectors and matrices.
         """
-        # initialize global time
         t0 = float(t0)
         self._t0 = t0
         self._t1 = t0
-        # initialize system properties
-        # then update nodes with boundary conditions
-        # and then initialize global solution vectors
-        # (we assume that initial conditions have already been applied)
         self.initialize_free_index_arrays()
         self.initialize_solution_variable_vectors()
         self.update_total_stress_distribution()
         self.initialize_integration_points()
-        # now build the global matrices and vectors
         self.update_global_matrices_and_vectors()
 
     def initialize_time_step(self) -> None:
@@ -2676,39 +2625,26 @@ class Mesh1D:
     def store_converged_matrices(self) -> None:
         pass
 
-    def update_boundary_vectors(self) -> None:
-        pass
-
-    def initialize_free_index_arrays(self) -> None:
-        pass
-
-    def initialize_integration_points(self) -> None:
+    def update_boundary_conditions(self, t: float) -> None:
         pass
 
     def update_nodes(self) -> None:
         pass
 
-    def update_boundary_conditions(self, t: float) -> None:
-        pass
-
-    def initialize_solution_variable_vectors(self) -> None:
-        pass
+    def update_integration_points(self) -> None:
+        """Updates the properties of integration points
+        in the parent mesh according to changes in void ratio.
+        """
+        for e in self.elements:
+            e.update_integration_points()
 
     def update_global_matrices_and_vectors(self) -> None:
         pass
 
+    def update_boundary_vectors(self) -> None:
+        pass
+
     def calculate_solution_vector_correction(self) -> None:
-        pass
-
-    def update_total_stress_distribution(self) -> None:
-        pass
-
-    def calculate_deformed_coords(self) -> npt.NDArray[np.floating]:
-        return np.array(
-            nd.z for nd in self.nodes
-        )
-
-    def update_pore_pressure_distribution(self) -> None:
         pass
 
     def iterative_correction_step(self) -> None:
@@ -2800,3 +2736,17 @@ class Mesh1D:
         # reset time step and return output values
         self.time_step = dt00
         return dt00, np.array(dt_list), np.array(err_list)
+
+    def calculate_total_settlement(self) -> float:
+        return 0.0
+
+    def calculate_deformed_coords(self) -> npt.NDArray[np.floating]:
+        return np.array(
+            nd.z for nd in self.nodes
+        )
+
+    def update_total_stress_distribution(self) -> None:
+        pass
+
+    def update_pore_pressure_distribution(self) -> None:
+        pass
