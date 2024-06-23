@@ -374,7 +374,7 @@ class ThermalBoundary1D(Boundary1D):
 
 
 class ThermalAnalysis1D(Mesh1D):
-    """Cjass for simulating thermal physics
+    """Class for simulating thermal physics
     on a mesh of :c:`ThermalElement1D`.
 
     Attributes
@@ -547,6 +547,7 @@ class ThermalAnalysis1D(Mesh1D):
             for ip in e.int_pts:
                 ip.temp__0 = ip.temp
                 ip.vol_water_cont__0 = ip.vol_water_cont
+            e.update_integration_points()
 
     def initialize_global_matrices_and_vectors(self):
         self._temp_vector_0 = np.zeros(self.num_nodes)
