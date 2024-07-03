@@ -861,79 +861,184 @@ class TestUpdateBoundaries(unittest.TestCase):
                 self.assertEqual(fx, 0.0)
 
 
-# class TestUpdateGlobalMatricesLinearConstant(unittest.TestCase):
-#     def setUp(self):
-#         self.mtl = Material(
-#             thrm_cond_solids=3.0,
-#             spec_heat_cap_solids=741.0,
-#             spec_grav_solids=2.65,
-#         )
-#         self.msh = CoupledAnalysis1D((0, 100), generate=True, order=1)
-#         for e in self.msh.elements:
-#             for ip in e.int_pts:
-#                 ip.material = self.mtl
-#                 ip.deg_sat_water = 0.8
-#                 ip.void_ratio = 0.35
-#                 ip.void_ratio_0 = 0.3
-#                 ip.water_flux_rate = -1.5e-8
-#                 ip.temp_gradient = 0.003
-#
-#     def test_initial_heat_flow_matrix(self):
-#         expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-#         self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected))
-#         self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected))
-#
-#     def test_initial_heat_storage_matrix(self):
-#         expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-#         self.assertTrue(np.allclose(self.msh._heat_storage_matrix_0, expected))
-#         self.assertTrue(np.allclose(self.msh._heat_storage_matrix, expected))
-#
-#     def test_initial_heat_flux_vector(self):
-#         expected = np.zeros(self.msh.num_nodes)
-#         self.assertTrue(np.allclose(self.msh._heat_flux_vector_0, expected))
-#         self.assertTrue(np.allclose(self.msh._heat_flux_vector, expected))
-#
-#     def test_update_heat_flow_matrix(self):
-#         expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-#         k00 = 0.1935775350469950
-#         d0 = 2 * np.ones((self.msh.num_nodes,)) * k00
-#         d0[0] = k00
-#         d0[-1] = k00
-#         dp1 = -np.ones((self.msh.num_nodes - 1,)) * k00
-#         dm1 = -np.ones((self.msh.num_nodes - 1,)) * k00
-#         expected1 = np.diag(d0) + np.diag(dm1, -1) + np.diag(dp1, 1)
-#         self.msh.update_heat_flow_matrix()
-#         self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected0))
-#         self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected1))
-#
-#     def test_update_heat_storage_matrix(self):
-#         expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-#         c0 = 8.08009876543210e6
-#         d0 = np.ones((self.msh.num_nodes,)) * 2.0 * c0
-#         d0[0] = c0
-#         d0[-1] = c0
-#         d1 = np.ones((self.msh.num_nodes - 1,)) * c0 * 0.5
-#         expected1 = np.diag(d0) + np.diag(d1, -1) + np.diag(d1, 1)
-#         self.msh.update_heat_storage_matrix()
-#         self.assertTrue(np.allclose(
-#             self.msh._heat_storage_matrix_0, expected0))
-#         self.assertTrue(np.allclose(
-#             self.msh._heat_storage_matrix, expected1))
-#
-#     def test_update_heat_flux_vector(self):
-#         expected0 = np.zeros(self.msh.num_nodes)
-#         expected1 = np.ones(self.msh.num_nodes) * 0.0018217333333333300
-#         expected1[0] = 0.0009108666666666670
-#         expected1[-1] = 0.0009108666666666670
-#         self.msh.update_heat_flux_vector()
-#         self.assertTrue(np.allclose(
-#             self.msh._heat_flux_vector_0, expected0))
-#         self.assertTrue(np.allclose(
-#             self.msh._heat_flux_vector, expected1,
-#             rtol=1e-13, atol=1e-16,
-#         ))
-#
-#
+class TestUpdateNodes(unittest.TestCase):
+    def setUp(self):
+        self.msh = CoupledAnalysis1D((0, 100), generate=True, order=1)
+        self.msh._void_ratio_vector[:] = np.linspace(
+            2.0, 22.0, self.msh.num_nodes)
+        self.msh._void_ratio_vector_0[:] = np.linspace(
+            1.0, 11.0, self.msh.num_nodes)
+        self.msh.time_step = 0.25
+        self.msh.update_nodes()
+
+    def test_initial_node_values(self):
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.void_ratio, 2.0 * (k+1))
+
+    def test_repeat_update_nodes(self):
+        self.msh.update_nodes()
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.void_ratio, 2.0 * (k+1))
+
+    def test_change_void_ratio_vectors_update_nodes(self):
+        self.msh._void_ratio_vector[:] = np.linspace(
+            4.0, 44.0, self.msh.num_nodes)
+        self.msh._void_ratio_vector_0[:] = np.linspace(
+            2.0, 22.0, self.msh.num_nodes)
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.void_ratio, 2.0 * (k+1))
+        self.msh.update_nodes()
+        for k, nd in enumerate(self.msh.nodes):
+            self.assertAlmostEqual(nd.void_ratio, 4.0 * (k+1))
+
+
+class TestUpdateGlobalMatricesLinearConstant(unittest.TestCase):
+    def setUp(self):
+        self.mtl = Material(
+            thrm_cond_solids=3.0,
+            spec_heat_cap_solids=741.0,
+            spec_grav_solids=2.6,
+            hyd_cond_index=0.305,
+            void_ratio_0_hyd_cond=2.6,
+            hyd_cond_mult=0.8,
+            hyd_cond_0=4.05e-4,
+            void_ratio_min=0.3,
+            void_ratio_tr=2.6,
+            void_ratio_0_comp=2.6,
+            eff_stress_0_comp=2.8,
+            comp_index_unfrozen=0.421,
+            rebound_index_unfrozen=0.08,
+        )
+        self.msh = CoupledAnalysis1D((0, 100), generate=True, order=1)
+        for e in self.msh.elements:
+            for ip in e.int_pts:
+                ip.material = self.mtl
+                ip.deg_sat_water = 0.8
+                ip.water_flux_rate = -1.5e-8
+                ip.temp_gradient = 0.003
+                ip.void_ratio = 0.6
+                ip.void_ratio_0 = 0.9
+                sig_p, dsig_de = ip.material.eff_stress(0.6, 0.0)
+                ip.eff_stress = sig_p
+                ip.eff_stress_gradient = dsig_de
+                k, dk_de = ip.material.hyd_cond(0.6, 1.0, False)
+                ip.hyd_cond = k
+                ip.hyd_cond_gradient = dk_de
+
+    def test_initial_heat_flow_matrix(self):
+        expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected))
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected))
+
+    def test_initial_heat_storage_matrix(self):
+        expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        self.assertTrue(np.allclose(self.msh._heat_storage_matrix_0, expected))
+        self.assertTrue(np.allclose(self.msh._heat_storage_matrix, expected))
+
+    def test_initial_heat_flux_vector(self):
+        expected = np.zeros(self.msh.num_nodes)
+        self.assertTrue(np.allclose(self.msh._heat_flux_vector_0, expected))
+        self.assertTrue(np.allclose(self.msh._heat_flux_vector, expected))
+
+    def test_update_heat_flow_matrix(self):
+        expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        k00 = 0.2503784879262050
+        d0 = 2 * np.ones((self.msh.num_nodes,)) * k00
+        d0[0] = k00
+        d0[-1] = k00
+        dp1 = -np.ones((self.msh.num_nodes - 1,)) * k00
+        dm1 = -np.ones((self.msh.num_nodes - 1,)) * k00
+        expected1 = np.diag(d0) + np.diag(dm1, -1) + np.diag(dp1, 1)
+        self.msh.update_heat_flow_matrix()
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected0))
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected1))
+
+    def test_update_heat_storage_matrix(self):
+        expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        c0 = 8.68800000000000E+06
+        d0 = np.ones((self.msh.num_nodes,)) * 2.0 * c0
+        d0[0] = c0
+        d0[-1] = c0
+        d1 = np.ones((self.msh.num_nodes - 1,)) * c0 * 0.5
+        expected1 = np.diag(d0) + np.diag(d1, -1) + np.diag(d1, 1)
+        self.msh.update_heat_storage_matrix()
+        self.assertTrue(np.allclose(
+            self.msh._heat_storage_matrix_0, expected0))
+        self.assertTrue(np.allclose(
+            self.msh._heat_storage_matrix, expected1))
+
+    def test_update_heat_flux_vector(self):
+        expected0 = np.zeros(self.msh.num_nodes)
+        expected1 = np.ones(self.msh.num_nodes) * 0.0022465125000000000
+        expected1[0] = 0.0011232562500000000
+        expected1[-1] = 0.0011232562500000000
+        self.msh.update_heat_flux_vector()
+        self.assertTrue(np.allclose(
+            self.msh._heat_flux_vector_0, expected0))
+        self.assertTrue(np.allclose(
+            self.msh._heat_flux_vector, expected1,
+            rtol=1e-13, atol=1e-16,
+        ))
+
+    def test_initial_stiffness_matrix(self):
+        expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        self.assertTrue(np.allclose(self.msh._stiffness_matrix_0, expected))
+        self.assertTrue(np.allclose(self.msh._stiffness_matrix, expected))
+
+    def test_initial_mass_matrix(self):
+        expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        self.assertTrue(np.allclose(self.msh._mass_matrix_0, expected))
+        self.assertTrue(np.allclose(self.msh._mass_matrix, expected))
+
+    def test_update_stiffness_matrix(self):
+        expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        k00 = 1.55999984566148E-09
+        k11 = 7.82923225956888E-10
+        d0 = np.ones((self.msh.num_nodes,)) * (k00 + k11)
+        d0[0] = k00
+        d0[-1] = k11
+        dp1 = -np.ones((self.msh.num_nodes - 1,)) * k00
+        dm1 = -np.ones((self.msh.num_nodes - 1,)) * k11
+        expected1 = np.diag(d0) + np.diag(dm1, -1) + np.diag(dp1, 1)
+        self.msh.update_stiffness_matrix()
+        self.assertTrue(np.allclose(
+            self.msh._stiffness_matrix_0,
+            expected0,
+            atol=1e-20, rtol=1e-16,
+        ))
+        self.assertTrue(np.allclose(
+            self.msh._stiffness_matrix,
+            expected1,
+            atol=1e-20, rtol=1e-16,
+        ))
+
+    def test_update_mass_matrix(self):
+        expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        m0 = 1.72280701754386
+        d0 = np.ones((self.msh.num_nodes,)) * 2.0 * m0
+        d0[0] = m0
+        d0[-1] = m0
+        d1 = np.ones((self.msh.num_nodes - 1,)) * m0 * 0.5
+        expected1 = np.diag(d0) + np.diag(d1, -1) + np.diag(d1, 1)
+        self.msh.update_mass_matrix()
+        self.assertTrue(np.allclose(
+            self.msh._mass_matrix_0,
+            expected0,
+            atol=1e-12, rtol=1e-10,
+        ))
+        self.assertTrue(np.allclose(
+            self.msh._mass_matrix,
+            expected1,
+            atol=1e-12, rtol=1e-10,
+        ))
+
+    def test_update_water_flux_vector(self):
+        self.msh.update_water_flux_vector()
+        expected = np.zeros(self.msh.num_nodes)
+        self.assertTrue(np.allclose(self.msh._water_flux_vector_0, expected))
+        self.assertTrue(np.allclose(self.msh._water_flux_vector, expected))
+
+
 # class TestUpdateIntegrationPointsLinear(unittest.TestCase):
 #     def setUp(self):
 #         self.mtl = Material(
@@ -1153,111 +1258,213 @@ class TestUpdateBoundaries(unittest.TestCase):
 #             expected_Phi, self.msh._heat_flux_vector,
 #             atol=1e-15, rtol=1e-6,
 #         ))
-#
-#
-# class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
-#     def setUp(self):
-#         self.mtl = Material(
-#             thrm_cond_solids=3.0,
-#             spec_heat_cap_solids=741.0,
-#             spec_grav_solids=2.65,
-#         )
-#         self.msh = CoupledAnalysis1D((0, 100), generate=True)
-#         for e in self.msh.elements:
-#             for ip in e.int_pts:
-#                 ip.material = self.mtl
-#                 ip.deg_sat_water = 0.8
-#                 ip.void_ratio = 0.35
-#                 ip.void_ratio_0 = 0.3
-#                 ip.water_flux_rate = -1.5e-8
-#                 ip.temp_gradient = 0.003
-#
-#     def test_initial_heat_flow_matrix(self):
-#         expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-#         self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected))
-#         self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected))
-#
-#     def test_initial_heat_storage_matrix(self):
-#         expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-#         self.assertTrue(np.allclose(self.msh._heat_storage_matrix_0, expected))
-#         self.assertTrue(np.allclose(self.msh._heat_storage_matrix, expected))
-#
-#     def test_initial_heat_flux_vector(self):
-#         expected = np.zeros(self.msh.num_nodes)
-#         self.assertTrue(np.allclose(self.msh._heat_flux_vector_0, expected))
-#         self.assertTrue(np.allclose(self.msh._heat_flux_vector, expected))
-#
-#     def test_update_heat_flow_matrix(self):
-#         expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-#         h00 = 0.7162368796738820
-#         h11 = 2.0906373785075500
-#         h10 = -0.9146538530970510
-#         h20 = 0.2613296723134430
-#         h30 = -0.0629126988902734
-#         h21 = -1.4373131977239400
-#         d0 = np.ones((self.msh.num_nodes,)) * (2 * h00)
-#         d0[0] = h00
-#         d0[-1] = h00
-#         d0[1::3] = h11
-#         d0[2::3] = h11
-#         d1 = np.ones((self.msh.num_nodes - 1,)) * h10
-#         d1[1::3] = h21
-#         d2 = np.ones((self.msh.num_nodes - 2,)) * h20
-#         d2[2::3] = 0.0
-#         d3 = np.zeros((self.msh.num_nodes - 3,))
-#         d3[0::3] = h30
-#         expected1 = np.diag(d0)
-#         expected1 += np.diag(d1, -1) + np.diag(d1, 1)
-#         expected1 += np.diag(d2, -2) + np.diag(d2, 2)
-#         expected1 += np.diag(d3, -3) + np.diag(d3, 3)
-#         self.msh.update_heat_flow_matrix()
-#         self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected0))
-#         self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected1))
-#
-#     def test_update_heat_storage_matrix(self):
-#         expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-#         c00 = 1.84687971781305e6
-#         c11 = 9.34982857142857e6
-#         c10 = 1.42844603174603e6
-#         c20 = -5.19434920634924e5
-#         c30 = 2.74146208112873e5
-#         c21 = -1.16872857142856e6
-#         d0 = np.ones((self.msh.num_nodes,)) * 2.0 * c00
-#         d0[0] = c00
-#         d0[-1] = c00
-#         d0[1::3] = c11
-#         d0[2::3] = c11
-#         d1 = np.ones((self.msh.num_nodes - 1,)) * c10
-#         d1[1::3] = c21
-#         d2 = np.ones((self.msh.num_nodes - 2,)) * c20
-#         d2[2::3] = 0.0
-#         d3 = np.zeros((self.msh.num_nodes - 3,))
-#         d3[0::3] = c30
-#         expected1 = np.diag(d0)
-#         expected1 += np.diag(d1, -1) + np.diag(d1, 1)
-#         expected1 += np.diag(d2, -2) + np.diag(d2, 2)
-#         expected1 += np.diag(d3, -3) + np.diag(d3, 3)
-#         self.msh.update_heat_storage_matrix()
-#         self.assertTrue(np.allclose(
-#             self.msh._heat_storage_matrix_0, expected0))
-#         self.assertTrue(np.allclose(
-#             self.msh._heat_storage_matrix, expected1))
-#
-#     def test_update_heat_flux_vector(self):
-#         expected0 = np.zeros(self.msh.num_nodes)
-#         expected1 = np.ones(self.msh.num_nodes) * 0.00068315
-#         expected1[3::3] = 0.000455433333333333
-#         expected1[0] = 0.000227716666666667
-#         expected1[-1] = 0.000227716666666667
-#         self.msh.update_heat_flux_vector()
-#         self.assertTrue(np.allclose(
-#             self.msh._heat_flux_vector_0, expected0))
-#         self.assertTrue(np.allclose(
-#             self.msh._heat_flux_vector, expected1,
-#             rtol=1e-13, atol=1e-16
-#         ))
-#
-#
+
+
+class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
+    def setUp(self):
+        self.mtl = Material(
+            thrm_cond_solids=3.0,
+            spec_heat_cap_solids=741.0,
+            spec_grav_solids=2.6,
+            hyd_cond_index=0.305,
+            void_ratio_0_hyd_cond=2.6,
+            hyd_cond_mult=0.8,
+            hyd_cond_0=4.05e-4,
+            void_ratio_min=0.3,
+            void_ratio_tr=2.6,
+            void_ratio_0_comp=2.6,
+            eff_stress_0_comp=2.8,
+            comp_index_unfrozen=0.421,
+            rebound_index_unfrozen=0.08,
+        )
+        self.msh = CoupledAnalysis1D((0, 100), generate=True)
+        for e in self.msh.elements:
+            for ip in e.int_pts:
+                ip.material = self.mtl
+                ip.deg_sat_water = 0.8
+                ip.void_ratio = 0.35
+                ip.void_ratio_0 = 0.3
+                ip.water_flux_rate = -1.5e-8
+                ip.temp_gradient = 0.003
+                ip.void_ratio = 0.6
+                ip.void_ratio_0 = 0.9
+                sig_p, dsig_de = ip.material.eff_stress(0.6, 0.0)
+                ip.eff_stress = sig_p
+                ip.eff_stress_gradient = dsig_de
+                k, dk_de = ip.material.hyd_cond(0.6, 1.0, False)
+                ip.hyd_cond = k
+                ip.hyd_cond_gradient = dk_de
+
+    def test_initial_heat_flow_matrix(self):
+        expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected))
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected))
+
+    def test_initial_heat_storage_matrix(self):
+        expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        self.assertTrue(np.allclose(self.msh._heat_storage_matrix_0, expected))
+        self.assertTrue(np.allclose(self.msh._heat_storage_matrix, expected))
+
+    def test_initial_heat_flux_vector(self):
+        expected = np.zeros(self.msh.num_nodes)
+        self.assertTrue(np.allclose(self.msh._heat_flux_vector_0, expected))
+        self.assertTrue(np.allclose(self.msh._heat_flux_vector, expected))
+
+    def test_update_heat_flow_matrix(self):
+        expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        h00 = 0.9264004053269600
+        h11 = 2.7040876696030200
+        h10 = -1.1830383554513200
+        h20 = 0.3380109587003770
+        h30 = -0.0813730085760168
+        h21 = -1.8590602728520800
+        d0 = np.ones((self.msh.num_nodes,)) * (2 * h00)
+        d0[0] = h00
+        d0[-1] = h00
+        d0[1::3] = h11
+        d0[2::3] = h11
+        d1 = np.ones((self.msh.num_nodes - 1,)) * h10
+        d1[1::3] = h21
+        d2 = np.ones((self.msh.num_nodes - 2,)) * h20
+        d2[2::3] = 0.0
+        d3 = np.zeros((self.msh.num_nodes - 3,))
+        d3[0::3] = h30
+        expected1 = np.diag(d0)
+        expected1 += np.diag(d1, -1) + np.diag(d1, 1)
+        expected1 += np.diag(d2, -2) + np.diag(d2, 2)
+        expected1 += np.diag(d3, -3) + np.diag(d3, 3)
+        self.msh.update_heat_flow_matrix()
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix_0, expected0))
+        self.assertTrue(np.allclose(self.msh._heat_flow_matrix, expected1))
+
+    def test_update_heat_storage_matrix(self):
+        expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        c00 = 1.98582857142857E+06
+        c11 = 1.00532571428571E+07
+        c10 = 1.53591428571429E+06
+        c20 = -5.58514285714289E+05
+        c30 = 2.94771428571427E+05
+        c21 = -1.25665714285713E+06
+        d0 = np.ones((self.msh.num_nodes,)) * 2.0 * c00
+        d0[0] = c00
+        d0[-1] = c00
+        d0[1::3] = c11
+        d0[2::3] = c11
+        d1 = np.ones((self.msh.num_nodes - 1,)) * c10
+        d1[1::3] = c21
+        d2 = np.ones((self.msh.num_nodes - 2,)) * c20
+        d2[2::3] = 0.0
+        d3 = np.zeros((self.msh.num_nodes - 3,))
+        d3[0::3] = c30
+        expected1 = np.diag(d0)
+        expected1 += np.diag(d1, -1) + np.diag(d1, 1)
+        expected1 += np.diag(d2, -2) + np.diag(d2, 2)
+        expected1 += np.diag(d3, -3) + np.diag(d3, 3)
+        self.msh.update_heat_storage_matrix()
+        self.assertTrue(np.allclose(
+            self.msh._heat_storage_matrix_0, expected0))
+        self.assertTrue(np.allclose(
+            self.msh._heat_storage_matrix, expected1))
+
+    def test_update_heat_flux_vector(self):
+        expected0 = np.zeros(self.msh.num_nodes)
+        expected1 = np.ones(self.msh.num_nodes) * 0.0008424421875
+        expected1[3::3] = 0.0005616281250
+        expected1[0] = 0.0002808140625
+        expected1[-1] = 0.0002808140625
+        self.msh.update_heat_flux_vector()
+        self.assertTrue(np.allclose(
+            self.msh._heat_flux_vector_0, expected0))
+        self.assertTrue(np.allclose(
+            self.msh._heat_flux_vector, expected1,
+            rtol=1e-13, atol=1e-16
+        ))
+
+    def test_initial_stiffness_matrix(self):
+        expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        self.assertTrue(np.allclose(self.msh._stiffness_matrix_0, expected))
+        self.assertTrue(np.allclose(self.msh._stiffness_matrix, expected))
+
+    def test_initial_mass_matrix(self):
+        expected = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        self.assertTrue(np.allclose(self.msh._mass_matrix_0, expected))
+        self.assertTrue(np.allclose(self.msh._mass_matrix, expected))
+
+    def test_initial_water_flux_vector(self):
+        expected = np.zeros(self.msh.num_nodes)
+        self.assertTrue(np.allclose(self.msh._water_flux_vector_0, expected))
+        self.assertTrue(np.allclose(self.msh._water_flux_vector, expected))
+
+    def test_update_stiffness_matrix(self):
+        expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        expected1 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        stiff_el = -np.array([
+            [-4.72294599234629E-09, 6.08882284823793E-09,
+             -1.81459605925378E-09, 4.48719203362137E-10,],
+            [4.98148866515888E-09, -1.26517845867392E-08,
+                9.48489198083411E-09, -1.81459605925378E-09,],
+            [-1.34835008743102E-09, 7.91131182593230E-09,
+             -1.26517845867392E-08, 6.08882284823793E-09,],
+            [3.12730794913833E-10, -1.34835008743102E-09,
+                4.98148866515888E-09, -3.94586937264169E-09,],
+        ])
+        for k in range(self.msh.num_elements):
+            kmin = 3 * k
+            kmax = kmin + 4
+            expected1[kmin:kmax, kmin:kmax] += stiff_el
+        self.msh.update_stiffness_matrix()
+        print(self.msh._stiffness_matrix)
+        self.assertTrue(np.allclose(
+            self.msh._stiffness_matrix_0,
+            expected0,
+            atol=1e-20, rtol=1e-16,
+        ))
+        self.assertTrue(np.allclose(
+            self.msh._stiffness_matrix,
+            expected1,
+            atol=1e-20, rtol=1e-16,
+        ))
+
+    def test_update_mass_matrix(self):
+        expected0 = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        m00 = 0.3937844611528820
+        m11 = 1.9935338345864700
+        m10 = 0.3045676691729330
+        m20 = -0.1107518796992490
+        m30 = 0.0584523809523807
+        m21 = -0.2491917293233050
+        d0 = np.ones((self.msh.num_nodes,)) * 2.0 * m00
+        d0[0] = m00
+        d0[-1] = m00
+        d0[1::3] = m11
+        d0[2::3] = m11
+        d1 = np.ones((self.msh.num_nodes - 1,)) * m10
+        d1[1::3] = m21
+        d2 = np.ones((self.msh.num_nodes - 2,)) * m20
+        d2[2::3] = 0.0
+        d3 = np.zeros((self.msh.num_nodes - 3,))
+        d3[0::3] = m30
+        expected1 = np.diag(d0)
+        expected1 += np.diag(d1, -1) + np.diag(d1, 1)
+        expected1 += np.diag(d2, -2) + np.diag(d2, 2)
+        expected1 += np.diag(d3, -3) + np.diag(d3, 3)
+        self.msh.update_mass_matrix()
+        self.assertTrue(np.allclose(
+            self.msh._mass_matrix_0, expected0,
+            atol=1e-12, rtol=1e-10,
+        ))
+        self.assertTrue(np.allclose(
+            self.msh._mass_matrix, expected1,
+            atol=1e-12, rtol=1e-10,
+        ))
+
+    def test_update_water_flux_vector(self):
+        self.msh.update_water_flux_vector()
+        expected = np.zeros(self.msh.num_nodes)
+        self.assertTrue(np.allclose(self.msh._water_flux_vector_0, expected))
+        self.assertTrue(np.allclose(self.msh._water_flux_vector, expected))
+
+
 # class TestUpdateIntegrationPointsCubic(unittest.TestCase):
 #     def setUp(self):
 #         self.mtl = Material(
