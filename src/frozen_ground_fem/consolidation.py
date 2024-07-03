@@ -1111,8 +1111,8 @@ class ConsolidationAnalysis1D(Mesh1D):
         for be in self.boundaries:
             if isinstance(be, HydraulicBoundary1D):
                 continue
-            if not (be.bnd_type
-                    == ConsolidationBoundary1D.BoundaryType.void_ratio):
+            if (be.bnd_type
+                    == ConsolidationBoundary1D.BoundaryType.water_flux):
                 self._water_flux_vector[be.nodes[0].index] -= be.bnd_value
 
     def update_stiffness_matrix(self) -> None:
