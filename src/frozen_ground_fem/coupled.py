@@ -61,14 +61,13 @@ class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
         self,
         update_water_flux: bool = True,
         update_res_stress: bool = True,
-        TT0: npt.ArrayLike = (),
     ) -> None:
         """Updates the properties of integration points
         in the element according to changes in void ratio.
         """
         ThermalElement1D.update_integration_points(self, False)
         ConsolidationElement1D.update_integration_points(
-            self, update_water_flux, update_res_stress, TT0,
+            self, update_water_flux, update_res_stress,
         )
 
 

@@ -174,14 +174,12 @@ class ConsolidationElement1D(Element1D):
         self,
         update_water_flux: bool = True,
         update_res_stress: bool = False,
-        TT0: npt.ArrayLike = (),
     ) -> None:
         """Updates the properties of integration points
         in the element according to changes in void ratio.
         """
         ee = np.array([nd.void_ratio for nd in self.nodes])
         TT = np.array([nd.temp for nd in self.nodes])
-        TT0 = np.array(TT0) if update_res_stress else np.zeros_like(TT)
         for ip in self.int_pts:
             N = self._shape_matrix(ip.local_coord)
             B = self._gradient_matrix(ip.local_coord, self.jacobian)
@@ -191,7 +189,7 @@ class ConsolidationElement1D(Element1D):
             ip.void_ratio = ep
             # get temperature state interpolated from nodes
             T = (N @ TT)[0]
-            T0 = (N @ TT0)[0]
+            T0 = ip.temp__0
             # soil is frozen
             if T < 0.0:
                 # set reference stress and void ratio for frozen state
