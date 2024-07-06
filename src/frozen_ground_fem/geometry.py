@@ -2619,7 +2619,6 @@ class Mesh1D:
         self.update_boundary_conditions(self._t1)
         self.update_integration_points()
         self.update_global_matrices_and_vectors()
-        self.update_boundary_vectors()
 
     def store_converged_matrices(self) -> None:
         pass
