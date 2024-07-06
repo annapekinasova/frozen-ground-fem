@@ -970,6 +970,8 @@ class ConsolidationAnalysis1D(Mesh1D):
                     N = e._shape_matrix(ip.local_coord)
                     ip.void_ratio_0 = (N @ ee0)[0]
                     ip.void_ratio = (N @ ee)[0]
+                    ip.temp = (N @ TT)[0]
+                    ip.deg_sat_water = ip.material.deg_sat_water(ip.temp)[0]
 
     def _initialize_hydraulic_boundary_conditions(self) -> None:
         # intialize global hydraulic boundaries
