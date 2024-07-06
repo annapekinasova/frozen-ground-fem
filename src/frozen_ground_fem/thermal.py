@@ -543,11 +543,11 @@ class ThermalAnalysis1D(Mesh1D):
 
     def initialize_integration_points(self) -> None:
         for e in self.elements:
-            e.update_integration_points()
+            ThermalElement1D.update_integration_points(e)
             for ip in e.int_pts:
                 ip.temp__0 = ip.temp
                 ip.vol_water_cont__0 = ip.vol_water_cont
-            e.update_integration_points()
+            ThermalElement1D.update_integration_points(e)
 
     def initialize_global_matrices_and_vectors(self):
         self._temp_vector_0 = np.zeros(self.num_nodes)
