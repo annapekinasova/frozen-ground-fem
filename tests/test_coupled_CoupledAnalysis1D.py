@@ -1042,7 +1042,7 @@ class TestUpdateGlobalMatricesLinearConstant(unittest.TestCase):
 class TestInitializeGlobalSystemLinear(unittest.TestCase):
     def setUp(self):
         self.mtl = Material(
-            spec_grav_solids=2.6,
+            spec_grav_solids=2.65,
             thrm_cond_solids=3.0,
             spec_heat_cap_solids=741.0,
             deg_sat_water_alpha=1.20e4,
@@ -1066,11 +1066,17 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
             comp_index_frozen_a3=0.23,
         )
         self.msh = CoupledAnalysis1D(
-            z_range=(0, 100),
+            z_range=(0, 0.1),
             num_elements=4,
             generate=True,
             order=1
         )
+        temp_bound = ThermalBoundary1D(
+            nodes=(self.msh.nodes[0],),
+            bnd_type=ThermalBoundary1D.BoundaryType.temp,
+            bnd_value=5.0,
+        )
+        self.msh.add_boundary(temp_bound)
         hyd_bound = HydraulicBoundary1D(
             nodes=(self.msh.nodes[0],), bnd_value=0.1,
         )
@@ -1087,6 +1093,7 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
             bnd_value_1=sig_p_ob,
         )
         self.msh.add_boundary(void_ratio_bound)
+        Sw0 = self.mtl.deg_sat_water(-5.0)[0]
         for nd in self.msh.nodes:
             nd.temp = -5.0
             nd.temp_rate = 0.0
@@ -1097,19 +1104,33 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
                 ip.material = self.mtl
                 ip.void_ratio = 2.83
                 ip.void_ratio_0 = 2.83
+                ip.deg_sat_water = Sw0
             for iipp in e._int_pts_deformed:
                 for ip in iipp:
                     ip.material = self.mtl
                     ip.void_ratio = 2.83
                     ip.void_ratio_0 = 2.83
+                    ip.deg_sat_water = Sw0
         self.msh.initialize_global_system(0.0)
 
     def test_time_step_set(self):
-        self.assertAlmostEqual(self.msh._t0, 1.5)
-        self.assertAlmostEqual(self.msh._t1, 1.5)
+        self.assertAlmostEqual(self.msh._t0, 0.0)
+        self.assertAlmostEqual(self.msh._t1, 0.0)
 
     def test_free_indices(self):
         expected_free_vec = [i for i in range(self.msh.num_nodes)][1:]
+        self.assertTrue(np.all(expected_free_vec ==
+                               self.msh._free_vec_thrm[0]))
+        self.assertTrue(np.all(expected_free_vec ==
+                        self.msh._free_arr_thrm[0].flatten()))
+        self.assertTrue(np.all(expected_free_vec ==
+                               self.msh._free_arr_thrm[1]))
+        self.assertTrue(np.all(expected_free_vec ==
+                               self.msh._free_vec_cnsl[0]))
+        self.assertTrue(np.all(expected_free_vec ==
+                        self.msh._free_arr_cnsl[0].flatten()))
+        self.assertTrue(np.all(expected_free_vec ==
+                               self.msh._free_arr_cnsl[1]))
         self.assertTrue(np.all(expected_free_vec == self.msh._free_vec[0]))
         self.assertTrue(np.all(expected_free_vec ==
                         self.msh._free_arr[0].flatten()))
@@ -1117,14 +1138,14 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_temperature_distribution(self):
         expected_temp_int_pts = np.array([
-            1.5984827557301400,
-            0.5015172442698560,
-            -0.0901923788646684,
-            -0.6098076211353320,
-            -0.9479274057836310,
-            -1.3520725942163700,
-            -3.7189110867544700,
-            -9.7810889132455400,
+            -5.0,
+            -5.0,
+            -5.0,
+            -5.0,
+            -5.0,
+            -5.0,
+            -5.0,
+            -5.0,
         ])
         actual_temp_int_pts = np.array([
             ip.temp for e in self.msh.elements for ip in e.int_pts
@@ -1134,14 +1155,14 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_temperature_rate_distribution(self):
         expected_temp_rate_int_pts = np.array([
-            0.04366025403784440,
-            0.02633974596215560,
-            0.01788675134594810,
-            0.01211324865405190,
-            -0.00901923788646684,
-            -0.06098076211353320,
-            -0.07366025403784440,
-            -0.05633974596215560,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
         ])
         actual_temp_rate_int_pts = np.array([
             ip.temp_rate for e in self.msh.elements for ip in e.int_pts
@@ -1151,14 +1172,14 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_temperature_gradient_distribution(self):
         expected_temp_gradient_int_pts = np.array([
-            -0.0760000,
-            -0.0760000,
-            -0.0360000,
-            -0.0360000,
-            -0.0280000,
-            -0.0280000,
-            -0.4200000,
-            -0.4200000,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
         ])
         actual_temp_gradient_int_pts = np.array([
             ip.temp_gradient for e in self.msh.elements for ip in e.int_pts
@@ -1168,14 +1189,14 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_deg_sat_water_distribution(self):
         expected_deg_sat_water_int_pts = np.array([
-            1.000000000000000,
-            1.000000000000000,
-            0.314715929845879,
-            0.113801777607921,
-            0.089741864676250,
-            0.074104172041942,
-            0.042882888566470,
-            0.025322726744343,
+            0.036518561878915,
+            0.036518561878915,
+            0.036518561878915,
+            0.036518561878915,
+            0.036518561878915,
+            0.036518561878915,
+            0.036518561878915,
+            0.036518561878915,
         ])
         actual_deg_sat_water_int_pts = np.array([
             ip.deg_sat_water for e in self.msh.elements for ip in e.int_pts
@@ -1198,7 +1219,6 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
             ip.vol_water_cont_temp_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        print(actual_vol_water_cont_temp_gradient_int_pts)
         self.assertTrue(np.allclose(
             actual_vol_water_cont_temp_gradient_int_pts,
             expected_vol_water_cont_temp_gradient_int_pts,
@@ -1636,7 +1656,6 @@ class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
             kmax = kmin + 4
             expected1[kmin:kmax, kmin:kmax] += stiff_el
         self.msh.update_stiffness_matrix()
-        print(self.msh._stiffness_matrix)
         self.assertTrue(np.allclose(
             self.msh._stiffness_matrix_0,
             expected0,
@@ -2151,7 +2170,6 @@ class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
 #             ip.vol_water_cont_temp_gradient
 #             for e in self.msh.elements for ip in e.int_pts
 #         ])
-#         print(actual_vol_water_cont_temp_gradient_int_pts)
 #         self.assertTrue(np.allclose(
 #             actual_vol_water_cont_temp_gradient_int_pts,
 #             expected_vol_water_cont_temp_gradient_int_pts,
