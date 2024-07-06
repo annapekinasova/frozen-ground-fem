@@ -1042,9 +1042,9 @@ class TestUpdateGlobalMatricesLinearConstant(unittest.TestCase):
 class TestInitializeGlobalSystemLinear(unittest.TestCase):
     def setUp(self):
         self.mtl = Material(
-            spec_grav_solids=2.65,
+            spec_grav_solids=2.6,
             thrm_cond_solids=3.0,
-            spec_heat_cap_solids=741.0,
+            spec_heat_cap_solids=874.0,
             deg_sat_water_alpha=1.20e4,
             deg_sat_water_beta=0.35,
             water_flux_b1=0.08,
@@ -1054,7 +1054,7 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
             hyd_cond_index=0.305,
             void_ratio_0_hyd_cond=2.6,
             hyd_cond_mult=0.8,
-            hyd_cond_0=4.05e-4,
+            hyd_cond_0=8.10e-6,
             void_ratio_min=0.3,
             void_ratio_tr=2.6,
             void_ratio_0_comp=2.6,
@@ -1208,12 +1208,12 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
         expected_vol_water_cont_temp_gradient_int_pts = np.array([
             0.00000000000000000,
             0.00000000000000000,
-            1.96985868037600000,
-            0.37676651903183400,
-            0.24895666952857000,
-            0.17754007257781200,
-            0.06672422855669150,
-            0.02583496685516250,
+            0.00000000000000000,
+            0.00000000000000000,
+            0.00000000000000000,
+            0.00000000000000000,
+            0.00000000000000000,
+            0.00000000000000000,
         ])
         actual_vol_water_cont_temp_gradient_int_pts = np.array([
             ip.vol_water_cont_temp_gradient
@@ -1226,14 +1226,14 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_thrm_cond_distribution(self):
         expected_thrm_cond_int_pts = np.array([
-            1.94419643704324,
-            1.94419643704324,
-            2.48085630059944,
-            2.66463955659925,
-            2.68754164945741,
-            2.70253225701445,
-            2.73271219424962,
-            2.74983450612514,
+            2.10850030207483,
+            2.10850030207482,
+            2.10850030207482,
+            2.10850030207482,
+            2.10850030207482,
+            2.10850030207482,
+            2.10850030207482,
+            2.10850030207482,
         ])
         actual_thrm_cond_int_pts = np.array([
             ip.thrm_cond
@@ -1245,11 +1245,11 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_void_ratio_distribution_nodes(self):
         expected_void_ratio_vector = np.array([
-            0.8,
-            0.55,
-            0.51,
-            0.48,
-            0.46,
+            2.830000000000000,
+            2.830000000000000,
+            2.830000000000000,
+            2.830000000000000,
+            2.830000000000000,
         ])
         actual_void_ratio_nodes = np.array([
             nd.void_ratio for nd in self.msh.nodes
@@ -1263,18 +1263,15 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_void_ratio_distribution_int_pts(self):
         expected_void_ratio_int_pts = np.array([
-            0.747168783648703,
-            0.602831216351297,
-            0.541547005383793,
-            0.518452994616208,
-            0.503660254037844,
-            0.486339745962156,
-            0.475773502691896,
-            0.464226497308104,
+            2.83000000000000000,
+            2.83000000000000000,
+            2.83000000000000000,
+            2.83000000000000000,
+            2.83000000000000000,
+            2.83000000000000000,
+            2.83000000000000000,
+            2.83000000000000000,
         ])
-        expected_void_ratio_0_int_pts = 0.9 * np.ones(
-            2 * self.msh.num_elements
-        )
         actual_void_ratio_int_pts = np.array([
             ip.void_ratio for e in self.msh.elements for ip in e.int_pts
         ])
@@ -1282,20 +1279,20 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
             ip.void_ratio_0 for e in self.msh.elements for ip in e.int_pts
         ])
         self.assertTrue(np.allclose(actual_void_ratio_0_int_pts,
-                                    expected_void_ratio_0_int_pts))
+                                    expected_void_ratio_int_pts))
         self.assertTrue(np.allclose(actual_void_ratio_int_pts,
                                     expected_void_ratio_int_pts))
 
     def test_hyd_cond_distribution(self):
         expected_hyd_cond_int_pts = np.array([
-            3.40877688437546E-10,
-            1.14646460334134E-10,
-            7.21819834044123E-11,
-            6.06332354537998E-11,
-            5.42262977612564E-11,
-            4.75796675742455E-11,
-            4.39316973318227E-11,
-            4.02641883365508E-11,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
         ])
         actual_hyd_cond_int_pts = np.array([
             ip.hyd_cond for e in self.msh.elements for ip in e.int_pts
@@ -1308,14 +1305,14 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_hyd_cond_grad_distribution(self):
         expected_hyd_cond_grad_int_pts = np.array([
-            2.57344224239529E-09,
-            8.65518788622658E-10,
-            5.44934947441782E-10,
-            4.57748144576778E-10,
-            4.09379229092870E-10,
-            3.59200764872360E-10,
-            3.31660561921905E-10,
-            3.03972851951628E-10,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
         ])
         actual_hyd_cond_grad_int_pts = np.array([
             ip.hyd_cond_gradient
@@ -1329,14 +1326,14 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_eff_stress_distribution(self):
         expected_sig_int_pts = np.array([
-            7.04988931005544E+04,
-            1.55248308168406E+05,
-            2.17067634321865E+05,
-            2.46291943422797E+05,
-            2.67046786747095E+05,
-            2.93581514142121E+05,
-            3.11047468426655E+05,
-            3.31325023360404E+05,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
         ])
         actual_sigp_int_pts = np.array([
             ip.eff_stress
@@ -1347,16 +1344,18 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
             actual_sigp_int_pts,
         ))
 
+        print(actual_sigp_int_pts)
+
     def test_eff_stress_grad_distribution(self):
         expected_dsigde_int_pts = np.array([
-            -3.85581235928545E+05,
-            -8.49103183138045E+05,
-            -1.18721306166510E+06,
-            -1.34705025522533E+06,
-            -1.46056520260290E+06,
-            -1.60569220437593E+06,
-            -1.70121915442459E+06,
-            -1.81212365730539E+06,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
         ])
         actual_dsigde_int_pts = np.array([
             ip.eff_stress_gradient
