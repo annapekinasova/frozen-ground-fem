@@ -205,6 +205,9 @@ class ConsolidationElement1D(Element1D):
                 )
                 ip.loc_stress = sig
                 ip.tot_stress_gradient = dsig_de
+                # reset effective stress and pre-consolidation stress
+                ip.eff_stress = 0.0
+                ip.pre_consol_stress = 0.0
             # soil is unfrozen
             else:
                 # update residual stress and pre-consolidation stress
@@ -922,15 +925,6 @@ class ConsolidationAnalysis1D(Mesh1D):
                 ip.void_ratio_0 = e0
                 ip.void_ratio = ep
                 # ip.void_ratio__0 = ep
-                # initialize pre-consolidation stress
-                ppc = ip.pre_consol_stress
-                ppc0, _ = ip.material.eff_stress(e0, ppc)
-                if ppc0 > ppc:
-                    ip.pre_consol_stress = ppc0
-                ppc = ip.pre_consol_stress
-                ppc1, _ = ip.material.eff_stress(ep, ppc)
-                if ppc1 > ppc:
-                    ip.pre_consol_stress = ppc1
                 # update total stress interpolated from nodes
                 sp = (N @ ss)[0]
                 ip.tot_stress = sp
@@ -950,8 +944,16 @@ class ConsolidationAnalysis1D(Mesh1D):
                     )
                     ip.loc_stress = sig
                     ip.tot_stress_gradient = dsig_de
+                    # reset effective stress and pre-consolidation stress
+                    ip.eff_stress = 0.0
+                    ip.pre_consol_stress = 0.0
                 # soil is unfrozen
                 else:
+                    # initialize pre-consolidation stress
+                    ppc = ip.pre_consol_stress
+                    ppc0, _ = ip.material.eff_stress(e0, ppc)
+                    if ppc0 > ppc:
+                        ip.pre_consol_stress = ppc0
                     # update effective stress
                     ppc = ip.pre_consol_stress
                     sig, dsig_de = ip.material.eff_stress(ep, ppc)
