@@ -806,12 +806,7 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
         for nd in self.msh.nodes:
             nd.void_ratio_0 = 0.9
         for e in self.msh.elements:
-            for ip in e.int_pts:
-                ip.material = self.mtl
-                ip.void_ratio_0 = 0.9
-            for iipp in e._int_pts_deformed:
-                for ip in iipp:
-                    ip.material = self.mtl
+            e.assign_material(self.mtl)
         self.msh._void_ratio_vector[:] = np.array([
             0.6,
             0.55,
@@ -820,12 +815,7 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
             0.46,
         ])
         self.msh.update_nodes()
-        self.msh.initialize_integration_points()
-        self.msh.update_integration_points()
-        self.msh.calculate_deformed_coords()
-        self.msh.update_total_stress_distribution()
-        self.msh.update_pore_pressure_distribution()
-        self.msh.update_global_matrices_and_vectors()
+        self.msh.initialize_global_system(0.0)
 
     def test_void_ratio_distribution(self):
         expected_void_ratio_int_pts = np.array([
@@ -999,6 +989,7 @@ class TestUpdateIntegrationPointsLinear(unittest.TestCase):
         actual_sig_nodes = np.array([
             nd.tot_stress for nd in self.msh.nodes
         ])
+        print(actual_sig_nodes)
         self.assertTrue(np.allclose(
             actual_sig_nodes,
             expected_sig_nodes,
@@ -1139,8 +1130,7 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
             nd.void_ratio = e0
             nd.void_ratio_0 = 0.9
         for e in self.msh.elements:
-            for ip in e.int_pts:
-                ip.material = self.mtl
+            e.assign_material(self.mtl)
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -1413,8 +1403,7 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
             nd.void_ratio = e0
             nd.void_ratio_0 = 0.9
         for e in self.msh.elements:
-            for ip in e.int_pts:
-                ip.material = self.mtl
+            e.assign_material(self.mtl)
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -1715,8 +1704,7 @@ class TestUpdateGlobalMatricesLinear(unittest.TestCase):
             nd.void_ratio = e0
             nd.void_ratio_0 = 0.9
         for e in self.msh.elements:
-            for ip in e.int_pts:
-                ip.material = self.mtl
+            e.assign_material(self.mtl)
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -2031,8 +2019,7 @@ class TestVoidRatioCorrectionLinearOneStep(unittest.TestCase):
             nd.void_ratio = e0
             nd.void_ratio_0 = 0.9
         for e in self.msh.elements:
-            for ip in e.int_pts:
-                ip.material = self.mtl
+            e.assign_material(self.mtl)
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -2381,8 +2368,7 @@ class TestIterativeVoidRatioCorrectionLinear(unittest.TestCase):
             nd.void_ratio = e0
             nd.void_ratio_0 = 0.9
         for e in self.msh.elements:
-            for ip in e.int_pts:
-                ip.material = self.mtl
+            e.assign_material(self.mtl)
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -2768,10 +2754,8 @@ class TestInitializeIntegrationPointsCubic(unittest.TestCase):
             nd.void_ratio = e0
             nd.void_ratio_0 = e00
         for e in self.msh.elements:
-            for ip in e.int_pts:
-                ip.material = self.mtl
-        self.msh.initialize_integration_points()
-        self.msh.update_global_matrices_and_vectors()
+            e.assign_material(self.mtl)
+        self.msh.initialize_global_system(0.0)
 
     def test_void_ratio_distribution_nodes(self):
         expected_void_ratio_0_nodes = np.array([
@@ -3242,8 +3226,7 @@ class TestInitializeGlobalSystemCubic(unittest.TestCase):
             nd.void_ratio = e0
             nd.void_ratio_0 = e00
         for e in self.msh.elements:
-            for ip in e.int_pts:
-                ip.material = self.mtl
+            e.assign_material(self.mtl)
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -3701,8 +3684,7 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
             nd.void_ratio = e0
             nd.void_ratio_0 = e00
         for e in self.msh.elements:
-            for ip in e.int_pts:
-                ip.material = self.mtl
+            e.assign_material(self.mtl)
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -4170,8 +4152,7 @@ class TestUpdateGlobalMatricesCubic(unittest.TestCase):
             nd.void_ratio = e0
             nd.void_ratio_0 = e00
         for e in self.msh.elements:
-            for ip in e.int_pts:
-                ip.material = self.mtl
+            e.assign_material(self.mtl)
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -4739,8 +4720,7 @@ class TestVoidRatioCorrectionCubicOneStep(unittest.TestCase):
             nd.void_ratio = e0
             nd.void_ratio_0 = e00
         for e in self.msh.elements:
-            for ip in e.int_pts:
-                ip.material = self.mtl
+            e.assign_material(self.mtl)
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -5359,8 +5339,7 @@ class TestIterativeVoidRatioCorrectionCubic(unittest.TestCase):
             nd.void_ratio = e0
             nd.void_ratio_0 = e00
         for e in self.msh.elements:
-            for ip in e.int_pts:
-                ip.material = self.mtl
+            e.assign_material(self.mtl)
         bnd0 = ConsolidationBoundary1D(
             nodes=(self.msh.nodes[0],),
             bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
