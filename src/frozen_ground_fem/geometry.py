@@ -1844,6 +1844,16 @@ class Element1D:
         """
         return self._int_pts
 
+    def assign_material(self, m: Material) -> None:
+        """Convenience method for assigning a material to
+        all integration points in the element.
+        """
+        for ip in self.int_pts:
+            ip.material = m
+        for iipp in self._int_pts_deformed:
+            for ip in iipp:
+                ip.material = m
+
     def update_integration_points(self) -> None:
         pass
 
@@ -2527,7 +2537,10 @@ class Mesh1D:
                              + " invalid, must be positive")
         self._max_iterations = value
 
-    def initialize_integration_points(self) -> None:
+    def initialize_integration_points_primary(self) -> None:
+        pass
+
+    def initialize_integration_points_secondary(self) -> None:
         pass
 
     def initialize_global_matrices_and_vectors(self):
@@ -2565,8 +2578,11 @@ class Mesh1D:
         self._t1 = t0
         self.initialize_free_index_arrays()
         self.initialize_solution_variable_vectors()
+        self.initialize_integration_points_primary()
+        self.calculate_deformed_coords()
         self.update_total_stress_distribution()
-        self.initialize_integration_points()
+        self.initialize_integration_points_secondary()
+        self.update_pore_pressure_distribution()
         self.update_global_matrices_and_vectors()
 
     def initialize_time_step(self) -> None:
