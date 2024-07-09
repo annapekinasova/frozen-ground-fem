@@ -674,6 +674,9 @@ class ThermalAnalysis1D(Mesh1D):
         This convenience method loops over nodes in the mesh
         and assigns the temperature from the global temperature vector.
         """
+        self._temp_rate_vector[:] = (
+            self._temp_vector[:] - self._temp_vector_0[:]
+        ) * self.over_dt
         for nd in self.nodes:
             nd.temp = self._temp_vector[nd.index]
             nd.temp_rate = self._temp_rate_vector[nd.index]
@@ -782,10 +785,10 @@ class ThermalAnalysis1D(Mesh1D):
         self._temp_vector[self._free_vec] += (
             self._delta_temp_vector[self._free_vec]
         )
-        # update temp rate vector
-        self._temp_rate_vector[:] = (
-            self._temp_vector[:] - self._temp_vector_0[:]
-        ) * self.over_dt
+        # # update temp rate vector
+        # self._temp_rate_vector[:] = (
+        #     self._temp_vector[:] - self._temp_vector_0[:]
+        # ) * self.over_dt
 
     def update_iteration_variables(self) -> None:
         self._eps_a = float(
