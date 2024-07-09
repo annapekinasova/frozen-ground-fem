@@ -1815,6 +1815,16 @@ class Element1D:
         self._order = value
 
     @property
+    def num_nodes(self) -> int:
+        """The number of nodes in the element.
+
+        Returns
+        -------
+        int
+        """
+        return len(self.nodes)
+
+    @property
     def nodes(self) -> tuple[Node1D, ...]:
         """The tuple of :c:`Node1D` contained in the element.
 
@@ -2609,6 +2619,7 @@ class Mesh1D:
         # setup global matrices and vectors
         self.store_converged_matrices()
         self.update_boundary_conditions(self._t1)
+        self.update_nodes()
         self.update_integration_points()
         self.update_global_matrices_and_vectors()
 
