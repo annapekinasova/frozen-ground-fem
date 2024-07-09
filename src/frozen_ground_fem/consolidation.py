@@ -96,6 +96,9 @@ class ConsolidationElement1D(Element1D):
         K = np.zeros_like(B.T @ B)
         jac = self.jacobian
         for ip in self.int_pts:
+            # skip frozen points (do not contribute to stiffness)
+            if ip.temp < 0.0:
+                continue
             e0 = ip.void_ratio_0
             e = ip.void_ratio
             e_ratio = (1.0 + e0) / (1.0 + e)
@@ -151,6 +154,55 @@ class ConsolidationElement1D(Element1D):
         return M
 
     @property
+    def water_flux_vector(self) -> npt.NDArray[np.floating]:
+        """The element water flux vector.
+
+        Returns
+        -------
+        numpy.ndarray
+            Shape depends on order of interpolation.
+            For order=1, shape=(2, ).
+            For order=3, shape=(4, ).
+
+        Notes
+        -----
+        Integrates
+            (1 - H(T-Tf)) * (B^T * (1+e0) / (1+e) * qw
+            - N^T * (1-Gi) * (1+e) * (1+e)/(1+e0) * (dthw/dT) * dT/dt)
+        over the element where
+        t is time,
+        T is the temperature,
+        Tf is the freezing temperature,
+        H(x) is the heaviside function,
+        e is the void ratio,
+        e0 is the initial void ratio,
+        qw is the water flux rate,
+        Gi is the specific gravity of ice,
+        thw is the volumetric water content.
+        """
+        N = self._shape_matrix(0)
+        Q = np.zeros(self.num_nodes)
+        jac = self.jacobian
+        for ip in self.int_pts:
+            # skip unfrozen points (do not contribute to water flux vector)
+            if ip.temp >= 0.0:
+                continue
+            N = self._shape_matrix(ip.local_coord).flatten()
+            B = self._gradient_matrix(ip.local_coord, jac).flatten()
+            ee = ip.void_ratio
+            ee0 = ip.void_ratio_0
+            ee_fact = (1.0 + ee0) / (1.0 + ee)
+            qw = ip.water_flux_rate
+            dthw_dT = ip.vol_water_cont_temp_gradient
+            dTdt = ip.temp_rate
+            Q += (
+                B * ee_fact * qw
+                - N * (1.0 - Gi) * (1.0 + ee) / ee_fact * dthw_dT * dTdt
+            ) * ip.weight
+        Q *= jac
+        return Q
+
+    @property
     def deformed_length(self) -> float:
         """The deformed length of the element.
 
@@ -189,6 +241,11 @@ class ConsolidationElement1D(Element1D):
             # get temperature state interpolated from nodes
             T = ip.temp
             T0 = ip.temp__0
+            thw0 = ip.vol_water_cont__0
+            thw1 = ip.vol_water_cont
+            ip.vol_water_cont_temp_gradient = np.abs(
+                (thw1 - thw0) / (T - T0)
+            ) if np.abs(T - T0) > 0.0 else 0.0
             # soil is frozen
             if T < 0.0:
                 # set reference stress and void ratio for frozen state
@@ -1118,6 +1175,10 @@ class ConsolidationAnalysis1D(Mesh1D):
             if (be.bnd_type
                     == ConsolidationBoundary1D.BoundaryType.water_flux):
                 self._water_flux_vector[be.nodes[0].index] -= be.bnd_value
+        for e in self.elements:
+            ind = [nd.index for nd in e.nodes]
+            Qe = e.water_flux_vector
+            self._water_flux_vector[np.ix_(ind)] += Qe
 
     def update_stiffness_matrix(self) -> None:
         """Updates the global stiffness matrix.
