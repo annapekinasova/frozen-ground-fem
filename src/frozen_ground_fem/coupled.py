@@ -322,6 +322,9 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         and assigns the temperature from the global temperature vector
         and the void ratio from the global void ratio vector.
         """
+        self._temp_rate_vector[:] = (
+            self._temp_vector[:] - self._temp_vector_0[:]
+        ) * self.over_dt
         for nd in self.nodes:
             nd.temp = self._temp_vector[nd.index]
             nd.temp_rate = self._temp_rate_vector[nd.index]
