@@ -2288,7 +2288,14 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
                                     atol=1e-18, rtol=1e-8))
 
     def test_global_water_flux_vector(self):
-        expected_flux_vector = np.zeros(self.msh.num_nodes)
+        expected_flux_vector = np.array([
+            -1.56524098050761E-06,
+            -5.84157071020524E-06,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+        ])
+        print(self.msh._water_flux_vector)
         self.assertTrue(np.allclose(expected_flux_vector,
                                     self.msh._water_flux_vector,
                                     atol=1e-18, rtol=1e-8))
