@@ -5,6 +5,9 @@ using the finite element method.
 import numpy as np
 import numpy.typing as npt
 
+from .materials import (
+    unit_weight_water as gam_w,
+)
 from .geometry import (
     Mesh1D,
 )
@@ -57,18 +60,79 @@ class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
         If order is not 1 or 3.
     """
 
-    def update_integration_points(
-        self,
-        update_water_flux: bool = True,
-        update_res_stress: bool = True,
-    ) -> None:
-        """Updates the properties of integration points
-        in the element according to changes in void ratio.
-        """
-        ThermalElement1D.update_integration_points(self, False)
-        ConsolidationElement1D.update_integration_points(
-            self, update_water_flux, update_res_stress,
-        )
+    def initialize_integration_points_primary(self) -> None:
+        ThermalElement1D.initialize_integration_points_primary(self)
+        ConsolidationElement1D.initialize_integration_points_primary(self)
+
+    def initialize_integration_points_secondary(self) -> None:
+        for ip in self.int_pts:
+            e0 = ip.void_ratio_0
+            ppc = ip.pre_consol_stress
+            ppc0, _ = ip.material.eff_stress(e0, ppc)
+            if ppc0 > ppc:
+                ip.pre_consol_stress = ppc0
+        self.update_integration_points_secondary()
+
+    def update_integration_points_primary(self) -> None:
+        ThermalElement1D.update_integration_points_primary(self)
+        ConsolidationElement1D.update_integration_points_primary(self)
+
+    def update_integration_points_secondary(self) -> None:
+        ThermalElement1D.update_integration_points_secondary(self)
+        ee = np.array([nd.void_ratio for nd in self.nodes])
+        jac = self.jacobian
+        for ip in self.int_pts:
+            B = self._gradient_matrix(ip.local_coord, jac)
+            e0 = ip.void_ratio_0
+            ep = ip.void_ratio
+            de_dZ = (B @ ee)[0]
+            T0 = ip.temp__0
+            T = ip.temp
+            # soil is frozen
+            if T < 0.0:
+                # set reference stress and void ratio for frozen state
+                if T0 >= 0.0:
+                    ip.void_ratio_0_ref_frozen = ep
+                    ip.tot_stress_0_ref_frozen = ip.tot_stress
+                # update local stress state
+                # and total stress gradient (for stiffness matrix)
+                e_f0 = ip.void_ratio_0_ref_frozen
+                sig_f0 = ip.tot_stress_0_ref_frozen
+                sig, dsig_de = ip.material.tot_stress(
+                    T, ep, e_f0, sig_f0,
+                )
+                ip.loc_stress = sig
+                ip.tot_stress_gradient = dsig_de
+                # reset effective stress and pre-consolidation stress
+                ip.eff_stress = 0.0
+                ip.pre_consol_stress = 0.0
+            # soil is unfrozen
+            else:
+                # update residual stress and pre-consolidation stress
+                # if thawed on this step
+                if T0 < 0.0:
+                    ppc = ip.material.res_stress(ep)
+                    ip.pre_consol_stress = ppc
+                # update effective stress
+                ppc = ip.pre_consol_stress
+                sig, dsig_de = ip.material.eff_stress(ep, ppc)
+                if sig > ppc:
+                    ip.pre_consol_stress = sig
+                ip.eff_stress = sig
+                ip.eff_stress_gradient = dsig_de
+                # update hydraulic conductivity and water flux
+                hyd_cond, dk_de = ip.material.hyd_cond(ep, 1.0, False)
+                ip.hyd_cond = hyd_cond
+                ip.hyd_cond_gradient = dk_de
+                if not hyd_cond:
+                    self.water_flux_rate = 0.0
+                else:
+                    Gs = ip.material.spec_grav_solids
+                    e_ratio = (1.0 + e0) / (1.0 + ep)
+                    ip.water_flux_rate = (
+                        -hyd_cond / gam_w * e_ratio
+                        * ((Gs - 1.0) * gam_w / (1.0 + e0) - dsig_de * de_dZ)
+                    )
 
 
 class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
@@ -245,16 +309,17 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             for k in range(num_elements)
         )
 
-    def initialize_integration_points_primary(self) -> None:
-        ThermalAnalysis1D.initialize_integration_points_primary(self)
-        ConsolidationAnalysis1D.initialize_integration_points_primary(self)
-
-    def initialize_integration_points_secondary(
-        self,
-        update_water_flux: bool = True,
-    ) -> None:
-        ThermalAnalysis1D.initialize_integration_points_secondary(self, False)
-        ConsolidationAnalysis1D.initialize_integration_points_secondary(self)
+    # def initialize_integration_points_primary(self) -> None:
+    #     ThermalAnalysis1D.initialize_integration_points_primary(self)
+    #     ConsolidationAnalysis1D.initialize_integration_points_primary(self)
+    #
+    # def initialize_integration_points_secondary(
+    #     self,
+    #     update_water_flux: bool = True,
+    # ) -> None:
+    #     ThermalAnalysis1D.initialize_integration_points_secondary(self,
+    #     False)
+    #     ConsolidationAnalysis1D.initialize_integration_points_secondary(self)
 
     def initialize_global_matrices_and_vectors(self):
         ThermalAnalysis1D.initialize_global_matrices_and_vectors(self)

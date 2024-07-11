@@ -1864,7 +1864,35 @@ class Element1D:
             for ip in iipp:
                 ip.material = m
 
-    def update_integration_points(self) -> None:
+    def initialize_integration_points_primary(self) -> None:
+        """Abstract base method for initializing values of
+        primary solution variables
+        (and any variables not affected by coupling)
+        at the element integration points.
+        """
+        pass
+
+    def initialize_integration_points_secondary(self) -> None:
+        """Abstract base method for initializing values of
+        secondary solution variables
+        (i.e. variables affected by coupling)
+        at the element integration points.
+        """
+        pass
+
+    def update_integration_points_primary(self) -> None:
+        """Abstract base method for updating values of
+        primary solution variables (and, optionally,
+        some variables not affected by coupling)
+        at the element integration points.
+        """
+        pass
+
+    def update_integration_points_secondary(self) -> None:
+        """Abstract base method for updating values of
+        secondary solution variables (esp. variables affected
+        by coupling) at the element integration points.
+        """
         pass
 
 
@@ -2547,11 +2575,24 @@ class Mesh1D:
                              + " invalid, must be positive")
         self._max_iterations = value
 
-    def initialize_integration_points_primary(self) -> None:
+    def initialize_boundary_conditions(self) -> None:
+        """Performs any necessary initialization of boundary conditions.
+        """
         pass
 
+    def initialize_integration_points_primary(self) -> None:
+        """Initializes the primary variables at integration points
+        across the mesh.
+        """
+        for e in self.elements:
+            e.initialize_integration_points_primary()
+
     def initialize_integration_points_secondary(self) -> None:
-        pass
+        """Initializes the secondary variables at integration points
+        across the mesh.
+        """
+        for e in self.elements:
+            e.initialize_integration_points_secondary()
 
     def initialize_global_matrices_and_vectors(self):
         pass
@@ -2587,6 +2628,7 @@ class Mesh1D:
         self._t0 = t0
         self._t1 = t0
         self.initialize_free_index_arrays()
+        self.initialize_boundary_conditions()
         self.initialize_solution_variable_vectors()
         self.initialize_integration_points_primary()
         self.calculate_deformed_coords()
@@ -2632,12 +2674,19 @@ class Mesh1D:
     def update_nodes(self) -> None:
         pass
 
-    def update_integration_points(self) -> None:
-        """Updates the properties of integration points
-        in the parent mesh according to changes in void ratio.
+    def update_integration_points_primary(self) -> None:
+        """Updates the primary variables at integration points
+        across the mesh.
         """
         for e in self.elements:
-            e.update_integration_points()
+            e.update_integration_points_primary()
+
+    def update_integration_points_secondary(self) -> None:
+        """Updates the secondary variables at integration points
+        across the mesh.
+        """
+        for e in self.elements:
+            e.update_integration_points_secondary()
 
     def update_global_matrices_and_vectors(self) -> None:
         pass

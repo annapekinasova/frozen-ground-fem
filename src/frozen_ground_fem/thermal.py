@@ -143,40 +143,81 @@ class ThermalElement1D(Element1D):
         Q *= jac
         return Q
 
-    def update_integration_points(
-        self,
-        update_water_flux: bool = True,
-    ) -> None:
-        """Updates the properties of integration points
-        in the element according to changes in temperature.
+    def initialize_integration_points_primary(self) -> None:
+        """Initializes values of thermal primary solution variables
+        (and variables not affected by coupling)
+        at the element integration points.
 
         Notes
         -----
-        This convenience method loops over the integration points
-        and interpolates temperatures from corresponding nodes
-        and updates degree of saturation of water accordingly.
+        Initializes
+        temperature,
+        temperature gradient,
+        temperature rate,
+        and degree of saturation of water.
+        Temperature is a primary solution variable and degree of
+        saturation is needed for total stress calculation, but is not
+        affected by coupling (if present). Temperature gradient (in
+        Lagrangian coordinates) and temperature rate are also not affected
+        by coupling, so are safe to update here.
+        Also initializes temp__0 and vol_water_cont__0 to same as
+        temp and vol_water_cont, but allows opportunity for modifying
+        these values before calling initialize_integration_points_secondary().
+        """
+        ThermalElement1D.update_integration_points_primary(self)
+        for ip in self.int_pts:
+            ip.temp__0 = ip.temp
+            ip.vol_water_cont__0 = ip.vol_water_cont
+
+    def initialize_integration_points_secondary(self) -> None:
+        """Initializes values of thermal secondary solution variables
+        (variables affected by coupling)
+        at the element integration points.
+
+        Notes
+        -----
+        Initializes
+        volumetric water content temperature gradient
+        and water flux rate (for frozen points).
+        Volumetric water content temperature gradient
+        is affected by coupling because it depends on
+        both degree of saturation and porosity (void ratio).
+        Water flux rate for frozen points
+        is affected by coupling because it depends on
+        total stress and the void ratio correction factor
+        for space derivatives.
+        """
+        ThermalElement1D.update_integration_points_secondary(self)
+
+    def update_integration_points_primary(self) -> None:
+        """Updates values of thermal primary solution variables
+        (and variables not affected by coupling)
+        at the element integration points.
+
+        Notes
+        -----
+        Updates
+        temperature,
+        temperature gradient,
+        temperature rate,
+        and degree of saturation of water.
+        Temperature is a primary solution variable and degree of
+        saturation is needed for total stress calculation, but is not
+        affected by coupling (if present). Temperature gradient (in
+        Lagrangian coordinates) and temperature rate are also not affected
+        by coupling, so are safe to update here.
         """
         Te = np.array([nd.temp for nd in self.nodes])
         dTdte = np.array([nd.temp_rate for nd in self.nodes])
+        jac = self.jacobian
         for ip in self.int_pts:
             N = self._shape_matrix(ip.local_coord)
-            B = self._gradient_matrix(ip.local_coord, self.jacobian)
+            B = self._gradient_matrix(ip.local_coord, jac)
             T = (N @ Te)[0]
-            dTdZ = (B @ Te)[0]
-            dTdt = (N @ dTdte)[0]
-            Sw, dSw_dT = ip.material.deg_sat_water(T)
             ip.temp = T
-            ip.temp_gradient = dTdZ
-            ip.temp_rate = dTdt
-            ip.deg_sat_water = Sw
-            T0 = ip.temp__0
-            thw0 = ip.vol_water_cont__0
-            thw1 = ip.vol_water_cont
-            ip.vol_water_cont_temp_gradient = np.abs(
-                (thw1 - thw0) / (T - T0)
-            ) if np.abs(T - T0) > 0.0 else 0.0
-            if update_water_flux:
-                ip.update_water_flux_rate()
+            ip.temp_gradient = (B @ Te)[0]
+            ip.temp_rate = (N @ dTdte)[0]
+            ip.deg_sat_water = ip.material.deg_sat_water(T)[0]
         for iipp in self._int_pts_deformed:
             for ip in iipp:
                 N = self._shape_matrix(ip.local_coord)
@@ -184,6 +225,42 @@ class ThermalElement1D(Element1D):
                 Sw = ip.material.deg_sat_water(T)[0]
                 ip.temp = T
                 ip.deg_sat_water = Sw
+
+    def update_integration_points_secondary(self) -> None:
+        """Updates values of thermal secondary solution variables
+        (variables affected by coupling)
+        at the element integration points.
+
+        Notes
+        -----
+        Updates
+        volumetric water content temperature gradient
+        and water flux rate (for frozen points).
+        Volumetric water content temperature gradient
+        is affected by coupling because it depends on
+        both degree of saturation and porosity (void ratio).
+        Water flux rate for frozen points
+        is affected by coupling because it depends on
+        total stress and the void ratio correction factor
+        for space derivatives.
+        """
+        for ip in self.int_pts:
+            T = ip.temp
+            T0 = ip.temp__0
+            thw0 = ip.vol_water_cont__0
+            thw1 = ip.vol_water_cont
+            ip.vol_water_cont_temp_gradient = np.abs(
+                (thw1 - thw0) / (T - T0)
+            ) if np.abs(T - T0) > 0.0 else 0.0
+            if T < 0.0:
+                ip.water_flux_rate = ip.material.water_flux(
+                    ip.void_ratio,
+                    ip.void_ratio_0,
+                    T,
+                    ip.temp_rate,
+                    ip.temp_gradient,
+                    ip.tot_stress,
+                )
 
 
 class ThermalBoundary1D(Boundary1D):
@@ -541,54 +618,54 @@ class ThermalAnalysis1D(Mesh1D):
             for k in range(num_elements)
         )
 
-    def initialize_integration_points_primary(self) -> None:
-        """Initializes the thermal variables needed for total stress
-        calculations at the integration points in the elements.
-        """
-        for e in self.elements:
-            Te = np.array([nd.temp for nd in e.nodes])
-            for ip in e.int_pts:
-                N = e._shape_matrix(ip.local_coord)
-                T = (N @ Te)[0]
-                Sw, dSw_dT = ip.material.deg_sat_water(T)
-                ip.temp = T
-                ip.deg_sat_water = Sw
-                ip.temp__0 = T
-                ip.vol_water_cont__0 = ip.vol_water_cont
-            for iipp in e._int_pts_deformed:
-                for ip in iipp:
-                    N = e._shape_matrix(ip.local_coord)
-                    T = (N @ Te)[0]
-                    Sw = ip.material.deg_sat_water(T)[0]
-                    ip.temp = T
-                    ip.deg_sat_water = Sw
-
-    def initialize_integration_points_secondary(
-        self,
-        update_water_flux: bool = True,
-    ) -> None:
-        """Initializes the remaining thermal variables
-        at the integration points in the elements.
-        """
-        for e in self.elements:
-            Te = np.array([nd.temp for nd in e.nodes])
-            dTdte = np.array([nd.temp_rate for nd in e.nodes])
-            for ip in e.int_pts:
-                N = e._shape_matrix(ip.local_coord)
-                B = e._gradient_matrix(ip.local_coord, e.jacobian)
-                dTdZ = (B @ Te)[0]
-                dTdt = (N @ dTdte)[0]
-                ip.temp_gradient = dTdZ
-                ip.temp_rate = dTdt
-                T = ip.temp
-                T0 = ip.temp__0
-                thw0 = ip.vol_water_cont__0
-                thw1 = ip.vol_water_cont
-                ip.vol_water_cont_temp_gradient = np.abs(
-                    (thw1 - thw0) / (T - T0)
-                ) if np.abs(T - T0) > 0.0 else 0.0
-                if update_water_flux:
-                    ip.update_water_flux_rate()
+    # def initialize_integration_points_primary(self) -> None:
+    #     """Initializes the thermal variables needed for total stress
+    #     calculations at the integration points in the elements.
+    #     """
+    #     for e in self.elements:
+    #         Te = np.array([nd.temp for nd in e.nodes])
+    #         for ip in e.int_pts:
+    #             N = e._shape_matrix(ip.local_coord)
+    #             T = (N @ Te)[0]
+    #             Sw, dSw_dT = ip.material.deg_sat_water(T)
+    #             ip.temp = T
+    #             ip.deg_sat_water = Sw
+    #             ip.temp__0 = T
+    #             ip.vol_water_cont__0 = ip.vol_water_cont
+    #         for iipp in e._int_pts_deformed:
+    #             for ip in iipp:
+    #                 N = e._shape_matrix(ip.local_coord)
+    #                 T = (N @ Te)[0]
+    #                 Sw = ip.material.deg_sat_water(T)[0]
+    #                 ip.temp = T
+    #                 ip.deg_sat_water = Sw
+    #
+    # def initialize_integration_points_secondary(
+    #     self,
+    #     update_water_flux: bool = True,
+    # ) -> None:
+    #     """Initializes the remaining thermal variables
+    #     at the integration points in the elements.
+    #     """
+    #     for e in self.elements:
+    #         Te = np.array([nd.temp for nd in e.nodes])
+    #         dTdte = np.array([nd.temp_rate for nd in e.nodes])
+    #         for ip in e.int_pts:
+    #             N = e._shape_matrix(ip.local_coord)
+    #             B = e._gradient_matrix(ip.local_coord, e.jacobian)
+    #             dTdZ = (B @ Te)[0]
+    #             dTdt = (N @ dTdte)[0]
+    #             ip.temp_gradient = dTdZ
+    #             ip.temp_rate = dTdt
+    #             T = ip.temp
+    #             T0 = ip.temp__0
+    #             thw0 = ip.vol_water_cont__0
+    #             thw1 = ip.vol_water_cont
+    #             ip.vol_water_cont_temp_gradient = np.abs(
+    #                 (thw1 - thw0) / (T - T0)
+    #             ) if np.abs(T - T0) > 0.0 else 0.0
+    #             if update_water_flux:
+    #                 ip.update_water_flux_rate()
 
     def initialize_global_matrices_and_vectors(self):
         self._temp_vector_0 = np.zeros(self.num_nodes)
