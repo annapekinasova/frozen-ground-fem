@@ -1721,14 +1721,6 @@ class TestUpdateGlobalMatricesLinear(unittest.TestCase):
         self.msh.time_step = 2.5920E+06
         self.msh.implicit_error_tolerance = 1.0e-6
         self.msh.initialize_time_step()
-        self.msh.update_boundary_conditions(self.msh._t1)
-        self.msh.update_nodes()
-        self.msh.update_integration_points_primary()
-        self.msh.calculate_deformed_coords()
-        self.msh.update_total_stress_distribution()
-        self.msh.initialize_integration_points_secondary()
-        self.msh.update_pore_pressure_distribution()
-        self.msh.update_global_matrices_and_vectors()
 
     def test_void_ratio_distribution_nodes(self):
         expected_void_ratio_vector_0 = np.array([
@@ -2040,14 +2032,6 @@ class TestVoidRatioCorrectionLinearOneStep(unittest.TestCase):
         self.msh.time_step = 2.5920E+06
         self.msh.implicit_error_tolerance = 1.0e-6
         self.msh.initialize_time_step()
-        self.msh.update_boundary_conditions(self.msh._t1)
-        self.msh.update_nodes()
-        self.msh.update_integration_points_primary()
-        self.msh.calculate_deformed_coords()
-        self.msh.update_total_stress_distribution()
-        self.msh.update_integration_points_secondary()
-        self.msh.update_pore_pressure_distribution()
-        self.msh.update_global_matrices_and_vectors()
         self.msh.calculate_solution_vector_correction()
         self.msh.update_nodes()
         self.msh.update_integration_points_primary()
@@ -4181,14 +4165,6 @@ class TestUpdateGlobalMatricesCubic(unittest.TestCase):
         self.msh.time_step = 2.5920E+06
         self.msh.implicit_error_tolerance = 1.0e-6
         self.msh.initialize_time_step()
-        self.msh.update_boundary_conditions(self.msh._t1)
-        self.msh.update_nodes()
-        self.msh.update_integration_points_primary()
-        self.msh.calculate_deformed_coords()
-        self.msh.update_total_stress_distribution()
-        self.msh.initialize_integration_points_secondary()
-        self.msh.update_pore_pressure_distribution()
-        self.msh.update_global_matrices_and_vectors()
 
     def test_void_ratio_distribution_nodes(self):
         expected_void_ratio_vector_0 = np.array([
