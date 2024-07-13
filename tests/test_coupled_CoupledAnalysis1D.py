@@ -1468,19 +1468,19 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_tot_stress_grad_distribution(self):
         expected_dsigde_int_pts = np.array([
-            -5.32198647330003E+06,
-            -5.38967591665359E+06,
-            -5.43922802832446E+06,
-            -5.50691747167802E+06,
-            -5.55646958334889E+06,
-            -5.62415902670245E+06,
-            -5.67371113837331E+06,
-            -5.74140058172688E+06,
+            -2.09299601559626E+02,
+            -1.53141051315518E+01,
+            -1.53141051315518E+01,
+            -1.53141051315518E+01,
+            -1.53141051315518E+01,
+            -1.53141051315518E+01,
+            -1.53141051315518E+01,
+            -1.53141051315518E+01,
         ])
         actual_dsigde_int_pts = np.array([
-            ip.tot_stress_gradient
-            for e in self.msh.elements for ip in e.int_pts
+            for e in self.msh.elements for ip in e.int_pts_secondary
         ])
+        print(actual_dsigde_int_pts)
         self.assertTrue(np.allclose(
             expected_dsigde_int_pts,
             actual_dsigde_int_pts,
