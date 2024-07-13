@@ -1077,7 +1077,8 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
             hyd_cond_mult=0.8,
             hyd_cond_0=8.10e-6,
             void_ratio_min=0.3,
-            void_ratio_tr=2.6,
+            void_ratio_tr=0.0,
+            void_ratio_sep=1.6,
             void_ratio_0_comp=2.6,
             eff_stress_0_comp=2.8,
             comp_index_unfrozen=0.421,
@@ -1698,7 +1699,8 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
             hyd_cond_mult=0.8,
             hyd_cond_0=8.10e-6,
             void_ratio_min=0.3,
-            void_ratio_tr=2.6,
+            void_ratio_tr=0.0,
+            void_ratio_sep=1.6,
             void_ratio_0_comp=2.6,
             eff_stress_0_comp=2.8,
             comp_index_unfrozen=0.421,
@@ -2166,7 +2168,7 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
         ))
 
     def test_calculate_settlement(self):
-        expected = 0.0
+        expected = 0.00587428488533737
         actual = self.msh.calculate_total_settlement()
         self.assertAlmostEqual(expected, actual)
 
@@ -2182,12 +2184,6 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
         self.assertTrue(np.allclose(expected, actual))
 
     def test_global_heat_flow_matrix_0(self):
-        expected_H = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
-        self.assertTrue(np.allclose(
-            expected_H, self.msh._heat_flow_matrix_0,
-        ))
-
-    def test_global_heat_flow_matrix(self):
         expected_H = np.array([
             [8.43400120829928E+01, -8.43400120829928E+01,
              0.00000000000000E+00, 0.00000000000000E+00,
@@ -2206,20 +2202,53 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
              8.43400120829928E+01,],
         ])
         self.assertTrue(np.allclose(
+            expected_H, self.msh._heat_flow_matrix_0,
+        ))
+
+    def test_global_heat_flow_matrix(self):
+        expected_H = np.array([
+            [1.00416479969625E+02, -1.00416479969625E+02,
+             0.00000000000000E+00, 0.00000000000000E+00,
+             0.00000000000000E+00,],
+            [-1.00416479969625E+02, 1.84756492052618E+02,
+             -8.43400120829928E+01, 0.00000000000000E+00,
+             0.00000000000000E+00,],
+            [0.00000000000000E+00, -8.43400120829928E+01,
+                1.68680024165986E+02, -8.43400120829928E+01,
+             0.00000000000000E+00,],
+            [0.00000000000000E+00, 0.00000000000000E+00,
+             -8.43400120829928E+01, 1.68680024165986E+02,
+             -8.43400120829928E+01,],
+            [0.00000000000000E+00, 0.00000000000000E+00,
+                0.00000000000000E+00, -8.43400120829928E+01,
+             8.43400120829928E+01,],
+        ])
+        self.assertTrue(np.allclose(
             expected_H, self.msh._heat_flow_matrix,
         ))
 
     def test_global_heat_storage_matrix_0(self):
-        expected_C = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        expected_C = np.array([
+            [1.70489693482649E+04, 8.52448467413248E+03, 0.00000000000000E+00,
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [8.52448467413248E+03, 3.40979386965298E+04, 8.52448467413248E+03,
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [0.00000000000000E+00, 8.52448467413248E+03, 3.40979386965298E+04,
+                8.52448467413248E+03, 0.00000000000000E+00,],
+            [0.00000000000000E+00, 0.00000000000000E+00, 8.52448467413248E+03,
+                3.40979386965298E+04, 8.52448467413248E+03,],
+            [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
+                8.52448467413248E+03, 1.70489693482649E+04,],
+        ])
         self.assertTrue(np.allclose(
             expected_C, self.msh._heat_storage_matrix_0,
         ))
 
     def test_global_heat_storage_matrix(self):
         expected_C = np.array([
-            [1.70489693482649E+04, 8.52448467413248E+03, 0.00000000000000E+00,
+            [1.95272432649798E+05, 5.85438655571886E+04, 0.00000000000000E+00,
                 0.00000000000000E+00, 0.00000000000000E+00,],
-            [8.52448467413248E+03, 3.40979386965298E+04, 8.52448467413248E+03,
+            [5.85438655571886E+04, 5.59519989272211E+04, 8.52448467413248E+03,
                 0.00000000000000E+00, 0.00000000000000E+00,],
             [0.00000000000000E+00, 8.52448467413248E+03, 3.40979386965298E+04,
                 8.52448467413248E+03, 0.00000000000000E+00,],
@@ -2240,7 +2269,13 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
         ))
 
     def test_global_heat_flux_vector(self):
-        expected_Phi = np.zeros(self.msh.num_nodes)
+        expected_Phi = np.array([
+            -8.33935003943986E-02,
+            -2.24222554544176E-02,
+            -0.00000000000000E+00,
+            -0.00000000000000E+00,
+            -0.00000000000000E+00,
+        ])
         self.assertTrue(np.allclose(
             expected_Phi, self.msh._heat_flux_vector,
             atol=1e-15, rtol=1e-6,
@@ -2254,14 +2289,36 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
         ))
 
     def test_global_stiffness_matrix(self):
-        expected_K = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        expected_K = np.array([
+            [2.59527068320373E-09, -2.59527068320373E-09, 0.00000000000000E+00,
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [-1.81079078550582E-10, 1.81079078550582E-10, 0.00000000000000E+00,
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
+                0.00000000000000E+00, 0.00000000000000E+00,],
+        ])
         self.assertTrue(np.allclose(
             expected_K, self.msh._stiffness_matrix,
             atol=1e-18, rtol=1e-8,
         ))
 
     def test_global_mass_matrix_0(self):
-        expected_M = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        expected_M = np.array([
+            [1.98713374797455E-03, 9.93566873987276E-04, 0.00000000000000E+00,
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [9.93566873987276E-04, 3.97426749594910E-03, 9.93566873987276E-04,
+                0.00000000000000E+00, 0.00000000000000E+00,],
+            [0.00000000000000E+00, 9.93566873987276E-04, 3.97426749594910E-03,
+                9.93566873987276E-04, 0.00000000000000E+00,],
+            [0.00000000000000E+00, 0.00000000000000E+00, 9.93566873987276E-04,
+                3.97426749594910E-03, 9.93566873987276E-04,],
+            [0.00000000000000E+00, 0.00000000000000E+00, 0.00000000000000E+00,
+                9.93566873987276E-04, 1.98713374797455E-03,],
+        ])
         self.assertTrue(np.allclose(
             expected_M, self.msh._mass_matrix_0,
             atol=1e-18, rtol=1e-8,
@@ -2269,9 +2326,9 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
 
     def test_global_mass_matrix(self):
         expected_M = np.array([
-            [1.98713374797455E-03, 9.93566873987276E-04, 0.00000000000000E+00,
+            [2.16333267482736E-03, 1.04135499405632E-03, 0.00000000000000E+00,
                 0.00000000000000E+00, 0.00000000000000E+00,],
-            [9.93566873987276E-04, 3.97426749594910E-03, 9.93566873987276E-04,
+            [1.04135499405632E-03, 3.98922104937246E-03, 9.93566873987276E-04,
                 0.00000000000000E+00, 0.00000000000000E+00,],
             [0.00000000000000E+00, 9.93566873987276E-04, 3.97426749594910E-03,
                 9.93566873987276E-04, 0.00000000000000E+00,],
