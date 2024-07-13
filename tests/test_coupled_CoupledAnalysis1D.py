@@ -1426,7 +1426,7 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
             actual_sig_nodes,
         ))
 
-    def test_tot_stress_distribution(self):
+    def test_tot_stress_distribution_int_pts(self):
         expected_sig_int_pts = np.array([
             1.50701578393613E+04,
             1.52618326210456E+04,
@@ -1468,17 +1468,18 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
 
     def test_tot_stress_grad_distribution(self):
         expected_dsigde_int_pts = np.array([
-            -2.09299601559626E+02,
-            -1.53141051315518E+01,
-            -1.53141051315518E+01,
-            -1.53141051315518E+01,
-            -1.53141051315518E+01,
-            -1.53141051315518E+01,
-            -1.53141051315518E+01,
-            -1.53141051315518E+01,
+            -5.32198647330003E+06,
+            -5.38967591665359E+06,
+            -5.43922802832446E+06,
+            -5.50691747167802E+06,
+            -5.55646958334889E+06,
+            -5.62415902670245E+06,
+            -5.67371113837331E+06,
+            -5.74140058172688E+06,
         ])
         actual_dsigde_int_pts = np.array([
-            for e in self.msh.elements for ip in e.int_pts_secondary
+            ip.tot_stress_gradient
+            for e in self.msh.elements for ip in e.int_pts
         ])
         print(actual_dsigde_int_pts)
         self.assertTrue(np.allclose(
@@ -2043,7 +2044,7 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
             actual_sig_nodes,
         ))
 
-    def test_tot_stress_distribution(self):
+    def test_tot_stress_distribution_int_pts(self):
         expected_sig_int_pts = np.array([
             1.51175090332130E+04,
             1.52811105151559E+04,
