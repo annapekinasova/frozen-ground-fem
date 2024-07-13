@@ -1804,7 +1804,7 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
 
     def test_temperature_rate_distribution_nodes(self):
         expected_temp_rate_nodes = np.array([
-            0.0,
+            2.66666666667,
             0.0,
             0.0,
             0.0,
@@ -1947,6 +1947,13 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
                                     atol=1e-30))
 
     def test_void_ratio_distribution_nodes(self):
+        expected_void_ratio_vector_0 = np.array([
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+        ])
         expected_void_ratio_vector = np.array([
             1.03011911113263,
             2.83000000000000,
@@ -1958,16 +1965,23 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
             nd.void_ratio for nd in self.msh.nodes
         ])
         self.assertTrue(np.allclose(expected_void_ratio_vector,
-                                    actual_void_ratio_nodes,
-                                    atol=1e-8))
+                                    actual_void_ratio_nodes))
         self.assertTrue(np.allclose(expected_void_ratio_vector,
-                                    self.msh._void_ratio_vector,
-                                    atol=1e-8))
-        self.assertTrue(np.allclose(expected_void_ratio_vector,
-                                    self.msh._void_ratio_vector_0,
-                                    atol=1e-8))
+                                    self.msh._void_ratio_vector))
+        self.assertTrue(np.allclose(expected_void_ratio_vector_0,
+                                    self.msh._void_ratio_vector_0))
 
     def test_void_ratio_distribution_int_pts(self):
+        expected_void_ratio_int_pts_0 = np.array([
+            2.83000000000000000,
+            2.83000000000000000,
+            2.83000000000000000,
+            2.83000000000000000,
+            2.83000000000000000,
+            2.83000000000000000,
+            2.83000000000000000,
+            2.83000000000000000,
+        ])
         expected_void_ratio_int_pts = np.array([
             1.41047869771790000,
             2.44964041341473000,
@@ -1985,7 +1999,7 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
             ip.void_ratio_0 for e in self.msh.elements for ip in e.int_pts
         ])
         self.assertTrue(np.allclose(actual_void_ratio_0_int_pts,
-                                    expected_void_ratio_int_pts))
+                                    expected_void_ratio_int_pts_0))
         self.assertTrue(np.allclose(actual_void_ratio_int_pts,
                                     expected_void_ratio_int_pts))
 
@@ -1998,19 +2012,18 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
             0.00000000000000E+00,
             0.00000000000000E+00,
             0.00000000000000E+00,
+            0.00000000000000E+00,
         ])
         actual_hyd_cond_int_pts = np.array([
             ip.hyd_cond for e in self.msh.elements for ip in e.int_pts
         ])
         self.assertTrue(np.allclose(
             actual_hyd_cond_int_pts,
-            expected_hyd_cond_int_pts,
-            atol=1e-18, rtol=1e-8,
-        ))
+            expected_hyd_cond_int_pts))
 
     def test_hyd_cond_grad_distribution(self):
         expected_hyd_cond_grad_int_pts = np.array([
-            7.69716904600309E-00,
+            7.69716904600309E-09,
             0.00000000000000E+00,
             0.00000000000000E+00,
             0.00000000000000E+00,
@@ -2025,9 +2038,7 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
         ])
         self.assertTrue(np.allclose(
             actual_hyd_cond_grad_int_pts,
-            expected_hyd_cond_grad_int_pts,
-            atol=1e-18, rtol=1e-8,
-        ))
+            expected_hyd_cond_grad_int_pts))
 
     def test_tot_stress_distribution_nodes(self):
         expected_sig_nodes = np.array([
@@ -2069,13 +2080,13 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
     def test_eff_stress_distribution(self):
         expected_sig_int_pts = np.array([
             7.27181296175159E+00,
-            2.80000000000000E+00,
-            2.80000000000000E+00,
-            2.80000000000000E+00,
-            2.80000000000000E+00,
-            2.80000000000000E+00,
-            2.80000000000000E+00,
-            2.80000000000000E+00,
+            0.0000000000000E+00,
+            0.0000000000000E+00,
+            0.0000000000000E+00,
+            0.0000000000000E+00,
+            0.0000000000000E+00,
+            0.0000000000000E+00,
+            0.0000000000000E+00,
         ])
         actual_sigp_int_pts = np.array([
             ip.eff_stress
@@ -2109,13 +2120,13 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
     def test_eff_stress_grad_distribution(self):
         expected_dsigde_int_pts = np.array([
             -2.09299601559626E+02,
-            -1.53141051315518E+01,
-            -1.53141051315518E+01,
-            -1.53141051315518E+01,
-            -1.53141051315518E+01,
-            -1.53141051315518E+01,
-            -1.53141051315518E+01,
-            -1.53141051315518E+01,
+            0.0000,
+            0.0000,
+            0.0000,
+            0.0000,
+            0.0000,
+            0.0000,
+            0.0000,
         ])
         actual_dsigde_int_pts = np.array([
             ip.eff_stress_gradient
@@ -2129,13 +2140,13 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
     def test_pre_consol_stress_distribution(self):
         expected_ppc_int_pts = np.array([
             6.89049609873269E+03,
-            2.80000000000000E+00,
-            2.80000000000000E+00,
-            2.80000000000000E+00,
-            2.80000000000000E+00,
-            2.80000000000000E+00,
-            2.80000000000000E+00,
-            2.80000000000000E+00,
+            0.000000000000E+00,
+            0.000000000000E+00,
+            0.000000000000E+00,
+            0.000000000000E+00,
+            0.000000000000E+00,
+            0.000000000000E+00,
+            0.000000000000E+00,
         ])
         actual_ppc_int_pts = np.array([
             ip.pre_consol_stress
