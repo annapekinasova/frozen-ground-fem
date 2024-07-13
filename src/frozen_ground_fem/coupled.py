@@ -74,6 +74,14 @@ class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
             if ip.temp < 0.0:
                 ip.void_ratio_0_ref_frozen = ip.void_ratio
                 ip.tot_stress_0_ref_frozen = ip.tot_stress
+                ip.eff_stress = 0.0
+                ip.eff_stress_gradient = 0.0
+                ip.pre_consol_stress = 0.0
+            else:
+                ip.void_ratio_0_ref_frozen = 0.0
+                ip.tot_stress_0_ref_frozen = 0.0
+                ip.loc_stress = 0.0
+                ip.tot_stress_gradient = 0.0
         self.update_integration_points_secondary()
 
     def update_integration_points_primary(self) -> None:
@@ -97,6 +105,10 @@ class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
                 if T0 >= 0.0:
                     ip.void_ratio_0_ref_frozen = ep
                     ip.tot_stress_0_ref_frozen = ip.tot_stress
+                    # reset effective stress and pre-consolidation stress
+                    ip.eff_stress = 0.0
+                    ip.eff_stress_gradient = 0.0
+                    ip.pre_consol_stress = 0.0
                 # update local stress state
                 # and total stress gradient (for stiffness matrix)
                 e_f0 = ip.void_ratio_0_ref_frozen
@@ -106,9 +118,6 @@ class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
                 )
                 ip.loc_stress = sig
                 ip.tot_stress_gradient = dsig_de
-                # reset effective stress and pre-consolidation stress
-                ip.eff_stress = 0.0
-                ip.pre_consol_stress = 0.0
             # soil is unfrozen
             else:
                 # update residual stress and pre-consolidation stress
@@ -116,6 +125,11 @@ class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
                 if T0 < 0.0:
                     ppc = ip.material.res_stress(ep)
                     ip.pre_consol_stress = ppc
+                    # reset total stress parameters
+                    ip.void_ratio_0_ref_frozen = 0.0
+                    ip.tot_stress_0_ref_frozen = 0.0
+                    ip.loc_stress = 0.0
+                    ip.tot_stress_gradient = 0.0
                 # update effective stress
                 ppc = ip.pre_consol_stress
                 sig, dsig_de = ip.material.eff_stress(ep, ppc)
