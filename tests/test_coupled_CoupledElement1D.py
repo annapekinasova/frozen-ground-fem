@@ -188,7 +188,8 @@ class TestCoupledElement1DLinear(unittest.TestCase):
         self.coup_e.nodes[1].void_ratio = 0.65
         for ip in self.coup_e.int_pts:
             ip.void_ratio_0 = 0.9
-        self.coup_e.update_integration_points()
+        self.coup_e.update_integration_points_primary()
+        self.coup_e.update_integration_points_secondary()
         self.assertAlmostEqual(self.coup_e.int_pts[0].temp, -0.366025403784439)
         self.assertAlmostEqual(self.coup_e.int_pts[1].temp, 1.366025403784440)
         self.assertAlmostEqual(
@@ -268,7 +269,8 @@ class TestCoupledElement1DLinear(unittest.TestCase):
         self.coup_e.nodes[1].temp_rate = 0.4
         self.coup_e.nodes[0].void_ratio = 0.75
         self.coup_e.nodes[1].void_ratio = 0.65
-        self.coup_e.update_integration_points()
+        self.coup_e.update_integration_points_primary()
+        self.coup_e.update_integration_points_secondary()
         self.assertAlmostEqual(self.coup_e.int_pts[0].temp, -0.366025403784439)
         self.assertAlmostEqual(self.coup_e.int_pts[1].temp, 1.366025403784440)
         self.assertAlmostEqual(
@@ -331,7 +333,8 @@ class TestCoupledElement1DLinear(unittest.TestCase):
         self.coup_e.nodes[1].void_ratio = 0.65
         for ip in self.coup_e.int_pts:
             ip.void_ratio_0 = 0.9
-        self.coup_e.update_integration_points()
+        self.coup_e.update_integration_points_primary()
+        self.coup_e.update_integration_points_secondary()
         expected = 1.7894736842105
         self.assertAlmostEqual(self.coup_e.deformed_length, expected)
 
@@ -559,7 +562,8 @@ class TestCoupledElement1DCubic(unittest.TestCase):
             nd.void_ratio = e
         for ip in self.coup_e.int_pts:
             ip.void_ratio_0 = 0.9
-        self.coup_e.update_integration_points()
+        self.coup_e.update_integration_points_primary()
+        self.coup_e.update_integration_points_secondary()
         expected_Tip = np.array([
             -0.913964840018686,
             -0.436743906025892,
@@ -682,7 +686,8 @@ class TestCoupledElement1DCubic(unittest.TestCase):
             nd.temp = T
             nd.temp_rate = dTdt
             nd.void_ratio = e
-        self.coup_e.update_integration_points()
+        self.coup_e.update_integration_points_primary()
+        self.coup_e.update_integration_points_secondary()
         expected_Tip = np.array([
             -0.913964840018686,
             -0.436743906025892,
@@ -808,7 +813,8 @@ class TestCoupledElement1DCubic(unittest.TestCase):
             nd.void_ratio = e
         for ip in self.coup_e.int_pts:
             ip.void_ratio_0 = 0.9
-        self.coup_e.update_integration_points()
+        self.coup_e.update_integration_points_primary()
+        self.coup_e.update_integration_points_secondary()
         expected = 5.8105263157895
         self.assertAlmostEqual(self.coup_e.deformed_length, expected)
 
