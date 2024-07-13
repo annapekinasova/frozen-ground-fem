@@ -71,6 +71,9 @@ class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
             ppc0, _ = ip.material.eff_stress(e0, ppc)
             if ppc0 > ppc:
                 ip.pre_consol_stress = ppc0
+            if ip.temp < 0.0:
+                ip.void_ratio_0_ref_frozen = ip.void_ratio
+                ip.tot_stress_0_ref_frozen = ip.tot_stress
         self.update_integration_points_secondary()
 
     def update_integration_points_primary(self) -> None:
