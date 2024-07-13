@@ -2662,7 +2662,11 @@ class Mesh1D:
         self.store_converged_matrices()
         self.update_boundary_conditions(self._t1)
         self.update_nodes()
-        self.update_integration_points()
+        self.update_integration_points_primary()
+        self.calculate_deformed_coords()
+        self.update_total_stress_distribution()
+        self.initialize_integration_points_secondary()
+        self.update_pore_pressure_distribution()
         self.update_global_matrices_and_vectors()
 
     def store_converged_matrices(self) -> None:
@@ -2711,9 +2715,10 @@ class Mesh1D:
         while self._eps_a > self.eps_s and self._iter < self.max_iterations:
             self.calculate_solution_vector_correction()
             self.update_nodes()
-            self.update_integration_points()
+            self.update_integration_points_primary()
             self.calculate_deformed_coords()
             self.update_total_stress_distribution()
+            self.update_integration_points_secondary()
             self.update_pore_pressure_distribution()
             self.update_global_matrices_and_vectors()
             self.update_iteration_variables()

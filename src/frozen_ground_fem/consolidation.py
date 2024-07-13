@@ -1383,23 +1383,21 @@ class ConsolidationAnalysis1D(Mesh1D):
             void_ratio_vector_1[:] = self._void_ratio_vector[:]
             # reset the system
             self._void_ratio_vector[:] = void_ratio_vector_0[:]
-            for (
-                e,
-                ppc0_e,
-            ) in zip(
+            for (e, ppc0_e) in zip(
                 self.elements,
                 pre_consol_stress__0,
             ):
-                for (
-                    ip,
-                    ppc0,
-                ) in zip(
+                for (ip, ppc0) in zip(
                     e.int_pts,
                     ppc0_e,
                 ):
                     ip.pre_consol_stress = ppc0
             self.update_nodes()
-            self.update_integration_points()
+            self.update_integration_points_primary()
+            self.calculate_deformed_coords()
+            self.update_total_stress_distribution()
+            self.update_integration_points_secondary()
+            self.update_pore_pressure_distribution()
             self.update_global_matrices_and_vectors()
             self._t1 = t0
             # take two half steps
@@ -1413,7 +1411,11 @@ class ConsolidationAnalysis1D(Mesh1D):
                                    - void_ratio_vector_1[:]) / 3.0
             self._void_ratio_vector[:] += void_ratio_error[:]
             self.update_nodes()
-            self.update_integration_points()
+            self.update_integration_points_primary()
+            self.calculate_deformed_coords()
+            self.update_total_stress_distribution()
+            self.update_integration_points_secondary()
+            self.update_pore_pressure_distribution()
             self.update_global_matrices_and_vectors()
             # update the time step
             void_ratio_rate[:] = (self._void_ratio_vector[:]

@@ -546,7 +546,11 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
                     ip.vol_water_cont__0 = thw0
                     ip.pre_consol_stress = ppc0
             self.update_nodes()
-            self.update_integration_points()
+            self.update_integration_points_primary()
+            self.calculate_deformed_coords()
+            self.update_total_stress_distribution()
+            self.update_integration_points_secondary()
+            self.update_pore_pressure_distribution()
             self.update_global_matrices_and_vectors()
             self._t1 = t0
             # take two half steps
@@ -566,7 +570,11 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
                                    - void_ratio_vector_1[:]) / 3.0
             self._void_ratio_vector[:] += void_ratio_error[:]
             self.update_nodes()
-            self.update_integration_points()
+            self.update_integration_points_primary()
+            self.calculate_deformed_coords()
+            self.update_total_stress_distribution()
+            self.update_integration_points_secondary()
+            self.update_pore_pressure_distribution()
             self.update_global_matrices_and_vectors()
             # update the time step
             temp_scale[:] = np.max(np.vstack([

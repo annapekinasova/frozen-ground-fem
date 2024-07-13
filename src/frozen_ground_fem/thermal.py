@@ -977,7 +977,9 @@ class ThermalAnalysis1D(Mesh1D):
                     ip.temp__0 = T0
                     ip.vol_water_cont__0 = thw0
             self.update_nodes()
-            self.update_integration_points()
+            self.update_integration_points_primary()
+            self.update_total_stress_distribution()
+            self.update_integration_points_secondary()
             self.update_global_matrices_and_vectors()
             self._t1 = t0
             # take two half steps
@@ -994,7 +996,9 @@ class ThermalAnalysis1D(Mesh1D):
                 self.over_dt * (self._temp_vector[:] - self._temp_vector_0[:])
             )
             self.update_nodes()
-            self.update_integration_points()
+            self.update_integration_points_primary()
+            self.update_total_stress_distribution()
+            self.update_integration_points_secondary()
             self.update_global_matrices_and_vectors()
             # update the time step
             temp_scale[:] = np.max(np.vstack([
