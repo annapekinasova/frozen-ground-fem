@@ -106,7 +106,8 @@ class TestConsolidationElement1DLinear(unittest.TestCase):
         self.consol_e.nodes[1].void_ratio = 0.65
         for ip in self.consol_e.int_pts:
             ip.void_ratio_0 = 0.9
-        self.consol_e.update_integration_points()
+        self.consol_e.update_integration_points_primary()
+        self.consol_e.update_integration_points_secondary()
         self.assertAlmostEqual(self.consol_e.int_pts[0].void_ratio,
                                0.728867513459481)
         self.assertAlmostEqual(self.consol_e.int_pts[1].void_ratio,
@@ -155,7 +156,8 @@ class TestConsolidationElement1DLinear(unittest.TestCase):
         for ip in self.consol_e.int_pts:
             ip.material = m
             ip.void_ratio_0 = 0.9
-        self.consol_e.update_integration_points()
+        self.consol_e.update_integration_points_primary()
+        self.consol_e.update_integration_points_secondary()
         self.assertAlmostEqual(self.consol_e.int_pts[0].void_ratio,
                                0.728867513459481)
         self.assertAlmostEqual(self.consol_e.int_pts[1].void_ratio,
@@ -190,7 +192,8 @@ class TestConsolidationElement1DLinear(unittest.TestCase):
         self.consol_e.nodes[1].void_ratio = 0.65
         for ip in self.consol_e.int_pts:
             ip.void_ratio_0 = 0.9
-        self.consol_e.update_integration_points()
+        self.consol_e.update_integration_points_primary()
+        self.consol_e.update_integration_points_secondary()
         expected = 1.7894736842105
         self.assertAlmostEqual(self.consol_e.deformed_length, expected)
 
@@ -312,7 +315,8 @@ class TestConsolidationElement1DCubic(unittest.TestCase):
             nd.void_ratio = e
         for ip in self.consol_e.int_pts:
             ip.void_ratio_0 = 0.9
-        self.consol_e.update_integration_points()
+        self.consol_e.update_integration_points_primary()
+        self.consol_e.update_integration_points_secondary()
         expected_e = np.array([
             1.066963710411440,
             0.948090621196697,
@@ -357,7 +361,8 @@ class TestConsolidationElement1DCubic(unittest.TestCase):
         for ip in self.consol_e.int_pts:
             ip.material = m
             ip.void_ratio_0 = 0.9
-        self.consol_e.update_integration_points()
+        self.consol_e.update_integration_points_primary()
+        self.consol_e.update_integration_points_secondary()
         expected_e_ip = np.array([
             1.066963710411440,
             0.948090621196697,
@@ -436,7 +441,8 @@ class TestConsolidationElement1DCubic(unittest.TestCase):
             nd.void_ratio = e
         for ip in self.consol_e.int_pts:
             ip.void_ratio_0 = 0.9
-        self.consol_e.update_integration_points()
+        self.consol_e.update_integration_points_primary()
+        self.consol_e.update_integration_points_secondary()
         expected = 5.8105263157895
         self.assertAlmostEqual(self.consol_e.deformed_length, expected)
 
