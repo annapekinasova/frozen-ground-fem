@@ -109,7 +109,8 @@ class TestThermalElement1DLinear(unittest.TestCase):
         self.thrm_e.nodes[1].temp = +2.0
         self.thrm_e.nodes[0].temp_rate = 0.2
         self.thrm_e.nodes[1].temp_rate = 0.4
-        self.thrm_e.update_integration_points()
+        self.thrm_e.update_integration_points_primary()
+        self.thrm_e.update_integration_points_secondary()
         self.assertAlmostEqual(self.thrm_e.int_pts[0].temp, -0.366025403784439)
         self.assertAlmostEqual(self.thrm_e.int_pts[1].temp, 1.366025403784440)
         self.assertAlmostEqual(
@@ -147,7 +148,8 @@ class TestThermalElement1DLinear(unittest.TestCase):
         self.thrm_e.nodes[1].temp = +2.0
         self.thrm_e.nodes[0].temp_rate = 0.2
         self.thrm_e.nodes[1].temp_rate = 0.4
-        self.thrm_e.update_integration_points()
+        self.thrm_e.update_integration_points_primary()
+        self.thrm_e.update_integration_points_secondary()
         self.assertAlmostEqual(self.thrm_e.int_pts[0].temp, -0.366025403784439)
         self.assertAlmostEqual(self.thrm_e.int_pts[1].temp, 1.366025403784440)
         self.assertAlmostEqual(
@@ -304,7 +306,8 @@ class TestThermalElement1DCubic(unittest.TestCase):
         for T, dTdt, nd in zip(Te, dTdte, self.thrm_e.nodes):
             nd.temp = T
             nd.temp_rate = dTdt
-        self.thrm_e.update_integration_points()
+        self.thrm_e.update_integration_points_primary()
+        self.thrm_e.update_integration_points_secondary()
         expected_Tip = np.array([
             -0.913964840018686,
             -0.436743906025892,
@@ -390,7 +393,8 @@ class TestThermalElement1DCubic(unittest.TestCase):
         for T, dTdt, nd in zip(Te, dTdte, self.thrm_e.nodes):
             nd.temp = T
             nd.temp_rate = dTdt
-        self.thrm_e.update_integration_points()
+        self.thrm_e.update_integration_points_primary()
+        self.thrm_e.update_integration_points_secondary()
         expected_Tip = np.array([
             -0.913964840018686,
             -0.436743906025892,
