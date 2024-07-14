@@ -1600,32 +1600,6 @@ class IntegrationPoint1D(Point1D):
     def exc_pore_pressure(self, value: float) -> None:
         self._exc_pore_pressure = float(value)
 
-    # def update_water_flux_rate(
-    #         self,
-    #         de_dZ: float = 0.0) -> None:
-    #     if self.temp < 0.0:
-    #         self.water_flux_rate = self.material.water_flux(
-    #             self.void_ratio,
-    #             self.void_ratio_0,
-    #             self.temp,
-    #             self.temp_rate,
-    #             self.temp_gradient,
-    #             self.tot_stress,
-    #         )
-    #     else:
-    #         if not self.hyd_cond:
-    #             self.water_flux_rate = 0.0
-    #         ep = self.void_ratio
-    #         e0 = self.void_ratio_0
-    #         Gs = self.material.spec_grav_solids
-    #         dsig_de = self.eff_stress_gradient
-    #         k = self.hyd_cond
-    #         e_ratio = (1.0 + e0) / (1.0 + ep)
-    #         self.water_flux_rate = (
-    #             -k / gam_w * e_ratio
-    #             * ((Gs - 1.0) * gam_w / (1.0 + e0) - dsig_de * de_dZ)
-    #         )
-
 
 class Element1D:
     """Class for organizing element level information.
@@ -2664,7 +2638,7 @@ class Mesh1D:
         self.update_integration_points_primary()
         self.calculate_deformed_coords()
         self.update_total_stress_distribution()
-        self.initialize_integration_points_secondary()
+        self.update_integration_points_secondary()
         self.update_pore_pressure_distribution()
         self.update_global_matrices_and_vectors()
 
