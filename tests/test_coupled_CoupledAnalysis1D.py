@@ -3228,6 +3228,7 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
         for e in self.msh.elements:
             e.assign_material(self.mtl)
         self.msh.time_step = 3.75
+        self.msh.implicit_error_tolerance = 1e-4
         self.msh.initialize_global_system(0.0)
         self.msh.initialize_time_step()
         self.msh.iterative_correction_step()
@@ -3258,10 +3259,10 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
     def test_temperature_distribution_nodes(self):
         expected_temp_nodes = np.array([
             5.00000000000000,
-            -4.93317614973010,
-            -5.01741240743522,
-            -4.99519948417723,
-            -5.00233408103877,
+            -4.94288663201352,
+            -5.01504720195889,
+            -4.99580782707204,
+            -5.00205581585805,
         ])
         actual_temp_nodes = np.array([
             nd.temp for nd in self.msh.nodes
@@ -3271,14 +3272,14 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
 
     def test_temperature_distribution_int_pts(self):
         expected_temp_int_pts = np.array([
-            2.90087288711227,
-            -2.83404903684237,
-            -4.95097736555187,
-            -4.99961119161345,
-            -5.01271826441747,
-            -4.99989362719498,
-            -4.99670720189871,
-            -5.00082636331728,
+            2.8988208207507100,
+            -2.8417074527642300,
+            -4.9581359547447900,
+            -4.9997978792276200,
+            -5.0109814436504400,
+            -4.9998735853804800,
+            -4.9971281824613000,
+            -5.0007354604687900,
         ])
         actual_temp_int_pts = np.array([
             ip.temp for e in self.msh.elements for ip in e.int_pts
@@ -3288,11 +3289,11 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
 
     def test_temperature_rate_distribution_nodes(self):
         expected_temp_rate_nodes = np.array([
-            2.66666666666667E+00,
-            1.78196934053065E-02,
-            -4.64330864939271E-03,
-            1.28013755273978E-03,
-            -6.22421610338364E-04,
+            2.66666666667E+00,
+            1.52302314631E-02,
+            -4.01258718904E-03,
+            1.11791278079E-03,
+            -5.48217562146E-04,
         ])
         actual_temp_rate_nodes = np.array([
             nd.temp_rate for nd in self.msh.nodes
@@ -3302,14 +3303,14 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
 
     def test_temperature_rate_distribution_int_pts(self):
         expected_temp_rate_int_pts = np.array([
-            2.10689943656328E+00,
-            5.77586923508701E-01,
-            1.30727025195007E-02,
-            1.03682236413034E-04,
-            -3.39153717799219E-03,
-            2.83660813392684E-05,
-            8.78079493676889E-04,
-            -2.20363551275469E-04,
+            2.10635221886686000,
+            0.57554467926287200,
+            0.01116374540138980,
+            0.00005389887263449,
+            -0.00292838497345164,
+            0.00003371056520437,
+            0.00076581801032079,
+            -0.00019612279167771,
         ])
         actual_temp_rate_int_pts = np.array([
             ip.temp_rate for e in self.msh.elements for ip in e.int_pts
@@ -3319,14 +3320,14 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
 
     def test_temperature_gradient_distribution(self):
         expected_temp_gradient_int_pts = np.array([
-            -397.327045989204000,
-            -397.327045989204000,
-            -3.369450308204880,
-            -3.369450308204880,
-            0.888516930319867,
-            0.888516930319867,
-            -0.285383874461701,
-            -0.285383874461701,
+            -397.71546528054100000,
+            -397.71546528054100000,
+            -2.88642279781453000,
+            -2.88642279781453000,
+            0.76957499547378900,
+            0.76957499547378900,
+            -0.24991955144022900,
+            -0.24991955144022900,
         ])
         actual_temp_gradient_int_pts = np.array([
             ip.temp_gradient for e in self.msh.elements for ip in e.int_pts
@@ -3336,14 +3337,14 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
 
     def test_deg_sat_water_distribution(self):
         expected_deg_sat_water_int_pts = np.array([
-            1.0000000000000000,
-            0.0496820848820785,
-            0.0367146086279011,
-            0.0365201051556731,
-            0.0364681812180862,
-            0.0365189840806239,
-            0.0365316376352820,
-            0.0365152824496168,
+            1.000000000000000,
+            0.049609579364599,
+            0.036685795369044,
+            0.036519364123332,
+            0.036475049693243,
+            0.036519063629644,
+            0.036529965177596,
+            0.036515643157591,
         ])
         actual_deg_sat_water_int_pts = np.array([
             ip.deg_sat_water for e in self.msh.elements for ip in e.int_pts
@@ -3353,14 +3354,14 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
 
     def test_vol_water_cont_distribution(self):
         expected_vol_water_cont_int_pts = np.array([
-            0.5850368186299210,
-            0.0352702137092612,
-            0.0271231173175534,
-            0.0269848371163786,
-            0.0269479074751672,
-            0.0269839734580570,
-            0.0269929632213637,
-            0.0269813700097701,
+            0.5850308349213140,
+            0.0352181993298558,
+            0.0271015296699256,
+            0.0269842884643744,
+            0.0269530617526990,
+            0.0269840311477929,
+            0.0269917066390633,
+            0.0269816419348008,
         ])
         actual_vol_water_cont_int_pts = np.array([
             ip.vol_water_cont
@@ -3373,14 +3374,14 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
 
     def test_vol_water_cont_temp_gradient_distribution(self):
         expected_vol_water_cont_temp_gradient_int_pts = np.array([
-            0.07063183236557720,
-            0.00382581347617737,
-            0.00284415542839772,
-            0.00295207291043913,
-            0.00281342243969949,
-            0.00267109985044893,
-            0.00281641795367762,
-            0.00280665399191934,
+            0.07064942454823320,
+            0.00381528908800095,
+            0.00281483415025699,
+            0.00296426089204178,
+            0.00278902974411304,
+            0.00270397617646927,
+            0.00279172102053797,
+            0.00278382178171495,
         ])
         actual_vol_water_cont_temp_gradient_int_pts = np.array([
             ip.vol_water_cont_temp_gradient
@@ -3393,14 +3394,14 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
 
     def test_thrm_cond_distribution(self):
         expected_thrm_cond_int_pts = np.array([
-            0.97218153631600,
-            2.08130949882047,
-            2.10807966891142,
-            2.10849700564701,
-            2.10860845686762,
-            2.10849939082597,
-            2.10847223060951,
-            2.10850734474485,
+            0.97218919425101,
+            2.08145676998618,
+            2.10814114328409,
+            2.10849858926907,
+            2.10859379907870,
+            2.10849922044490,
+            2.10847579887437,
+            2.10850657542380,
         ])
         actual_thrm_cond_int_pts = np.array([
             ip.thrm_cond
@@ -3412,14 +3413,14 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
 
     def test_vol_heat_cap_distribution(self):
         expected_vol_heat_cap_int_pts = np.array([
-            3.40245711886556E+06,
-            2.07647074315400E+06,
-            2.04625811734248E+06,
-            2.04587890817645E+06,
-            2.04577769627469E+06,
-            2.04587728014699E+06,
-            2.04590202020966E+06,
-            2.04586982070706E+06,
+            3.40244556073401E+06,
+            2.07635418515680E+06,
+            2.04621118802055E+06,
+            2.04587764545300E+06,
+            2.04578882338173E+06,
+            2.04587742583443E+06,
+            2.04589932419534E+06,
+            2.04587039455450E+06,
         ])
         actual_vol_heat_cap_int_pts = np.array([
             ip.vol_heat_cap
@@ -3439,10 +3440,10 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
         ])
         expected_void_ratio_vector = np.array([
             1.03011911113263,
-            2.82703611599852,
-            2.83079796876963,
-            2.82977200892296,
-            2.83011399553852,
+            2.82687168093000,
+            2.83084146850407,
+            2.82975979844757,
+            2.83012001569178,
         ])
         actual_void_ratio_nodes = np.array([
             nd.void_ratio for nd in self.msh.nodes
@@ -3466,14 +3467,14 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
             2.83000000000000000,
         ])
         expected_void_ratio_int_pts = np.array([
-            1.40985235533021,
-            2.44730287180095,
-            2.82783108902905,
-            2.83000299573910,
-            2.83058115794312,
-            2.82998881974947,
-            2.82984427919847,
-            2.83004172526302,
+            1.40981760611148000,
+            2.44717318595114000,
+            2.82771059575478000,
+            2.83000255367929000,
+            2.83061288472497000,
+            2.82998838222667000,
+            2.82983592130822000,
+            2.83004389283113000,
         ])
         actual_void_ratio_int_pts = np.array([
             ip.void_ratio for e in self.msh.elements for ip in e.int_pts
@@ -3488,7 +3489,7 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
 
     def test_hyd_cond_distribution(self):
         expected_hyd_cond_int_pts = np.array([
-            1.01475592022872E-09,
+            1.01448974629494E-09,
             0.00000000000000E+00,
             0.00000000000000E+00,
             0.00000000000000E+00,
@@ -3508,7 +3509,7 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
 
     def test_hyd_cond_grad_distribution(self):
         expected_hyd_cond_grad_int_pts = np.array([
-            7.66085854080689E-09,
+            7.65884907152145E-09,
             0.00000000000000E+00,
             0.00000000000000E+00,
             0.00000000000000E+00,
@@ -3529,11 +3530,11 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
 
     def test_tot_stress_distribution_nodes(self):
         expected_sig_nodes = np.array([
-            1.5057776376192E+04,
-            1.5341057441242E+04,
-            1.5672986178896E+04,
-            1.6004992898353E+04,
-            1.6336980105333E+04,
+            1.5057784709296E+04,
+            1.5341060353481E+04,
+            1.5672985314020E+04,
+            1.6004993005062E+04,
+            1.6336980020337E+04,
         ])
         actual_sig_nodes = np.array([
             nd.tot_stress
