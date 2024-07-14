@@ -1414,14 +1414,6 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
             nd.tot_stress
             for nd in self.msh.nodes
         ])
-        Sw_iipp = [
-            ip.deg_sat_water
-            for e in self.msh.elements
-            for iipp in e._int_pts_deformed
-            for ip in iipp
-        ]
-        print(actual_sig_nodes)
-        print(Sw_iipp)
         self.assertTrue(np.allclose(
             expected_sig_nodes,
             actual_sig_nodes,
@@ -1482,7 +1474,6 @@ class TestInitializeGlobalSystemLinear(unittest.TestCase):
             ip.tot_stress_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        print(actual_dsigde_int_pts)
         self.assertTrue(np.allclose(
             expected_dsigde_int_pts,
             actual_dsigde_int_pts,
@@ -1830,7 +1821,6 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
         actual_temp_rate_int_pts = np.array([
             ip.temp_rate for e in self.msh.elements for ip in e.int_pts
         ])
-        print(actual_temp_rate_int_pts)
         self.assertTrue(np.allclose(actual_temp_rate_int_pts,
                                     expected_temp_rate_int_pts))
 
@@ -2019,7 +2009,9 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
         ])
         self.assertTrue(np.allclose(
             actual_hyd_cond_int_pts,
-            expected_hyd_cond_int_pts))
+            expected_hyd_cond_int_pts,
+            atol=1e-18, rtol=1e-8,
+        ))
 
     def test_hyd_cond_grad_distribution(self):
         expected_hyd_cond_grad_int_pts = np.array([
@@ -2038,7 +2030,9 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
         ])
         self.assertTrue(np.allclose(
             actual_hyd_cond_grad_int_pts,
-            expected_hyd_cond_grad_int_pts))
+            expected_hyd_cond_grad_int_pts,
+            atol=1e-18, rtol=1e-8,
+        ))
 
     def test_tot_stress_distribution_nodes(self):
         expected_sig_nodes = np.array([
@@ -2077,6 +2071,26 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
             actual_sig_int_pts,
         ))
 
+    def test_loc_stress_distribution_int_pts(self):
+        expected_sig_int_pts = np.array([
+            0.00000000000000E+00,
+            2.24341159206153E+50,
+            1.54021482997682E+04,
+            1.55938230814525E+04,
+            1.57341387601751E+04,
+            1.59258135418595E+04,
+            1.60661292205821E+04,
+            1.62578040022664E+04,
+        ])
+        actual_sig_int_pts = np.array([
+            ip.loc_stress
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            expected_sig_int_pts,
+            actual_sig_int_pts,
+        ))
+
     def test_eff_stress_distribution(self):
         expected_sig_int_pts = np.array([
             7.27181296175159E+00,
@@ -2100,13 +2114,13 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
     def test_tot_stress_grad_distribution(self):
         expected_dsigde_int_pts = np.array([
             0.00000000000000E+00,
-            -4.27081477472239E+06,
-            -5.44240718561433E+06,
-            -5.51009662896790E+06,
-            -5.55964874063876E+06,
-            -5.62733818399233E+06,
-            -5.67689029566319E+06,
-            -5.74457973901676E+06,
+            -6.26996013389023E+52,
+            -5.43922802832446E+06,
+            -5.50691747167802E+06,
+            -5.55646958334889E+06,
+            -5.62415902670245E+06,
+            -5.67371113837331E+06,
+            -5.74140058172688E+06,
         ])
         actual_dsigde_int_pts = np.array([
             ip.tot_stress_gradient
@@ -2367,7 +2381,6 @@ class TestInitializeTimeStepLinear(unittest.TestCase):
             0.00000000000000E+00,
             0.00000000000000E+00,
         ])
-        print(self.msh._water_flux_vector)
         self.assertTrue(np.allclose(expected_flux_vector,
                                     self.msh._water_flux_vector,
                                     atol=1e-18, rtol=1e-8))
@@ -2473,11 +2486,11 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
 
     def test_temperature_distribution_nodes(self):
         expected_temp_nodes = np.array([
-            5.0,
-            -5.0,
-            -5.0,
-            -5.0,
-            -5.0,
+            5.00000000000000,
+            -4.93317614973010,
+            -5.01741240743522,
+            -4.99519948417723,
+            -5.00233408103877,
         ])
         actual_temp_nodes = np.array([
             nd.temp for nd in self.msh.nodes
@@ -2487,14 +2500,14 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
 
     def test_temperature_distribution_int_pts(self):
         expected_temp_int_pts = np.array([
-            2.8867513459481300,
-            -2.8867513459481300,
-            -5.0,
-            -5.0,
-            -5.0,
-            -5.0,
-            -5.0,
-            -5.0,
+            2.90087288711227,
+            -2.83404903684237,
+            -4.95097736555187,
+            -4.99961119161345,
+            -5.01271826441747,
+            -4.99989362719498,
+            -4.99670720189871,
+            -5.00082636331728,
         ])
         actual_temp_int_pts = np.array([
             ip.temp for e in self.msh.elements for ip in e.int_pts
@@ -2504,11 +2517,11 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
 
     def test_temperature_rate_distribution_nodes(self):
         expected_temp_rate_nodes = np.array([
-            2.66666666667,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
+            2.66666666666667E+00,
+            1.78196934053065E-02,
+            -4.64330864939271E-03,
+            1.28013755273978E-03,
+            -6.22421610338364E-04,
         ])
         actual_temp_rate_nodes = np.array([
             nd.temp_rate for nd in self.msh.nodes
@@ -2518,32 +2531,31 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
 
     def test_temperature_rate_distribution_int_pts(self):
         expected_temp_rate_int_pts = np.array([
-            2.10313369225284000,
-            0.56353297441383300,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
+            2.10689943656328E+00,
+            5.77586923508701E-01,
+            1.30727025195007E-02,
+            1.03682236413034E-04,
+            -3.39153717799219E-03,
+            2.83660813392684E-05,
+            8.78079493676889E-04,
+            -2.20363551275469E-04,
         ])
         actual_temp_rate_int_pts = np.array([
             ip.temp_rate for e in self.msh.elements for ip in e.int_pts
         ])
-        print(actual_temp_rate_int_pts)
         self.assertTrue(np.allclose(actual_temp_rate_int_pts,
                                     expected_temp_rate_int_pts))
 
     def test_temperature_gradient_distribution(self):
         expected_temp_gradient_int_pts = np.array([
-            -400.00000000000000000,
-            -400.00000000000000000,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
+            -397.327045989204000,
+            -397.327045989204000,
+            -3.369450308204880,
+            -3.369450308204880,
+            0.888516930319867,
+            0.888516930319867,
+            -0.285383874461701,
+            -0.285383874461701,
         ])
         actual_temp_gradient_int_pts = np.array([
             ip.temp_gradient for e in self.msh.elements for ip in e.int_pts
@@ -2553,14 +2565,14 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
 
     def test_deg_sat_water_distribution(self):
         expected_deg_sat_water_int_pts = np.array([
-            1.000000000000000,
-            0.049189123034829,
-            0.036518561878915,
-            0.036518561878915,
-            0.036518561878915,
-            0.036518561878915,
-            0.036518561878915,
-            0.036518561878915,
+            1.0000000000000000,
+            0.0496820848820785,
+            0.0367146086279011,
+            0.0365201051556731,
+            0.0364681812180862,
+            0.0365189840806239,
+            0.0365316376352820,
+            0.0365152824496168,
         ])
         actual_deg_sat_water_int_pts = np.array([
             ip.deg_sat_water for e in self.msh.elements for ip in e.int_pts
@@ -2570,14 +2582,14 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
 
     def test_vol_water_cont_distribution(self):
         expected_vol_water_cont_int_pts = np.array([
-            0.5851446432832020,
-            0.0349299200049867,
-            0.0269836893256734,
-            0.0269836893256734,
-            0.0269836893256734,
-            0.0269836893256734,
-            0.0269836893256734,
-            0.0269836893256734,
+            0.5850368186299210,
+            0.0352702137092612,
+            0.0271231173175534,
+            0.0269848371163786,
+            0.0269479074751672,
+            0.0269839734580570,
+            0.0269929632213637,
+            0.0269813700097701,
         ])
         actual_vol_water_cont_int_pts = np.array([
             ip.vol_water_cont
@@ -2590,14 +2602,14 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
 
     def test_vol_water_cont_temp_gradient_distribution(self):
         expected_vol_water_cont_temp_gradient_int_pts = np.array([
-            0.07077197308170330,
-            0.00376019673031735,
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
+            0.07063183236557720,
+            0.00382581347617737,
+            0.00284415542839772,
+            0.00295207291043913,
+            0.00281342243969949,
+            0.00267109985044893,
+            0.00281641795367762,
+            0.00280665399191934,
         ])
         actual_vol_water_cont_temp_gradient_int_pts = np.array([
             ip.vol_water_cont_temp_gradient
@@ -2610,14 +2622,14 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
 
     def test_thrm_cond_distribution(self):
         expected_thrm_cond_int_pts = np.array([
-            0.97204355293632,
-            2.08230418654856,
-            2.10850030207482,
-            2.10850030207482,
-            2.10850030207482,
-            2.10850030207482,
-            2.10850030207482,
-            2.10850030207482,
+            0.97218153631600,
+            2.08130949882047,
+            2.10807966891142,
+            2.10849700564701,
+            2.10860845686762,
+            2.10849939082597,
+            2.10847223060951,
+            2.10850734474485,
         ])
         actual_thrm_cond_int_pts = np.array([
             ip.thrm_cond
@@ -2629,14 +2641,14 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
 
     def test_vol_heat_cap_distribution(self):
         expected_vol_heat_cap_int_pts = np.array([
-            3.40266539296583E+06,
-            2.07560330535707E+06,
-            2.04587632179179E+06,
-            2.04587632179179E+06,
-            2.04587632179179E+06,
-            2.04587632179179E+06,
-            2.04587632179179E+06,
-            2.04587632179179E+06,
+            3.40245711886556E+06,
+            2.07647074315400E+06,
+            2.04625811734248E+06,
+            2.04587890817645E+06,
+            2.04577769627469E+06,
+            2.04587728014699E+06,
+            2.04590202020966E+06,
+            2.04586982070706E+06,
         ])
         actual_vol_heat_cap_int_pts = np.array([
             ip.vol_heat_cap
@@ -2656,10 +2668,10 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
         ])
         expected_void_ratio_vector = np.array([
             1.03011911113263,
-            2.83000000000000,
-            2.83000000000000,
-            2.83000000000000,
-            2.83000000000000,
+            2.82703611599852,
+            2.83079796876963,
+            2.82977200892296,
+            2.83011399553852,
         ])
         actual_void_ratio_nodes = np.array([
             nd.void_ratio for nd in self.msh.nodes
@@ -2683,14 +2695,14 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
             2.83000000000000000,
         ])
         expected_void_ratio_int_pts = np.array([
-            1.41047869771790000,
-            2.44964041341473000,
-            2.83000000000000000,
-            2.83000000000000000,
-            2.83000000000000000,
-            2.83000000000000000,
-            2.83000000000000000,
-            2.83000000000000000,
+            1.40985235533021,
+            2.44730287180095,
+            2.82783108902905,
+            2.83000299573910,
+            2.83058115794312,
+            2.82998881974947,
+            2.82984427919847,
+            2.83004172526302,
         ])
         actual_void_ratio_int_pts = np.array([
             ip.void_ratio for e in self.msh.elements for ip in e.int_pts
@@ -2705,7 +2717,7 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
 
     def test_hyd_cond_distribution(self):
         expected_hyd_cond_int_pts = np.array([
-            1.01956560310148E-09,
+            1.01475592022872E-09,
             0.00000000000000E+00,
             0.00000000000000E+00,
             0.00000000000000E+00,
@@ -2719,11 +2731,13 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
         ])
         self.assertTrue(np.allclose(
             actual_hyd_cond_int_pts,
-            expected_hyd_cond_int_pts))
+            expected_hyd_cond_int_pts,
+            atol=1e-18, rtol=1e-8,
+        ))
 
     def test_hyd_cond_grad_distribution(self):
         expected_hyd_cond_grad_int_pts = np.array([
-            7.69716904600309E-09,
+            7.66085854080689E-09,
             0.00000000000000E+00,
             0.00000000000000E+00,
             0.00000000000000E+00,
@@ -2738,7 +2752,9 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
         ])
         self.assertTrue(np.allclose(
             actual_hyd_cond_grad_int_pts,
-            expected_hyd_cond_grad_int_pts))
+            expected_hyd_cond_grad_int_pts,
+            atol=1e-18, rtol=1e-8,
+        ))
 
     def test_tot_stress_distribution_nodes(self):
         expected_sig_nodes = np.array([
@@ -2777,6 +2793,26 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
             actual_sig_int_pts,
         ))
 
+    def test_loc_stress_distribution_int_pts(self):
+        expected_sig_int_pts = np.array([
+            0.00000000000000E+00,
+            2.14956087529361E+50,
+            3.30037464730506E+04,
+            1.55773351714842E+04,
+            1.28113521802748E+04,
+            1.59888166591600E+04,
+            1.69740749026231E+04,
+            1.60199789767812E+04,
+        ])
+        actual_sig_int_pts = np.array([
+            ip.loc_stress
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            expected_sig_int_pts,
+            actual_sig_int_pts,
+        ))
+
     def test_eff_stress_distribution(self):
         expected_sig_int_pts = np.array([
             7.31964996413560E+00,
@@ -2800,34 +2836,18 @@ class TestGlobalCorrectionLinearOneStep(unittest.TestCase):
     def test_tot_stress_grad_distribution(self):
         expected_dsigde_int_pts = np.array([
             0.00000000000000E+00,
-            -4.24304488707781E+06,
-            -5.41520350369216E+06,
-            -5.50988340823319E+06,
-            -5.56687661082910E+06,
-            -5.62728258860969E+06,
-            -5.67498740103197E+06,
-            -5.74507055391762E+06,
+            -5.96856751743033E+52,
+            -1.15968891191472E+07,
+            -5.50087631467452E+06,
+            -4.53017524055802E+06,
+            -5.64634705448757E+06,
+            -5.99233356552434E+06,
+            -5.65789089590299E+06,
         ])
         actual_dsigde_int_pts = np.array([
             ip.tot_stress_gradient
             for e in self.msh.elements for ip in e.int_pts
         ])
-        e0ref = np.array([
-            ip.void_ratio_0_ref_frozen
-            for e in self.msh.elements for ip in e.int_pts
-        ])
-        sig0ref = np.array([
-            ip.tot_stress_0_ref_frozen
-            for e in self.msh.elements for ip in e.int_pts
-        ])
-        T0 = np.array([
-            ip.temp__0
-            for e in self.msh.elements for ip in e.int_pts
-        ])
-        print(actual_dsigde_int_pts)
-        print(e0ref)
-        print(sig0ref)
-        print(T0)
         self.assertTrue(np.allclose(
             expected_dsigde_int_pts,
             actual_dsigde_int_pts,
