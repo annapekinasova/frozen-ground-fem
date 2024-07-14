@@ -3229,6 +3229,7 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
             e.assign_material(self.mtl)
         self.msh.time_step = 3.75
         self.msh.initialize_global_system(0.0)
+        self.msh.initialize_time_step()
         self.msh.iterative_correction_step()
 
     def test_time_step_set(self):
@@ -3930,9 +3931,9 @@ class TestGlobalCorrectionLinearIterative(unittest.TestCase):
         ))
 
     def test_iteration_variables(self):
-        expected_eps_a = 6.20768442838417E-03
+        expected_eps_a = 1.13406734711426E-05
         self.assertAlmostEqual(self.msh._eps_a, expected_eps_a, delta=1e-10)
-        self.assertEqual(self.msh._iter, 1)
+        self.assertEqual(self.msh._iter, 3)
 
 
 class TestUpdateGlobalMatricesCubicConstant(unittest.TestCase):
