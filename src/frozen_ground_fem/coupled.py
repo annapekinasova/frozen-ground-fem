@@ -326,18 +326,6 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             for k in range(num_elements)
         )
 
-    # def initialize_integration_points_primary(self) -> None:
-    #     ThermalAnalysis1D.initialize_integration_points_primary(self)
-    #     ConsolidationAnalysis1D.initialize_integration_points_primary(self)
-    #
-    # def initialize_integration_points_secondary(
-    #     self,
-    #     update_water_flux: bool = True,
-    # ) -> None:
-    #     ThermalAnalysis1D.initialize_integration_points_secondary(self,
-    #     False)
-    #     ConsolidationAnalysis1D.initialize_integration_points_secondary(self)
-
     def initialize_global_matrices_and_vectors(self):
         ThermalAnalysis1D.initialize_global_matrices_and_vectors(self)
         ConsolidationAnalysis1D.initialize_global_matrices_and_vectors(self)

@@ -618,55 +618,6 @@ class ThermalAnalysis1D(Mesh1D):
             for k in range(num_elements)
         )
 
-    # def initialize_integration_points_primary(self) -> None:
-    #     """Initializes the thermal variables needed for total stress
-    #     calculations at the integration points in the elements.
-    #     """
-    #     for e in self.elements:
-    #         Te = np.array([nd.temp for nd in e.nodes])
-    #         for ip in e.int_pts:
-    #             N = e._shape_matrix(ip.local_coord)
-    #             T = (N @ Te)[0]
-    #             Sw, dSw_dT = ip.material.deg_sat_water(T)
-    #             ip.temp = T
-    #             ip.deg_sat_water = Sw
-    #             ip.temp__0 = T
-    #             ip.vol_water_cont__0 = ip.vol_water_cont
-    #         for iipp in e._int_pts_deformed:
-    #             for ip in iipp:
-    #                 N = e._shape_matrix(ip.local_coord)
-    #                 T = (N @ Te)[0]
-    #                 Sw = ip.material.deg_sat_water(T)[0]
-    #                 ip.temp = T
-    #                 ip.deg_sat_water = Sw
-    #
-    # def initialize_integration_points_secondary(
-    #     self,
-    #     update_water_flux: bool = True,
-    # ) -> None:
-    #     """Initializes the remaining thermal variables
-    #     at the integration points in the elements.
-    #     """
-    #     for e in self.elements:
-    #         Te = np.array([nd.temp for nd in e.nodes])
-    #         dTdte = np.array([nd.temp_rate for nd in e.nodes])
-    #         for ip in e.int_pts:
-    #             N = e._shape_matrix(ip.local_coord)
-    #             B = e._gradient_matrix(ip.local_coord, e.jacobian)
-    #             dTdZ = (B @ Te)[0]
-    #             dTdt = (N @ dTdte)[0]
-    #             ip.temp_gradient = dTdZ
-    #             ip.temp_rate = dTdt
-    #             T = ip.temp
-    #             T0 = ip.temp__0
-    #             thw0 = ip.vol_water_cont__0
-    #             thw1 = ip.vol_water_cont
-    #             ip.vol_water_cont_temp_gradient = np.abs(
-    #                 (thw1 - thw0) / (T - T0)
-    #             ) if np.abs(T - T0) > 0.0 else 0.0
-    #             if update_water_flux:
-    #                 ip.update_water_flux_rate()
-
     def initialize_global_matrices_and_vectors(self):
         self._temp_vector_0 = np.zeros(self.num_nodes)
         self._temp_vector = np.zeros(self.num_nodes)
@@ -862,10 +813,6 @@ class ThermalAnalysis1D(Mesh1D):
         self._temp_vector[self._free_vec] += (
             self._delta_temp_vector[self._free_vec]
         )
-        # # update temp rate vector
-        # self._temp_rate_vector[:] = (
-        #     self._temp_vector[:] - self._temp_vector_0[:]
-        # ) * self.over_dt
 
     def update_iteration_variables(self) -> None:
         self._eps_a = float(

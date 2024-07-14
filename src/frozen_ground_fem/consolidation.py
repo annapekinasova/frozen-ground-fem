@@ -1041,69 +1041,6 @@ class ConsolidationAnalysis1D(Mesh1D):
         # assign hydraulic boundaries to the analysis property
         self._hyd_boundaries = tuple(hyd_boundaries)
 
-    # def initialize_integration_points_primary(self) -> None:
-    #     """Initializes the hydromechanical primary variables
-    #     at integration points
-    #     across the mesh. Also initializes hydraulic boundary conditions.
-    #     """
-    #     for e in self.elements:
-    #         e.initialize_integration_points_primary()
-    #
-    # def initialize_integration_points_secondary(
-    #     self,
-    #     update_water_flux: bool = True,
-    # ) -> None:
-    #     """Initializes the remaining hydromechanical variables
-    #     at the integration points in the elements.
-    #     """
-    #     # initialize void ratio distribution
-    #     # and preconsolidation stress
-    #     for e in self.elements:
-    #         ee = np.array([nd.void_ratio for nd in e.nodes])
-    #         for ip in e.int_pts:
-    #             B = e._gradient_matrix(ip.local_coord, e.jacobian)
-    #             de_dZ = (B @ ee)[0]
-    #             T = ip.temp
-    #             ep = ip.void_ratio
-    #             # soil is frozen
-    #             if T < 0.0:
-    #                 # set reference stress and void ratio for frozen state
-    #                 ip.void_ratio_0_ref_frozen = ep
-    #                 ip.tot_stress_0_ref_frozen = ip.tot_stress
-    #                 # update local stress state
-    #                 # and total stress gradient (for stiffness matrix)
-    #                 e_f0 = ip.void_ratio_0_ref_frozen
-    #                 sig_f0 = ip.tot_stress_0_ref_frozen
-    #                 sig, dsig_de = ip.material.tot_stress(
-    #                     T, ep, e_f0, sig_f0,
-    #                 )
-    #                 ip.loc_stress = sig
-    #                 ip.tot_stress_gradient = dsig_de
-    #                 # reset effective stress and pre-consolidation stress
-    #                 ip.eff_stress = 0.0
-    #                 ip.pre_consol_stress = 0.0
-    #             # soil is unfrozen
-    #             else:
-    #                 # initialize pre-consolidation stress
-    #                 e0 = ip.void_ratio_0
-    #                 ppc = ip.pre_consol_stress
-    #                 ppc0, _ = ip.material.eff_stress(e0, ppc)
-    #                 if ppc0 > ppc:
-    #                     ip.pre_consol_stress = ppc0
-    #                 # update effective stress
-    #                 ppc = ip.pre_consol_stress
-    #                 sig, dsig_de = ip.material.eff_stress(ep, ppc)
-    #                 if sig > ppc:
-    #                     ip.pre_consol_stress = sig
-    #                 ip.eff_stress = sig
-    #                 ip.eff_stress_gradient = dsig_de
-    #                 # update hydraulic conductivity and water flux
-    #                 k, dk_de = ip.material.hyd_cond(ep, 1.0, False)
-    #                 ip.hyd_cond = k
-    #                 ip.hyd_cond_gradient = dk_de
-    #             if update_water_flux:
-    #                 ip.update_water_flux_rate(de_dZ)
-
     def initialize_global_matrices_and_vectors(self):
         self._void_ratio_vector_0 = np.zeros(self.num_nodes)
         self._void_ratio_vector = np.zeros(self.num_nodes)
