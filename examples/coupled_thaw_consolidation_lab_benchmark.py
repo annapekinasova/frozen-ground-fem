@@ -140,6 +140,7 @@ def main():
         z_range=[0.0, H_layer],
         num_elements=num_elements,
         generate=True,
+        order=1,
     )
     con_static.implicit_error_tolerance = tol
 
