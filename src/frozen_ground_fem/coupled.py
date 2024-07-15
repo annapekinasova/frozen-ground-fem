@@ -404,10 +404,6 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         ThermalAnalysis1D.update_global_matrices_and_vectors(self)
         ConsolidationAnalysis1D.update_global_matrices_and_vectors(self)
 
-    def update_boundary_vectors(self) -> None:
-        ThermalAnalysis1D.update_boundary_vectors(self)
-        ConsolidationAnalysis1D.update_boundary_vectors(self)
-
     def calculate_solution_vector_correction(self) -> None:
         self._free_vec = self._free_vec_thrm
         self._free_arr = self._free_arr_thrm

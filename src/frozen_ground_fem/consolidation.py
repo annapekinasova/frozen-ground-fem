@@ -1185,9 +1185,6 @@ class ConsolidationAnalysis1D(Mesh1D):
         self.update_stiffness_matrix()
         self.update_mass_matrix()
 
-    def update_boundary_vectors(self) -> None:
-        self.update_water_flux_vector()
-
     def calculate_solution_vector_correction(self) -> None:
         """Performs a single iteration of void ratio correction
         in the implicit time stepping scheme.

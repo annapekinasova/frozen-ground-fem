@@ -773,9 +773,6 @@ class ThermalAnalysis1D(Mesh1D):
         self.update_heat_flow_matrix()
         self.update_heat_storage_matrix()
 
-    def update_boundary_vectors(self) -> None:
-        self.update_heat_flux_vector()
-
     def calculate_solution_vector_correction(self) -> None:
         """Performs a single iteration of temperature correction
         in the implicit time stepping scheme.
