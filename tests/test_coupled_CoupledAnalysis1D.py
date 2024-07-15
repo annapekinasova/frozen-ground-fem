@@ -7452,5 +7452,1232 @@ class TestGlobalCorrectionCubicOneStep(unittest.TestCase):
         self.assertEqual(self.msh._iter, 1)
 
 
+class TestGlobalCorrectionCubicIterative(unittest.TestCase):
+    def setUp(self):
+        self.mtl = Material(
+            spec_grav_solids=2.6,
+            thrm_cond_solids=2.1,
+            spec_heat_cap_solids=874.0,
+            deg_sat_water_alpha=1.20e4,
+            deg_sat_water_beta=0.35,
+            water_flux_b1=0.08,
+            water_flux_b2=4.0,
+            water_flux_b3=1.0e-5,
+            seg_pot_0=2.0e-9,
+            hyd_cond_index=0.305,
+            void_ratio_0_hyd_cond=2.6,
+            hyd_cond_mult=0.8,
+            hyd_cond_0=8.10e-6,
+            void_ratio_min=0.3,
+            void_ratio_tr=0.0,
+            void_ratio_sep=1.6,
+            void_ratio_0_comp=2.6,
+            eff_stress_0_comp=2.8,
+            comp_index_unfrozen=0.421,
+            rebound_index_unfrozen=0.08,
+            comp_index_frozen_a1=0.021,
+            comp_index_frozen_a2=0.01,
+            comp_index_frozen_a3=0.23,
+        )
+        self.msh = CoupledAnalysis1D(
+            z_range=(0, 0.1),
+            num_elements=4,
+            generate=True,
+            order=3,
+        )
+        temp_bound = ThermalBoundary1D(
+            nodes=(self.msh.nodes[0],),
+            bnd_type=ThermalBoundary1D.BoundaryType.temp,
+            bnd_value=5.0,
+        )
+        self.msh.add_boundary(temp_bound)
+        hyd_bound = HydraulicBoundary1D(
+            nodes=(self.msh.nodes[0],), bnd_value=0.1,
+        )
+        self.msh.add_boundary(hyd_bound)
+        e_cu0 = self.mtl.void_ratio_0_comp
+        Ccu = self.mtl.comp_index_unfrozen
+        sig_cu0 = self.mtl.eff_stress_0_comp
+        sig_p_ob = 1.50e4
+        e_bnd = e_cu0 - Ccu * np.log10(sig_p_ob / sig_cu0)
+        void_ratio_bound = ConsolidationBoundary1D(
+            nodes=(self.msh.nodes[0],),
+            bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
+            bnd_value=e_bnd,
+            bnd_value_1=sig_p_ob,
+        )
+        self.msh.add_boundary(void_ratio_bound)
+        for nd in self.msh.nodes:
+            nd.temp = -5.0
+            nd.temp_rate = 0.0
+            nd.void_ratio = 2.83
+            nd.void_ratio_0 = 2.83
+        for e in self.msh.elements:
+            e.assign_material(self.mtl)
+        self.msh.time_step = 3.75
+        self.msh.implicit_error_tolerance = 1e-4
+        self.msh.initialize_global_system(0.0)
+        self.msh.initialize_time_step()
+        self.msh.iterative_correction_step()
+
+    def test_time_step_set(self):
+        self.assertAlmostEqual(self.msh._t0, 0.0)
+        self.assertAlmostEqual(self.msh._t1, 3.75)
+
+    def test_free_indices(self):
+        expected_free_vec = [i for i in range(self.msh.num_nodes)][1:]
+        self.assertTrue(np.all(expected_free_vec ==
+                               self.msh._free_vec_thrm[0]))
+        self.assertTrue(np.all(expected_free_vec ==
+                        self.msh._free_arr_thrm[0].flatten()))
+        self.assertTrue(np.all(expected_free_vec ==
+                               self.msh._free_arr_thrm[1]))
+        self.assertTrue(np.all(expected_free_vec ==
+                               self.msh._free_vec_cnsl[0]))
+        self.assertTrue(np.all(expected_free_vec ==
+                        self.msh._free_arr_cnsl[0].flatten()))
+        self.assertTrue(np.all(expected_free_vec ==
+                               self.msh._free_arr_cnsl[1]))
+        self.assertTrue(np.all(expected_free_vec == self.msh._free_vec[0]))
+        self.assertTrue(np.all(expected_free_vec ==
+                        self.msh._free_arr[0].flatten()))
+        self.assertTrue(np.all(expected_free_vec == self.msh._free_arr[1]))
+
+    def test_temperature_distribution_nodes(self):
+        expected_temp_nodes = np.array([
+            5.00000000000000,
+            -4.58064305347386,
+            -5.09259369878234,
+            -4.80566118243967,
+            -5.02013289549439,
+            -4.99377774953049,
+            -5.01551059728053,
+            -4.99839296443377,
+            -5.00049740270868,
+            -4.99875428179049,
+            -5.00013139862023,
+            -4.99995013366397,
+            -5.00019758038024,
+        ])
+        actual_temp_nodes = np.array([
+            nd.temp for nd in self.msh.nodes
+        ])
+        self.assertTrue(np.allclose(actual_temp_nodes,
+                                    expected_temp_nodes))
+
+    def test_temperature_distribution_int_pts(self):
+        expected_temp_int_pts = np.array([
+            2.79350985635116000,
+            -2.98251124947254000,
+            -5.45334184924163000,
+            -4.70543987432889000,
+            -4.58445666724564000,
+            -4.86123110592992000,
+            -4.99320367296527000,
+            -5.01900150159398000,
+            -4.98192929089300000,
+            -4.99871835495692000,
+            -5.01107494452767000,
+            -5.00054167909094000,
+            -4.99848427657569000,
+            -5.00144192988793000,
+            -5.00009669270696000,
+            -4.99911676817540000,
+            -4.99996589674129000,
+            -5.00011137052420000,
+            -4.99988835399590000,
+            -5.00006237554238000,
+        ])
+        actual_temp_int_pts = np.array([
+            ip.temp for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(actual_temp_int_pts,
+                                    expected_temp_int_pts))
+
+    def test_temperature_rate_distribution_nodes(self):
+        expected_temp_rate_nodes = np.array([
+            2.66666666667E+00,
+            1.11828519074E-01,
+            -2.46916530086E-02,
+            5.18236846828E-02,
+            -5.36877213184E-03,
+            1.65926679187E-03,
+            -4.13615927481E-03,
+            4.28542817661E-04,
+            -1.32640722314E-04,
+            3.32191522536E-04,
+            -3.50396320622E-05,
+            1.32976896069E-05,
+            -5.26881013961E-05,
+        ])
+        actual_temp_rate_nodes = np.array([
+            nd.temp_rate for nd in self.msh.nodes
+        ])
+        self.assertTrue(np.allclose(actual_temp_rate_nodes,
+                                    expected_temp_rate_nodes))
+
+    def test_temperature_rate_distribution_int_pts(self):
+        expected_temp_rate_int_pts = np.array([
+            2.07826929502698000,
+            0.53799700014066100,
+            -0.12089115979776900,
+            0.07854936684563340,
+            0.11081155540116500,
+            0.03700503841868800,
+            0.00181235387593243,
+            -0.00506706709172765,
+            0.00481885576187126,
+            0.00034177201148769,
+            -0.00295331854071352,
+            -0.00014444775757991,
+            0.00040419291314960,
+            -0.00038451463677718,
+            -0.00002578472185409,
+            0.00023552848655941,
+            0.00000909420232786,
+            -0.00002969880645241,
+            0.00002977226776489,
+            -0.00001663347796726,
+        ])
+        actual_temp_rate_int_pts = np.array([
+            ip.temp_rate for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(actual_temp_rate_int_pts,
+                                    expected_temp_rate_int_pts))
+
+    def test_temperature_gradient_distribution(self):
+        expected_temp_gradient_int_pts = np.array([
+            -1741.61193271617000000,
+            -821.99614139238800000,
+            -20.08503120444660000,
+            134.41344831667500000,
+            -132.08827298017400000,
+            -43.14004787916920000,
+            -16.04239999098820000,
+            4.60719177933043000,
+            2.63871349862029000,
+            -11.70195433090690000,
+            3.44343255039109000,
+            1.28022031909985000,
+            -0.36788074456221100,
+            -0.20994619054999900,
+            0.93565943723484700,
+            -0.28072726191793200,
+            -0.10084016061352900,
+            0.03168726204377850,
+            0.00865252298432040,
+            -0.09646408983621770,
+        ])
+        actual_temp_gradient_int_pts = np.array([
+            ip.temp_gradient for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(actual_temp_gradient_int_pts,
+                                    expected_temp_gradient_int_pts))
+
+    def test_deg_sat_water_distribution(self):
+        expected_deg_sat_water_int_pts = np.array([
+            1.000000000000000,
+            0.048327866859888,
+            0.034835486316865,
+            0.037743275744262,
+            0.038280962976073,
+            0.037081343248642,
+            0.036545564728929,
+            0.036443363829594,
+            0.036590484142070,
+            0.036523649742313,
+            0.036474679839319,
+            0.036516412127335,
+            0.036524579200757,
+            0.036512840109049,
+            0.036518178110201,
+            0.036522067910648,
+            0.036518697235828,
+            0.036518119855644,
+            0.036519005010708,
+            0.036518314312078,
+        ])
+        actual_deg_sat_water_int_pts = np.array([
+            ip.deg_sat_water for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(actual_deg_sat_water_int_pts,
+                                    expected_deg_sat_water_int_pts))
+
+    def test_vol_water_cont_distribution(self):
+        expected_vol_water_cont_int_pts = np.array([
+            0.5933409036663990,
+            0.0347137941455160,
+            0.0259983926596006,
+            0.0276700304850956,
+            0.0281049333503606,
+            0.0273971641035589,
+            0.0270037247601581,
+            0.0269284930407589,
+            0.0270364176827250,
+            0.0269874890826638,
+            0.0269515603071046,
+            0.0269820902347432,
+            0.0269880888155971,
+            0.0269795141405410,
+            0.0269834000408081,
+            0.0269862422709633,
+            0.0269837915274113,
+            0.0269833679044109,
+            0.0269840099015926,
+            0.0269835118209834,
+        ])
+        actual_vol_water_cont_int_pts = np.array([
+            ip.vol_water_cont
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            actual_vol_water_cont_int_pts,
+            expected_vol_water_cont_int_pts,
+        ))
+
+    def test_vol_water_cont_temp_gradient_distribution(self):
+        expected_vol_water_cont_temp_gradient_int_pts = np.array([
+            0.07267036608405440,
+            0.00383154791709323,
+            0.00217340770043845,
+            0.00233005454441085,
+            0.00269826017242343,
+            0.00297959265767964,
+            0.00294797975174945,
+            0.00290483805406171,
+            0.00291789086633871,
+            0.00296474988215058,
+            0.00290105458212178,
+            0.00295210015848509,
+            0.00290256774629881,
+            0.00289555349912283,
+            0.00299179611781682,
+            0.00289045890194653,
+            0.00299683202572657,
+            0.00288605324259997,
+            0.00287136043694659,
+            0.00284574182773160,
+        ])
+        actual_vol_water_cont_temp_gradient_int_pts = np.array([
+            ip.vol_water_cont_temp_gradient
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            actual_vol_water_cont_temp_gradient_int_pts,
+            expected_vol_water_cont_temp_gradient_int_pts,
+        ))
+
+    def test_thrm_cond_distribution(self):
+        expected_thrm_cond_int_pts = np.array([
+            0.96161190808560,
+            2.08386909830600,
+            2.11222278039383,
+            2.10583789102445,
+            2.10470615678924,
+            2.10729705788461,
+            2.10844260973825,
+            2.10866116401499,
+            2.10834644401980,
+            2.10848943940575,
+            2.10859419730293,
+            2.10850489385686,
+            2.10848742524793,
+            2.10851254914857,
+            2.10850112058321,
+            2.10849279599814,
+            2.10850001343686,
+            2.10850124854706,
+            2.10849935270860,
+            2.10850083296573,
+        ])
+        actual_thrm_cond_int_pts = np.array([
+            ip.thrm_cond
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(actual_thrm_cond_int_pts,
+                                    expected_thrm_cond_int_pts,
+                                    atol=1e-30))
+
+    def test_vol_heat_cap_distribution(self):
+        expected_vol_heat_cap_int_pts = np.array([
+            3.41849728952202E+06,
+            2.07189843589171E+06,
+            2.04068492699884E+06,
+            2.04973762945771E+06,
+            2.05033158994784E+06,
+            2.04686180026389E+06,
+            2.04592197585812E+06,
+            2.04574415057103E+06,
+            2.04600325157033E+06,
+            2.04588471657155E+06,
+            2.04579851440537E+06,
+            2.04587272106436E+06,
+            2.04588704256472E+06,
+            2.04586605845371E+06,
+            2.04587571105607E+06,
+            2.04588265602292E+06,
+            2.04587653577673E+06,
+            2.04587551949074E+06,
+            2.04587713996668E+06,
+            2.04587585132210E+06,
+        ])
+        actual_vol_heat_cap_int_pts = np.array([
+            ip.vol_heat_cap
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(actual_vol_heat_cap_int_pts,
+                                    expected_vol_heat_cap_int_pts,
+                                    atol=1e-30))
+
+    def test_void_ratio_distribution_nodes(self):
+        expected_void_ratio_vector_0 = np.array([
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+        ])
+        expected_void_ratio_vector = np.array([
+            1.03011911113263,
+            2.82860362814449,
+            2.83030219017640,
+            2.82864319196977,
+            2.83020739309145,
+            2.82992420987324,
+            2.83017238134810,
+            2.82997363821678,
+            2.83000967971728,
+            2.82997775724541,
+            2.83000350117433,
+            2.82999835238855,
+            2.83000556068865,
+        ])
+        actual_void_ratio_nodes = np.array([
+            nd.void_ratio for nd in self.msh.nodes
+        ])
+        self.assertTrue(np.allclose(expected_void_ratio_vector,
+                                    actual_void_ratio_nodes))
+        self.assertTrue(np.allclose(expected_void_ratio_vector,
+                                    self.msh._void_ratio_vector))
+        self.assertTrue(np.allclose(expected_void_ratio_vector_0,
+                                    self.msh._void_ratio_vector_0))
+
+    def test_void_ratio_distribution_int_pts(self):
+        expected_void_ratio_0_int_pts = np.array([
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+        ])
+        expected_void_ratio_int_pts = np.array([
+            1.45906217029424000,
+            2.54984638864668000,
+            2.94196187886160000,
+            2.74688342963922000,
+            2.76187613284318000,
+            2.82906415640503000,
+            2.83003329007169000,
+            2.83014805333527000,
+            2.82983353714076000,
+            2.83001619266510000,
+            2.83011887186063000,
+            2.82999572897865000,
+            2.82998123267581000,
+            2.83002115207895000,
+            2.82999770360935000,
+            2.82998486870991000,
+            2.83000087809921000,
+            2.83000208525824000,
+            2.82999724622774000,
+            2.83000217846009000,
+        ])
+        actual_void_ratio_int_pts = np.array([
+            ip.void_ratio for e in self.msh.elements for ip in e.int_pts
+        ])
+        actual_void_ratio_0_int_pts = np.array([
+            ip.void_ratio_0 for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(actual_void_ratio_0_int_pts,
+                                    expected_void_ratio_0_int_pts))
+        self.assertTrue(np.allclose(actual_void_ratio_int_pts,
+                                    expected_void_ratio_int_pts))
+
+    def test_hyd_cond_distribution(self):
+        expected_hyd_cond_int_pts = np.array([
+            1.47131359995378E-09,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+        ])
+        actual_hyd_cond_int_pts = np.array([
+            ip.hyd_cond for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            actual_hyd_cond_int_pts,
+            expected_hyd_cond_int_pts,
+            atol=1e-18, rtol=1e-8,
+        ))
+
+    def test_hyd_cond_grad_distribution(self):
+        expected_hyd_cond_grad_int_pts = np.array([
+            1.11076221717147E-08,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+        ])
+        actual_hyd_cond_grad_int_pts = np.array([
+            ip.hyd_cond_gradient
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            actual_hyd_cond_grad_int_pts,
+            expected_hyd_cond_grad_int_pts,
+            atol=1e-18, rtol=1e-8,
+        ))
+
+    def test_tot_stress_distribution_nodes(self):
+        expected_sig_nodes = np.array([
+            1.5014449426337E+04,
+            1.5113476028161E+04,
+            1.5225585741593E+04,
+            1.5334795051351E+04,
+            1.5445453476614E+04,
+            1.5556118992751E+04,
+            1.5666780872216E+04,
+            1.5777445060385E+04,
+            1.5888108274891E+04,
+            1.5998771975971E+04,
+            1.6109435372849E+04,
+            1.6220098890878E+04,
+            1.6330762361581E+04,
+        ])
+        actual_sig_nodes = np.array([
+            nd.tot_stress
+            for nd in self.msh.nodes
+        ])
+        self.assertTrue(np.allclose(
+            expected_sig_nodes,
+            actual_sig_nodes,
+        ))
+
+    def test_tot_stress_distribution_int_pts(self):
+        expected_sig_int_pts = np.array([
+            1.50269954877711E+04,
+            1.50808695652533E+04,
+            1.51688944656309E+04,
+            1.52602408925064E+04,
+            1.53202003019101E+04,
+            1.53503672063938E+04,
+            1.54114021870632E+04,
+            1.55007860187946E+04,
+            1.55901709772620E+04,
+            1.56512080222119E+04,
+            1.56823547825786E+04,
+            1.57433934223862E+04,
+            1.58327766980807E+04,
+            1.59221598148903E+04,
+            1.59831981636064E+04,
+            1.60143456477484E+04,
+            1.60753837861055E+04,
+            1.61647671272493E+04,
+            1.62541504924742E+04,
+            1.63151886749502E+04,
+        ])
+        actual_sig_int_pts = np.array([
+            ip.tot_stress
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            expected_sig_int_pts,
+            actual_sig_int_pts,
+        ))
+
+    def test_eff_stress_distribution(self):
+        expected_sig_int_pts = np.array([
+            4.37282420168772E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+        ])
+        actual_sigp_int_pts = np.array([
+            ip.eff_stress
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            expected_sig_int_pts,
+            actual_sigp_int_pts,
+        ))
+
+    def test_tot_stress_grad_distribution(self):
+        expected_dsigde_int_pts = np.array([
+            0.00000000000000E+00,
+            -1.08583596188892E+41,
+            -5.91856127895118E-12,
+            -1.21595631208941E+19,
+            -5.28973693373085E+16,
+            -7.40148242121397E+06,
+            -5.37422054411254E+06,
+            -5.20382625831659E+06,
+            -5.82652993204991E+06,
+            -5.49396766371034E+06,
+            -5.31531355577168E+06,
+            -5.56744793090401E+06,
+            -5.62661079891232E+06,
+            -5.58085776096722E+06,
+            -5.64806958757320E+06,
+            -5.68421501797755E+06,
+            -5.67421076576147E+06,
+            -5.70341918345798E+06,
+            -5.74463970437447E+06,
+            -5.75628339299024E+06,
+        ])
+        actual_dsigde_int_pts = np.array([
+            ip.tot_stress_gradient
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            expected_dsigde_int_pts,
+            actual_dsigde_int_pts,
+        ))
+
+    def test_eff_stress_grad_distribution(self):
+        expected_dsigde_int_pts = np.array([
+            -1.25859997763622E+02,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+        ])
+        actual_dsigde_int_pts = np.array([
+            ip.eff_stress_gradient
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            expected_dsigde_int_pts,
+            actual_dsigde_int_pts,
+        ))
+
+    def test_pre_consol_stress_distribution(self):
+        expected_ppc_int_pts = np.array([
+            5.59237749521184E+03,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+            0.00000000000000E+00,
+        ])
+        actual_ppc_int_pts = np.array([
+            ip.pre_consol_stress
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            actual_ppc_int_pts,
+            expected_ppc_int_pts,
+        ))
+
+    def test_water_flux_distribution(self):
+        expected_water_flux_int_pts = np.array([
+            -1.08612342162270E-08,
+            -6.11415768983904E-12,
+            2.80596141810489E-17,
+            7.17663208907426E-16,
+            -1.20799268738528E-15,
+            -1.04751860522187E-16,
+            -8.90094253171621E-18,
+            -3.36915779991035E-17,
+            2.31169487646101E-18,
+            -8.02371291610817E-19,
+            -2.54441256571506E-17,
+            -8.77500870088515E-18,
+            -4.26797726991474E-20,
+            1.48876702940155E-18,
+            -5.95633331983979E-18,
+            1.03233810240133E-20,
+            9.58554565378461E-20,
+            -2.02596451262750E-19,
+            -5.33501961492381E-21,
+            6.00287543301189E-19,
+        ])
+        actual_water_flux_int_pts = np.array([
+            ip.water_flux_rate
+            for e in self.msh.elements for ip in e.int_pts
+        ])
+        self.assertTrue(np.allclose(
+            actual_water_flux_int_pts,
+            expected_water_flux_int_pts,
+            atol=1e-18, rtol=1e-8,
+        ))
+
+    def test_calculate_settlement(self):
+        expected = 0.00147292827080989
+        actual = self.msh.calculate_total_settlement()
+        self.assertAlmostEqual(expected, actual)
+
+    def test_calculate_deformed_coords(self):
+        expected = np.array([
+            0.00147292827080989,
+            0.00833502512822456,
+            0.01683036648801830,
+            0.02500057167654190,
+            0.03333320517382640,
+            0.04166680098768840,
+            0.04999992740615340,
+            0.05833334957732680,
+            0.06666664963848040,
+            0.07500000907423080,
+            0.08333333154089270,
+            0.09166666857113480,
+            0.10000000000000000,
+        ])
+        actual = self.msh.calculate_deformed_coords()
+        self.assertTrue(np.allclose(expected, actual))
+
+    def test_global_heat_flow_matrix_0(self):
+        expected_H = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        expected_H[0:4, 0:4] = np.array([
+            [3.12058044707073E+02, -3.98506557092141E+02,
+                1.13859016312040E+02, -2.74105039269726E+01,],
+            [-3.98506557092141E+02, 9.10872130496322E+02, -
+                6.26224589716221E+02, 1.13859016312040E+02,],
+            [1.13859016312040E+02, -6.26224589716221E+02,
+                9.10872130496322E+02, -3.98506557092141E+02,],
+            [-2.74105039269726E+01, 1.13859016312040E+02, -
+                3.98506557092141E+02, 6.24116089414146E+02,],
+        ])
+        expected_H[3:7, 3:7] = np.array([
+            [6.24116089414146E+02, -3.98506557092141E+02,
+                1.13859016312040E+02, -2.74105039269726E+01,],
+            [-3.98506557092141E+02, 9.10872130496322E+02, -
+                6.26224589716221E+02, 1.13859016312040E+02,],
+            [1.13859016312040E+02, -6.26224589716221E+02,
+                9.10872130496322E+02, -3.98506557092141E+02,],
+            [-2.74105039269726E+01, 1.13859016312040E+02, -
+                3.98506557092141E+02, 6.24116089414146E+02,],
+        ])
+        expected_H[6:10, 6:10] = np.array([
+            [6.24116089414146E+02, -3.98506557092141E+02,
+                1.13859016312040E+02, -2.74105039269726E+01,],
+            [-3.98506557092141E+02, 9.10872130496322E+02, -
+                6.26224589716221E+02, 1.13859016312040E+02,],
+            [1.13859016312040E+02, -6.26224589716221E+02,
+                9.10872130496322E+02, -3.98506557092141E+02,],
+            [-2.74105039269726E+01, 1.13859016312040E+02, -
+                3.98506557092141E+02, 6.24116089414146E+02,],
+        ])
+        expected_H[9:13, 9:13] = np.array([
+            [6.24116089414146E+02, -3.98506557092141E+02,
+                1.13859016312040E+02, -2.74105039269726E+01,],
+            [-3.98506557092141E+02, 9.10872130496322E+02, -
+                6.26224589716221E+02, 1.13859016312040E+02,],
+            [1.13859016312040E+02, -6.26224589716221E+02,
+                9.10872130496322E+02, -3.98506557092141E+02,],
+            [-2.74105039269726E+01, 1.13859016312040E+02, -
+                3.98506557092141E+02, 3.12058044707073E+02,],
+        ])
+        self.assertTrue(np.allclose(
+            expected_H, self.msh._heat_flow_matrix_0,
+        ))
+
+    def test_global_heat_flow_matrix(self):
+        expected_H = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        expected_H[0:4, 0:4] = np.array([
+            [3.48551857427586E+02, -4.38664308836745E+02,
+                1.18617959352344E+02, -2.85055079431851E+01,],
+            [-4.38664308836745E+02, 9.54878072615016E+02, -
+                6.34899807055506E+02, 1.18686043277235E+02,],
+            [1.18617959352344E+02, -6.34899807055506E+02,
+                9.30635630486192E+02, -4.14353782783030E+02,],
+            [-2.85055079431851E+01, 1.18686043277235E+02, -
+                4.14353782783030E+02, 6.36209425205201E+02,],
+        ])
+        expected_H[3:7, 3:7] = np.array([
+            [6.36209425205201E+02, -3.98478223373076E+02,
+                1.13850287547035E+02, -2.74082419301801E+01,],
+            [-3.98478223373076E+02, 9.10831006786278E+02, -
+                6.26205755062565E+02, 1.13852971649363E+02,],
+            [1.13850287547035E+02, -6.26205755062565E+02,
+                9.10856039877672E+02, -3.98500572362142E+02,],
+            [-2.74082419301801E+01, 1.13852971649363E+02, -
+                3.98500572362142E+02, 6.24110412958808E+02,],
+        ])
+        expected_H[6:10, 6:10] = np.array([
+            [6.24110412958808E+02, -3.98500971469836E+02,
+                1.13856465092936E+02, -2.74100639389494E+01,],
+            [-3.98500971469836E+02, 9.10864503455536E+02, -
+                6.26222393931813E+02, 1.13858861946112E+02,],
+            [1.13856465092936E+02, -6.26222393931813E+02,
+                9.10872617007105E+02, -3.98506688168228E+02,],
+            [-2.74100639389494E+01, 1.13858861946112E+02, -
+                3.98506688168228E+02, 6.24116834896652E+02,],
+        ])
+        expected_H[9:13, 9:13] = np.array([
+            [6.24116834896652E+02, -3.98507945860702E+02,
+                1.13859597237453E+02, -2.74105961123375E+01,],
+            [-3.98507945860702E+02, 9.10874040576192E+02, -
+                6.26225103532984E+02, 1.13859008817494E+02,],
+            [1.13859597237453E+02, -6.26225103532984E+02,
+                9.10871868681651E+02, -3.98506362386120E+02,],
+            [-2.74105961123375E+01, 1.13859008817494E+02, -
+                3.98506362386120E+02, 3.12057949680963E+02,],
+        ])
+        self.assertTrue(np.allclose(
+            expected_H, self.msh._heat_flow_matrix,
+        ))
+
+    def test_global_heat_storage_matrix_0(self):
+        expected_C = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        expected_C[0:4, 0:4] = np.array([
+            [3.89690727960341E+03, 3.01401422406826E+03, -
+                1.09600517238846E+03, 5.78447174316131E+02,],
+            [3.01401422406826E+03, 1.97280931029923E+04, -
+                2.46601163787403E+03, -1.09600517238846E+03,],
+            [-1.09600517238846E+03, -2.46601163787403E+03,
+                1.97280931029923E+04, 3.01401422406826E+03,],
+            [5.78447174316131E+02, -1.09600517238846E+03,
+                3.01401422406826E+03, 7.79381455920682E+03,],
+        ])
+        expected_C[3:7, 3:7] = np.array([
+            [7.79381455920682E+03, 3.01401422406826E+03, -
+                1.09600517238846E+03, 5.78447174316131E+02,],
+            [3.01401422406826E+03, 1.97280931029923E+04, -
+                2.46601163787403E+03, -1.09600517238846E+03,],
+            [-1.09600517238846E+03, -2.46601163787403E+03,
+                1.97280931029923E+04, 3.01401422406826E+03,],
+            [5.78447174316131E+02, -1.09600517238846E+03,
+                3.01401422406826E+03, 7.79381455920682E+03,],
+        ])
+        expected_C[6:10, 6:10] = np.array([
+            [7.79381455920682E+03, 3.01401422406826E+03, -
+                1.09600517238846E+03, 5.78447174316131E+02,],
+            [3.01401422406826E+03, 1.97280931029923E+04, -
+                2.46601163787403E+03, -1.09600517238846E+03,],
+            [-1.09600517238846E+03, -2.46601163787403E+03,
+                1.97280931029923E+04, 3.01401422406826E+03,],
+            [5.78447174316131E+02, -1.09600517238846E+03,
+                3.01401422406826E+03, 7.79381455920682E+03,],
+        ])
+        expected_C[9:13, 9:13] = np.array([
+            [7.79381455920682E+03, 3.01401422406826E+03, -
+                1.09600517238846E+03, 5.78447174316131E+02,],
+            [3.01401422406826E+03, 1.97280931029923E+04, -
+                2.46601163787403E+03, -1.09600517238846E+03,],
+            [-1.09600517238846E+03, -2.46601163787403E+03,
+                1.97280931029923E+04, 3.01401422406826E+03,],
+            [5.78447174316131E+02, -1.09600517238846E+03,
+                3.01401422406826E+03, 3.89690727960341E+03,],
+        ])
+        self.assertTrue(np.allclose(
+            expected_C, self.msh._heat_storage_matrix_0,
+        ))
+
+    def test_global_heat_storage_matrix(self):
+        expected_C = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        expected_C[0:4, 0:4] = np.array([
+            [4.43191512823289E+04, 2.36981820128043E+04, -
+                1.04228560749454E+04, 2.72752667799082E+03,],
+            [2.36981820128043E+04, 3.90029293105477E+04, -
+                8.55740958874031E+03, -4.24779044556544E+02,],
+            [-1.04228560749454E+04, -8.55740958874031E+03,
+                2.86880738707144E+04, 3.70202795202652E+03,],
+            [2.72752667799082E+03, -4.24779044556544E+02,
+                3.70202795202652E+03, 1.11623327575310E+04,],
+        ])
+        expected_C[3:7, 3:7] = np.array([
+            [1.11623327575310E+04, 4.34504137087101E+03, -
+                1.57859291028286E+03, 8.32013883836929E+02,],
+            [4.34504137087101E+03, 2.83286569503940E+04, -
+                3.56356665091589E+03, -1.57154179183068E+03,],
+            [-1.57859291028286E+03, -3.56356665091589E+03,
+                2.82710488146534E+04, 4.33093913396665E+03,],
+            [8.32013883836929E+02, -1.57154179183068E+03,
+                4.33093913396665E+03, 1.11847844690370E+04,],
+        ])
+        expected_C[6:10, 6:10] = np.array([
+            [1.11847844690370E+04, 4.32565154978876E+03, -
+                1.57068969983964E+03, 8.30341858342614E+02,],
+            [4.32565154978876E+03, 2.83231771696813E+04, -
+                3.55281645032842E+03, -1.57371258764738E+03,],
+            [-1.57068969983964E+03, -3.55281645032842E+03,
+                2.82262891058439E+04, 4.33169732540424E+03,],
+            [8.30341858342614E+02, -1.57371258764738E+03,
+                4.33169732540424E+03, 1.11939182473388E+04,],
+        ])
+        expected_C[9:13, 9:13] = np.array([
+            [1.11939182473388E+04, 4.33875339905279E+03, -
+                1.57527170728184E+03, 8.26460701311306E+02,],
+            [4.33875339905279E+03, 2.83926657073714E+04, -
+                3.56462995346732E+03, -1.54969645637448E+03,],
+            [-1.57527170728184E+03, -3.56462995346732E+03,
+                2.81533764708163E+04, 4.28760289723806E+03,],
+            [8.26460701311306E+02, -1.54969645637448E+03,
+                4.28760289723806E+03, 5.54428380775912E+03,],
+        ])
+        self.assertTrue(np.allclose(
+            expected_C, self.msh._heat_storage_matrix,
+        ))
+
+    def test_global_heat_flux_vector_0(self):
+        expected_Phi = np.zeros(self.msh.num_nodes)
+        self.assertTrue(np.allclose(
+            expected_Phi, self.msh._heat_flux_vector_0,
+            atol=1e-15, rtol=1e-6,
+        ))
+
+    def test_global_heat_flux_vector(self):
+        expected_Phi = np.array([
+            -2.79290103673607E-01,
+            -1.37357548454370E-01,
+            6.34480778125953E-02,
+            -1.37516584370449E-02,
+            -2.21354685809020E-11,
+            1.30181167751189E-11,
+            -1.80114564012573E-12,
+            6.89011230770680E-13,
+            -2.24126575586310E-13,
+            1.08147550668570E-13,
+            2.50491651539409E-16,
+            3.12862117696491E-16,
+            5.49717497043505E-16,
+        ])
+        self.assertTrue(np.allclose(
+            expected_Phi, self.msh._heat_flux_vector,
+            atol=1e-15, rtol=1e-6,
+        ))
+
+    def test_global_stiffness_matrix_0(self):
+        expected_K = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        self.assertTrue(np.allclose(
+            expected_K, self.msh._stiffness_matrix_0,
+            atol=1e-18, rtol=1e-8,
+        ))
+
+    def test_global_stiffness_matrix(self):
+        expected_K = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        expected_K[0:4, 0:4] = np.array([
+            [5.94778993558129E-09, -8.85844069639067E-09,
+                3.68186331790065E-09, -7.71212557091269E-10,],
+            [-3.13517819888019E-09, 4.66943023344734E-09, -
+                1.94077089651127E-09, 4.06518861944119E-10,],
+            [1.23703757204794E-09, -1.84240265541974E-09,
+                7.65763974302678E-10, -1.60398890930876E-10,],
+            [-2.54329299095376E-10, 3.78789607197318E-10, -
+                1.57437590625859E-10, 3.29772825239172E-11,],
+        ])
+        self.assertTrue(np.allclose(
+            expected_K, self.msh._stiffness_matrix,
+            atol=1e-18, rtol=1e-8,
+        ))
+
+    def test_global_mass_matrix_0(self):
+        expected_M = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        expected_M[0:4, 0:4] = np.array([
+            [4.54201999537039E-04, 3.51296859016929E-04, -
+                1.27744312369792E-04, 6.74206093062793E-05,],
+            [3.51296859016929E-04, 2.29939762265626E-03, -
+                2.87424702832033E-04, -1.27744312369793E-04,],
+            [-1.27744312369792E-04, -2.87424702832033E-04,
+                2.29939762265626E-03, 3.51296859016929E-04,],
+            [6.74206093062793E-05, -1.27744312369793E-04,
+                3.51296859016929E-04, 9.08403999074079E-04,],
+        ])
+        expected_M[3:7, 3:7] = np.array([
+            [9.08403999074079E-04, 3.51296859016929E-04, -
+                1.27744312369792E-04, 6.74206093062793E-05,],
+            [3.51296859016929E-04, 2.29939762265626E-03, -
+                2.87424702832033E-04, -1.27744312369793E-04,],
+            [-1.27744312369792E-04, -2.87424702832033E-04,
+                2.29939762265626E-03, 3.51296859016929E-04,],
+            [6.74206093062793E-05, -1.27744312369793E-04,
+                3.51296859016929E-04, 9.08403999074079E-04,],
+        ])
+        expected_M[6:10, 6:10] = np.array([
+            [9.08403999074079E-04, 3.51296859016929E-04, -
+                1.27744312369792E-04, 6.74206093062793E-05,],
+            [3.51296859016929E-04, 2.29939762265626E-03, -
+                2.87424702832033E-04, -1.27744312369793E-04,],
+            [-1.27744312369792E-04, -2.87424702832033E-04,
+                2.29939762265626E-03, 3.51296859016929E-04,],
+            [6.74206093062793E-05, -1.27744312369793E-04,
+                3.51296859016929E-04, 9.08403999074079E-04,],
+        ])
+        expected_M[9:13, 9:13] = np.array([
+            [9.08403999074079E-04, 3.51296859016929E-04, -
+                1.27744312369792E-04, 6.74206093062793E-05,],
+            [3.51296859016929E-04, 2.29939762265626E-03, -
+                2.87424702832033E-04, -1.27744312369793E-04,],
+            [-1.27744312369792E-04, -2.87424702832033E-04,
+                2.29939762265626E-03, 3.51296859016929E-04,],
+            [6.74206093062793E-05, -1.27744312369793E-04,
+                3.51296859016929E-04, 4.54201999537039E-04,],
+        ])
+        self.assertTrue(np.allclose(
+            expected_M, self.msh._mass_matrix_0,
+            atol=1e-18, rtol=1e-8,
+        ))
+
+    def test_global_mass_matrix(self):
+        expected_M = np.zeros((self.msh.num_nodes, self.msh.num_nodes))
+        expected_M[0:4, 0:4] = np.array([
+            [4.93106606407249E-04, 3.70668389131976E-04, -
+                1.36612809358475E-04, 6.93490903675524E-05,],
+            [3.70668389131976E-04, 2.31051693484695E-03, -
+                2.92328311245078E-04, -1.26736712087998E-04,],
+            [-1.36612809358475E-04, -2.92328311245078E-04,
+                2.30161797775055E-03, 3.50916194591022E-04,],
+            [6.93490903675524E-05, -1.26736712087998E-04,
+                3.50916194591022E-04, 9.08598613506195E-04,],
+        ])
+        expected_M[3:7, 3:7] = np.array([
+            [9.08598613506195E-04, 3.51308951039910E-04, -
+                1.27748674621162E-04, 6.74217876133794E-05,],
+            [3.51308951039910E-04, 2.29940389124752E-03, -
+                2.87434805392762E-04, -1.27743568740252E-04,],
+            [-1.27748674621162E-04, -2.87434805392762E-04,
+                2.29940612987324E-03, 3.51298739278092E-04,],
+            [6.74217876133794E-05, -1.27743568740252E-04,
+                3.51298739278092E-04, 9.08402685377218E-04,],
+        ])
+        expected_M[6:10, 6:10] = np.array([
+            [9.08402685377218E-04, 3.51295914426545E-04, -
+                1.27743973659913E-04, 6.74205173960884E-05,],
+            [3.51295914426545E-04, 2.29939713428068E-03, -
+                2.87423901320159E-04, -1.27744371069125E-04,],
+            [-1.27743973659913E-04, -2.87423901320159E-04,
+                2.29939694975551E-03, 3.51296709244970E-04,],
+            [6.74205173960884E-05, -1.27744371069125E-04,
+                3.51296709244970E-04, 9.08404105019454E-04,],
+        ])
+        expected_M[9:13, 9:13] = np.array([
+            [9.08404105019454E-04, 3.51296933579600E-04, -
+                1.27744339831523E-04, 6.74206160715568E-05,],
+            [3.51296933579600E-04, 2.29939765744209E-03, -
+                2.87424761749663E-04, -1.27744305532206E-04,],
+            [-1.27744339831523E-04, -2.87424761749663E-04,
+                2.29939767329788E-03, 3.51296864980965E-04,],
+            [6.74206160715568E-05, -1.27744305532206E-04,
+                3.51296864980965E-04, 4.54201991137872E-04,],
+        ])
+        self.assertTrue(np.allclose(
+            expected_M, self.msh._mass_matrix,
+            atol=1e-18, rtol=1e-8,
+        ))
+
+    def test_global_water_flux_vector_0(self):
+        expected_flux_vector = np.zeros(self.msh.num_nodes)
+        self.assertTrue(np.allclose(expected_flux_vector,
+                                    self.msh._water_flux_vector_0,
+                                    atol=1e-18, rtol=1e-8))
+
+    def test_global_water_flux_vector(self):
+        expected_flux_vector = np.array([
+            -6.35637111457762E-07,
+            -3.29138294996811E-06,
+            7.93886781303014E-07,
+            -5.83294154838650E-07,
+            -2.59930476232246E-08,
+            1.17788090321145E-08,
+            -5.17266314056848E-09,
+            1.99505027478770E-09,
+            -9.17895621047170E-10,
+            4.06330855770363E-10,
+            -1.65524749635941E-10,
+            8.60565107688571E-11,
+            -3.22785950809545E-11,
+        ])
+        self.assertTrue(np.allclose(expected_flux_vector,
+                                    self.msh._water_flux_vector,
+                                    atol=1e-18, rtol=1e-8))
+
+    def test_residual_heat_flux_vector(self):
+        expected_Psi = np.array([
+            -1.04397436792134E+01,
+            4.64393784123848E-01,
+            -1.35446062903610E-01,
+            2.81402877433673E-01,
+            -4.30134635057238E-02,
+            1.57189221152992E-02,
+            -3.57520049198517E-02,
+            5.46745117053885E-03,
+            -2.00757972668227E-03,
+            4.61316192514244E-03,
+            -7.26145858587236E-04,
+            3.41715698158700E-04,
+            -1.15329048128561E-03,
+        ])
+        self.assertTrue(np.allclose(
+            expected_Psi, self.msh._residual_heat_flux_vector,
+            atol=1e-9, rtol=1e-8,
+        ))
+
+    def test_temperature_increment_vector(self):
+        expected_dT = np.array([
+            0.000000000000000E+00,
+            4.193569465261340E-01,
+            -9.259369878233970E-02,
+            1.943388175603230E-01,
+            -2.013289549438570E-02,
+            6.222250469512280E-03,
+            -1.551059728053060E-02,
+            1.607035566226830E-03,
+            -4.974027086765300E-04,
+            1.245718209510860E-03,
+            -1.313986202336430E-04,
+            4.986633602600810E-05,
+            -1.975803802350190E-04,
+        ])
+        self.assertTrue(np.allclose(
+            expected_dT, self.msh._delta_temp_vector,
+            atol=1e-10, rtol=1e-8,
+        ))
+
+    def test_residual_water_flux_vector(self):
+        expected_Psi = np.array([
+            1.79944279757781E+00,
+            -1.39638949606890E-03,
+            3.02196599714599E-04,
+            -1.35682072166694E-03,
+            2.07395031378053E-04,
+            -7.57908356972426E-05,
+            1.72382960539653E-04,
+            -2.63620298077366E-05,
+            9.67980782002828E-06,
+            -2.22429626502778E-05,
+            3.50120708384002E-06,
+            -1.64762686298354E-06,
+            5.56074066256944E-06,
+        ])
+        self.assertTrue(np.allclose(
+            expected_Psi, self.msh._residual_water_flux_vector,
+            atol=1e-9, rtol=1e-8,
+        ))
+
+    def test_void_ratio_increment_vector(self):
+        expected_de = np.array([
+            0.000000000000000E+00,
+            -1.396371855507080E-03,
+            3.021901764035320E-04,
+            -1.356808030228990E-03,
+            2.073930914451410E-04,
+            -7.579012676446070E-05,
+            1.723813481028630E-04,
+            -2.636178322242110E-05,
+            9.679717276982760E-06,
+            -2.224275459391780E-05,
+            3.501174334227810E-06,
+            -1.647611451401320E-06,
+            5.560688648479460E-06,
+        ])
+        self.assertTrue(np.allclose(
+            expected_de, self.msh._delta_void_ratio_vector,
+            atol=1e-11, rtol=1e-8,
+        ))
+
+    def test_iteration_variables(self):
+        expected_eps_a = 2.63801493284172E-02
+        self.assertAlmostEqual(self.msh._eps_a, expected_eps_a, delta=1e-10)
+        self.assertEqual(self.msh._iter, 1)
+
+
 if __name__ == "__main__":
     unittest.main()
