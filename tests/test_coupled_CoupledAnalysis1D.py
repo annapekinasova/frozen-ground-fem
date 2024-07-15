@@ -5149,7 +5149,7 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
 
     def test_time_step_set(self):
         self.assertAlmostEqual(self.msh._t0, 0.0)
-        self.assertAlmostEqual(self.msh._t1, 0.0)
+        self.assertAlmostEqual(self.msh._t1, 3.75)
 
     def test_free_indices(self):
         expected_free_vec = [i for i in range(self.msh.num_nodes)][1:]
@@ -5172,7 +5172,7 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
 
     def test_temperature_distribution_nodes(self):
         expected_temp_nodes = np.array([
-            -5.00000000000000,
+            5.00000000000000,
             -5.00000000000000,
             -5.00000000000000,
             -5.00000000000000,
@@ -5194,11 +5194,11 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
 
     def test_temperature_distribution_int_pts(self):
         expected_temp_int_pts = np.array([
-            -5.0000000000000,
-            -5.0000000000000,
-            -5.0000000000000,
-            -5.0000000000000,
-            -5.0000000000000,
+            2.61335047284981000,
+            -3.45235489226239000,
+            -5.62500000000000000,
+            -4.53571663107363000,
+            -4.62527894951383000,
             -5.0000000000000,
             -5.0000000000000,
             -5.0000000000000,
@@ -5223,7 +5223,7 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
 
     def test_temperature_rate_distribution_nodes(self):
         expected_temp_rate_nodes = np.array([
-            0.00000000000E+00,
+            2.66666666667E+00,
             0.00000000000E+00,
             0.00000000000E+00,
             0.00000000000E+00,
@@ -5245,11 +5245,11 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
 
     def test_temperature_rate_distribution_int_pts(self):
         expected_temp_rate_int_pts = np.array([
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
+            2.03022679275995000,
+            0.41270536206336900,
+            -0.16666666666666700,
+            0.12380889838036900,
+            0.09992561346298070,
             0.00000000000000000,
             0.00000000000000000,
             0.00000000000000000,
@@ -5274,11 +5274,11 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
 
     def test_temperature_gradient_distribution(self):
         expected_temp_gradient_int_pts = np.array([
-            0.00000000000,
-            0.00000000000,
-            0.00000000000,
-            0.00000000000,
-            0.00000000000,
+            -1874.13044414512000000,
+            -826.05379629479600000,
+            50.00000000000000000,
+            143.19096189543300000,
+            -243.00672145552500000,
             0.00000000000,
             0.00000000000,
             0.00000000000,
@@ -5303,11 +5303,11 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
 
     def test_deg_sat_water_distribution(self):
         expected_deg_sat_water_int_pts = np.array([
-            0.036518561878915,
-            0.036518561878915,
-            0.036518561878915,
-            0.036518561878915,
-            0.036518561878915,
+            1.000000000000000,
+            0.044646724785561,
+            0.034253111943192,
+            0.038503774143103,
+            0.038097125437071,
             0.036518561878915,
             0.036518561878915,
             0.036518561878915,
@@ -5332,11 +5332,11 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
 
     def test_vol_water_cont_distribution(self):
         expected_vol_water_cont_int_pts = np.array([
-            0.0269836893256734,
-            0.0269836893256734,
-            0.0269836893256734,
-            0.0269836893256734,
-            0.0269836893256734,
+            0.5934443054215600,
+            0.0320752901884927,
+            0.0255649251018659,
+            0.0282263293087495,
+            0.0279717907282567,
             0.0269836893256734,
             0.0269836893256734,
             0.0269836893256734,
@@ -5364,11 +5364,11 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
 
     def test_vol_water_cont_temp_gradient_distribution(self):
         expected_vol_water_cont_temp_gradient_int_pts = np.array([
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
-            0.00000000000000000,
+            0.07440359118051350,
+            0.00328990208243689,
+            0.00227002275809187,
+            0.00267646886846198,
+            0.00263689857108717,
             0.00000000000000000,
             0.00000000000000000,
             0.00000000000000000,
@@ -5396,11 +5396,11 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
 
     def test_thrm_cond_distribution(self):
         expected_thrm_cond_int_pts = np.array([
-            2.10850030207482,
-            2.10850030207482,
-            2.10850030207482,
-            2.10850030207482,
-            2.10850030207482,
+            0.96148102294413,
+            2.09144104991107,
+            2.11348332448606,
+            2.10422752104159,
+            2.10509626519628,
             2.10850030207482,
             2.10850030207482,
             2.10850030207482,
@@ -5427,11 +5427,11 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
 
     def test_vol_heat_cap_distribution(self):
         expected_vol_heat_cap_int_pts = np.array([
-            2.04587632179179E+06,
-            2.04587632179179E+06,
-            2.04587632179179E+06,
-            2.04587632179179E+06,
-            2.04587632179179E+06,
+            3.41869702035229E+06,
+            2.06571964398055E+06,
+            2.03966461690623E+06,
+            2.05104242826674E+06,
+            2.05000353630872E+06,
             2.04587632179179E+06,
             2.04587632179179E+06,
             2.04587632179179E+06,
@@ -5457,8 +5457,23 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
                                     atol=1e-30))
 
     def test_void_ratio_distribution_nodes(self):
-        expected_void_ratio_vector = np.array([
+        expected_void_ratio_vector_0 = np.array([
             2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+            2.83000000000000,
+        ])
+        expected_void_ratio_vector = np.array([
+            1.03011911113263,
             2.83000000000000,
             2.83000000000000,
             2.83000000000000,
@@ -5479,16 +5494,38 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
                                     actual_void_ratio_nodes))
         self.assertTrue(np.allclose(expected_void_ratio_vector,
                                     self.msh._void_ratio_vector))
-        self.assertTrue(np.allclose(expected_void_ratio_vector,
+        self.assertTrue(np.allclose(expected_void_ratio_vector_0,
                                     self.msh._void_ratio_vector_0))
 
     def test_void_ratio_distribution_int_pts(self):
+        expected_void_ratio_0_int_pts = np.array([
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+            2.8300000000000,
+        ])
         expected_void_ratio_int_pts = np.array([
-            2.8300000000000,
-            2.8300000000000,
-            2.8300000000000,
-            2.8300000000000,
-            2.8300000000000,
+            1.45968759836683000,
+            2.55144231478341000,
+            2.94249255555421000,
+            2.74643452372505000,
+            2.76255467425737000,
             2.8300000000000,
             2.8300000000000,
             2.8300000000000,
@@ -5512,13 +5549,13 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
             ip.void_ratio_0 for e in self.msh.elements for ip in e.int_pts
         ])
         self.assertTrue(np.allclose(actual_void_ratio_0_int_pts,
-                                    expected_void_ratio_int_pts))
+                                    expected_void_ratio_0_int_pts))
         self.assertTrue(np.allclose(actual_void_ratio_int_pts,
                                     expected_void_ratio_int_pts))
 
     def test_hyd_cond_distribution(self):
         expected_hyd_cond_int_pts = np.array([
-            0.00000000000000E+00,
+            1.47827704519679E-09,
             0.00000000000000E+00,
             0.00000000000000E+00,
             0.00000000000000E+00,
@@ -5550,7 +5587,7 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
 
     def test_hyd_cond_grad_distribution(self):
         expected_hyd_cond_grad_int_pts = np.array([
-            0.00000000000000E+00,
+            1.11601924183129E-08,
             0.00000000000000E+00,
             0.00000000000000E+00,
             0.00000000000000E+00,
@@ -5583,19 +5620,19 @@ class TestInitializeTimeStepCubic(unittest.TestCase):
 
     def test_tot_stress_distribution_nodes(self):
         expected_sig_nodes = np.array([
-            1.5000000000000E+04,
-            1.5110663486802E+04,
-            1.5221326973605E+04,
-            1.5331990460407E+04,
-            1.5442653947209E+04,
-            1.5553317434012E+04,
-            1.5663980920814E+04,
-            1.5774644407616E+04,
-            1.5885307894418E+04,
-            1.5995971381221E+04,
-            1.6106634868023E+04,
-            1.6217298354825E+04,
-            1.6327961841628E+04,
+            1.5014406683681E+04,
+            1.5113450824417E+04,
+            1.5225567580442E+04,
+            1.5334778500411E+04,
+            1.5445441987213E+04,
+            1.5556105474015E+04,
+            1.5666768960818E+04,
+            1.5777432447620E+04,
+            1.5888095934422E+04,
+            1.5998759421224E+04,
+            1.6109422908027E+04,
+            1.6220086394829E+04,
+            1.6330749881631E+04,
         ])
         actual_sig_nodes = np.array([
             nd.tot_stress
