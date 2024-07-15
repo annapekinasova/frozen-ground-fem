@@ -1544,6 +1544,32 @@ class IntegrationPoint1D(Point1D):
     def exc_pore_pressure(self, value: float) -> None:
         self._exc_pore_pressure = float(value)
 
+    @property
+    def z_def(self) -> float:
+        """Deformed coordinate of the integration point.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the deformed coordinate
+            of the :c:`IntegrationPoint1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+        """
+        return self._z_def
+
+    @z_def.setter
+    def z_def(self, value: float) -> None:
+        value = float(value)
+        self._z_def = value
+
 
 class Element1D:
     """Class for organizing element level information.
