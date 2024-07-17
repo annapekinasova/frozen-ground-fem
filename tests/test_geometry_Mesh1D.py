@@ -92,10 +92,12 @@ class TestMesh1DInvalid(unittest.TestCase):
         with self.assertRaises(ValueError):
             msh.add_boundary(Boundary1D((nd,)))
         with self.assertRaises(ValueError):
-            msh.add_boundary(Boundary1D(
-                (msh.nodes[0],),
-                (ip,),
-            ))
+            msh.add_boundary(
+                Boundary1D(
+                    (msh.nodes[0],),
+                    (ip,),
+                )
+            )
 
     def test_remove_boundary(self):
         msh = Mesh1D((-8, 100), generate=True)
@@ -256,7 +258,7 @@ class TestMesh1DCubic(unittest.TestCase):
         self.assertEqual(msh.num_nodes, 325)
         self.assertEqual(msh.num_elements, 108)
         self.assertEqual(msh.num_boundaries, 0)
-        self.assertAlmostEqual(msh.nodes[1].z - msh.nodes[0].z, 1.0/3.0)
+        self.assertAlmostEqual(msh.nodes[1].z - msh.nodes[0].z, 1.0 / 3.0)
 
     def test_generate_mesh(self):
         msh = Mesh1D()

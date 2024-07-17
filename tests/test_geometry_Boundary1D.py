@@ -25,8 +25,7 @@ class TestBoundary1DInvalid(unittest.TestCase):
     def test_initialize_too_many_int_pts(self):
         with self.assertRaises(ValueError):
             nodes = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(1))
-            int_pts = tuple(IntegrationPoint1D(2.0 * k + 1.0)
-                            for k in range(2))
+            int_pts = tuple(IntegrationPoint1D(2.0 * k + 1.0) for k in range(2))
             Boundary1D(nodes, int_pts)
 
     def test_initialize_invalid_int_pts_integer(self):

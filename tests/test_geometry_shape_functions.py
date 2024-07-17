@@ -103,8 +103,7 @@ class TestGradientMatrixLinear(unittest.TestCase):
 
     def test_gradient_matrix_linear_valid_str(self):
         expected = np.array([[-0.5, 0.5]])
-        self.assertTrue(np.allclose(
-            gradient_matrix_linear("8.e-1", "2.e0"), expected))
+        self.assertTrue(np.allclose(gradient_matrix_linear("8.e-1", "2.e0"), expected))
 
 
 class TestShapeMatrixCubicInvalid(unittest.TestCase):
@@ -140,16 +139,20 @@ class TestShapeMatrixCubic(unittest.TestCase):
         self.N = shape_matrix_cubic(0.8)
         self.T_1D = np.array([5.0, 10.0, 12.0, 13.0])
         self.T_column = np.reshape(self.T_1D, (4, 1))
-        self.fct = np.array([0.8, 0.8 - 1./3., 0.8 - 2./3., -0.2])
+        self.fct = np.array([0.8, 0.8 - 1.0 / 3.0, 0.8 - 2.0 / 3.0, -0.2])
         self.cef = np.array([-4.5, 13.5, -13.5, 4.5])
 
     def test_shape_matrix_cubic_valid_float(self):
-        expected = np.array([[
-            self.cef[0] * self.fct[1] * self.fct[2] * self.fct[3],
-            self.cef[1] * self.fct[0] * self.fct[2] * self.fct[3],
-            self.cef[2] * self.fct[0] * self.fct[1] * self.fct[3],
-            self.cef[3] * self.fct[0] * self.fct[1] * self.fct[2],
-        ]])
+        expected = np.array(
+            [
+                [
+                    self.cef[0] * self.fct[1] * self.fct[2] * self.fct[3],
+                    self.cef[1] * self.fct[0] * self.fct[2] * self.fct[3],
+                    self.cef[2] * self.fct[0] * self.fct[1] * self.fct[3],
+                    self.cef[3] * self.fct[0] * self.fct[1] * self.fct[2],
+                ]
+            ]
+        )
         self.assertTrue(np.allclose(self.N, expected))
 
     def test_shape_matrix_cubic_shape(self):
@@ -167,22 +170,28 @@ class TestShapeMatrixCubic(unittest.TestCase):
         self.assertAlmostEqual(expected, actual, delta=1.0e-8)
 
     def test_shape_matrix_cubic_multiply_transpose(self):
-        expected = np.array([
-            [0.003136, -0.016128, 0.056448, 0.012544],
-            [-0.016128, 0.082944, -0.290304, -0.064512],
-            [0.056448, -0.290304, 1.016064, 0.225792],
-            [0.012544, -0.064512, 0.225792, 0.050176],
-        ])
+        expected = np.array(
+            [
+                [0.003136, -0.016128, 0.056448, 0.012544],
+                [-0.016128, 0.082944, -0.290304, -0.064512],
+                [0.056448, -0.290304, 1.016064, 0.225792],
+                [0.012544, -0.064512, 0.225792, 0.050176],
+            ]
+        )
         actual = self.N.T @ self.N
         self.assertTrue(np.allclose(expected, actual))
 
     def test_shape_matrix_cubic_valid_str(self):
-        expected = np.array([[
-            self.cef[0] * self.fct[1] * self.fct[2] * self.fct[3],
-            self.cef[1] * self.fct[0] * self.fct[2] * self.fct[3],
-            self.cef[2] * self.fct[0] * self.fct[1] * self.fct[3],
-            self.cef[3] * self.fct[0] * self.fct[1] * self.fct[2],
-        ]])
+        expected = np.array(
+            [
+                [
+                    self.cef[0] * self.fct[1] * self.fct[2] * self.fct[3],
+                    self.cef[1] * self.fct[0] * self.fct[2] * self.fct[3],
+                    self.cef[2] * self.fct[0] * self.fct[1] * self.fct[3],
+                    self.cef[3] * self.fct[0] * self.fct[1] * self.fct[2],
+                ]
+            ]
+        )
         self.assertTrue(np.allclose(shape_matrix_cubic("8.e-1"), expected))
 
 
@@ -191,24 +200,38 @@ class TestGradientMatrixCubic(unittest.TestCase):
         self.B = gradient_matrix_cubic(0.8, 2.0)
         self.T_1D = np.array([5.0, 10.0, 12.0, 13.0])
         self.T_column = np.reshape(self.T_1D, (4, 1))
-        self.fct = np.array([0.8, 0.8 - 1./3., 0.8 - 2./3., -0.2])
+        self.fct = np.array([0.8, 0.8 - 1.0 / 3.0, 0.8 - 2.0 / 3.0, -0.2])
         self.cef = np.array([-4.5, 13.5, -13.5, 4.5])
 
     def test_gradient_matrix_cubic_valid_float(self):
-        expected = 0.5 * np.array([
-            self.cef[0] * (self.fct[2]*self.fct[3]
-                           + self.fct[1]*self.fct[3]
-                           + self.fct[1]*self.fct[2]),
-            self.cef[1] * (self.fct[0]*self.fct[2]
-                           + self.fct[0]*self.fct[3]
-                           + self.fct[2]*self.fct[3]),
-            self.cef[2] * (self.fct[0]*self.fct[1]
-                           + self.fct[1]*self.fct[3]
-                           + self.fct[0]*self.fct[3]),
-            self.cef[3] * (self.fct[0]*self.fct[1]
-                           + self.fct[0]*self.fct[2]
-                           + self.fct[1]*self.fct[2]),
-        ])
+        expected = 0.5 * np.array(
+            [
+                self.cef[0]
+                * (
+                    self.fct[2] * self.fct[3]
+                    + self.fct[1] * self.fct[3]
+                    + self.fct[1] * self.fct[2]
+                ),
+                self.cef[1]
+                * (
+                    self.fct[0] * self.fct[2]
+                    + self.fct[0] * self.fct[3]
+                    + self.fct[2] * self.fct[3]
+                ),
+                self.cef[2]
+                * (
+                    self.fct[0] * self.fct[1]
+                    + self.fct[1] * self.fct[3]
+                    + self.fct[0] * self.fct[3]
+                ),
+                self.cef[3]
+                * (
+                    self.fct[0] * self.fct[1]
+                    + self.fct[0] * self.fct[2]
+                    + self.fct[1] * self.fct[2]
+                ),
+            ]
+        )
         self.assertTrue(np.allclose(self.B, expected))
 
     def test_gradient_matrix_cubic_shape(self):
@@ -226,32 +249,47 @@ class TestGradientMatrixCubic(unittest.TestCase):
         self.assertAlmostEqual(expected, actual, delta=1.0e-8)
 
     def test_gradient_matrix_cubic_multiply_transpose(self):
-        expected = np.array([
-            [0.0169, -0.0702, -0.1053, 0.1586],
-            [-0.0702, 0.2916, 0.4374, -0.6588],
-            [-0.1053, 0.4374, 0.6561, -0.9882],
-            [0.1586, -0.6588, -0.9882, 1.4884],
-        ])
+        expected = np.array(
+            [
+                [0.0169, -0.0702, -0.1053, 0.1586],
+                [-0.0702, 0.2916, 0.4374, -0.6588],
+                [-0.1053, 0.4374, 0.6561, -0.9882],
+                [0.1586, -0.6588, -0.9882, 1.4884],
+            ]
+        )
         actual = self.B.T @ self.B
         self.assertTrue(np.allclose(expected, actual))
 
     def test_gradient_matrix_cubic_valid_str(self):
-        expected = 0.5 * np.array([
-            self.cef[0] * (self.fct[2]*self.fct[3]
-                           + self.fct[1]*self.fct[3]
-                           + self.fct[1]*self.fct[2]),
-            self.cef[1] * (self.fct[0]*self.fct[2]
-                           + self.fct[0]*self.fct[3]
-                           + self.fct[2]*self.fct[3]),
-            self.cef[2] * (self.fct[0]*self.fct[1]
-                           + self.fct[1]*self.fct[3]
-                           + self.fct[0]*self.fct[3]),
-            self.cef[3] * (self.fct[0]*self.fct[1]
-                           + self.fct[0]*self.fct[2]
-                           + self.fct[1]*self.fct[2]),
-        ])
-        self.assertTrue(np.allclose(
-            gradient_matrix_cubic("8.e-1", "2.e0"), expected))
+        expected = 0.5 * np.array(
+            [
+                self.cef[0]
+                * (
+                    self.fct[2] * self.fct[3]
+                    + self.fct[1] * self.fct[3]
+                    + self.fct[1] * self.fct[2]
+                ),
+                self.cef[1]
+                * (
+                    self.fct[0] * self.fct[2]
+                    + self.fct[0] * self.fct[3]
+                    + self.fct[2] * self.fct[3]
+                ),
+                self.cef[2]
+                * (
+                    self.fct[0] * self.fct[1]
+                    + self.fct[1] * self.fct[3]
+                    + self.fct[0] * self.fct[3]
+                ),
+                self.cef[3]
+                * (
+                    self.fct[0] * self.fct[1]
+                    + self.fct[0] * self.fct[2]
+                    + self.fct[1] * self.fct[2]
+                ),
+            ]
+        )
+        self.assertTrue(np.allclose(gradient_matrix_cubic("8.e-1", "2.e0"), expected))
 
 
 if __name__ == "__main__":

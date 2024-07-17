@@ -59,9 +59,9 @@ class TestNode1DDefaults(unittest.TestCase):
 
 class TestNode1DInitializers(unittest.TestCase):
     def setUp(self):
-        self.p = Node1D(0, 1.0, temp=-5.0,
-                        void_ratio=0.3, void_ratio_0=0.9,
-                        temp_rate=1.5)
+        self.p = Node1D(
+            0, 1.0, temp=-5.0, void_ratio=0.3, void_ratio_0=0.9, temp_rate=1.5
+        )
 
     def test_index_value(self):
         self.assertEqual(self.p.index, 0)

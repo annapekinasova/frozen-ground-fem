@@ -483,7 +483,7 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         self.p.deg_sat_water = 0.2
         self.assertEqual(self.p.deg_sat_water, 0.2)
         ee = self.p.void_ratio
-        expected_vol_water_cont = (ee / (1+ee)) * 0.2
+        expected_vol_water_cont = (ee / (1 + ee)) * 0.2
         self.assertAlmostEqual(self.p.vol_water_cont, expected_vol_water_cont)
 
     def test_set_deg_sat_water_valid_float_edge_0(self):
@@ -496,7 +496,7 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         self.p.deg_sat_water = 1.0
         self.assertEqual(self.p.deg_sat_water, 1.0)
         ee = self.p.void_ratio
-        expected_vol_water_cont = (ee / (1+ee)) * 1.0
+        expected_vol_water_cont = (ee / (1 + ee)) * 1.0
         self.assertAlmostEqual(self.p.vol_water_cont, expected_vol_water_cont)
 
     def test_set_deg_sat_water_invalid_float_negative(self):
@@ -511,7 +511,7 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         self.p.deg_sat_water = 0
         self.assertEqual(self.p.deg_sat_water, 0.0)
         ee = self.p.void_ratio
-        expected_vol_water_cont = (ee / (1+ee)) * 0.0
+        expected_vol_water_cont = (ee / (1 + ee)) * 0.0
         self.assertAlmostEqual(self.p.vol_water_cont, expected_vol_water_cont)
 
     def test_set_deg_sat_water_valid_int_type(self):
@@ -522,7 +522,7 @@ class TestIntegrationPoint1DSetters(unittest.TestCase):
         self.p.deg_sat_water = "1.e-1"
         self.assertEqual(self.p.deg_sat_water, 1.0e-1)
         ee = self.p.void_ratio
-        expected_vol_water_cont = (ee / (1+ee)) * 0.1
+        expected_vol_water_cont = (ee / (1 + ee)) * 0.1
         self.assertAlmostEqual(self.p.vol_water_cont, expected_vol_water_cont)
 
     def test_set_deg_sat_water_invalid_str(self):

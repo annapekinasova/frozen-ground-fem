@@ -17,8 +17,9 @@ class TestConsolidationBoundary1DDefaults(unittest.TestCase):
         self.consol_bnd = ConsolidationBoundary1D(self.nodes)
 
     def test_default_bnd_type(self):
-        self.assertEqual(self.consol_bnd.bnd_type,
-                         ConsolidationBoundary1D.BoundaryType.water_flux)
+        self.assertEqual(
+            self.consol_bnd.bnd_type, ConsolidationBoundary1D.BoundaryType.water_flux
+        )
 
     def test_default_bnd_value(self):
         self.assertAlmostEqual(self.consol_bnd.bnd_value, 0.0)
@@ -47,13 +48,13 @@ class TestConsolidationBoundary1DInvalid(unittest.TestCase):
 
     def test_initialize_too_few_nodes(self):
         with self.assertRaises(ValueError):
-            ConsolidationBoundary1D((),)
+            ConsolidationBoundary1D(
+                (),
+            )
 
     def test_initialize_too_many_nodes(self):
         with self.assertRaises(ValueError):
-            ConsolidationBoundary1D(tuple([
-                Node1D(k, 2.0*k + 1.0) for k in range(2)
-            ]))
+            ConsolidationBoundary1D(tuple([Node1D(k, 2.0 * k + 1.0) for k in range(2)]))
 
     def test_initialize_invalid_nodes(self):
         with self.assertRaises(TypeError):
@@ -108,12 +109,9 @@ class TestConsolidationBoundary1DBasicSetters(unittest.TestCase):
     def test_assign_bnd_type_valid(self):
         bt = ConsolidationBoundary1D.BoundaryType
         self.consol_bnd.bnd_type = bt.water_flux
-        self.assertEqual(
-            self.consol_bnd.bnd_type, bt.water_flux
-        )
+        self.assertEqual(self.consol_bnd.bnd_type, bt.water_flux)
         self.consol_bnd.bnd_type = bt.void_ratio
-        self.assertEqual(self.consol_bnd.bnd_type,
-                         bt.void_ratio)
+        self.assertEqual(self.consol_bnd.bnd_type, bt.void_ratio)
 
     def test_assign_bnd_value_valid(self):
         self.consol_bnd.bnd_value = 1.0
@@ -161,10 +159,13 @@ class TestConsolidationBoundary1DBndFunction(unittest.TestCase):
         self.consol_bnd = ConsolidationBoundary1D(self.nodes)
         per = 365.0 * 86400.0
         om = 2.0 * np.pi / per
-        t0 = (7.0/12.0) * per
+        t0 = (7.0 / 12.0) * per
         eavg = 0.5
         eamp = 0.1
-        def f(t): return eavg + eamp * np.cos(om * (t - t0))
+
+        def f(t):
+            return eavg + eamp * np.cos(om * (t - t0))
+
         self.f = f
         self.consol_bnd.bnd_function = f
 
@@ -195,8 +196,9 @@ class TestConsolidationBoundary1DBndFunctionLambda(unittest.TestCase):
         def bfunc(per, t0, eavg, eamp):
             om = 2.0 * np.pi / per
             return lambda t: eavg + eamp * np.cos(om * (t - t0))
+
         per = 365.0 * 86400.0
-        t0 = (7.0/12.0) * per
+        t0 = (7.0 / 12.0) * per
         eavg = 0.5
         eamp = 0.1
         self.f = bfunc(per, t0, eavg, eamp)
@@ -233,11 +235,10 @@ class TestConsolidationBoundary1DBndFunctionClass(unittest.TestCase):
                 self.om = 2.0 * np.pi / per
 
             def __call__(self, t):
-                return (self.eavg
-                        + self.eamp * np.cos(self.om * (t - self.t0)))
+                return self.eavg + self.eamp * np.cos(self.om * (t - self.t0))
 
         per = 365.0 * 86400.0
-        t0 = (7.0/12.0) * per
+        t0 = (7.0 / 12.0) * per
         eavg = 0.5
         eamp = 0.1
         self.f = BFunc(per, t0, eavg, eamp)

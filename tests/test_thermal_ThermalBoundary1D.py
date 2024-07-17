@@ -17,8 +17,7 @@ class TestThermalBoundary1DDefaults(unittest.TestCase):
         self.thrm_bnd = ThermalBoundary1D(self.nodes)
 
     def test_default_bnd_type(self):
-        self.assertEqual(self.thrm_bnd.bnd_type,
-                         ThermalBoundary1D.BoundaryType.temp)
+        self.assertEqual(self.thrm_bnd.bnd_type, ThermalBoundary1D.BoundaryType.temp)
 
     def test_default_bnd_value(self):
         self.assertAlmostEqual(self.thrm_bnd.bnd_value, 0.0)
@@ -47,13 +46,13 @@ class TestThermalBoundary1DInvalid(unittest.TestCase):
 
     def test_initialize_too_few_nodes(self):
         with self.assertRaises(ValueError):
-            ThermalBoundary1D((),)
+            ThermalBoundary1D(
+                (),
+            )
 
     def test_initialize_too_many_nodes(self):
         with self.assertRaises(ValueError):
-            ThermalBoundary1D(tuple([
-                Node1D(k, 2.0*k + 1.0) for k in range(2)
-            ]))
+            ThermalBoundary1D(tuple([Node1D(k, 2.0 * k + 1.0) for k in range(2)]))
 
     def test_initialize_invalid_nodes(self):
         with self.assertRaises(TypeError):
@@ -110,8 +109,7 @@ class TestThermalBoundary1DBasicSetters(unittest.TestCase):
             self.thrm_bnd.bnd_type, ThermalBoundary1D.BoundaryType.heat_flux
         )
         self.thrm_bnd.bnd_type = ThermalBoundary1D.BoundaryType.temp
-        self.assertEqual(self.thrm_bnd.bnd_type,
-                         ThermalBoundary1D.BoundaryType.temp)
+        self.assertEqual(self.thrm_bnd.bnd_type, ThermalBoundary1D.BoundaryType.temp)
         self.thrm_bnd.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
         self.assertEqual(
             self.thrm_bnd.bnd_type, ThermalBoundary1D.BoundaryType.temp_grad
@@ -166,10 +164,13 @@ class TestThermalBoundary1DBndFunction(unittest.TestCase):
         self.thrm_bnd = ThermalBoundary1D(self.nodes)
         per = 365.0 * 86400.0
         om = 2.0 * np.pi / per
-        t0 = (7.0/12.0) * per
+        t0 = (7.0 / 12.0) * per
         Tavg = 5.0
         Tamp = 20.0
-        def f(t): return Tavg + Tamp * np.cos(om * (t - t0))
+
+        def f(t):
+            return Tavg + Tamp * np.cos(om * (t - t0))
+
         self.f = f
         self.thrm_bnd.bnd_function = f
 
@@ -200,8 +201,9 @@ class TestThermalBoundary1DBndFunctionLambda(unittest.TestCase):
         def bfunc(per, t0, Tavg, Tamp):
             om = 2.0 * np.pi / per
             return lambda t: Tavg + Tamp * np.cos(om * (t - t0))
+
         per = 365.0 * 86400.0
-        t0 = (7.0/12.0) * per
+        t0 = (7.0 / 12.0) * per
         Tavg = 5.0
         Tamp = 20.0
         self.f = bfunc(per, t0, Tavg, Tamp)
@@ -238,11 +240,10 @@ class TestThermalBoundary1DBndFunctionClass(unittest.TestCase):
                 self.om = 2.0 * np.pi / per
 
             def __call__(self, t):
-                return (self.Tavg
-                        + self.Tamp * np.cos(self.om * (t - self.t0)))
+                return self.Tavg + self.Tamp * np.cos(self.om * (t - self.t0))
 
         per = 365.0 * 86400.0
-        t0 = (7.0/12.0) * per
+        t0 = (7.0 / 12.0) * per
         Tavg = 5.0
         Tamp = 20.0
         self.f = BFunc(per, t0, Tavg, Tamp)

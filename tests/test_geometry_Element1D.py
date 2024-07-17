@@ -109,35 +109,41 @@ class TestElement1DCubic(unittest.TestCase):
         self.assertEqual(self.e.jacobian, 6.0)
 
     def test_int_pt_local_coords(self):
-        expected = np.array([
-            0.046910077030668,
-            0.230765344947159,
-            0.500000000000000,
-            0.769234655052842,
-            0.953089922969332,
-        ])
+        expected = np.array(
+            [
+                0.046910077030668,
+                0.230765344947159,
+                0.500000000000000,
+                0.769234655052842,
+                0.953089922969332,
+            ]
+        )
         actual = np.array([ip.local_coord for ip in self.e.int_pts])
         self.assertTrue(np.allclose(actual, expected))
 
     def test_int_pt_weights(self):
-        expected = np.array([
-            0.118463442528095,
-            0.239314335249683,
-            0.284444444444444,
-            0.239314335249683,
-            0.118463442528095,
-        ])
+        expected = np.array(
+            [
+                0.118463442528095,
+                0.239314335249683,
+                0.284444444444444,
+                0.239314335249683,
+                0.118463442528095,
+            ]
+        )
         actual = np.array([ip.weight for ip in self.e.int_pts])
         self.assertTrue(np.allclose(actual, expected))
 
     def test_int_pt_global_coords(self):
-        expected = np.array([
-            1.281460462184010,
-            2.384592069682950,
-            4.000000000000000,
-            5.615407930317050,
-            6.718539537815990,
-        ])
+        expected = np.array(
+            [
+                1.281460462184010,
+                2.384592069682950,
+                4.000000000000000,
+                5.615407930317050,
+                6.718539537815990,
+            ]
+        )
         actual = np.array([ip.z for ip in self.e.int_pts])
         self.assertTrue(np.allclose(actual, expected))
 

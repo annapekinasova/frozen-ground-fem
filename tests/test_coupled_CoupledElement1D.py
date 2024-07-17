@@ -32,8 +32,7 @@ class TestCoupledElement1DLinear(unittest.TestCase):
             self.assertIs(nd, e_nd)
 
     def test_heat_flow_matrix_uninitialized(self):
-        self.assertTrue(np.allclose(
-            self.coup_e.heat_flow_matrix, np.zeros((2, 2))))
+        self.assertTrue(np.allclose(self.coup_e.heat_flow_matrix, np.zeros((2, 2))))
 
     def test_heat_flow_matrix_conduction_only(self):
         m = Material(thrm_cond_solids=3.0)
@@ -45,9 +44,7 @@ class TestCoupledElement1DLinear(unittest.TestCase):
         e_fact = 1.30 / 1.35
         lam = 2.0875447196636
         jac = 2.0
-        expected = (
-            lam / jac * np.array([[1.0, -1.0], [-1.0, 1.0]]) * e_fact ** 2
-        )
+        expected = lam / jac * np.array([[1.0, -1.0], [-1.0, 1.0]]) * e_fact**2
         self.assertTrue(np.allclose(self.coup_e.heat_flow_matrix, expected))
 
     def test_heat_flux_vector_advection(self):
@@ -62,15 +59,11 @@ class TestCoupledElement1DLinear(unittest.TestCase):
         qw = -1.5e-8
         dTdZ = 0.5
         jac = 2.0
-        expected = (
-            - qw * Cw * dTdZ * e_fact * np.array([0.5, 0.5]) * jac
-        )
+        expected = -qw * Cw * dTdZ * e_fact * np.array([0.5, 0.5]) * jac
         self.assertTrue(np.allclose(self.coup_e.heat_flux_vector, expected))
 
     def test_heat_storage_matrix_uninitialized(self):
-        self.assertTrue(
-            np.allclose(self.coup_e.heat_storage_matrix, np.zeros((2, 2)))
-        )
+        self.assertTrue(np.allclose(self.coup_e.heat_storage_matrix, np.zeros((2, 2))))
 
     def test_heat_storage_matrix_heat_capacity_only(self):
         m = Material(spec_grav_solids=2.65, spec_heat_cap_solids=7.41e2)
@@ -84,11 +77,9 @@ class TestCoupledElement1DLinear(unittest.TestCase):
         lat_heat = 0.0
         jac = 2.0
         expected = (
-            (heat_cap + lat_heat) * jac * np.array([[2.0, 1.0], [1.0, 2.0]])
-            / 6.0
+            (heat_cap + lat_heat) * jac * np.array([[2.0, 1.0], [1.0, 2.0]]) / 6.0
         )
-        self.assertTrue(np.allclose(
-            self.coup_e.heat_storage_matrix, expected))
+        self.assertTrue(np.allclose(self.coup_e.heat_storage_matrix, expected))
 
     def test_heat_storage_matrix_heat_capacity_and_latent_heat(self):
         m = Material(spec_grav_solids=2.65, spec_heat_cap_solids=7.41e2)
@@ -102,15 +93,12 @@ class TestCoupledElement1DLinear(unittest.TestCase):
         lat_heat = 7.588262500e6
         jac = 2.0
         expected = (
-            (heat_cap + lat_heat) * jac * np.array([[2.0, 1.0], [1.0, 2.0]])
-            / 6.0
+            (heat_cap + lat_heat) * jac * np.array([[2.0, 1.0], [1.0, 2.0]]) / 6.0
         )
-        self.assertTrue(np.allclose(
-            self.coup_e.heat_storage_matrix, expected))
+        self.assertTrue(np.allclose(self.coup_e.heat_storage_matrix, expected))
 
     def test_stiffness_matrix_uninitialized(self):
-        self.assertTrue(np.allclose(
-            self.coup_e.stiffness_matrix, np.zeros((2, 2))))
+        self.assertTrue(np.allclose(self.coup_e.stiffness_matrix, np.zeros((2, 2))))
 
     def test_stiffness_matrix_full(self):
         m = Material(
@@ -153,8 +141,7 @@ class TestCoupledElement1DLinear(unittest.TestCase):
         dsig_de = -sig_p * np.log(10) / Ccu
         e_ratio = (1.0 + e0) / (1.0 + e)
         coef_0 = k * e_ratio * dsig_de / gam_w / jac
-        coef_1 = (dk_de * (Gs - 1.0) / (1.0 + e)
-                  - k * (Gs - 1.0) / (1.0 + e) ** 2)
+        coef_1 = dk_de * (Gs - 1.0) / (1.0 + e) - k * (Gs - 1.0) / (1.0 + e) ** 2
         stiff_0 = coef_0 * np.array([[1.0, -1.0], [-1.0, 1.0]])
         stiff_1 = coef_1 * np.array([[-0.5, 0.5], [-0.5, 0.5]])
         expected = stiff_0 + stiff_1
@@ -163,10 +150,7 @@ class TestCoupledElement1DLinear(unittest.TestCase):
     def test_mass_matrix_uninitialized(self):
         jac = 2.0
         expected = jac / 6.0 * np.array([[2.0, 1.0], [1.0, 2.0]])
-        self.assertTrue(
-            np.allclose(self.coup_e.mass_matrix,
-                        expected)
-        )
+        self.assertTrue(np.allclose(self.coup_e.mass_matrix, expected))
 
     def test_mass_matrix_full(self):
         for ip in self.coup_e.int_pts:
@@ -192,48 +176,28 @@ class TestCoupledElement1DLinear(unittest.TestCase):
         self.coup_e.update_integration_points_secondary()
         self.assertAlmostEqual(self.coup_e.int_pts[0].temp, -0.366025403784439)
         self.assertAlmostEqual(self.coup_e.int_pts[1].temp, 1.366025403784440)
-        self.assertAlmostEqual(
-            self.coup_e.int_pts[0].temp_rate, 0.242264973081037)
-        self.assertAlmostEqual(
-            self.coup_e.int_pts[1].temp_rate, 0.357735026918963)
+        self.assertAlmostEqual(self.coup_e.int_pts[0].temp_rate, 0.242264973081037)
+        self.assertAlmostEqual(self.coup_e.int_pts[1].temp_rate, 0.357735026918963)
         self.assertAlmostEqual(self.coup_e.int_pts[0].temp_gradient, 1.5)
         self.assertAlmostEqual(self.coup_e.int_pts[1].temp_gradient, 1.5)
         self.assertAlmostEqual(self.coup_e.int_pts[0].deg_sat_water, 0.0)
         self.assertAlmostEqual(self.coup_e.int_pts[1].deg_sat_water, 1.0)
-        self.assertAlmostEqual(
-            self.coup_e.int_pts[0].deg_sat_water_temp_gradient, 0.0)
-        self.assertAlmostEqual(
-            self.coup_e.int_pts[1].deg_sat_water_temp_gradient, 0.0)
-        self.assertAlmostEqual(
-            self.coup_e.int_pts[0].water_flux_rate, 0.0
-        )
-        self.assertAlmostEqual(
-            self.coup_e.int_pts[1].water_flux_rate, 0.0
-        )
-        self.assertAlmostEqual(self.coup_e.int_pts[0].void_ratio,
-                               0.728867513459481)
-        self.assertAlmostEqual(self.coup_e.int_pts[1].void_ratio,
-                               0.671132486540519)
-        self.assertAlmostEqual(self.coup_e.int_pts[0].hyd_cond,
-                               0.0)
-        self.assertAlmostEqual(self.coup_e.int_pts[1].hyd_cond,
-                               0.0)
-        self.assertAlmostEqual(self.coup_e.int_pts[0].hyd_cond_gradient,
-                               0.0)
-        self.assertAlmostEqual(self.coup_e.int_pts[1].hyd_cond_gradient,
-                               0.0)
-        self.assertAlmostEqual(self.coup_e.int_pts[0].eff_stress,
-                               0.0)
-        self.assertAlmostEqual(self.coup_e.int_pts[1].eff_stress,
-                               0.0)
-        self.assertAlmostEqual(self.coup_e.int_pts[0].eff_stress_gradient,
-                               0.0)
-        self.assertAlmostEqual(self.coup_e.int_pts[1].eff_stress_gradient,
-                               0.0)
-        self.assertAlmostEqual(self.coup_e.int_pts[0].pre_consol_stress,
-                               0.0)
-        self.assertAlmostEqual(self.coup_e.int_pts[1].pre_consol_stress,
-                               0.0)
+        self.assertAlmostEqual(self.coup_e.int_pts[0].deg_sat_water_temp_gradient, 0.0)
+        self.assertAlmostEqual(self.coup_e.int_pts[1].deg_sat_water_temp_gradient, 0.0)
+        self.assertAlmostEqual(self.coup_e.int_pts[0].water_flux_rate, 0.0)
+        self.assertAlmostEqual(self.coup_e.int_pts[1].water_flux_rate, 0.0)
+        self.assertAlmostEqual(self.coup_e.int_pts[0].void_ratio, 0.728867513459481)
+        self.assertAlmostEqual(self.coup_e.int_pts[1].void_ratio, 0.671132486540519)
+        self.assertAlmostEqual(self.coup_e.int_pts[0].hyd_cond, 0.0)
+        self.assertAlmostEqual(self.coup_e.int_pts[1].hyd_cond, 0.0)
+        self.assertAlmostEqual(self.coup_e.int_pts[0].hyd_cond_gradient, 0.0)
+        self.assertAlmostEqual(self.coup_e.int_pts[1].hyd_cond_gradient, 0.0)
+        self.assertAlmostEqual(self.coup_e.int_pts[0].eff_stress, 0.0)
+        self.assertAlmostEqual(self.coup_e.int_pts[1].eff_stress, 0.0)
+        self.assertAlmostEqual(self.coup_e.int_pts[0].eff_stress_gradient, 0.0)
+        self.assertAlmostEqual(self.coup_e.int_pts[1].eff_stress_gradient, 0.0)
+        self.assertAlmostEqual(self.coup_e.int_pts[0].pre_consol_stress, 0.0)
+        self.assertAlmostEqual(self.coup_e.int_pts[1].pre_consol_stress, 0.0)
         # TODO: Test total stress
 
     def test_update_integration_points_with_material(self):
@@ -273,10 +237,8 @@ class TestCoupledElement1DLinear(unittest.TestCase):
         self.coup_e.update_integration_points_secondary()
         self.assertAlmostEqual(self.coup_e.int_pts[0].temp, -0.366025403784439)
         self.assertAlmostEqual(self.coup_e.int_pts[1].temp, 1.366025403784440)
-        self.assertAlmostEqual(
-            self.coup_e.int_pts[0].temp_rate, 0.242264973081037)
-        self.assertAlmostEqual(
-            self.coup_e.int_pts[1].temp_rate, 0.357735026918963)
+        self.assertAlmostEqual(self.coup_e.int_pts[0].temp_rate, 0.242264973081037)
+        self.assertAlmostEqual(self.coup_e.int_pts[1].temp_rate, 0.357735026918963)
         self.assertAlmostEqual(self.coup_e.int_pts[0].temp_gradient, 1.5)
         self.assertAlmostEqual(self.coup_e.int_pts[1].temp_gradient, 1.5)
         self.assertAlmostEqual(
@@ -295,37 +257,36 @@ class TestCoupledElement1DLinear(unittest.TestCase):
             self.coup_e.int_pts[1].deg_sat_water_temp_gradient,
             0.0,
         )
-        self.assertAlmostEqual(self.coup_e.int_pts[0].void_ratio,
-                               0.728867513459481)
-        self.assertAlmostEqual(self.coup_e.int_pts[1].void_ratio,
-                               0.671132486540519)
-        self.assertAlmostEqual(self.coup_e.int_pts[0].hyd_cond,
-                               0.0, delta=1e-17)
-        self.assertAlmostEqual(self.coup_e.int_pts[1].hyd_cond,
-                               1.919991214136810E-10, delta=1e-17)
-        self.assertAlmostEqual(self.coup_e.int_pts[0].hyd_cond_gradient,
-                               0.0, delta=1e-17)
-        self.assertAlmostEqual(self.coup_e.int_pts[1].hyd_cond_gradient,
-                               1.449489556836380E-09, delta=1e-17)
-        self.assertAlmostEqual(self.coup_e.int_pts[0].eff_stress,
-                               0.0)
-        self.assertAlmostEqual(self.coup_e.int_pts[1].eff_stress,
-                               1.068540727404800E+05)
-        self.assertAlmostEqual(self.coup_e.int_pts[0].eff_stress_gradient,
-                               0.0)
-        self.assertAlmostEqual(self.coup_e.int_pts[1].eff_stress_gradient,
-                               -5.844194656007840E+05)
-        self.assertAlmostEqual(self.coup_e.int_pts[0].pre_consol_stress,
-                               0.0)
-        self.assertAlmostEqual(self.coup_e.int_pts[1].pre_consol_stress,
-                               1.068540727404800E+05)
+        self.assertAlmostEqual(self.coup_e.int_pts[0].void_ratio, 0.728867513459481)
+        self.assertAlmostEqual(self.coup_e.int_pts[1].void_ratio, 0.671132486540519)
+        self.assertAlmostEqual(self.coup_e.int_pts[0].hyd_cond, 0.0, delta=1e-17)
+        self.assertAlmostEqual(
+            self.coup_e.int_pts[1].hyd_cond, 1.919991214136810e-10, delta=1e-17
+        )
+        self.assertAlmostEqual(
+            self.coup_e.int_pts[0].hyd_cond_gradient, 0.0, delta=1e-17
+        )
+        self.assertAlmostEqual(
+            self.coup_e.int_pts[1].hyd_cond_gradient, 1.449489556836380e-09, delta=1e-17
+        )
+        self.assertAlmostEqual(self.coup_e.int_pts[0].eff_stress, 0.0)
+        self.assertAlmostEqual(self.coup_e.int_pts[1].eff_stress, 1.068540727404800e05)
+        self.assertAlmostEqual(self.coup_e.int_pts[0].eff_stress_gradient, 0.0)
+        self.assertAlmostEqual(
+            self.coup_e.int_pts[1].eff_stress_gradient, -5.844194656007840e05
+        )
+        self.assertAlmostEqual(self.coup_e.int_pts[0].pre_consol_stress, 0.0)
+        self.assertAlmostEqual(
+            self.coup_e.int_pts[1].pre_consol_stress, 1.068540727404800e05
+        )
         self.assertAlmostEqual(
             self.coup_e.int_pts[0].water_flux_rate,
-            1.25043538838904E-10,
+            1.25043538838904e-10,
             delta=1e-17,
         )
-        self.assertAlmostEqual(self.coup_e.int_pts[1].water_flux_rate,
-                               4.664043445100810E-10, delta=1e-17)
+        self.assertAlmostEqual(
+            self.coup_e.int_pts[1].water_flux_rate, 4.664043445100810e-10, delta=1e-17
+        )
         # TODO: Test total stress
 
     def test_deformed_length(self):
@@ -355,8 +316,7 @@ class TestCoupledElement1DCubic(unittest.TestCase):
             self.assertIs(nd, e_nd)
 
     def test_heat_flow_matrix_uninitialized(self):
-        self.assertTrue(np.allclose(
-            self.coup_e.heat_flow_matrix, np.zeros((4, 4))))
+        self.assertTrue(np.allclose(self.coup_e.heat_flow_matrix, np.zeros((4, 4))))
 
     def test_heat_flow_matrix_conduction_only(self):
         m = Material(thrm_cond_solids=3.0)
@@ -368,14 +328,20 @@ class TestCoupledElement1DCubic(unittest.TestCase):
         lam = 2.0875447196636
         jac = 6.0
         e_fact = 1.30 / 1.35
-        expected = (1/40) * lam / jac * np.array(
-            [
-                [148, -189, 54, -13],
-                [-189, 432, -297, 54],
-                [54, -297, 432, -189],
-                [-13, 54, -189, 148],
-            ]
-        ) * e_fact ** 2
+        expected = (
+            (1 / 40)
+            * lam
+            / jac
+            * np.array(
+                [
+                    [148, -189, 54, -13],
+                    [-189, 432, -297, 54],
+                    [54, -297, 432, -189],
+                    [-13, 54, -189, 148],
+                ]
+            )
+            * e_fact**2
+        )
         self.assertTrue(np.allclose(self.coup_e.heat_flow_matrix, expected))
 
     def test_heat_flux_vector_advection(self):
@@ -390,19 +356,16 @@ class TestCoupledElement1DCubic(unittest.TestCase):
         e_fact = 1.30 / 1.35
         qw = -1.5e-8
         dTdZ = 0.5
-        expected = -qw * Cw * dTdZ * jac * np.array(
-            [0.125, 0.375, 0.375, 0.125]
-        ) * e_fact
+        expected = (
+            -qw * Cw * dTdZ * jac * np.array([0.125, 0.375, 0.375, 0.125]) * e_fact
+        )
         self.assertTrue(np.allclose(self.coup_e.heat_flux_vector, expected))
 
     def test_heat_storage_matrix_uninitialized(self):
-        self.assertTrue(
-            np.allclose(self.coup_e.heat_storage_matrix, np.zeros((4, 4)))
-        )
+        self.assertTrue(np.allclose(self.coup_e.heat_storage_matrix, np.zeros((4, 4))))
 
     def test_heat_storage_matrix_heat_capacity_only(self):
-        m = Material(spec_grav_solids=2.65,
-                     spec_heat_cap_solids=7.41e2)
+        m = Material(spec_grav_solids=2.65, spec_heat_cap_solids=7.41e2)
         for ip in self.coup_e.int_pts:
             ip.material = m
             ip.void_ratio = 0.35
@@ -412,20 +375,23 @@ class TestCoupledElement1DCubic(unittest.TestCase):
         heat_cap = 2.42402962962963e6
         lat_heat = 0.0
         jac = 6.0
-        expected = (1/1680) * (heat_cap + lat_heat) * jac * np.array(
-            [
-                [128,   99,  -36,   19],
-                [99,  648,  -81,  -36],
-                [-36,  -81,  648,   99],
-                [19,  -36,   99,  128],
-            ]
+        expected = (
+            (1 / 1680)
+            * (heat_cap + lat_heat)
+            * jac
+            * np.array(
+                [
+                    [128, 99, -36, 19],
+                    [99, 648, -81, -36],
+                    [-36, -81, 648, 99],
+                    [19, -36, 99, 128],
+                ]
+            )
         )
-        self.assertTrue(np.allclose(
-            self.coup_e.heat_storage_matrix, expected))
+        self.assertTrue(np.allclose(self.coup_e.heat_storage_matrix, expected))
 
     def test_heat_storage_matrix_heat_capacity_and_latent_heat(self):
-        m = Material(spec_grav_solids=2.65,
-                     spec_heat_cap_solids=7.41e2)
+        m = Material(spec_grav_solids=2.65, spec_heat_cap_solids=7.41e2)
         for ip in self.coup_e.int_pts:
             ip.material = m
             ip.void_ratio = 0.35
@@ -435,20 +401,23 @@ class TestCoupledElement1DCubic(unittest.TestCase):
         heat_cap = 2.42402962962963e6
         lat_heat = 7.588262500e6
         jac = 6.0
-        expected = (1/1680) * (heat_cap + lat_heat) * jac * np.array(
-            [
-                [128,   99,  -36,   19],
-                [99,  648,  -81,  -36],
-                [-36,  -81,  648,   99],
-                [19,  -36,   99,  128],
-            ]
+        expected = (
+            (1 / 1680)
+            * (heat_cap + lat_heat)
+            * jac
+            * np.array(
+                [
+                    [128, 99, -36, 19],
+                    [99, 648, -81, -36],
+                    [-36, -81, 648, 99],
+                    [19, -36, 99, 128],
+                ]
+            )
         )
-        self.assertTrue(np.allclose(
-            self.coup_e.heat_storage_matrix, expected))
+        self.assertTrue(np.allclose(self.coup_e.heat_storage_matrix, expected))
 
     def test_stiffness_matrix_uninitialized(self):
-        self.assertTrue(np.allclose(
-            self.coup_e.stiffness_matrix, np.zeros((4, 4))))
+        self.assertTrue(np.allclose(self.coup_e.stiffness_matrix, np.zeros((4, 4))))
 
     def test_stiffness_matrix_full(self):
         m = Material(
@@ -491,33 +460,49 @@ class TestCoupledElement1DCubic(unittest.TestCase):
         dsig_de = -sig_p * np.log(10) / Ccu
         e_ratio = (1.0 + e0) / (1.0 + e)
         coef_0 = k * e_ratio * dsig_de / gam_w / jac
-        coef_1 = (dk_de * (Gs - 1.0) / (1.0 + e)
-                  - k * (Gs - 1.0) / (1.0 + e) ** 2)
-        stiff_0 = coef_0 / 40.0 * np.array([[148, -189, 54, -13],
-                                            [-189, 432, -297, 54],
-                                            [54, -297, 432, -189],
-                                            [-13, 54, -189, 148]])
-        stiff_1 = coef_1 / 1680.0 * np.array([[-840, 1197, -504, 147],
-                                              [-1197, 0, 1701, -504],
-                                              [504, -1701, 0, 1197],
-                                              [-147, 504, -1197, 840]])
+        coef_1 = dk_de * (Gs - 1.0) / (1.0 + e) - k * (Gs - 1.0) / (1.0 + e) ** 2
+        stiff_0 = (
+            coef_0
+            / 40.0
+            * np.array(
+                [
+                    [148, -189, 54, -13],
+                    [-189, 432, -297, 54],
+                    [54, -297, 432, -189],
+                    [-13, 54, -189, 148],
+                ]
+            )
+        )
+        stiff_1 = (
+            coef_1
+            / 1680.0
+            * np.array(
+                [
+                    [-840, 1197, -504, 147],
+                    [-1197, 0, 1701, -504],
+                    [504, -1701, 0, 1197],
+                    [-147, 504, -1197, 840],
+                ]
+            )
+        )
         expected = stiff_0 + stiff_1
         self.assertTrue(np.allclose(self.coup_e.stiffness_matrix, expected))
 
     def test_mass_matrix_uninitialized(self):
         jac = 6.0
-        expected = jac / 1680.0 * np.array(
-            [
-                [128,   99,  -36,   19],
-                [99,  648,  -81,  -36],
-                [-36,  -81,  648,   99],
-                [19,  -36,   99,  128],
-            ]
+        expected = (
+            jac
+            / 1680.0
+            * np.array(
+                [
+                    [128, 99, -36, 19],
+                    [99, 648, -81, -36],
+                    [-36, -81, 648, 99],
+                    [19, -36, 99, 128],
+                ]
+            )
         )
-        self.assertTrue(
-            np.allclose(self.coup_e.mass_matrix,
-                        expected)
-        )
+        self.assertTrue(np.allclose(self.coup_e.mass_matrix, expected))
 
     def test_mass_matrix_full(self):
         for ip in self.coup_e.int_pts:
@@ -527,35 +512,46 @@ class TestCoupledElement1DCubic(unittest.TestCase):
         e0 = 0.3
         Sw = 0.2
         coef = (Sw + Gi * (1.0 - Sw)) / (1.0 + e0)
-        expected = coef * jac / 1680.0 * np.array(
-            [
-                [128,   99,  -36,   19],
-                [99,  648,  -81,  -36],
-                [-36,  -81,  648,   99],
-                [19,  -36,   99,  128],
-            ]
+        expected = (
+            coef
+            * jac
+            / 1680.0
+            * np.array(
+                [
+                    [128, 99, -36, 19],
+                    [99, 648, -81, -36],
+                    [-36, -81, 648, 99],
+                    [19, -36, 99, 128],
+                ]
+            )
         )
         self.assertTrue(np.allclose(self.coup_e.mass_matrix, expected))
 
     def test_update_integration_points_null_material(self):
-        Te = np.array([
-            -1.00,
-            -0.10,
-            1.10,
-            2.00,
-        ])
-        dTdte = np.array([
-            -0.5,
-            -0.1,
-            0.5,
-            0.8,
-        ])
-        enode = np.array([
-            1.1,
-            0.89,
-            0.75,
-            0.7,
-        ])
+        Te = np.array(
+            [
+                -1.00,
+                -0.10,
+                1.10,
+                2.00,
+            ]
+        )
+        dTdte = np.array(
+            [
+                -0.5,
+                -0.1,
+                0.5,
+                0.8,
+            ]
+        )
+        enode = np.array(
+            [
+                1.1,
+                0.89,
+                0.75,
+                0.7,
+            ]
+        )
         for T, dTdt, e, nd in zip(Te, dTdte, enode, self.coup_e.nodes):
             nd.temp = T
             nd.temp_rate = dTdt
@@ -564,55 +560,69 @@ class TestCoupledElement1DCubic(unittest.TestCase):
             ip.void_ratio_0 = 0.9
         self.coup_e.update_integration_points_primary()
         self.coup_e.update_integration_points_secondary()
-        expected_Tip = np.array([
-            -0.913964840018686,
-            -0.436743906025892,
-            0.500000000000000,
-            1.436743906025890,
-            1.913964840018690,
-        ])
-        expected_dTdtip = np.array([
-            -0.474536483402387,
-            -0.267597978008154,
-            0.206250000000000,
-            0.647478693241513,
-            0.794655768169027,
-        ])
-        expected_dTdZip = np.array([
-            0.33535785429992,
-            0.51464214570008,
-            0.61250000000000,
-            0.51464214570008,
-            0.33535785429992,
-        ])
-        expected_Sw = np.array([
-            0.0,
-            0.0,
-            1.0,
-            1.0,
-            1.0,
-        ])
-        expected_dSw_dT = np.array([
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-        ])
-        expected_qw = np.array([
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-        ])
-        expected_e = np.array([
-            1.066963710411440,
-            0.948090621196697,
-            0.810000000000000,
-            0.724100234429932,
-            0.700845433961932,
-        ])
+        expected_Tip = np.array(
+            [
+                -0.913964840018686,
+                -0.436743906025892,
+                0.500000000000000,
+                1.436743906025890,
+                1.913964840018690,
+            ]
+        )
+        expected_dTdtip = np.array(
+            [
+                -0.474536483402387,
+                -0.267597978008154,
+                0.206250000000000,
+                0.647478693241513,
+                0.794655768169027,
+            ]
+        )
+        expected_dTdZip = np.array(
+            [
+                0.33535785429992,
+                0.51464214570008,
+                0.61250000000000,
+                0.51464214570008,
+                0.33535785429992,
+            ]
+        )
+        expected_Sw = np.array(
+            [
+                0.0,
+                0.0,
+                1.0,
+                1.0,
+                1.0,
+            ]
+        )
+        expected_dSw_dT = np.array(
+            [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ]
+        )
+        expected_qw = np.array(
+            [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ]
+        )
+        expected_e = np.array(
+            [
+                1.066963710411440,
+                0.948090621196697,
+                0.810000000000000,
+                0.724100234429932,
+                0.700845433961932,
+            ]
+        )
         for ip, eT, edTdt, edTdZ, eSw, edSw, eqw, ee in zip(
             self.coup_e.int_pts,
             expected_Tip,
@@ -664,116 +674,145 @@ class TestCoupledElement1DCubic(unittest.TestCase):
             ip.material = m
             ip.tot_stress = 120.0e3
             ip.void_ratio_0 = 0.9
-        Te = np.array([
-            -1.00,
-            -0.10,
-            1.10,
-            2.00,
-        ])
-        dTdte = np.array([
-            -0.5,
-            -0.1,
-            0.5,
-            0.8,
-        ])
-        ee = np.array([
-            1.1,
-            0.89,
-            0.75,
-            0.7,
-        ])
+        Te = np.array(
+            [
+                -1.00,
+                -0.10,
+                1.10,
+                2.00,
+            ]
+        )
+        dTdte = np.array(
+            [
+                -0.5,
+                -0.1,
+                0.5,
+                0.8,
+            ]
+        )
+        ee = np.array(
+            [
+                1.1,
+                0.89,
+                0.75,
+                0.7,
+            ]
+        )
         for T, dTdt, e, nd in zip(Te, dTdte, ee, self.coup_e.nodes):
             nd.temp = T
             nd.temp_rate = dTdt
             nd.void_ratio = e
         self.coup_e.update_integration_points_primary()
         self.coup_e.update_integration_points_secondary()
-        expected_Tip = np.array([
-            -0.913964840018686,
-            -0.436743906025892,
-            0.500000000000000,
-            1.436743906025890,
-            1.913964840018690,
-        ])
-        expected_dTdtip = np.array([
-            -0.474536483402387,
-            -0.267597978008154,
-            0.206250000000000,
-            0.647478693241513,
-            0.794655768169027,
-        ])
-        expected_dTdZip = np.array([
-            0.33535785429992,
-            0.51464214570008,
-            0.61250000000000,
-            0.51464214570008,
-            0.33535785429992,
-        ])
-        expected_Sw = np.array([
-            0.0915235681884727,
-            0.1361684964587000,
-            1.00000000000000,
-            1.00000000000000,
-            1.00000000000000,
-        ])
-        expected_dSw_dT = np.array([
-            0.00000000000000,
-            0.00000000000000,
-            0.00000000000000,
-            0.00000000000000,
-            0.00000000000000,
-        ])
-        expected_e_ip = np.array([
-            1.066963710411440,
-            0.948090621196697,
-            0.810000000000000,
-            0.724100234429932,
-            0.700845433961932,
-        ])
-        expected_k_ip = np.array([
-            0.0,
-            0.0,
-            5.477754498683320E-10,
-            2.863940483811450E-10,
-            2.402806184667600E-10,
-        ])
-        expected_dkde_ip = np.array([
-            0.0,
-            0.0,
-            4.135408475983370E-09,
-            2.162120218113580E-09,
-            1.813988754809670E-09,
-        ])
-        expected_sigp_ip = np.array([
-            0.0,
-            0.0,
-            4.999648864537800E+04,
-            7.997918088269650E+04,
-            9.082679879495540E+04,
-        ])
-        expected_dsigde_ip = np.array([
-            0.0,
-            0.0,
-            -2.734469583299130E+05,
-            -4.374319944189340E+05,
-            -4.967611233958050E+05,
-        ])
-        expected_ppc_ip = np.array([
-            0.0,
-            0.0,
-            4.999648864537800E+04,
-            7.997918088269650E+04,
-            9.082679879495540E+04,
-        ])
-        expected_qw_ip = np.array([
-            -1.24670456065463E-11,
-            -1.34515776932174E-10,
-            6.444230380341150E-10,
-            2.246276375886120E-10,
-            -1.335017975631420E-10,
-        ])
-        for (ip, eT, edTdt, edTdZ, eSw, edSw, eqw,
-             e, k, dkde, sigp, dsigde, ppc) in zip(
+        expected_Tip = np.array(
+            [
+                -0.913964840018686,
+                -0.436743906025892,
+                0.500000000000000,
+                1.436743906025890,
+                1.913964840018690,
+            ]
+        )
+        expected_dTdtip = np.array(
+            [
+                -0.474536483402387,
+                -0.267597978008154,
+                0.206250000000000,
+                0.647478693241513,
+                0.794655768169027,
+            ]
+        )
+        expected_dTdZip = np.array(
+            [
+                0.33535785429992,
+                0.51464214570008,
+                0.61250000000000,
+                0.51464214570008,
+                0.33535785429992,
+            ]
+        )
+        expected_Sw = np.array(
+            [
+                0.0915235681884727,
+                0.1361684964587000,
+                1.00000000000000,
+                1.00000000000000,
+                1.00000000000000,
+            ]
+        )
+        expected_dSw_dT = np.array(
+            [
+                0.00000000000000,
+                0.00000000000000,
+                0.00000000000000,
+                0.00000000000000,
+                0.00000000000000,
+            ]
+        )
+        expected_e_ip = np.array(
+            [
+                1.066963710411440,
+                0.948090621196697,
+                0.810000000000000,
+                0.724100234429932,
+                0.700845433961932,
+            ]
+        )
+        expected_k_ip = np.array(
+            [
+                0.0,
+                0.0,
+                5.477754498683320e-10,
+                2.863940483811450e-10,
+                2.402806184667600e-10,
+            ]
+        )
+        expected_dkde_ip = np.array(
+            [
+                0.0,
+                0.0,
+                4.135408475983370e-09,
+                2.162120218113580e-09,
+                1.813988754809670e-09,
+            ]
+        )
+        expected_sigp_ip = np.array(
+            [
+                0.0,
+                0.0,
+                4.999648864537800e04,
+                7.997918088269650e04,
+                9.082679879495540e04,
+            ]
+        )
+        expected_dsigde_ip = np.array(
+            [
+                0.0,
+                0.0,
+                -2.734469583299130e05,
+                -4.374319944189340e05,
+                -4.967611233958050e05,
+            ]
+        )
+        expected_ppc_ip = np.array(
+            [
+                0.0,
+                0.0,
+                4.999648864537800e04,
+                7.997918088269650e04,
+                9.082679879495540e04,
+            ]
+        )
+        expected_qw_ip = np.array(
+            [
+                -1.24670456065463e-11,
+                -1.34515776932174e-10,
+                6.444230380341150e-10,
+                2.246276375886120e-10,
+                -1.335017975631420e-10,
+            ]
+        )
+        for ip, eT, edTdt, edTdZ, eSw, edSw, eqw, e, k, dkde, sigp, dsigde, ppc in zip(
             self.coup_e.int_pts,
             expected_Tip,
             expected_dTdtip,
@@ -803,12 +842,14 @@ class TestCoupledElement1DCubic(unittest.TestCase):
         # TODO: Test total stress
 
     def test_deformed_length(self):
-        ee = np.array([
-            1.1,
-            0.89,
-            0.75,
-            0.7,
-        ])
+        ee = np.array(
+            [
+                1.1,
+                0.89,
+                0.75,
+                0.7,
+            ]
+        )
         for nd, e in zip(self.coup_e.nodes, ee):
             nd.void_ratio = e
         for ip in self.coup_e.int_pts:
