@@ -7,6 +7,7 @@ ThermalElement1D
 ThermalBoundary1D
 ThermalAnalysis1D
 """
+
 from typing import (
     Callable,
     Sequence,
@@ -84,7 +85,7 @@ class ThermalElement1D(Element1D):
         for ip in self.int_pts:
             e = ip.void_ratio
             e0 = ip.void_ratio_0
-            e_fact = ((1+e0) / (1+e)) ** 2
+            e_fact = ((1 + e0) / (1 + e)) ** 2
             B = self._gradient_matrix(ip.local_coord, jac)
             H += (e_fact * ip.thrm_cond * ip.weight) * (B.T @ B)
         H *= jac
@@ -133,13 +134,11 @@ class ThermalElement1D(Element1D):
         for ip in self.int_pts:
             e = ip.void_ratio
             e0 = ip.void_ratio_0
-            e_fact = (1+e0) / (1+e)
+            e_fact = (1 + e0) / (1 + e)
             qw = ip.water_flux_rate
             dTdZ = ip.temp_gradient
             N = self._shape_matrix(ip.local_coord).flatten()
-            Q -= N * (
-                e_fact * qw * Cw * dTdZ
-            ) * ip.weight
+            Q -= N * (e_fact * qw * Cw * dTdZ) * ip.weight
         Q *= jac
         return Q
 
@@ -249,9 +248,9 @@ class ThermalElement1D(Element1D):
             T0 = ip.temp__0
             thw0 = ip.vol_water_cont__0
             thw1 = ip.vol_water_cont
-            ip.vol_water_cont_temp_gradient = np.abs(
-                (thw1 - thw0) / (T - T0)
-            ) if np.abs(T - T0) > 0.0 else 0.0
+            ip.vol_water_cont_temp_gradient = (
+                np.abs((thw1 - thw0) / (T - T0)) if np.abs(T - T0) > 0.0 else 0.0
+            )
             if T < 0.0:
                 ip.water_flux_rate = ip.material.water_flux(
                     ip.void_ratio,
@@ -307,6 +306,7 @@ class ThermalBoundary1D(Boundary1D):
         If len(int_pts) > 1.
         If bnd_value is not convertible to float.
     """
+
     BoundaryType = Enum("BoundaryType", ["temp", "heat_flux", "temp_grad"])
 
     _bnd_type: BoundaryType
@@ -404,12 +404,9 @@ class ThermalBoundary1D(Boundary1D):
         return self._bnd_function
 
     @bnd_function.setter
-    def bnd_function(
-            self,
-            value: Callable[[float], float] | None) -> None:
+    def bnd_function(self, value: Callable[[float], float] | None) -> None:
         if not (callable(value) or value is None):
-            raise TypeError(
-                f"type(value) {type(value)} is not callable or None")
+            raise TypeError(f"type(value) {type(value)} is not callable or None")
         self._bnd_function = value
 
     def update_nodes(self) -> None:
@@ -522,6 +519,7 @@ class ThermalAnalysis1D(Mesh1D):
         If grid_size cannot be cast to float.
         If grid_size < 0.0.
     """
+
     _elements: tuple[ThermalElement1D, ...]
     _boundaries: set[ThermalBoundary1D]
     _temp_vector_0: npt.NDArray[np.floating]
@@ -592,15 +590,12 @@ class ThermalAnalysis1D(Mesh1D):
             )
         for nd in new_boundary.nodes:
             if nd not in self.nodes:
-                raise ValueError(f"new_boundary contains node {nd}"
-                                 + " not in mesh")
+                raise ValueError(f"new_boundary contains node {nd}" + " not in mesh")
         if new_boundary.int_pts:
             int_pts = tuple(ip for e in self.elements for ip in e.int_pts)
             for ip in new_boundary.int_pts:
                 if ip not in int_pts:
-                    raise ValueError(
-                        f"new_boundary contains int_pt {ip} not in mesh"
-                    )
+                    raise ValueError(f"new_boundary contains int_pt {ip} not in mesh")
         self._boundaries.add(new_boundary)
 
     def _generate_elements(self, num_elements: int, order: int):
@@ -612,9 +607,9 @@ class ThermalAnalysis1D(Mesh1D):
         to generate ThermalElement1D objects.
         """
         self._elements = tuple(
-            ThermalElement1D(tuple(self.nodes[order * k + j]
-                                   for j in range(order + 1)),
-                             order)
+            ThermalElement1D(
+                tuple(self.nodes[order * k + j] for j in range(order + 1)), order
+            )
             for k in range(num_elements)
         )
 
@@ -623,15 +618,10 @@ class ThermalAnalysis1D(Mesh1D):
         self._temp_vector = np.zeros(self.num_nodes)
         self._heat_flux_vector_0 = np.zeros(self.num_nodes)
         self._heat_flux_vector = np.zeros(self.num_nodes)
-        self._heat_flow_matrix_0 = np.zeros(
-            (self.num_nodes, self.num_nodes))
-        self._heat_flow_matrix = np.zeros(
-            (self.num_nodes, self.num_nodes))
-        self._heat_storage_matrix_0 = np.zeros(
-            (self.num_nodes, self.num_nodes)
-        )
-        self._heat_storage_matrix = np.zeros(
-            (self.num_nodes, self.num_nodes))
+        self._heat_flow_matrix_0 = np.zeros((self.num_nodes, self.num_nodes))
+        self._heat_flow_matrix = np.zeros((self.num_nodes, self.num_nodes))
+        self._heat_storage_matrix_0 = np.zeros((self.num_nodes, self.num_nodes))
+        self._heat_storage_matrix = np.zeros((self.num_nodes, self.num_nodes))
         self._residual_heat_flux_vector = np.zeros(self.num_nodes)
         self._delta_temp_vector = np.zeros(self.num_nodes)
         self._temp_rate_vector = np.zeros(self.num_nodes)
@@ -664,9 +654,7 @@ class ThermalAnalysis1D(Mesh1D):
                 ip.temp__0 = ip.temp
                 ip.vol_water_cont__0 = ip.vol_water_cont
 
-    def update_boundary_conditions(
-            self,
-            time: float) -> None:
+    def update_boundary_conditions(self, time: float) -> None:
         """Update the thermal boundary conditions.
 
         Parameters
@@ -786,46 +774,48 @@ class ThermalAnalysis1D(Mesh1D):
         """
         # update the residual vector
         self._residual_heat_flux_vector[:] = (
-            self.one_minus_alpha * self.dt * np.linalg.solve(
+            self.one_minus_alpha
+            * self.dt
+            * np.linalg.solve(
                 self._heat_storage_matrix_0,
                 self._heat_flux_vector_0
-                - self._heat_flow_matrix_0 @ self._temp_vector_0
+                - self._heat_flow_matrix_0 @ self._temp_vector_0,
             )
-            + self.alpha * self.dt * np.linalg.solve(
+            + self.alpha
+            * self.dt
+            * np.linalg.solve(
                 self._heat_storage_matrix,
-                self._heat_flux_vector
-                - self._heat_flow_matrix @ self._temp_vector
+                self._heat_flux_vector - self._heat_flow_matrix @ self._temp_vector,
             )
             - (self._temp_vector[:] - self._temp_vector_0[:])
         )
         # calculate temperature increment
         self._delta_temp_vector[self._free_vec] = np.linalg.solve(
             np.eye(self.num_nodes)[self._free_arr]
-            + self.alpha * self.dt * np.linalg.solve(
-                self._heat_storage_matrix, self._heat_flow_matrix
-            )[self._free_arr],
+            + self.alpha
+            * self.dt
+            * np.linalg.solve(self._heat_storage_matrix, self._heat_flow_matrix)[
+                self._free_arr
+            ],
             self._residual_heat_flux_vector[self._free_vec],
         )
         # increment temperature and iteration variables
-        self._temp_vector[self._free_vec] += (
-            self._delta_temp_vector[self._free_vec]
-        )
+        self._temp_vector[self._free_vec] += self._delta_temp_vector[self._free_vec]
 
     def update_iteration_variables(self) -> None:
         self._eps_a = float(
-            np.linalg.norm(self._delta_temp_vector) /
-            np.linalg.norm(self._temp_vector)
+            np.linalg.norm(self._delta_temp_vector) / np.linalg.norm(self._temp_vector)
         )
         self._iter += 1
 
     def solve_to(
-            self,
-            tf: float,
-            adapt_dt: bool = True,
-        ) -> tuple[
-            float,
-            npt.NDArray,
-            npt.NDArray,
+        self,
+        tf: float,
+        adapt_dt: bool = True,
+    ) -> tuple[
+        float,
+        npt.NDArray,
+        npt.NDArray,
     ]:
         """Performs time integration until
         specified final time tf.
@@ -878,14 +868,18 @@ class ThermalAnalysis1D(Mesh1D):
         temp_error = np.zeros_like(self._temp_vector)
         temp_rate_0 = np.zeros_like(self._temp_vector)
         temp_scale = np.zeros_like(self._temp_vector)
-        vol_water_cont__0 = np.zeros((
-            self.num_elements,
-            num_int_pt_per_element,
-        ))
-        temp__0 = np.zeros((
-            self.num_elements,
-            num_int_pt_per_element,
-        ))
+        vol_water_cont__0 = np.zeros(
+            (
+                self.num_elements,
+                num_int_pt_per_element,
+            )
+        )
+        temp__0 = np.zeros(
+            (
+                self.num_elements,
+                num_int_pt_per_element,
+            )
+        )
         dt_list = []
         err_list = []
         done = False
@@ -933,11 +927,10 @@ class ThermalAnalysis1D(Mesh1D):
             self.initialize_time_step()
             self.iterative_correction_step()
             # compute truncation error correction
-            temp_error[:] = (self._temp_vector[:]
-                             - temp_vector_1[:]) / 3.0
+            temp_error[:] = (self._temp_vector[:] - temp_vector_1[:]) / 3.0
             self._temp_vector[:] += temp_error[:]
-            self._temp_rate_vector[:] = (
-                self.over_dt * (self._temp_vector[:] - self._temp_vector_0[:])
+            self._temp_rate_vector[:] = self.over_dt * (
+                self._temp_vector[:] - self._temp_vector_0[:]
             )
             self.update_nodes()
             self.update_integration_points_primary()
@@ -945,10 +938,15 @@ class ThermalAnalysis1D(Mesh1D):
             self.update_integration_points_secondary()
             self.update_global_matrices_and_vectors()
             # update the time step
-            temp_scale[:] = np.max(np.vstack([
-                self._temp_vector[:], self._temp_rate_vector[:] *
-                self.time_step,
-            ]), axis=0)
+            temp_scale[:] = np.max(
+                np.vstack(
+                    [
+                        self._temp_vector[:],
+                        self._temp_rate_vector[:] * self.time_step,
+                    ]
+                ),
+                axis=0,
+            )
             T_scale = float(np.linalg.norm(temp_scale))
             err_targ = self.eps_s * T_scale
             err_curr = float(np.linalg.norm(temp_error))

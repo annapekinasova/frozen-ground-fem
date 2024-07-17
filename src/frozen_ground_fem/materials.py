@@ -2,6 +2,7 @@
 for tracking material properties.
 
 """
+
 import numpy as np
 
 """
@@ -256,6 +257,7 @@ class Material:
         If comp_index_frozen_a3 < 0.
 
     """
+
     _thrm_cond_solids: float = 0.0
     _spec_grav_solids: float = 1.0
     _dens_solids: float = dens_water
@@ -312,7 +314,6 @@ class Material:
         comp_index_frozen_a2: float = 0.0,
         comp_index_frozen_a3: float = 0.0,
     ):
-
         self.thrm_cond_solids = thrm_cond_solids
         self.spec_grav_solids = spec_grav_solids
         self.spec_heat_cap_solids = spec_heat_cap_solids
@@ -457,9 +458,7 @@ class Material:
         return self._vol_heat_cap_solids
 
     def _update_vol_heat_cap_solids(self) -> None:
-        self._vol_heat_cap_solids = (
-            self.dens_solids * self.spec_heat_cap_solids
-        )
+        self._vol_heat_cap_solids = self.dens_solids * self.spec_heat_cap_solids
 
     @property
     def deg_sat_water_alpha(self) -> float:
@@ -1168,10 +1167,7 @@ class Material:
         deg_sat_deriv *= (deg_sat_water**beta_ratio_2) * (deg_sat_base**beta)
         return deg_sat_water, deg_sat_deriv
 
-    def hyd_cond(self,
-                 e: float,
-                 temp: float,
-                 thawed: bool) -> tuple[float, float]:
+    def hyd_cond(self, e: float, temp: float, thawed: bool) -> tuple[float, float]:
         """The hydraulic conductivity for unfrozen and thawed soil.
 
         Parameters
@@ -1339,9 +1335,8 @@ class Material:
         sig_p = 10 ** ((e_sep - e) / Crsl)
         # compute corrected pre-consolidation stress on the NCL
         ppc = 10 ** (
-            ((e_cu0 - e) + (
-                Ccu * np.log10(sig_cu0) - Cru * np.log10(sig_p)
-            )) / (Ccu - Cru)
+            ((e_cu0 - e) + (Ccu * np.log10(sig_cu0) - Cru * np.log10(sig_p)))
+            / (Ccu - Cru)
         )
         return ppc
 
@@ -1368,8 +1363,7 @@ class Material:
             raise ValueError(f"temp {temp} is >= Tf = 0.0")
         return (
             self.comp_index_frozen_a1
-            - self.comp_index_frozen_a2 *
-            np.abs(temp) ** self.comp_index_frozen_a3
+            - self.comp_index_frozen_a2 * np.abs(temp) ** self.comp_index_frozen_a3
         )
 
     def tot_stress(

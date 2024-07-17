@@ -17,6 +17,7 @@ Element1D
 Boundary1D
 Mesh1D
 """
+
 from typing import (
     ClassVar,
     Sequence,
@@ -110,9 +111,7 @@ def shape_matrix_cubic(s: float) -> npt.NDArray[np.floating]:
     )
 
 
-def gradient_matrix_linear(
-        s: float,
-        dz: float) -> npt.NDArray[np.floating]:
+def gradient_matrix_linear(s: float, dz: float) -> npt.NDArray[np.floating]:
     """Calculates the gradient of the shape (interpolation) function matrix
     for linear interpolation.
 
@@ -146,10 +145,7 @@ def gradient_matrix_linear(
     return np.array([[-1.0, 1.0]]) / dz
 
 
-def gradient_matrix_cubic(
-    s: float,
-    dz: float
-) -> npt.NDArray[np.floating]:
+def gradient_matrix_cubic(s: float, dz: float) -> npt.NDArray[np.floating]:
     """Calculates the gradient of the shape (interpolation) function matrix
     for cubic interpolation.
 
@@ -217,6 +213,7 @@ class Point1D:
     ValueError
         If value cannot be converted to float.
     """
+
     _coords: npt.NDArray[np.floating]
 
     def __init__(self, value: float = 0.0):
@@ -311,6 +308,7 @@ class Node1D(Point1D):
         If tot_stress cannot be converted to float.
         If z_def cannot be converted to float.
     """
+
     _index: int
     _temp: float = 0.0
     _void_ratio: float = 0.0
@@ -666,6 +664,7 @@ class IntegrationPoint1D(Point1D):
         If tot_stress_gradient is positive.
         If loc_stress is not convertible to float.
     """
+
     _local_coord: float = 0.0
     _weight: float = 0.0
     _void_ratio: float = 0.0
@@ -1010,10 +1009,7 @@ class IntegrationPoint1D(Point1D):
     def vol_water_cont__0(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
-            raise ValueError(
-                f"vol_water_cont__0 value {value} "
-                + "is negative."
-            )
+            raise ValueError(f"vol_water_cont__0 value {value} " + "is negative.")
         self._vol_water_cont__0 = value
 
     @property
@@ -1046,8 +1042,7 @@ class IntegrationPoint1D(Point1D):
         value = float(value)
         if value < 0.0 or value > 1.0:
             raise ValueError(
-                f"deg_sat_water value {value} "
-                + "not between 0.0 and 1.0"
+                f"deg_sat_water value {value} " + "not between 0.0 and 1.0"
             )
         self._deg_sat_water = value
         self._deg_sat_ice = 1.0 - value
@@ -1096,8 +1091,7 @@ class IntegrationPoint1D(Point1D):
         value = float(value)
         if value < 0.0:
             raise ValueError(
-                f"deg_sat_water_temp_gradient value {value} "
-                + "is negative"
+                f"deg_sat_water_temp_gradient value {value} " + "is negative"
             )
         self._deg_sat_water_temp_gradient = value
 
@@ -1127,8 +1121,7 @@ class IntegrationPoint1D(Point1D):
         value = float(value)
         if value < 0.0:
             raise ValueError(
-                f"vol_water_cont_temp_gradient value {value} "
-                + "is negative"
+                f"vol_water_cont_temp_gradient value {value} " + "is negative"
             )
         self._vol_water_cont_temp_gradient = value
 
@@ -1262,9 +1255,7 @@ class IntegrationPoint1D(Point1D):
     def hyd_cond_gradient(self, value: float) -> None:
         value = float(value)
         if value < 0.0:
-            raise ValueError(
-                f"value {value} for hyd_cond_gradient cannot be negative."
-            )
+            raise ValueError(f"value {value} for hyd_cond_gradient cannot be negative.")
         self._hyd_cond_gradient = value
 
     @property
@@ -1392,8 +1383,7 @@ class IntegrationPoint1D(Point1D):
         value = float(value)
         if value < 0.0:
             raise ValueError(
-                f"value {value} for void_ratio_0_ref_frozen"
-                + " cannot be negative."
+                f"value {value} for void_ratio_0_ref_frozen" + " cannot be negative."
             )
         self._void_ratio_0_ref_frozen = value
 
@@ -1632,9 +1622,7 @@ class Element1D:
         0.23931433524968324,
         0.11846344252809454,
     )
-    _int_pt_coords_cubic_deformed: ClassVar[
-        tuple[tuple[float, float], ...]
-    ] = (
+    _int_pt_coords_cubic_deformed: ClassVar[tuple[tuple[float, float], ...]] = (
         (
             0.070441621801729,
             0.262891711531604,
@@ -1648,9 +1636,7 @@ class Element1D:
             0.929558378198271,
         ),
     )
-    _int_pt_weights_cubic_deformed: ClassVar[
-        tuple[tuple[float, float], ...]
-    ] = (
+    _int_pt_weights_cubic_deformed: ClassVar[tuple[tuple[float, float], ...]] = (
         (
             0.5,
             0.5,
@@ -1701,7 +1687,8 @@ class Element1D:
                 tuple(
                     IntegrationPoint1D(local_coord=xi, weight=wt)
                     for (xi, wt) in zip(xx, ww)
-                ) for (xx, ww) in zip(
+                )
+                for (xx, ww) in zip(
                     Element1D._int_pt_coords_linear_deformed,
                     Element1D._int_pt_weights_linear_deformed,
                 )
@@ -1720,7 +1707,8 @@ class Element1D:
                 tuple(
                     IntegrationPoint1D(local_coord=xi, weight=wt)
                     for (xi, wt) in zip(xx, ww)
-                ) for (xx, ww) in zip(
+                )
+                for (xx, ww) in zip(
                     Element1D._int_pt_coords_cubic_deformed,
                     Element1D._int_pt_weights_cubic_deformed,
                 )
@@ -1863,6 +1851,7 @@ class Boundary1D:
         If len(nodes) != 1.
         If len(int_pts) > 1.
     """
+
     _nodes: tuple[Node1D, ...]
     _int_pts: tuple[IntegrationPoint1D, ...]
 
@@ -1882,8 +1871,7 @@ class Boundary1D:
         for ip in int_pts:
             if not isinstance(ip, IntegrationPoint1D):
                 raise TypeError(
-                    "int_pts contains invalid objects, "
-                    + "not IntegrationPoint1D"
+                    "int_pts contains invalid objects, " + "not IntegrationPoint1D"
                 )
         self._int_pts = tuple(int_pts)
 
@@ -1977,6 +1965,7 @@ class Mesh1D:
         If grid_size cannot be cast to float.
         If grid_size < 0.0.
     """
+
     _z_min: float = -np.inf
     _z_max: float = np.inf
     _mesh_valid: bool = False
@@ -1987,7 +1976,7 @@ class Mesh1D:
     _boundaries: set[Any]
     _time_step: float = 0.0
     _inv_time_step: float = 0.0
-    _implicit_factor: float = 0.5   # Crank-Nicolson
+    _implicit_factor: float = 0.5  # Crank-Nicolson
     _inv_implicit_factor: float = 0.5
     _implicit_error_tolerance: float = 1e-3
     _max_iterations: int = 100
@@ -2190,15 +2179,12 @@ class Mesh1D:
             )
         for nd in new_boundary.nodes:
             if nd not in self.nodes:
-                raise ValueError(f"new_boundary contains node {nd}"
-                                 + " not in mesh")
+                raise ValueError(f"new_boundary contains node {nd}" + " not in mesh")
         if new_boundary.int_pts:
             int_pts = tuple(ip for e in self.elements for ip in e.int_pts)
             for ip in new_boundary.int_pts:
                 if ip not in int_pts:
-                    raise ValueError(
-                        f"new_boundary contains int_pt {ip} not in mesh"
-                    )
+                    raise ValueError(f"new_boundary contains int_pt {ip} not in mesh")
         self._boundaries.add(new_boundary)
 
     def remove_boundary(self, boundary: Boundary1D) -> None:
@@ -2217,7 +2203,7 @@ class Mesh1D:
         self._boundaries.remove(boundary)
 
     def clear_boundaries(self) -> None:
-        """ Clears existing :c:`Boundary1D` objects
+        """Clears existing :c:`Boundary1D` objects
         from the mesh.
         """
         self._boundaries.clear()
@@ -2258,11 +2244,7 @@ class Mesh1D:
             self.clear_boundaries()
             self._mesh_valid = False
 
-    def generate_mesh(
-        self,
-        num_elements: int = 10,
-        order: int = 3
-    ):
+    def generate_mesh(self, num_elements: int = 10, order: int = 3):
         """Generates a mesh using assigned mesh properties.
 
         Parameters
@@ -2289,16 +2271,12 @@ class Mesh1D:
         self.mesh_valid = False
         num_elements = int(num_elements)
         if num_elements < 1:
-            raise ValueError(
-                f"num_elements {num_elements} not strictly positive")
+            raise ValueError(f"num_elements {num_elements} not strictly positive")
         order = int(order)
         if order not in [1, 3]:
             raise ValueError(f"order {order} not 1 or 3")
         self._hbw = order
-        num_elements_out = self._generate_nodes(
-            num_elements * order + 1,
-            order
-        )
+        num_elements_out = self._generate_nodes(num_elements * order + 1, order)
         if num_elements_out:
             num_elements = num_elements_out
         self._generate_elements(num_elements, order)
@@ -2320,9 +2298,7 @@ class Mesh1D:
 
     def _generate_elements(self, num_elements: int, order: int):
         self._elements = tuple(
-            Element1D(tuple(self.nodes[order * k + j]
-                            for j in range(order + 1)),
-                      order)
+            Element1D(tuple(self.nodes[order * k + j] for j in range(order + 1)), order)
             for k in range(num_elements)
         )
 
@@ -2511,16 +2487,15 @@ class Mesh1D:
     @max_iterations.setter
     def max_iterations(self, value: int) -> None:
         if not isinstance(value, int):
-            raise TypeError(f"type(max_iterations) {type(value)}"
-                            + " invalid, must be int")
+            raise TypeError(
+                f"type(max_iterations) {type(value)}" + " invalid, must be int"
+            )
         if value <= 0:
-            raise ValueError(f"max_iterations {value}"
-                             + " invalid, must be positive")
+            raise ValueError(f"max_iterations {value}" + " invalid, must be positive")
         self._max_iterations = value
 
     def initialize_boundary_conditions(self) -> None:
-        """Performs any necessary initialization of boundary conditions.
-        """
+        """Performs any necessary initialization of boundary conditions."""
         pass
 
     def initialize_integration_points_primary(self) -> None:
@@ -2670,18 +2645,17 @@ class Mesh1D:
         tf = float(tf)
         if tf <= self._t1:
             raise ValueError(
-                f"Provided tf {tf} is <= current "
-                f"simulation time {self._t1}."
+                f"Provided tf {tf} is <= current " f"simulation time {self._t1}."
             )
         return tf
 
     def solve_to(
-            self,
-            tf: float,
-        ) -> tuple[
-            float,
-            npt.NDArray,
-            npt.NDArray,
+        self,
+        tf: float,
+    ) -> tuple[
+        float,
+        npt.NDArray,
+        npt.NDArray,
     ]:
         """Performs time integration until
         specified final time tf.
@@ -2736,9 +2710,7 @@ class Mesh1D:
         return 0.0
 
     def calculate_deformed_coords(self) -> npt.NDArray[np.floating]:
-        return np.array(
-            nd.z for nd in self.nodes
-        )
+        return np.array(nd.z for nd in self.nodes)
 
     def update_total_stress_distribution(self) -> None:
         pass
