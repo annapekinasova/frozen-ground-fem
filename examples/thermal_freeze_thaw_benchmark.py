@@ -262,154 +262,162 @@ def main():
             + f"dthw_dT_max = {dthw_dT_max} 1/K"
         )
 
-    t_Neumann = np.array([
-        0.00,
-        1.00,
-        2.00,
-        3.00,
-        4.00,
-        5.00,
-        10.00,
-        15.00,
-        20.00,
-        25.00,
-        30.00,
-        35.00,
-        40.00,
-        45.00,
-        50.00,
-        55.00,
-        60.00,
-        65.00,
-        70.00,
-        75.00,
-        80.00,
-        85.00,
-        90.00,
-        95.00,
-        100.00,
-        105.00,
-        110.00,
-        115.00,
-        120.00,
-        125.00,
-        130.00,
-        135.00,
-        140.00,
-        145.00,
-        150.00,
-    ])
-    Z_Neumann_freeze = np.array([
-        0.0000,
-        0.1294,
-        0.1830,
-        0.2241,
-        0.2588,
-        0.2893,
-        0.4092,
-        0.5011,
-        0.5787,
-        0.6470,
-        0.7087,
-        0.7655,
-        0.8183,
-        0.8680,
-        0.9149,
-        0.9596,
-        1.0023,
-        1.0432,
-        1.0826,
-        1.1206,
-        1.1573,
-        1.1929,
-        1.2275,
-        1.2611,
-        1.2939,
-        1.3259,
-        1.3571,
-        1.3876,
-        1.4174,
-        1.4466,
-        1.4753,
-        1.5034,
-        1.5310,
-        1.5581,
-        1.5847,
-    ])
-    Z_Neumann_thaw = np.array([
-        0.0000,
-        0.0904,
-        0.1278,
-        0.1565,
-        0.1807,
-        0.2020,
-        0.2857,
-        0.3500,
-        0.4041,
-        0.4518,
-        0.4949,
-        0.5346,
-        0.5715,
-        0.6061,
-        0.6389,
-        0.6701,
-        0.6999,
-        0.7285,
-        0.7560,
-        0.7825,
-        0.8082,
-        0.8330,
-        0.8572,
-        0.8807,
-        0.9036,
-        0.9259,
-        0.9477,
-        0.9690,
-        0.9898,
-        1.0102,
-        1.0302,
-        1.0499,
-        1.0691,
-        1.0880,
-        1.1066,
-    ])
+    t_Neumann = np.array(
+        [
+            0.00,
+            1.00,
+            2.00,
+            3.00,
+            4.00,
+            5.00,
+            10.00,
+            15.00,
+            20.00,
+            25.00,
+            30.00,
+            35.00,
+            40.00,
+            45.00,
+            50.00,
+            55.00,
+            60.00,
+            65.00,
+            70.00,
+            75.00,
+            80.00,
+            85.00,
+            90.00,
+            95.00,
+            100.00,
+            105.00,
+            110.00,
+            115.00,
+            120.00,
+            125.00,
+            130.00,
+            135.00,
+            140.00,
+            145.00,
+            150.00,
+        ]
+    )
+    Z_Neumann_freeze = np.array(
+        [
+            0.0000,
+            0.1294,
+            0.1830,
+            0.2241,
+            0.2588,
+            0.2893,
+            0.4092,
+            0.5011,
+            0.5787,
+            0.6470,
+            0.7087,
+            0.7655,
+            0.8183,
+            0.8680,
+            0.9149,
+            0.9596,
+            1.0023,
+            1.0432,
+            1.0826,
+            1.1206,
+            1.1573,
+            1.1929,
+            1.2275,
+            1.2611,
+            1.2939,
+            1.3259,
+            1.3571,
+            1.3876,
+            1.4174,
+            1.4466,
+            1.4753,
+            1.5034,
+            1.5310,
+            1.5581,
+            1.5847,
+        ]
+    )
+    Z_Neumann_thaw = np.array(
+        [
+            0.0000,
+            0.0904,
+            0.1278,
+            0.1565,
+            0.1807,
+            0.2020,
+            0.2857,
+            0.3500,
+            0.4041,
+            0.4518,
+            0.4949,
+            0.5346,
+            0.5715,
+            0.6061,
+            0.6389,
+            0.6701,
+            0.6999,
+            0.7285,
+            0.7560,
+            0.7825,
+            0.8082,
+            0.8330,
+            0.8572,
+            0.8807,
+            0.9036,
+            0.9259,
+            0.9477,
+            0.9690,
+            0.9898,
+            1.0102,
+            1.0302,
+            1.0499,
+            1.0691,
+            1.0880,
+            1.1066,
+        ]
+    )
 
     plt.figure(figsize=(4.0, 4.0))
     plt.plot(t_Neumann, Z_Neumann_freeze, "--k", label="Neumann")
     plt.plot(t_Neumann, Z_Neumann_thaw, "--k")
-    plt.plot(t_plot / s_per_day, Zt_freeze, "ob", label="freezing",
-             markerfacecolor="none")
-    plt.plot(t_plot / s_per_day, Zt_thaw, "sr", label="thawing",
-             markerfacecolor="none")
+    plt.plot(
+        t_plot / s_per_day, Zt_freeze, "ob", label="freezing", markerfacecolor="none"
+    )
+    plt.plot(t_plot / s_per_day, Zt_thaw, "sr", label="thawing", markerfacecolor="none")
     plt.ylim((4.0, 0.0))
     plt.legend()
     plt.xlabel("time, t [days]")
     plt.ylabel("freeze/thaw depth, Z [m]")
     plt.savefig("examples/thermal_freeze_thaw_benchmark_front.svg")
 
-    z_Neumann = np.array([
-        0.00,
-        0.10,
-        0.20,
-        0.30,
-        0.40,
-        0.50,
-        0.60,
-        0.70,
-        0.80,
-        0.90,
-        1.00,
-        1.10,
-        1.20,
-        1.30,
-        1.40,
-        1.50,
-        1.60,
-        1.70,
-        1.80,
-        1.90,
-        2.00,
-    ])
+    z_Neumann = np.array(
+        [
+            0.00,
+            0.10,
+            0.20,
+            0.30,
+            0.40,
+            0.50,
+            0.60,
+            0.70,
+            0.80,
+            0.90,
+            1.00,
+            1.10,
+            1.20,
+            1.30,
+            1.40,
+            1.50,
+            1.60,
+            1.70,
+            1.80,
+            1.90,
+            2.00,
+        ]
+    )
 
     T_Neumann_freeze = np.zeros((3, 21))
     T_Neumann_freeze[0, :] = [
@@ -557,12 +565,9 @@ def main():
     plt.plot(T_Neumann_freeze[0, :], z_Neumann, "--k", label="Neumann")
     plt.plot(T_Neumann_freeze[1, :], z_Neumann, "--k")
     plt.plot(T_Neumann_freeze[2, :], z_Neumann, "--k")
-    plt.plot(T_freeze[0, :], z_nod, "ob", label="t=10 days",
-             markerfacecolor="none")
-    plt.plot(T_freeze[1, :], z_nod, "sb", label="50 days",
-             markerfacecolor="none")
-    plt.plot(T_freeze[2, :], z_nod, "^b", label="100 days",
-             markerfacecolor="none")
+    plt.plot(T_freeze[0, :], z_nod, "ob", label="t=10 days", markerfacecolor="none")
+    plt.plot(T_freeze[1, :], z_nod, "sb", label="50 days", markerfacecolor="none")
+    plt.plot(T_freeze[2, :], z_nod, "^b", label="100 days", markerfacecolor="none")
     plt.ylim((6.0, 0.0))
     plt.legend()
     plt.xlabel("temperature, T [deg C]")
@@ -573,12 +578,9 @@ def main():
     plt.plot(T_Neumann_thaw[0, :], z_Neumann, "--k", label="Neumann")
     plt.plot(T_Neumann_thaw[1, :], z_Neumann, "--k")
     plt.plot(T_Neumann_thaw[2, :], z_Neumann, "--k")
-    plt.plot(T_thaw[0, :], z_nod, "or", label="t=10 days",
-             markerfacecolor="none")
-    plt.plot(T_thaw[1, :], z_nod, "sr", label="50 days",
-             markerfacecolor="none")
-    plt.plot(T_thaw[2, :], z_nod, "^r", label="100 days",
-             markerfacecolor="none")
+    plt.plot(T_thaw[0, :], z_nod, "or", label="t=10 days", markerfacecolor="none")
+    plt.plot(T_thaw[1, :], z_nod, "sr", label="50 days", markerfacecolor="none")
+    plt.plot(T_thaw[2, :], z_nod, "^r", label="100 days", markerfacecolor="none")
     plt.ylim((6.0, 0.0))
     plt.legend()
     plt.xlabel("temperature, T [deg C]")
