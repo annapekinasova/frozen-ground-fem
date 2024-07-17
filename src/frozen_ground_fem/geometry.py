@@ -712,6 +712,7 @@ class IntegrationPoint1D(Point1D):
     _pore_pressure: float = 0.0
     _exc_pore_pressure: float = 0.0
     _material: Material
+    _z_def: float = 0.0
 
     def __init__(
         self,
