@@ -8,19 +8,20 @@ from:
         Geoenviron. Eng., 141(11), 06015008,
         doi: 10.1061/(ASCE)GT.1943-5606.0001357.
 """
+
 import time
 import numpy as np
 import numpy.typing as npt
 import matplotlib.pyplot as plt
 
-from frozen_ground_fem.materials import (
+from frozen_ground_fem import (
     Material,
-    unit_weight_water,
-)
-from frozen_ground_fem.consolidation import (
-    ConsolidationAnalysis1D,
-    ConsolidationBoundary1D,
     HydraulicBoundary1D,
+    ConsolidationBoundary1D,
+    ConsolidationAnalysis1D,
+)
+from frozen_ground_fem.materials import (
+    unit_weight_water,
 )
 
 
@@ -35,7 +36,7 @@ def solve_consolidation_benchmark(
     ppc0: float = 0.0,
     tol: float = 1e-6,
     stabilize: bool = True,
-    s_per_yr: float = 3.1536E+07,
+    s_per_yr: float = 3.1536e07,
 ):
     # define the material properties
     m = Material(
@@ -65,8 +66,7 @@ def solve_consolidation_benchmark(
     print(f"e0k = {m.void_ratio_0_hyd_cond}")
     print(f"Cc = {m.comp_index_unfrozen}")
     print(f"Cr = {m.rebound_index_unfrozen}")
-    print(f"sig_p_0 = {m.eff_stress_0_comp} Pa"
-          + f" = {m.eff_stress_0_comp*1e-3} kPa")
+    print(f"sig_p_0 = {m.eff_stress_0_comp} Pa" + f" = {m.eff_stress_0_comp*1e-3} kPa")
     print(f"e0sig = {m.void_ratio_0_comp}")
     print(f"ppc0 = {ppc0} Pa = {ppc0*1e-3} kPa")
     print(f"num_elements = {num_elements}")
@@ -75,19 +75,21 @@ def solve_consolidation_benchmark(
     print(f"tol = {tol:0.4e}")
 
     # define plotting time increments
-    t_plot_targ = np.hstack([
-        0.0,
-        np.linspace(0.01, 0.1, 10)[:-1],
-        np.linspace(0.1, 1.0, 10)[:-1],
-        np.linspace(1.0, 60.0, 60),
-    ]) * s_per_yr
+    t_plot_targ = (
+        np.hstack(
+            [
+                0.0,
+                np.linspace(0.01, 0.1, 10)[:-1],
+                np.linspace(0.1, 1.0, 10)[:-1],
+                np.linspace(1.0, 60.0, 60),
+            ]
+        )
+        * s_per_yr
+    )
     n_plot_targ = len(t_plot_targ)
     dt_plot = np.max([0.5 * s_per_yr, dt_sim_0])
     t_plot_extra = t_max - t_plot_targ[-1]
-    n_plot = (
-        n_plot_targ +
-        int(np.floor(t_plot_extra / dt_plot) + 1)
-    )
+    n_plot = n_plot_targ + int(np.floor(t_plot_extra / dt_plot) + 1)
     n_stab_max = 50
 
     # create consolidation analysis
@@ -120,10 +122,18 @@ def solve_consolidation_benchmark(
 
     # initialize void ratio profile
     (
-        e0, sig_p_0_exp, hyd_cond_0_exp,
-        e1, sig_p_1_exp, hyd_cond_1_exp,
+        e0,
+        sig_p_0_exp,
+        hyd_cond_0_exp,
+        e1,
+        sig_p_1_exp,
+        hyd_cond_1_exp,
     ) = calculate_static_profile(
-        z_nod, m, qi, (qf - qi), ppc0,
+        z_nod,
+        m,
+        qi,
+        (qf - qi),
+        ppc0,
     )
     sig_p_0_exp *= 1.0e-3
     sig_p_1_exp *= 1.0e-3
@@ -150,7 +160,7 @@ def solve_consolidation_benchmark(
     # create hydraulic boundary conditions
     # and assign them to the mesh
     hyd_boundary = HydraulicBoundary1D(
-        (con_static.nodes[0], ),
+        (con_static.nodes[0],),
         bnd_type=HydraulicBoundary1D.BoundaryType.fixed_head,
         bnd_value=H_layer,
     )
@@ -231,11 +241,12 @@ def solve_consolidation_benchmark(
         s_con.append(con_static.calculate_total_settlement())
         UU, Uz = con_static.calculate_degree_consolidation(e1)
         U_con.append(UU)
-        ue = np.array([
-            ip.exc_pore_pressure
-            for e in con_static.elements
-            for ip in e.int_pts
-        ]) * 1.0e-3
+        ue = (
+            np.array(
+                [ip.exc_pore_pressure for e in con_static.elements for ip in e.int_pts]
+            )
+            * 1.0e-3
+        )
         eps_s = np.abs((s_con[-1] - s_con[-2]) / s_con[-1])
         print(
             f"t = {con_static._t1 / s_per_yr:0.3f} yr, "
@@ -275,8 +286,7 @@ def solve_consolidation_benchmark(
     s0 = s_con[k_50 - 1]
     t1 = t_con[k_50]
     t0 = t_con[k_50 - 1]
-    t_50 = (np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0))
-                           * (s_50 - s0) / (s1 - s0))) ** 2
+    t_50 = (np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0)) * (s_50 - s0) / (s1 - s0))) ** 2
 
     print(f"Run time = {run_time: 0.4f} s")
     print(f"Total settlement = {s_con[-1]} m")
@@ -284,11 +294,18 @@ def solve_consolidation_benchmark(
     print(f"t_50 = {t_50} s = {t_50 / s_per_yr} yr")
 
     return (
-        t_con, s_con, U_con,
-        z_nod, z_int,
-        e_nod, Uz_nod,
-        sig_p_int, ue_norm_int, hyd_cond_int,
-        t_50, run_time,
+        t_con,
+        s_con,
+        U_con,
+        z_nod,
+        z_int,
+        e_nod,
+        Uz_nod,
+        sig_p_int,
+        ue_norm_int,
+        hyd_cond_int,
+        t_50,
+        run_time,
     )
 
 
@@ -332,21 +349,23 @@ def main():
         "^",
         "D",
     ]
-    t_FP15 = np.array([
-        0.00,
-        0.05,
-        0.10,
-        0.50,
-        1.00,
-        2.00,
-        3.00,
-        4.00,
-        5.00,
-        10.00,
-        20.00,
-        40.00,
-        60.00,
-    ])
+    t_FP15 = np.array(
+        [
+            0.00,
+            0.05,
+            0.10,
+            0.50,
+            1.00,
+            2.00,
+            3.00,
+            4.00,
+            5.00,
+            10.00,
+            20.00,
+            40.00,
+            60.00,
+        ]
+    )
     z_FP15 = np.linspace(0.0, 10.0, 11)
 
     # load expected settlement
@@ -388,60 +407,116 @@ def main():
     # solve neutral buoyancy case
     # normally consolidated
     (
-        t_con_Gs_1, s_con_Gs_1, U_con_Gs_1,
-        z_nod_Gs_1, z_int_Gs_1,
-        e_nod_Gs_1, Uz_nod_Gs_1,
-        sig_p_int_Gs_1, ue_norm_int_Gs_1, hyd_cond_int_Gs_1,
-        t_50_Gs_1, run_time_Gs_1,
+        t_con_Gs_1,
+        s_con_Gs_1,
+        U_con_Gs_1,
+        z_nod_Gs_1,
+        z_int_Gs_1,
+        e_nod_Gs_1,
+        Uz_nod_Gs_1,
+        sig_p_int_Gs_1,
+        ue_norm_int_Gs_1,
+        hyd_cond_int_Gs_1,
+        t_50_Gs_1,
+        run_time_Gs_1,
     ) = solve_consolidation_benchmark(
-        Gs=1.0, H_layer=H_layer, num_elements=num_elements,
-        dt_sim_0=dt_sim_0, t_max=t_max, qi=qi, qf=qf, ppc0=0.0,
-        stabilize=stabilize, tol=tol,
+        Gs=1.0,
+        H_layer=H_layer,
+        num_elements=num_elements,
+        dt_sim_0=dt_sim_0,
+        t_max=t_max,
+        qi=qi,
+        qf=qf,
+        ppc0=0.0,
+        stabilize=stabilize,
+        tol=tol,
     )
     t_con_Gs_1_yr = t_con_Gs_1 / s_per_yr
 
     # solve self weight case
     # normally consolidated
     (
-        t_con_Gs_278, s_con_Gs_278, U_con_Gs_278,
-        z_nod_Gs_278, z_int_Gs_278,
-        e_nod_Gs_278, Uz_nod_Gs_278,
-        sig_p_int_Gs_278, ue_norm_int_Gs_278, hyd_cond_int_Gs_278,
-        t_50_Gs_278, run_time_Gs_278,
+        t_con_Gs_278,
+        s_con_Gs_278,
+        U_con_Gs_278,
+        z_nod_Gs_278,
+        z_int_Gs_278,
+        e_nod_Gs_278,
+        Uz_nod_Gs_278,
+        sig_p_int_Gs_278,
+        ue_norm_int_Gs_278,
+        hyd_cond_int_Gs_278,
+        t_50_Gs_278,
+        run_time_Gs_278,
     ) = solve_consolidation_benchmark(
-        Gs=2.78, H_layer=H_layer, num_elements=num_elements,
-        dt_sim_0=dt_sim_0, t_max=t_max, qi=qi, qf=qf, ppc0=0.0,
-        stabilize=stabilize, tol=tol,
+        Gs=2.78,
+        H_layer=H_layer,
+        num_elements=num_elements,
+        dt_sim_0=dt_sim_0,
+        t_max=t_max,
+        qi=qi,
+        qf=qf,
+        ppc0=0.0,
+        stabilize=stabilize,
+        tol=tol,
     )
     t_con_Gs_278_yr = t_con_Gs_278 / s_per_yr
 
     # solve neutral buoyancy case
     # overconsolidated
     (
-        t_con_Gs_1_OC, s_con_Gs_1_OC, U_con_Gs_1_OC,
-        z_nod_Gs_1_OC, z_int_Gs_1_OC,
-        e_nod_Gs_1_OC, Uz_nod_Gs_1_OC,
-        sig_p_int_Gs_1_OC, ue_norm_int_Gs_1_OC, hyd_cond_int_Gs_1_OC,
-        t_50_Gs_1_OC, run_time_Gs_1_OC,
+        t_con_Gs_1_OC,
+        s_con_Gs_1_OC,
+        U_con_Gs_1_OC,
+        z_nod_Gs_1_OC,
+        z_int_Gs_1_OC,
+        e_nod_Gs_1_OC,
+        Uz_nod_Gs_1_OC,
+        sig_p_int_Gs_1_OC,
+        ue_norm_int_Gs_1_OC,
+        hyd_cond_int_Gs_1_OC,
+        t_50_Gs_1_OC,
+        run_time_Gs_1_OC,
     ) = solve_consolidation_benchmark(
-        Gs=1.0, H_layer=H_layer, num_elements=num_elements,
-        dt_sim_0=dt_sim_0, t_max=t_max, qi=qi, qf=qf, ppc0=ppc0,
-        stabilize=stabilize, tol=tol,
+        Gs=1.0,
+        H_layer=H_layer,
+        num_elements=num_elements,
+        dt_sim_0=dt_sim_0,
+        t_max=t_max,
+        qi=qi,
+        qf=qf,
+        ppc0=ppc0,
+        stabilize=stabilize,
+        tol=tol,
     )
     t_con_Gs_1_OC_yr = t_con_Gs_1_OC / s_per_yr
 
     # solve self weight case
     # overconsolidated
     (
-        t_con_Gs_278_OC, s_con_Gs_278_OC, U_con_Gs_278_OC,
-        z_nod_Gs_278_OC, z_int_Gs_278_OC,
-        e_nod_Gs_278_OC, Uz_nod_Gs_278_OC,
-        sig_p_int_Gs_278_OC, ue_norm_int_Gs_278_OC, hyd_cond_int_Gs_278_OC,
-        t_50_Gs_278_OC, run_time_Gs_278_OC,
+        t_con_Gs_278_OC,
+        s_con_Gs_278_OC,
+        U_con_Gs_278_OC,
+        z_nod_Gs_278_OC,
+        z_int_Gs_278_OC,
+        e_nod_Gs_278_OC,
+        Uz_nod_Gs_278_OC,
+        sig_p_int_Gs_278_OC,
+        ue_norm_int_Gs_278_OC,
+        hyd_cond_int_Gs_278_OC,
+        t_50_Gs_278_OC,
+        run_time_Gs_278_OC,
     ) = solve_consolidation_benchmark(
-        Gs=2.78, H_layer=H_layer, num_elements=num_elements,
-        dt_sim_0=dt_sim_0, t_max=t_max, qi=qi, qf=qf, ppc0=ppc0,
-        stabilize=stabilize, tol=tol,
+        Gs=2.78,
+        H_layer=H_layer,
+        num_elements=num_elements,
+        dt_sim_0=dt_sim_0,
+        t_max=t_max,
+        qi=qi,
+        qf=qf,
+        ppc0=ppc0,
+        stabilize=stabilize,
+        tol=tol,
     )
     t_con_Gs_278_OC_yr = t_con_Gs_278_OC / s_per_yr
 
@@ -450,17 +525,29 @@ def main():
 
     plt.subplot(2, 2, 1)
     plt.semilogx(
-        t_con_Gs_1_yr[1:], s_con_Gs_1[1:], "--b", label="Gs=1.0",
+        t_con_Gs_1_yr[1:],
+        s_con_Gs_1[1:],
+        "--b",
+        label="Gs=1.0",
     )
     plt.semilogx(
-        t_FP15[1:], s_FP15_Gs_1[1:], "xb", label="Gs=1.0 [FP15]",
+        t_FP15[1:],
+        s_FP15_Gs_1[1:],
+        "xb",
+        label="Gs=1.0 [FP15]",
         markeredgecolor="blue",
     )
     plt.semilogx(
-        t_con_Gs_278_yr[1:], s_con_Gs_278[1:], "-r", label="Gs=2.78",
+        t_con_Gs_278_yr[1:],
+        s_con_Gs_278[1:],
+        "-r",
+        label="Gs=2.78",
     )
     plt.semilogx(
-        t_FP15[1:], s_FP15_Gs_278[1:], "or", label="Gs=2.78 [FP15]",
+        t_FP15[1:],
+        s_FP15_Gs_278[1:],
+        "or",
+        label="Gs=2.78 [FP15]",
         markeredgecolor="red",
     )
     plt.ylabel(r"Settlement, $s$ [$m$]")
@@ -470,17 +557,29 @@ def main():
 
     plt.subplot(2, 2, 2)
     plt.semilogx(
-        t_con_Gs_1_OC_yr[1:], s_con_Gs_1_OC[1:], "--b", label="Gs=1.0",
+        t_con_Gs_1_OC_yr[1:],
+        s_con_Gs_1_OC[1:],
+        "--b",
+        label="Gs=1.0",
     )
     plt.semilogx(
-        t_FP15[1:], s_FP15_Gs_1_OC[1:], "xb", label="Gs=1.0 [FP15]",
+        t_FP15[1:],
+        s_FP15_Gs_1_OC[1:],
+        "xb",
+        label="Gs=1.0 [FP15]",
         markeredgecolor="blue",
     )
     plt.semilogx(
-        t_con_Gs_278_OC_yr[1:], s_con_Gs_278_OC[1:], "-r", label="Gs=2.78",
+        t_con_Gs_278_OC_yr[1:],
+        s_con_Gs_278_OC[1:],
+        "-r",
+        label="Gs=2.78",
     )
     plt.semilogx(
-        t_FP15[1:], s_FP15_Gs_278_OC[1:], "or", label="Gs=2.78 [FP15]",
+        t_FP15[1:],
+        s_FP15_Gs_278_OC[1:],
+        "or",
+        label="Gs=2.78 [FP15]",
         markeredgecolor="red",
     )
     plt.xlim([0.01, 100])
@@ -490,17 +589,29 @@ def main():
 
     plt.subplot(2, 2, 3)
     plt.semilogx(
-        t_con_Gs_1_yr[1:], U_con_Gs_1[1:], "--b", label="Gs=1.0",
+        t_con_Gs_1_yr[1:],
+        U_con_Gs_1[1:],
+        "--b",
+        label="Gs=1.0",
     )
     plt.semilogx(
-        t_FP15[1:], U_FP15_Gs_1[1:], "xb", label="Gs=1.0 [FP15]",
+        t_FP15[1:],
+        U_FP15_Gs_1[1:],
+        "xb",
+        label="Gs=1.0 [FP15]",
         markeredgecolor="blue",
     )
     plt.semilogx(
-        t_con_Gs_278_yr[1:], U_con_Gs_278[1:], "-r", label="Gs=2.78",
+        t_con_Gs_278_yr[1:],
+        U_con_Gs_278[1:],
+        "-r",
+        label="Gs=2.78",
     )
     plt.semilogx(
-        t_FP15[1:], U_FP15_Gs_278[1:], "or", label="Gs=2.78 [FP15]",
+        t_FP15[1:],
+        U_FP15_Gs_278[1:],
+        "or",
+        label="Gs=2.78 [FP15]",
         markeredgecolor="red",
     )
     plt.xlabel(r"Time, $t$ [$yr$]")
@@ -510,17 +621,29 @@ def main():
 
     plt.subplot(2, 2, 4)
     plt.semilogx(
-        t_con_Gs_1_OC_yr[1:], U_con_Gs_1_OC[1:], "--b", label="Gs=1.0",
+        t_con_Gs_1_OC_yr[1:],
+        U_con_Gs_1_OC[1:],
+        "--b",
+        label="Gs=1.0",
     )
     plt.semilogx(
-        t_FP15[1:], U_FP15_Gs_1_OC[1:], "xb", label="Gs=1.0 [FP15]",
+        t_FP15[1:],
+        U_FP15_Gs_1_OC[1:],
+        "xb",
+        label="Gs=1.0 [FP15]",
         markeredgecolor="blue",
     )
     plt.semilogx(
-        t_con_Gs_278_OC_yr[1:], U_con_Gs_278_OC[1:], "-r", label="Gs=2.78",
+        t_con_Gs_278_OC_yr[1:],
+        U_con_Gs_278_OC[1:],
+        "-r",
+        label="Gs=2.78",
     )
     plt.semilogx(
-        t_FP15[1:], U_FP15_Gs_278_OC[1:], "or", label="Gs=2.78 [FP15]",
+        t_FP15[1:],
+        U_FP15_Gs_278_OC[1:],
+        "or",
+        label="Gs=2.78 [FP15]",
         markeredgecolor="red",
     )
     plt.xlabel(r"Time, $t$ [$yr$]")
@@ -533,20 +656,20 @@ def main():
     plt.figure(figsize=(8.1, 4.7))
 
     plt.subplot(2, 2, 1)
+    plt.plot(e_nod_Gs_1[:, 0], z_nod_Gs_1, "--b")
     plt.plot(
-        e_nod_Gs_1[:, 0], z_nod_Gs_1, "--b"
-    )
-    plt.plot(
-        e_FP15_Gs_1[:, 0], z_FP15,
-        marker="x", linestyle="none",
+        e_FP15_Gs_1[:, 0],
+        z_FP15,
+        marker="x",
+        linestyle="none",
         markeredgecolor="blue",
     )
+    plt.plot(e_nod_Gs_278[:, 0], z_nod_Gs_278, "-r")
     plt.plot(
-        e_nod_Gs_278[:, 0], z_nod_Gs_278, "-r"
-    )
-    plt.plot(
-        e_FP15_Gs_278[:, 0], z_FP15,
-        marker="x", linestyle="none",
+        e_FP15_Gs_278[:, 0],
+        z_FP15,
+        marker="x",
+        linestyle="none",
         markeredgecolor="red",
     )
     for kk, kk_plot in enumerate(k_plot):
@@ -555,25 +678,31 @@ def main():
         plt.plot(e_nod_Gs_1[:, kk_plot], z_nod_Gs_1, "--b")
         plt.plot(e_nod_Gs_278[:, kk_plot], z_nod_Gs_278, "-r")
         plt.plot(
-            e_nod_Gs_1[::6, kk_plot], z_nod_Gs_1[::6],
+            e_nod_Gs_1[::6, kk_plot],
+            z_nod_Gs_1[::6],
             marker=k_plot_lts[kk],
             linestyle="none",
             markeredgecolor="blue",
         )
         plt.plot(
-            e_nod_Gs_278[::6, kk_plot], z_nod_Gs_278[::6],
+            e_nod_Gs_278[::6, kk_plot],
+            z_nod_Gs_278[::6],
             marker=k_plot_lts[kk],
             linestyle="none",
             markeredgecolor="red",
         )
         plt.plot(
-            e_FP15_Gs_1[:, kk], z_FP15,
-            marker="x", linestyle="none",
+            e_FP15_Gs_1[:, kk],
+            z_FP15,
+            marker="x",
+            linestyle="none",
             markeredgecolor="blue",
         )
         plt.plot(
-            e_FP15_Gs_278[:, kk], z_FP15,
-            marker="x", linestyle="none",
+            e_FP15_Gs_278[:, kk],
+            z_FP15,
+            marker="x",
+            linestyle="none",
             markeredgecolor="red",
         )
     plt.ylabel(r"Depth (Lagrangian), $Z$ [$m$]")
@@ -584,14 +713,20 @@ def main():
     plt.subplot(2, 2, 3)
     plt.plot(e_nod_Gs_1_OC[:, 0], z_nod_Gs_1_OC, "--b", label="Gs=1.0")
     plt.plot(
-        e_FP15_Gs_1_OC[:, 0], z_FP15, label="Gs=1.0 [FP15]",
-        marker="x", linestyle="none",
+        e_FP15_Gs_1_OC[:, 0],
+        z_FP15,
+        label="Gs=1.0 [FP15]",
+        marker="x",
+        linestyle="none",
         markeredgecolor="blue",
     )
     plt.plot(e_nod_Gs_278_OC[:, 0], z_nod_Gs_278_OC, "-r", label="Gs=2.78")
     plt.plot(
-        e_FP15_Gs_278_OC[:, 0], z_FP15, label="Gs=2.78 [FP15]",
-        marker="x", linestyle="none",
+        e_FP15_Gs_278_OC[:, 0],
+        z_FP15,
+        label="Gs=2.78 [FP15]",
+        marker="x",
+        linestyle="none",
         markeredgecolor="red",
     )
     for kk, kk_plot in enumerate(k_plot):
@@ -600,26 +735,32 @@ def main():
         plt.plot(e_nod_Gs_1_OC[:, kk_plot], z_nod_Gs_1_OC, "--b")
         plt.plot(e_nod_Gs_278_OC[:, kk_plot], z_nod_Gs_278_OC, "-r")
         plt.plot(
-            e_nod_Gs_1_OC[::6, kk_plot], z_nod_Gs_1_OC[::6],
+            e_nod_Gs_1_OC[::6, kk_plot],
+            z_nod_Gs_1_OC[::6],
             label=k_plot_labels[kk],
             marker=k_plot_lts[kk],
             linestyle="none",
             markeredgecolor="blue",
         )
         plt.plot(
-            e_nod_Gs_278_OC[::6, 10], z_nod_Gs_278_OC[::6],
+            e_nod_Gs_278_OC[::6, 10],
+            z_nod_Gs_278_OC[::6],
             marker=k_plot_lts[kk],
             linestyle="none",
             markeredgecolor="red",
         )
         plt.plot(
-            e_FP15_Gs_1_OC[:, kk], z_FP15,
-            marker="x", linestyle="none",
+            e_FP15_Gs_1_OC[:, kk],
+            z_FP15,
+            marker="x",
+            linestyle="none",
             markeredgecolor="blue",
         )
         plt.plot(
-            e_FP15_Gs_278_OC[:, kk], z_FP15,
-            marker="x", linestyle="none",
+            e_FP15_Gs_278_OC[:, kk],
+            z_FP15,
+            marker="x",
+            linestyle="none",
             markeredgecolor="red",
         )
     plt.xlabel(r"Void Ratio, $e$")
@@ -635,25 +776,31 @@ def main():
         plt.plot(ue_norm_int_Gs_1[:, kk_plot], z_int_Gs_1, "--b")
         plt.plot(ue_norm_int_Gs_278[:, kk_plot], z_int_Gs_278, "-r")
         plt.plot(
-            ue_norm_int_Gs_1[::6, kk_plot], z_int_Gs_1[::6],
+            ue_norm_int_Gs_1[::6, kk_plot],
+            z_int_Gs_1[::6],
             marker=k_plot_lts[kk],
             linestyle="none",
             markeredgecolor="blue",
         )
         plt.plot(
-            ue_norm_int_Gs_278[::6, kk_plot], z_int_Gs_278[::6],
+            ue_norm_int_Gs_278[::6, kk_plot],
+            z_int_Gs_278[::6],
             marker=k_plot_lts[kk],
             linestyle="none",
             markeredgecolor="red",
         )
         plt.plot(
-            ue_FP15_Gs_1[:, kk], z_FP15,
-            marker="x", linestyle="none",
+            ue_FP15_Gs_1[:, kk],
+            z_FP15,
+            marker="x",
+            linestyle="none",
             markeredgecolor="blue",
         )
         plt.plot(
-            ue_FP15_Gs_278[:, kk], z_FP15,
-            marker="x", linestyle="none",
+            ue_FP15_Gs_278[:, kk],
+            z_FP15,
+            marker="x",
+            linestyle="none",
             markeredgecolor="red",
         )
     plt.ylim((11, -1))
@@ -667,25 +814,31 @@ def main():
         plt.plot(ue_norm_int_Gs_1_OC[:, kk_plot], z_int_Gs_1_OC, "--b")
         plt.plot(ue_norm_int_Gs_278_OC[:, kk_plot], z_int_Gs_278_OC, "-r")
         plt.plot(
-            ue_norm_int_Gs_1_OC[::6, kk_plot], z_int_Gs_1_OC[::6],
+            ue_norm_int_Gs_1_OC[::6, kk_plot],
+            z_int_Gs_1_OC[::6],
             marker=k_plot_lts[kk],
             linestyle="none",
             markeredgecolor="blue",
         )
         plt.plot(
-            ue_norm_int_Gs_278_OC[::6, kk_plot], z_int_Gs_278_OC[::6],
+            ue_norm_int_Gs_278_OC[::6, kk_plot],
+            z_int_Gs_278_OC[::6],
             marker=k_plot_lts[kk],
             linestyle="none",
             markeredgecolor="red",
         )
         plt.plot(
-            ue_FP15_Gs_1_OC[:, kk], z_FP15,
-            marker="x", linestyle="none",
+            ue_FP15_Gs_1_OC[:, kk],
+            z_FP15,
+            marker="x",
+            linestyle="none",
             markeredgecolor="blue",
         )
         plt.plot(
-            ue_FP15_Gs_278_OC[:, kk], z_FP15,
-            marker="x", linestyle="none",
+            ue_FP15_Gs_278_OC[:, kk],
+            z_FP15,
+            marker="x",
+            linestyle="none",
             markeredgecolor="red",
         )
     plt.xlabel(r"Normalized excess pore pressure, $u_e/\Delta q$")
@@ -804,13 +957,19 @@ def calculate_static_profile(
         else:
             e1[k] = e_cu0 - Ccu * np.log10(sig_p_1[k] / sig_cu0)
     # compute the corresponding hydraulic conductivity
-    hyd_cond_0 = (m.hyd_cond_0 *
-                  10 ** ((e0 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index))
-    hyd_cond_1 = (m.hyd_cond_0 *
-                  10 ** ((e1 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index))
+    hyd_cond_0 = m.hyd_cond_0 * 10 ** (
+        (e0 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index
+    )
+    hyd_cond_1 = m.hyd_cond_0 * 10 ** (
+        (e1 - m.void_ratio_0_hyd_cond) / m.hyd_cond_index
+    )
     return (
-        e0, sig_p_0, hyd_cond_0,
-        e1, sig_p_1, hyd_cond_1,
+        e0,
+        sig_p_0,
+        hyd_cond_0,
+        e1,
+        sig_p_1,
+        hyd_cond_1,
     )
 
 
