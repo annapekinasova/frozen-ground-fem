@@ -17,22 +17,19 @@ boundary conditions, and soil properties from:
         Canadian Geotechnical Journal, 57(10), 1595-1610,
         https://doi.org/10.1139/cgj-2019-0306.
 """
+
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-from frozen_ground_fem.materials import (
+from frozen_ground_fem import (
     Material,
-)
-from frozen_ground_fem.thermal import (
     ThermalBoundary1D,
-)
-from frozen_ground_fem.consolidation import (
-    ConsolidationBoundary1D,
     HydraulicBoundary1D,
-)
-from frozen_ground_fem.coupled import (
+    ConsolidationBoundary1D,
     CoupledAnalysis1D,
+    ThermalAnalysis1D,
+    ConsolidationAnalysis1D,
 )
 
 
@@ -40,8 +37,8 @@ def main():
     # define simulation parameters
     s_per_min = 60.0
     H_layer = 0.5
-    num_elements = 10
-    dt_sim_0 = 1.0e-2
+    num_elements = 50
+    dt_sim_0 = 1.0e-3
     t_max = 1000.0 * s_per_min
     qi = 15.0e3
     tol = 1e-4
@@ -89,13 +86,14 @@ def main():
     print(f"Gs = {m.spec_grav_solids}")
     print(f"lam_s = {m.thrm_cond_solids} W/m/K")
     print(f"cs = {m.spec_heat_cap_solids} J/kg/K")
-    print(f"deg_sat_water_alpha = {m.deg_sat_water_alpha} Pa"
-          + f" = {m.deg_sat_water_alpha*1e-3} kPa")
+    print(
+        f"deg_sat_water_alpha = {m.deg_sat_water_alpha} Pa"
+        + f" = {m.deg_sat_water_alpha*1e-3} kPa"
+    )
     print(f"deg_sat_water_beta = {m.deg_sat_water_beta}")
     print(f"water_flux_b1 = {m.water_flux_b1}")
     print(f"water_flux_b2 = {m.water_flux_b2} 1/K")
-    print(f"water_flux_b3 = {m.water_flux_b3} 1/Pa"
-          + f" = {m.water_flux_b3*1e6} 1/MPa")
+    print(f"water_flux_b3 = {m.water_flux_b3} 1/Pa" + f" = {m.water_flux_b3*1e6} 1/MPa")
     print(f"e_min = {m.void_ratio_min}")
     print(f"e_sep = {m.void_ratio_sep}")
     print(f"seg_pot_0 = {m.seg_pot_0} m^2/K/s")
@@ -105,8 +103,7 @@ def main():
     print(f"e0k = {m.void_ratio_0_hyd_cond}")
     print(f"Cc = {m.comp_index_unfrozen}")
     print(f"Cr = {m.rebound_index_unfrozen}")
-    print(f"sig_p_0 = {m.eff_stress_0_comp} Pa"
-          + f" = {m.eff_stress_0_comp*1e-3} kPa")
+    print(f"sig_p_0 = {m.eff_stress_0_comp} Pa" + f" = {m.eff_stress_0_comp*1e-3} kPa")
     print(f"e0sig = {m.void_ratio_0_comp}")
     print(f"comp_index_frozen_a1 = {m.comp_index_frozen_a1}")
     print(f"comp_index_frozen_a2 = {m.comp_index_frozen_a2}")
@@ -117,30 +114,32 @@ def main():
     print(f"tol = {tol:0.4e}")
 
     # define plotting time increments
-    t_plot_targ = np.hstack([
-        0.0,
-        np.linspace(0.01, 0.1, 10)[:-1],
-        np.linspace(0.1, 1.0, 10)[:-1],
-        np.linspace(1.0, 5.0, 5)[:-1],
-        np.linspace(5.0, 100.0, 20)[:-1],
-        np.linspace(100.0, 300.0, 21)[:-1],
-        np.linspace(300.0, 348.0, 7),
-        np.linspace(400.0, 750.0, 8),
-    ]) * s_per_min
+    t_plot_targ = (
+        np.hstack(
+            [
+                0.0,
+                np.linspace(0.01, 0.1, 10)[:-1],
+                np.linspace(0.1, 1.0, 10)[:-1],
+                np.linspace(1.0, 5.0, 5)[:-1],
+                np.linspace(5.0, 100.0, 20)[:-1],
+                np.linspace(100.0, 300.0, 21)[:-1],
+                np.linspace(300.0, 348.0, 7),
+                np.linspace(400.0, 750.0, 8),
+            ]
+        )
+        * s_per_min
+    )
     n_plot_targ = len(t_plot_targ)
     dt_plot = np.max([50.0 * s_per_min, dt_sim_0])
     t_plot_extra = t_max - t_plot_targ[-1]
-    n_plot = (
-        n_plot_targ +
-        int(np.floor(t_plot_extra / dt_plot) + 1)
-    )
+    n_plot = n_plot_targ + int(np.floor(t_plot_extra / dt_plot) + 1)
 
     # create coupled analysis and generate the mesh
-    con_static = CoupledAnalysis1D(
+    con_static = ThermalAnalysis1D(
         z_range=[0.0, H_layer],
         num_elements=num_elements,
         generate=True,
-        order=1,
+        # order=1,
     )
     con_static.implicit_error_tolerance = tol
 
@@ -157,8 +156,10 @@ def main():
     # set initial conditions
     for nd in con_static.nodes:
         nd.temp = -5.0
-        nd.void_ratio = 2.83
-        nd.void_ratio_0 = 2.83
+        # nd.void_ratio = 2.83
+        # nd.void_ratio_0 = 2.83
+        nd.void_ratio = 1.05
+        nd.void_ratio_0 = 1.05
 
     # assign material properties to elements
     for e in con_static.elements:
@@ -172,23 +173,23 @@ def main():
         bnd_value=5.0,
     )
     con_static.add_boundary(temp_bound)
-    hyd_bound = HydraulicBoundary1D(
-        nodes=(con_static.nodes[0],),
-        bnd_value=H_layer,
-    )
-    con_static.add_boundary(hyd_bound)
-    e_cu0 = m.void_ratio_0_comp
-    Ccu = m.comp_index_unfrozen
-    sig_cu0 = m.eff_stress_0_comp
-    sig_p_ob = 1.50e4
-    e_bnd = e_cu0 - Ccu * np.log10(sig_p_ob / sig_cu0)
-    void_ratio_bound = ConsolidationBoundary1D(
-        nodes=(con_static.nodes[0],),
-        bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
-        bnd_value=e_bnd,
-        bnd_value_1=sig_p_ob,
-    )
-    con_static.add_boundary(void_ratio_bound)
+    # hyd_bound = HydraulicBoundary1D(
+    #     nodes=(con_static.nodes[0],),
+    #     bnd_value=H_layer,
+    # )
+    # con_static.add_boundary(hyd_bound)
+    # e_cu0 = m.void_ratio_0_comp
+    # Ccu = m.comp_index_unfrozen
+    # sig_cu0 = m.eff_stress_0_comp
+    # sig_p_ob = 1.50e4
+    # e_bnd = e_cu0 - Ccu * np.log10(sig_p_ob / sig_cu0)
+    # void_ratio_bound = ConsolidationBoundary1D(
+    #     nodes=(con_static.nodes[0],),
+    #     bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
+    #     bnd_value=e_bnd,
+    #     bnd_value_1=sig_p_ob,
+    # )
+    # con_static.add_boundary(void_ratio_bound)
 
     # start simulation time
     tic = time.perf_counter()
@@ -212,10 +213,11 @@ def main():
 
     t_con = [0.0]
     s_con = [0.0]
+    Z_con = [0.0]
     k_plot = 0
     t_plot = 0.0
-    eps_s = 1.0
-    while (eps_s > tol and k_plot < n_plot) or t_plot < t_plot_targ[-1]:
+    eps_a = 1.0
+    while (eps_a > tol and k_plot < n_plot) or t_plot < t_plot_targ[-1]:
         k_plot += 1
         if k_plot < n_plot_targ:
             t_plot = t_plot_targ[k_plot]
@@ -224,24 +226,55 @@ def main():
         dt00, dt_s, err_s = con_static.solve_to(t_plot)
         toc = time.perf_counter()
         run_time = toc - tic
+        # get total settlement
         t_con.append(con_static._t1)
         s_con.append(con_static.calculate_total_settlement())
-        ue = np.array([
-            ip.exc_pore_pressure
-            for e in con_static.elements
-            for ip in e.int_pts
-        ]) * 1.0e-3
-        eps_s = np.abs((s_con[-1] - s_con[-2]) / s_con[-1])
+        # find thaw depth
+        # first find the element containing T=0.0
+        for k, e in enumerate(con_static.elements):
+            if e.nodes[0].temp * e.nodes[-1].temp < 0.0:
+                ee = e
+                break
+        # get temperatures and depths for this element
+        jac = ee.jacobian
+        Te = np.array([nd.temp for nd in ee.nodes])
+        ze = np.array([nd.z for nd in ee.nodes])
+        # perform Newton-Raphson to find T = 0.0
+        s = 0.5
+        eps_a_Z = 1.0
+        eps_s_Z = 1.0e-8
+        while eps_a_Z > eps_s_Z:
+            N = ee._shape_matrix(s)
+            B = ee._gradient_matrix(s, jac)
+            ds = (N @ Te)[0] / (jac * B @ Te)[0]
+            s -= ds
+            eps_a_Z = np.abs(ds / s)
+        # compute thaw depth Z
+        N = ee._shape_matrix(s)
+        Zte = (N @ ze)[0]
+        Z_con.append(Zte)
+        # get excess pore pressure profile
+        ue = (
+            np.array(
+                [ip.exc_pore_pressure for e in con_static.elements for ip in e.int_pts]
+            )
+            * 1.0e-3
+        )
+        eps_a_scon = np.abs((s_con[-1] - s_con[-2]) / s_con[-1]) if s_con[-1] else 0.0
+        eps_a_Zcon = np.abs((Z_con[-1] - Z_con[-2]) / Z_con[-1]) if Z_con[-1] else 0.0
+        eps_a = np.max([eps_a_scon, eps_a_Zcon])
         print(
             f"t = {con_static._t1 / s_per_min:0.3f} min, "
             + f"s = {s_con[-1]:0.3f} m, "
+            + f"Z = {Z_con[-1]:0.3f} m, "
             + f"ue_mean = {np.mean(ue):0.4f} kPa, "
-            + f"eps =  {eps_s:0.4e}, "
+            + f"eps =  {eps_a:0.4e}, "
             + f"dt = {dt00:0.4e} s, "
             + f"run_time = {run_time:0.4f} s"
         )
+        # save temp, void ratio, eff stress, pore pressure, and deformed coord profiles
         T_nod[:, k_plot] = con_static._temp_vector[:]
-        e_nod[:, k_plot] = con_static._void_ratio_vector[:]
+        # e_nod[:, k_plot] = con_static._void_ratio_vector[:]
         zdef_nod[:, k_plot] = np.array([nd.z_def for nd in con_static.nodes])
         sig_p_int[:, k_plot] = 1.0e-3 * np.array(
             [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
@@ -257,10 +290,12 @@ def main():
     # convert settlement to arrays
     t_con = np.array(t_con)
     s_con = np.array(s_con)
+    Z_con = np.array(Z_con)
     t_con_min = t_con / s_per_min
-    s_con_cm = s_con * 1e-2
-    zdef_nod_cm = zdef_nod * 1e-2
-    zdef_int_cm = zdef_int * 1e-2
+    s_con_cm = s_con * 1e2
+    Z_con_cm = Z_con * 1e2
+    zdef_nod_cm = zdef_nod * 1e2
+    zdef_int_cm = zdef_int * 1e2
 
     # calculate time to 50 percent settlement
     s_tot = np.max(s_con)
@@ -274,19 +309,27 @@ def main():
     s0 = s_con[k_50 - 1]
     t1 = t_con[k_50]
     t0 = t_con[k_50 - 1]
-    t_50 = (np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0))
-                           * (s_50 - s0) / (s1 - s0))) ** 2
+    t_50 = (np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0)) * (s_50 - s0) / (s1 - s0))) ** 2
 
     print(f"Run time = {run_time: 0.4f} s")
     print(f"Total settlement = {s_tot} m = {s_tot * 1e-2} cm")
     print(f"t_50 = {t_50} s = {t_50 / s_per_min} min")
 
-    # settlement and average degree of consolidation
+    # settlement, thaw depth, exc pore press, and void ratio profiles
     plt.figure(figsize=(8.1, 4.7))
 
     plt.subplot(2, 2, 1)
     plt.plot(
-        np.sqrt(t_con_min[1:]), 5.0 - s_con_cm[1:], "or", label="settlement",
+        np.sqrt(t_con_min[1:]),
+        s_con_cm[1:],
+        "or",
+        label="settlement",
+    )
+    plt.plot(
+        np.sqrt(t_con_min[1:]),
+        Z_con_cm[1:],
+        "xb",
+        label="thaw depth",
     )
     plt.ylabel(r"Depth, $s$ [$cm$]")
     plt.xlabel(r"Time, $t$ [$min^{0.5}$]")
@@ -296,19 +339,34 @@ def main():
 
     plt.subplot(2, 2, 2)
     plt.plot(
-        e_nod[:, 23], zdef_nod_cm[:, 23], "ob", label="5 min",
+        e_nod[:, 23],
+        zdef_nod_cm[:, 23],
+        "ob",
+        label="5 min",
     )
     plt.plot(
-        e_nod[:, 27], zdef_nod_cm[:, 27], "or", label="25 min",
+        e_nod[:, 27],
+        zdef_nod_cm[:, 27],
+        "or",
+        label="25 min",
     )
     plt.plot(
-        e_nod[:, 41], zdef_nod_cm[:, 41], "xb", label="95 min",
+        e_nod[:, 41],
+        zdef_nod_cm[:, 41],
+        "xb",
+        label="95 min",
     )
     plt.plot(
-        e_nod[:, 68], zdef_nod_cm[:, 68], "xr", label="348 min",
+        e_nod[:, 68],
+        zdef_nod_cm[:, 68],
+        "xr",
+        label="348 min",
     )
     plt.plot(
-        e_nod[:, 76], zdef_nod_cm[:, 76], "--k", label="750 min",
+        e_nod[:, 76],
+        zdef_nod_cm[:, 76],
+        "--k",
+        label="750 min",
     )
     plt.xlim([1.0, 1.4])
     plt.ylim([5.0, 0.0])
@@ -317,19 +375,34 @@ def main():
 
     plt.subplot(2, 2, 3)
     plt.plot(
-        ue_int[:, 23], zdef_int_cm[:, 23], "ob", label="5 min",
+        ue_int[:, 23],
+        zdef_int_cm[:, 23],
+        "ob",
+        label="5 min",
     )
     plt.plot(
-        ue_int[:, 27], zdef_int_cm[:, 27], "or", label="25 min",
+        ue_int[:, 27],
+        zdef_int_cm[:, 27],
+        "or",
+        label="25 min",
     )
     plt.plot(
-        ue_int[:, 41], zdef_int_cm[:, 41], "xb", label="95 min",
+        ue_int[:, 41],
+        zdef_int_cm[:, 41],
+        "xb",
+        label="95 min",
     )
     plt.plot(
-        ue_int[:, 68], zdef_int_cm[:, 68], "xr", label="348 min",
+        ue_int[:, 68],
+        zdef_int_cm[:, 68],
+        "xr",
+        label="348 min",
     )
     plt.plot(
-        ue_int[:, 76], zdef_int_cm[:, 76], "--k", label="750 min",
+        ue_int[:, 76],
+        zdef_int_cm[:, 76],
+        "--k",
+        label="750 min",
     )
     plt.xlim([0.0, 15.0])
     plt.ylim([5.0, 0.0])
@@ -339,19 +412,34 @@ def main():
 
     plt.subplot(2, 2, 4)
     plt.plot(
-        T_nod[:, 23], zdef_nod_cm[:, 23], "ob", label="5 min",
+        T_nod[:, 23],
+        zdef_nod_cm[:, 23],
+        "ob",
+        label="5 min",
     )
     plt.plot(
-        T_nod[:, 27], zdef_nod_cm[:, 27], "or", label="25 min",
+        T_nod[:, 27],
+        zdef_nod_cm[:, 27],
+        "or",
+        label="25 min",
     )
     plt.plot(
-        T_nod[:, 41], zdef_nod_cm[:, 41], "xb", label="95 min",
+        T_nod[:, 41],
+        zdef_nod_cm[:, 41],
+        "xb",
+        label="95 min",
     )
     plt.plot(
-        T_nod[:, 68], zdef_nod_cm[:, 68], "xr", label="348 min",
+        T_nod[:, 68],
+        zdef_nod_cm[:, 68],
+        "xr",
+        label="348 min",
     )
     plt.plot(
-        T_nod[:, 76], zdef_nod_cm[:, 76], "--k", label="750 min",
+        T_nod[:, 76],
+        zdef_nod_cm[:, 76],
+        "--k",
+        label="750 min",
     )
     plt.xlim([5.0, -5.0])
     plt.ylim([5.0, 0.0])
