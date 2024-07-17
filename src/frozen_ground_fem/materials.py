@@ -3,6 +3,21 @@ for tracking material properties.
 
 """
 
+__all__ = [
+    "grav_acc",
+    "dens_water",
+    "unit_weight_water",
+    "spec_grav_ice",
+    "dens_ice",
+    "vol_heat_cap_water",
+    "vol_heat_cap_ice",
+    "thrm_cond_water",
+    "thrm_cond_ice",
+    "latent_heat_fusion_water",
+    "Material",
+    "NULL_MATERIAL",
+]
+
 import numpy as np
 
 """

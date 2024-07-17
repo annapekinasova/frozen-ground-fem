@@ -8,6 +8,12 @@ ThermalBoundary1D
 ThermalAnalysis1D
 """
 
+__all__ = [
+    "ThermalBoundary1D",
+    "ThermalElement1D",
+    "ThermalAnalysis1D",
+]
+
 from typing import (
     Callable,
     Sequence,
@@ -17,14 +23,14 @@ from enum import Enum
 import numpy as np
 import numpy.typing as npt
 
-from .materials import (
+from . import (
     vol_heat_cap_water as Cw,
     dens_ice as rho_i,
     latent_heat_fusion_water as Lw,
-)
-from .geometry import (
     Node1D,
     IntegrationPoint1D,
+)
+from .geometry import (
     Element1D,
     Boundary1D,
     Mesh1D,
@@ -311,7 +317,7 @@ class ThermalBoundary1D(Boundary1D):
 
     _bnd_type: BoundaryType
     _bnd_value: float = 0.0
-    _bnd_function: Callable | None
+    _bnd_function: Callable[[float], float] | None
 
     def __init__(
         self,
@@ -319,7 +325,7 @@ class ThermalBoundary1D(Boundary1D):
         int_pts: Sequence[IntegrationPoint1D] = (),
         bnd_type=BoundaryType.temp,
         bnd_value: float = 0.0,
-        bnd_function: Callable | None = None,
+        bnd_function: Callable[[float], float] | None = None,
     ):
         super().__init__(nodes, int_pts)
         self.bnd_type = bnd_type
@@ -383,11 +389,11 @@ class ThermalBoundary1D(Boundary1D):
 
         Parameters
         ----------
-        Callable or None
+        Callable[[float], float] or None
 
         Returns
         -------
-        Callable or None
+        Callable[[float], float] or None
 
         Raises
         ------

@@ -2,25 +2,30 @@
 Module for coupled thermal and large strain consolidation physics
 using the finite element method.
 """
+
+__all__ = [
+    "ThermalBoundary1D",
+    "HydraulicBoundary1D",
+    "ConsolidationBoundary1D",
+    "CoupledElement1D",
+    "CoupledAnalysis1D",
+]
+
 import numpy as np
 import numpy.typing as npt
 
-from .materials import (
+from . import (
     unit_weight_water as gam_w,
-)
-from .geometry import (
-    Mesh1D,
-)
-from .thermal import (
     ThermalElement1D,
     ThermalBoundary1D,
     ThermalAnalysis1D,
-)
-from .consolidation import (
     ConsolidationElement1D,
     ConsolidationBoundary1D,
     HydraulicBoundary1D,
     ConsolidationAnalysis1D,
+)
+from .geometry import (
+    Mesh1D,
 )
 
 
@@ -114,7 +119,10 @@ class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
                 e_f0 = ip.void_ratio_0_ref_frozen
                 sig_f0 = ip.tot_stress_0_ref_frozen
                 sig, dsig_de = ip.material.tot_stress(
-                    T, ep, e_f0, sig_f0,
+                    T,
+                    ep,
+                    e_f0,
+                    sig_f0,
                 )
                 ip.loc_stress = sig
                 ip.tot_stress_gradient = dsig_de
@@ -147,7 +155,9 @@ class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
                     Gs = ip.material.spec_grav_solids
                     e_ratio = (1.0 + e0) / (1.0 + ep)
                     ip.water_flux_rate = (
-                        -hyd_cond / gam_w * e_ratio
+                        -hyd_cond
+                        / gam_w
+                        * e_ratio
                         * ((Gs - 1.0) * gam_w / (1.0 + e0) - dsig_de * de_dZ)
                     )
 
@@ -220,6 +230,7 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         If grid_size cannot be cast to float.
         If grid_size < 0.0.
     """
+
     _elements: tuple[CoupledElement1D, ...]
     _boundaries: set
     _free_vec_thrm: tuple[npt.NDArray, ...]
@@ -265,10 +276,7 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
 
     def add_boundary(
         self,
-        new_boundary:
-            ThermalBoundary1D
-            | ConsolidationBoundary1D
-            | HydraulicBoundary1D,
+        new_boundary: ThermalBoundary1D | ConsolidationBoundary1D | HydraulicBoundary1D,
     ) -> None:
         """Adds a boundary to the mesh.
 
@@ -300,15 +308,12 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             )
         for nd in new_boundary.nodes:
             if nd not in self.nodes:
-                raise ValueError(f"new_boundary contains node {nd}"
-                                 + " not in mesh")
+                raise ValueError(f"new_boundary contains node {nd}" + " not in mesh")
         if new_boundary.int_pts:
             int_pts = tuple(ip for e in self.elements for ip in e.int_pts)
             for ip in new_boundary.int_pts:
                 if ip not in int_pts:
-                    raise ValueError(
-                        f"new_boundary contains int_pt {ip} not in mesh"
-                    )
+                    raise ValueError(f"new_boundary contains int_pt {ip} not in mesh")
         self._boundaries.add(new_boundary)
 
     def _generate_elements(self, num_elements: int, order: int):
@@ -320,9 +325,9 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         to generate CoupledElement1D objects.
         """
         self._elements = tuple(
-            CoupledElement1D(tuple(self.nodes[order * k + j]
-                                   for j in range(order + 1)),
-                             order)
+            CoupledElement1D(
+                tuple(self.nodes[order * k + j] for j in range(order + 1)), order
+            )
             for k in range(num_elements)
         )
 
@@ -346,9 +351,7 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         ThermalAnalysis1D.store_converged_matrices(self)
         ConsolidationAnalysis1D.store_converged_matrices(self)
 
-    def update_boundary_conditions(
-            self,
-            time: float) -> None:
+    def update_boundary_conditions(self, time: float) -> None:
         """Update the thermal and consolidation boundary conditions.
 
         Parameters
@@ -376,9 +379,7 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             if tb.bnd_type == ThermalBoundary1D.BoundaryType.temp:
                 for nd in tb.nodes:
                     self._temp_vector[nd.index] = nd.temp
-            elif (
-                tb.bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio
-            ):
+            elif tb.bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio:
                 for nd in tb.nodes:
                     self._void_ratio_vector[nd.index] = nd.void_ratio
 
@@ -414,8 +415,7 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
 
     def update_iteration_variables(self) -> None:
         eps_a_thrm = float(
-            np.linalg.norm(self._delta_temp_vector) /
-            np.linalg.norm(self._temp_vector)
+            np.linalg.norm(self._delta_temp_vector) / np.linalg.norm(self._temp_vector)
         )
         eps_a_cnsl = float(
             np.linalg.norm(self._delta_void_ratio_vector)
@@ -425,13 +425,13 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         self._iter += 1
 
     def solve_to(
-            self,
-            tf: float,
-            adapt_dt: bool = True,
-        ) -> tuple[
-            float,
-            npt.NDArray,
-            npt.NDArray,
+        self,
+        tf: float,
+        adapt_dt: bool = True,
+    ) -> tuple[
+        float,
+        npt.NDArray,
+        npt.NDArray,
     ]:
         """Performs time integration until
         specified final time tf.
@@ -484,23 +484,29 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         temp_error = np.zeros_like(self._temp_vector)
         temp_rate_0 = np.zeros_like(self._temp_vector)
         temp_scale = np.zeros_like(self._temp_vector)
-        vol_water_cont__0 = np.zeros((
-            self.num_elements,
-            num_int_pt_per_element,
-        ))
-        temp__0 = np.zeros((
-            self.num_elements,
-            num_int_pt_per_element,
-        ))
+        vol_water_cont__0 = np.zeros(
+            (
+                self.num_elements,
+                num_int_pt_per_element,
+            )
+        )
+        temp__0 = np.zeros(
+            (
+                self.num_elements,
+                num_int_pt_per_element,
+            )
+        )
         void_ratio_vector_0 = np.zeros_like(self._void_ratio_vector)
         void_ratio_vector_1 = np.zeros_like(self._void_ratio_vector)
         void_ratio_error = np.zeros_like(self._void_ratio_vector)
         void_ratio_rate = np.zeros_like(self._void_ratio_vector)
         void_ratio_scale = np.zeros_like(self._void_ratio_vector)
-        pre_consol_stress__0 = np.zeros((
-            self.num_elements,
-            num_int_pt_per_element,
-        ))
+        pre_consol_stress__0 = np.zeros(
+            (
+                self.num_elements,
+                num_int_pt_per_element,
+            )
+        )
         dt_list = []
         err_list = []
         done = False
@@ -561,14 +567,14 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             self.initialize_time_step()
             self.iterative_correction_step()
             # compute truncation error correction
-            temp_error[:] = (self._temp_vector[:]
-                             - temp_vector_1[:]) / 3.0
+            temp_error[:] = (self._temp_vector[:] - temp_vector_1[:]) / 3.0
             self._temp_vector[:] += temp_error[:]
-            self._temp_rate_vector[:] = (
-                self.over_dt * (self._temp_vector[:] - self._temp_vector_0[:])
+            self._temp_rate_vector[:] = self.over_dt * (
+                self._temp_vector[:] - self._temp_vector_0[:]
             )
-            void_ratio_error[:] = (self._void_ratio_vector[:]
-                                   - void_ratio_vector_1[:]) / 3.0
+            void_ratio_error[:] = (
+                self._void_ratio_vector[:] - void_ratio_vector_1[:]
+            ) / 3.0
             self._void_ratio_vector[:] += void_ratio_error[:]
             self.update_nodes()
             self.update_integration_points_primary()
@@ -578,27 +584,38 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             self.update_pore_pressure_distribution()
             self.update_global_matrices_and_vectors()
             # update the time step
-            temp_scale[:] = np.max(np.vstack([
-                self._temp_vector[:],
-                self._temp_rate_vector[:] * self.time_step,
-            ]), axis=0)
+            temp_scale[:] = np.max(
+                np.vstack(
+                    [
+                        self._temp_vector[:],
+                        self._temp_rate_vector[:] * self.time_step,
+                    ]
+                ),
+                axis=0,
+            )
             T_scale = float(np.linalg.norm(temp_scale))
-            void_ratio_rate[:] = (self._void_ratio_vector[:]
-                                  - void_ratio_vector_0[:])
-            void_ratio_scale[:] = np.max(np.vstack([
-                self._void_ratio_vector[:],
-                void_ratio_rate,
-            ]), axis=0)
+            void_ratio_rate[:] = self._void_ratio_vector[:] - void_ratio_vector_0[:]
+            void_ratio_scale[:] = np.max(
+                np.vstack(
+                    [
+                        self._void_ratio_vector[:],
+                        void_ratio_rate,
+                    ]
+                ),
+                axis=0,
+            )
             e_scale = float(np.linalg.norm(void_ratio_scale))
             err_targ_thrm = self.eps_s * T_scale
             err_curr_thrm = float(np.linalg.norm(temp_error))
             err_targ_cnsl = self.eps_s * e_scale
             err_curr_cnsl = float(np.linalg.norm(void_ratio_error))
             # update the time step
-            eps_a = np.max([
-                err_curr_thrm / T_scale,
-                err_curr_cnsl / e_scale,
-            ])
+            eps_a = np.max(
+                [
+                    err_curr_thrm / T_scale,
+                    err_curr_cnsl / e_scale,
+                ]
+            )
             dt1_thrm = dt0 * (err_targ_thrm / err_curr_thrm) ** 0.2
             dt1_cnsl = dt0 * (err_targ_cnsl / err_curr_cnsl) ** 0.2
             dt1 = np.min([dt1_thrm, dt1_cnsl])

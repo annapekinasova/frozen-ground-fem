@@ -18,7 +18,21 @@ Boundary1D
 Mesh1D
 """
 
+__all__ = [
+    "shape_matrix_linear",
+    "shape_matrix_cubic",
+    "gradient_matrix_linear",
+    "gradient_matrix_cubic",
+    "Point1D",
+    "Node1D",
+    "IntegrationPoint1D",
+    "Boundary1D",
+    "Element1D",
+    "Mesh1D",
+]
+
 from typing import (
+    Callable,
     ClassVar,
     Sequence,
     Any,
@@ -27,13 +41,15 @@ from typing import (
 import numpy as np
 import numpy.typing as npt
 
-from .materials import (
+from . import (
     Material,
-    NULL_MATERIAL,
     thrm_cond_ice as lam_i,
     thrm_cond_water as lam_w,
     vol_heat_cap_ice as C_i,
     vol_heat_cap_water as C_w,
+)
+from .materials import (
+    NULL_MATERIAL,
 )
 
 
@@ -1655,6 +1671,8 @@ class Element1D:
     _int_pts: tuple[IntegrationPoint1D, ...]
     _int_pts_deformed: tuple[tuple[IntegrationPoint1D, ...], ...]
     _order: int = 3
+    _shape_matrix: Callable[[float], npt.NDArray[np.floating]]
+    _gradient_matrix: Callable[[float, float], npt.NDArray[np.floating]]
 
     def __init__(
         self,
@@ -1982,6 +2000,8 @@ class Mesh1D:
     _max_iterations: int = 100
     _free_vec: tuple[npt.NDArray, ...]
     _free_arr: tuple[npt.NDArray, ...]
+    _t0: float
+    _t1: float
 
     def __init__(
         self,

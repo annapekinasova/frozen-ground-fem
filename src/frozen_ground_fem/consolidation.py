@@ -9,6 +9,13 @@ ConsolidationBoundary1D
 ConsolidationAnalysis1D
 """
 
+__all__ = [
+    "HydraulicBoundary1D",
+    "ConsolidationBoundary1D",
+    "ConsolidationElement1D",
+    "ConsolidationAnalysis1D",
+]
+
 from typing import (
     Callable,
     Sequence,
@@ -18,14 +25,13 @@ from enum import Enum
 import numpy as np
 import numpy.typing as npt
 
-from .materials import (
+from . import (
     unit_weight_water as gam_w,
     spec_grav_ice as Gi,
-)
-
-from .geometry import (
     Node1D,
     IntegrationPoint1D,
+)
+from .geometry import (
     Element1D,
     Boundary1D,
     Mesh1D,
@@ -443,7 +449,7 @@ class ConsolidationBoundary1D(Boundary1D):
 
     _bnd_type: BoundaryType
     _bnd_value: float = 0.0
-    _bnd_function: Callable | None
+    _bnd_function: Callable[[float], float] | None
     _bnd_value_1: float = 0.0
 
     def __init__(
@@ -452,7 +458,7 @@ class ConsolidationBoundary1D(Boundary1D):
         int_pts: Sequence[IntegrationPoint1D] = (),
         bnd_type=BoundaryType.water_flux,
         bnd_value: float = 0.0,
-        bnd_function: Callable | None = None,
+        bnd_function: Callable[[float], float] | None = None,
         bnd_value_1: float = 0.0,
     ):
         super().__init__(nodes, int_pts)
@@ -661,7 +667,7 @@ class HydraulicBoundary1D(Boundary1D):
 
     _bnd_type: BoundaryType
     _bnd_value: float = 0.0
-    _bnd_function: Callable | None
+    _bnd_function: Callable[[float], float] | None
 
     def __init__(
         self,
@@ -669,7 +675,7 @@ class HydraulicBoundary1D(Boundary1D):
         int_pts: Sequence[IntegrationPoint1D] = (),
         bnd_type=BoundaryType.fixed_head,
         bnd_value: float = 0.0,
-        bnd_function: Callable | None = None,
+        bnd_function: Callable[[float], float] | None = None,
     ):
         super().__init__(nodes, int_pts)
         self.bnd_type = bnd_type
