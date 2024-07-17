@@ -833,38 +833,6 @@ class IntegrationPoint1D(Point1D):
         self._vol_water_cont = self.porosity * self.deg_sat_water
 
     @property
-    def void_ratio__0(self) -> float:
-        """Previous void ratio of the integration point
-        (e.g. at the beginning of a time step).
-
-        Parameters
-        ----------
-        float
-
-        Returns
-        -------
-        float
-
-        Raises
-        ------
-        ValueError
-            If value to assign is not convertible to float.
-            If value to assign is negative.
-
-        Notes
-        -----
-        Also updates porosity and volumetric ice content.
-        """
-        return self._void_ratio__0
-
-    @void_ratio__0.setter
-    def void_ratio__0(self, value: float) -> None:
-        value = float(value)
-        if value < 0.0:
-            raise ValueError(f"void_ratio {value} is not positive")
-        self._void_ratio__0 = value
-
-    @property
     def void_ratio_0(self) -> float:
         """Initial (reference) void ratio of the integration point
         (e.g. prior to settlement analysis).
@@ -1360,30 +1328,6 @@ class IntegrationPoint1D(Point1D):
         self._eff_stress = float(value)
 
     @property
-    def eff_stress__0(self) -> float:
-        """Previous effective stress of the integration point
-        (e.g. at the beginning of a time step).
-
-        Parameters
-        ----------
-        float
-
-        Returns
-        -------
-        float
-
-        Raises
-        ------
-        ValueError
-            If the value to assign is not convertible to float.
-        """
-        return self._eff_stress__0
-
-    @eff_stress__0.setter
-    def eff_stress__0(self, value: float) -> None:
-        self._eff_stress__0 = float(value)
-
-    @property
     def eff_stress_gradient(self) -> float:
         """Effective stress gradient
         (with respect to void ratio)
@@ -1589,6 +1533,32 @@ class IntegrationPoint1D(Point1D):
     @exc_pore_pressure.setter
     def exc_pore_pressure(self, value: float) -> None:
         self._exc_pore_pressure = float(value)
+
+    @property
+    def z_def(self) -> float:
+        """Deformed coordinate of the integration point.
+
+        Parameters
+        ----------
+        float
+            Value to assign to the deformed coordinate
+            of the :c:`IntegrationPoint1D`.
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+        """
+        return self._z_def
+
+    @z_def.setter
+    def z_def(self, value: float) -> None:
+        value = float(value)
+        self._z_def = value
 
 
 class Element1D:
@@ -2641,9 +2611,6 @@ class Mesh1D:
             e.update_integration_points_secondary()
 
     def update_global_matrices_and_vectors(self) -> None:
-        pass
-
-    def update_boundary_vectors(self) -> None:
         pass
 
     def calculate_solution_vector_correction(self) -> None:

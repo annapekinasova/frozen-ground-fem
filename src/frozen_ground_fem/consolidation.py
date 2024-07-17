@@ -1185,9 +1185,6 @@ class ConsolidationAnalysis1D(Mesh1D):
         self.update_stiffness_matrix()
         self.update_mass_matrix()
 
-    def update_boundary_vectors(self) -> None:
-        self.update_water_flux_vector()
-
     def calculate_solution_vector_correction(self) -> None:
         """Performs a single iteration of void ratio correction
         in the implicit time stepping scheme.
@@ -1402,7 +1399,8 @@ class ConsolidationAnalysis1D(Mesh1D):
 
         Notes
         -----
-        Also assigns deformed coordinates to the nodes.
+        Also assigns deformed coordinates to the nodes
+        and integration points.
         """
         # initialize top node with settlement
         s = self.calculate_total_settlement()
@@ -1419,6 +1417,12 @@ class ConsolidationAnalysis1D(Mesh1D):
         # assign deformed coordinates to the nodes
         for k, zd in enumerate(def_coords):
             self.nodes[k].z_def = zd
+        # update deformed coordinates at the integration points
+        for e in self.elements:
+            zde = np.array([nd.z_def for nd in e.nodes])
+            for ip in e.int_pts:
+                N = e._shape_matrix(ip.local_coord)
+                ip.z_def = (N @ zde)[0]
         return def_coords
 
     def update_total_stress_distribution(self) -> None:
