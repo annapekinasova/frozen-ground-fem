@@ -169,6 +169,17 @@ class ThermalElement1D(Element1D):
         temp and vol_water_cont, but allows opportunity for modifying
         these values before calling initialize_integration_points_secondary().
         """
+        ee = np.array([nd.void_ratio for nd in self.nodes])
+        ee0 = np.array([nd.void_ratio_0 for nd in self.nodes])
+        for ip in self.int_pts:
+            N = self._shape_matrix(ip.local_coord)
+            ip.void_ratio = (N @ ee)[0]
+            ip.void_ratio_0 = (N @ ee0)[0]
+        for iipp in self._int_pts_deformed:
+            for ip in iipp:
+                N = self._shape_matrix(ip.local_coord)
+                ip.void_ratio = (N @ ee)[0]
+                ip.void_ratio_0 = (N @ ee0)[0]
         ThermalElement1D.update_integration_points_primary(self)
         for ip in self.int_pts:
             ip.temp__0 = ip.temp
