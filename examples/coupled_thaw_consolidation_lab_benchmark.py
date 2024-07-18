@@ -28,8 +28,6 @@ from frozen_ground_fem import (
     HydraulicBoundary1D,
     ConsolidationBoundary1D,
     CoupledAnalysis1D,
-    ThermalAnalysis1D,
-    ConsolidationAnalysis1D,
 )
 
 
@@ -37,7 +35,7 @@ def main():
     # define simulation parameters
     s_per_min = 60.0
     H_layer = 0.5
-    num_elements = 50
+    num_elements = 25
     dt_sim_0 = 1.0e-3
     t_max = 1000.0 * s_per_min
     qi = 15.0e3
@@ -71,7 +69,7 @@ def main():
         hyd_cond_0=8.10e-6,
         void_ratio_min=0.3,
         void_ratio_tr=0.0,
-        void_ratio_sep=1.6,
+        void_ratio_sep=2.6,
         void_ratio_0_comp=2.6,
         eff_stress_0_comp=2.8,
         comp_index_unfrozen=0.421,
@@ -135,11 +133,10 @@ def main():
     n_plot = n_plot_targ + int(np.floor(t_plot_extra / dt_plot) + 1)
 
     # create coupled analysis and generate the mesh
-    con_static = ThermalAnalysis1D(
+    con_static = CoupledAnalysis1D(
         z_range=[0.0, H_layer],
         num_elements=num_elements,
         generate=True,
-        # order=1,
     )
     con_static.implicit_error_tolerance = tol
 
@@ -156,10 +153,8 @@ def main():
     # set initial conditions
     for nd in con_static.nodes:
         nd.temp = -5.0
-        # nd.void_ratio = 2.83
-        # nd.void_ratio_0 = 2.83
-        nd.void_ratio = 1.05
-        nd.void_ratio_0 = 1.05
+        nd.void_ratio = 1.60
+        nd.void_ratio_0 = 1.60
 
     # assign material properties to elements
     for e in con_static.elements:
@@ -173,23 +168,24 @@ def main():
         bnd_value=5.0,
     )
     con_static.add_boundary(temp_bound)
-    # hyd_bound = HydraulicBoundary1D(
-    #     nodes=(con_static.nodes[0],),
-    #     bnd_value=H_layer,
-    # )
-    # con_static.add_boundary(hyd_bound)
-    # e_cu0 = m.void_ratio_0_comp
-    # Ccu = m.comp_index_unfrozen
-    # sig_cu0 = m.eff_stress_0_comp
-    # sig_p_ob = 1.50e4
-    # e_bnd = e_cu0 - Ccu * np.log10(sig_p_ob / sig_cu0)
-    # void_ratio_bound = ConsolidationBoundary1D(
-    #     nodes=(con_static.nodes[0],),
-    #     bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
-    #     bnd_value=e_bnd,
-    #     bnd_value_1=sig_p_ob,
-    # )
-    # con_static.add_boundary(void_ratio_bound)
+    hyd_bound = HydraulicBoundary1D(
+        nodes=(con_static.nodes[0],),
+        bnd_value=H_layer,
+    )
+    con_static.add_boundary(hyd_bound)
+    e_cu0 = m.void_ratio_0_comp
+    Ccu = m.comp_index_unfrozen
+    sig_cu0 = m.eff_stress_0_comp
+    sig_p_ob = 1.50e4
+    e_bnd = e_cu0 - Ccu * np.log10(sig_p_ob / sig_cu0)
+    void_ratio_bound = ConsolidationBoundary1D(
+        nodes=(con_static.nodes[0],),
+        bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
+        bnd_value=e_bnd,
+        bnd_value_1=sig_p_ob,
+    )
+    con_static.add_boundary(void_ratio_bound)
+    print(e_bnd)
 
     # start simulation time
     tic = time.perf_counter()
@@ -238,7 +234,6 @@ def main():
         # get temperatures and depths for this element
         jac = ee.jacobian
         Te = np.array([nd.temp for nd in ee.nodes])
-        ze = np.array([nd.z for nd in ee.nodes])
         # perform Newton-Raphson to find T = 0.0
         s = 0.5
         eps_a_Z = 1.0
@@ -249,9 +244,10 @@ def main():
             ds = (N @ Te)[0] / (jac * B @ Te)[0]
             s -= ds
             eps_a_Z = np.abs(ds / s)
-        # compute thaw depth Z
+        # compute thaw depth (in deformed coords)
+        zde = np.array([nd.z_def for nd in ee.nodes])
         N = ee._shape_matrix(s)
-        Zte = (N @ ze)[0]
+        Zte = (N @ zde)[0]
         Z_con.append(Zte)
         # get excess pore pressure profile
         ue = (
@@ -273,8 +269,8 @@ def main():
             + f"run_time = {run_time:0.4f} s"
         )
         # save temp, void ratio, eff stress, pore pressure, and deformed coord profiles
-        T_nod[:, k_plot] = con_static._temp_vector[:]
-        # e_nod[:, k_plot] = con_static._void_ratio_vector[:]
+        T_nod[:, k_plot] = np.array([nd.temp for nd in con_static.nodes])
+        e_nod[:, k_plot] = np.array([nd.void_ratio for nd in con_static.nodes])
         zdef_nod[:, k_plot] = np.array([nd.z_def for nd in con_static.nodes])
         sig_p_int[:, k_plot] = 1.0e-3 * np.array(
             [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
@@ -312,11 +308,11 @@ def main():
     t_50 = (np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0)) * (s_50 - s0) / (s1 - s0))) ** 2
 
     print(f"Run time = {run_time: 0.4f} s")
-    print(f"Total settlement = {s_tot} m = {s_tot * 1e-2} cm")
+    print(f"Total settlement = {s_tot} m = {s_tot * 1e2} cm")
     print(f"t_50 = {t_50} s = {t_50 / s_per_min} min")
 
     # settlement, thaw depth, exc pore press, and void ratio profiles
-    plt.figure(figsize=(8.1, 4.7))
+    plt.figure(figsize=(8.0, 8.0))
 
     plt.subplot(2, 2, 1)
     plt.plot(
@@ -368,8 +364,8 @@ def main():
         "--k",
         label="750 min",
     )
-    plt.xlim([1.0, 1.4])
-    plt.ylim([5.0, 0.0])
+    plt.xlim([1.0, 2.6])
+    plt.ylim([50.0, 0.0])
     plt.xlabel(r"Void ratio, $e$")
     plt.legend()
 
@@ -404,8 +400,8 @@ def main():
         "--k",
         label="750 min",
     )
-    plt.xlim([0.0, 15.0])
-    plt.ylim([5.0, 0.0])
+    plt.xlim([0.0, 20.0])
+    plt.ylim([50.0, 0.0])
     plt.xlabel(r"Excess pore pressure, $u_e$ [$kPa$]")
     plt.ylabel(r"Depth, $s$ [$cm$]")
     plt.legend()
@@ -441,8 +437,8 @@ def main():
         "--k",
         label="750 min",
     )
-    plt.xlim([5.0, -5.0])
-    plt.ylim([5.0, 0.0])
+    plt.xlim([6.0, -6.0])
+    plt.ylim([50.0, 0.0])
     plt.xlabel(r"Temperature, $T$ [$deg C$]")
     plt.legend()
 
