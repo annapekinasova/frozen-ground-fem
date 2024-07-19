@@ -26,6 +26,7 @@ import numpy.typing as npt
 from . import (
     vol_heat_cap_water as Cw,
     dens_ice as rho_i,
+    spec_grav_ice as Gi,
     latent_heat_fusion_water as Lw,
     Node1D,
     IntegrationPoint1D,
@@ -35,6 +36,8 @@ from .geometry import (
     Boundary1D,
     Mesh1D,
 )
+
+_ONE_MINUS_Gi = 1.0 - Gi
 
 
 class ThermalElement1D(Element1D):
@@ -169,21 +172,20 @@ class ThermalElement1D(Element1D):
         temp and vol_water_cont, but allows opportunity for modifying
         these values before calling initialize_integration_points_secondary().
         """
-        ee = np.array([nd.void_ratio for nd in self.nodes])
         ee0 = np.array([nd.void_ratio_0 for nd in self.nodes])
         for ip in self.int_pts:
             N = self._shape_matrix(ip.local_coord)
-            ip.void_ratio = (N @ ee)[0]
             ip.void_ratio_0 = (N @ ee0)[0]
         for iipp in self._int_pts_deformed:
             for ip in iipp:
                 N = self._shape_matrix(ip.local_coord)
-                ip.void_ratio = (N @ ee)[0]
                 ip.void_ratio_0 = (N @ ee0)[0]
         ThermalElement1D.update_integration_points_primary(self)
         for ip in self.int_pts:
             ip.temp__0 = ip.temp
             ip.vol_water_cont__0 = ip.vol_water_cont
+        for nd in self.nodes:
+            nd.deg_sat_water__0 = nd.deg_sat_water
 
     def initialize_integration_points_secondary(self) -> None:
         """Initializes values of thermal secondary solution variables
@@ -223,6 +225,8 @@ class ThermalElement1D(Element1D):
         Lagrangian coordinates) and temperature rate are also not affected
         by coupling, so are safe to update here.
         """
+        self.update_deg_sat_water_nodes()
+        ee = np.array([nd.void_ratio for nd in self.nodes])
         Te = np.array([nd.temp for nd in self.nodes])
         dTdte = np.array([nd.temp_rate for nd in self.nodes])
         jac = self.jacobian
@@ -230,6 +234,7 @@ class ThermalElement1D(Element1D):
             N = self._shape_matrix(ip.local_coord)
             B = self._gradient_matrix(ip.local_coord, jac)
             T = (N @ Te)[0]
+            ip.void_ratio = (N @ ee)[0]
             ip.temp = T
             ip.temp_gradient = (B @ Te)[0]
             ip.temp_rate = (N @ dTdte)[0]
@@ -238,9 +243,9 @@ class ThermalElement1D(Element1D):
             for ip in iipp:
                 N = self._shape_matrix(ip.local_coord)
                 T = (N @ Te)[0]
-                Sw = ip.material.deg_sat_water(T)[0]
+                ip.void_ratio = (N @ ee)[0]
                 ip.temp = T
-                ip.deg_sat_water = Sw
+                ip.deg_sat_water = ip.material.deg_sat_water(T)[0]
 
     def update_integration_points_secondary(self) -> None:
         """Updates values of thermal secondary solution variables
@@ -277,6 +282,11 @@ class ThermalElement1D(Element1D):
                     ip.temp_gradient,
                     ip.tot_stress,
                 )
+
+    def update_deg_sat_water_nodes(self) -> None:
+        m = self.int_pts[0].material
+        for nd in self.nodes:
+            nd.deg_sat_water = m.deg_sat_water(nd.temp)[0]
 
 
 class ThermalBoundary1D(Boundary1D):
@@ -666,6 +676,8 @@ class ThermalAnalysis1D(Mesh1D):
         self._heat_flux_vector_0[:] = self._heat_flux_vector[:]
         self._heat_flow_matrix_0[:, :] = self._heat_flow_matrix[:, :]
         self._heat_storage_matrix_0[:, :] = self._heat_storage_matrix[:, :]
+        for nd in self.nodes:
+            nd.deg_sat_water__0 = nd.deg_sat_water
         for e in self.elements:
             for ip in e.int_pts:
                 ip.temp__0 = ip.temp
@@ -819,6 +831,12 @@ class ThermalAnalysis1D(Mesh1D):
         # increment temperature and iteration variables
         self._temp_vector[self._free_vec] += self._delta_temp_vector[self._free_vec]
 
+    def update_void_ratio_phase_change(self) -> None:
+        for nd in self.nodes:
+            dSw = nd.deg_sat_water - nd.deg_sat_water__0
+            de = -_ONE_MINUS_Gi * nd.void_ratio_0 * dSw
+            nd.void_ratio += de
+
     def update_iteration_variables(self) -> None:
         self._eps_a = float(
             np.linalg.norm(self._delta_temp_vector) / np.linalg.norm(self._temp_vector)
@@ -884,6 +902,8 @@ class ThermalAnalysis1D(Mesh1D):
         temp_vector_1 = np.zeros_like(self._temp_vector)
         temp_error = np.zeros_like(self._temp_vector)
         temp_rate_0 = np.zeros_like(self._temp_vector)
+        deg_sat_water_0 = np.zeros_like(self._temp_vector)
+        void_ratio_vector_0 = np.zeros_like(self._temp_vector)
         temp_scale = np.zeros_like(self._temp_vector)
         vol_water_cont__0 = np.zeros(
             (
@@ -911,6 +931,8 @@ class ThermalAnalysis1D(Mesh1D):
             dt0 = self.time_step
             temp_vector_0[:] = self._temp_vector[:]
             temp_rate_0[:] = self._temp_rate_vector[:]
+            void_ratio_vector_0[:] = np.array([nd.void_ratio for nd in self.nodes])
+            deg_sat_water_0[:] = np.array([nd.deg_sat_water__0 for nd in self.nodes])
             for ke, e in enumerate(self.elements):
                 for jip, ip in enumerate(e.int_pts):
                     temp__0[ke, jip] = ip.temp
@@ -923,6 +945,9 @@ class ThermalAnalysis1D(Mesh1D):
             # reset the system
             self._temp_vector[:] = temp_vector_0[:]
             self._temp_rate_vector[:] = temp_rate_0[:]
+            for nd, en0, Sw0 in zip(self.nodes, void_ratio_vector_0, deg_sat_water_0):
+                nd.void_ratio = en0
+                nd.deg_sat_water__0 = Sw0
             for e, T0e, thw0_e in zip(
                 self.elements,
                 temp__0,
@@ -933,8 +958,10 @@ class ThermalAnalysis1D(Mesh1D):
                     ip.vol_water_cont__0 = thw0
             self.update_nodes()
             self.update_integration_points_primary()
+            self.calculate_deformed_coords()
             self.update_total_stress_distribution()
             self.update_integration_points_secondary()
+            self.update_pore_pressure_distribution()
             self.update_global_matrices_and_vectors()
             self._t1 = t0
             # take two half steps
@@ -951,8 +978,10 @@ class ThermalAnalysis1D(Mesh1D):
             )
             self.update_nodes()
             self.update_integration_points_primary()
+            self.calculate_deformed_coords()
             self.update_total_stress_distribution()
             self.update_integration_points_secondary()
+            self.update_pore_pressure_distribution()
             self.update_global_matrices_and_vectors()
             # update the time step
             temp_scale[:] = np.max(

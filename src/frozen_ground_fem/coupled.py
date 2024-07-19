@@ -413,6 +413,11 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         self._free_arr = self._free_arr_cnsl
         ConsolidationAnalysis1D.calculate_solution_vector_correction(self)
 
+    def update_void_ratio_phase_change(self) -> None:
+        ThermalAnalysis1D.update_void_ratio_phase_change(self)
+        for nd in self.nodes:
+            self._void_ratio_vector[nd.index] = nd.void_ratio
+
     def update_iteration_variables(self) -> None:
         eps_a_thrm = float(
             np.linalg.norm(self._delta_temp_vector) / np.linalg.norm(self._temp_vector)
@@ -483,6 +488,7 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         temp_vector_1 = np.zeros_like(self._temp_vector)
         temp_error = np.zeros_like(self._temp_vector)
         temp_rate_0 = np.zeros_like(self._temp_vector)
+        deg_sat_water_0 = np.zeros_like(self._temp_vector)
         temp_scale = np.zeros_like(self._temp_vector)
         vol_water_cont__0 = np.zeros(
             (
@@ -522,6 +528,7 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             temp_vector_0[:] = self._temp_vector[:]
             temp_rate_0[:] = self._temp_rate_vector[:]
             void_ratio_vector_0[:] = self._void_ratio_vector[:]
+            deg_sat_water_0[:] = np.array([nd.deg_sat_water__0 for nd in self.nodes])
             for ke, e in enumerate(self.elements):
                 for jip, ip in enumerate(e.int_pts):
                     temp__0[ke, jip] = ip.temp
@@ -537,6 +544,8 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             self._temp_vector[:] = temp_vector_0[:]
             self._temp_rate_vector[:] = temp_rate_0[:]
             self._void_ratio_vector[:] = void_ratio_vector_0[:]
+            for nd, Sw0 in zip(self.nodes, deg_sat_water_0):
+                nd.deg_sat_water__0 = Sw0
             for e, T0e, thw0_e, ppc0_e in zip(
                 self.elements,
                 temp__0,

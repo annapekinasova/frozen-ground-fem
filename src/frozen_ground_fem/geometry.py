@@ -286,6 +286,8 @@ class Node1D(Point1D):
     void_ratio_0
     tot_stress
     z_def
+    deg_sat_water
+    deg_sat_water__0
 
     Parameters
     ----------
@@ -332,6 +334,8 @@ class Node1D(Point1D):
     _temp_rate: float = 0.0
     _tot_stress: float = 0.0
     _z_def: float = 0.0
+    _deg_sat_water: float = 1.0
+    _deg_sat_water__0: float = 1.0
 
     def __init__(
         self,
@@ -342,6 +346,9 @@ class Node1D(Point1D):
         void_ratio_0: float = 0.0,
         temp_rate: float = 0.0,
         tot_stress: float = 0.0,
+        z_def: float = 0.0,
+        deg_sat_water: float = 1.0,
+        deg_sat_water__0: float = 1.0,
     ):
         self.index = index
         super().__init__(coord)
@@ -351,6 +358,8 @@ class Node1D(Point1D):
         self.temp_rate = temp_rate
         self.tot_stress = tot_stress
         self.z_def = coord
+        self.deg_sat_water = deg_sat_water
+        self.deg_sat_water__0 = deg_sat_water__0
 
     @property
     def temp(self) -> float:
@@ -537,6 +546,61 @@ class Node1D(Point1D):
     def z_def(self, value: float) -> None:
         value = float(value)
         self._z_def = value
+
+    @property
+    def deg_sat_water(self) -> float:
+        """Degree of saturation of water of the node.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.0 or value > 1.0
+        """
+        return self._deg_sat_water
+
+    @deg_sat_water.setter
+    def deg_sat_water(self, value: float) -> None:
+        value = float(value)
+        if value < 0.0 or value > 1.0:
+            raise ValueError(f"deg_sat_water value {value} not between 0.0 and 1.0")
+        self._deg_sat_water = value
+
+    @property
+    def deg_sat_water__0(self) -> float:
+        """Previous degree of saturation of water of the node
+        (i.e. at the beginning of the time step).
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If value to assign is not convertible to float.
+            If value < 0.0 or value > 1.0
+        """
+        return self._deg_sat_water__0
+
+    @deg_sat_water__0.setter
+    def deg_sat_water__0(self, value: float) -> None:
+        value = float(value)
+        if value < 0.0 or value > 1.0:
+            raise ValueError(f"deg_sat_water__0 value {value} not between 0.0 and 1.0")
+        self._deg_sat_water__0 = value
 
 
 class IntegrationPoint1D(Point1D):
@@ -2637,6 +2701,9 @@ class Mesh1D:
     def calculate_solution_vector_correction(self) -> None:
         pass
 
+    def update_void_ratio_phase_change(self) -> None:
+        pass
+
     def iterative_correction_step(self) -> None:
         """Performs iterative correction of the
         global void ratio vector for a single time step.
@@ -2658,6 +2725,13 @@ class Mesh1D:
             self.update_pore_pressure_distribution()
             self.update_global_matrices_and_vectors()
             self.update_iteration_variables()
+        self.update_void_ratio_phase_change()
+        self.update_integration_points_primary()
+        self.calculate_deformed_coords()
+        self.update_total_stress_distribution()
+        self.update_integration_points_secondary()
+        self.update_pore_pressure_distribution()
+        self.update_global_matrices_and_vectors()
 
     def update_iteration_variables(self) -> None:
         self._iter += 1
