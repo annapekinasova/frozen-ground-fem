@@ -35,11 +35,11 @@ def main():
     # define simulation parameters
     s_per_min = 60.0
     H_layer = 0.5
-    num_elements = 25
-    dt_sim_0 = 1.0e-3
+    num_elements = 50
+    dt_sim_0 = 1.0e-4
     t_max = 1000.0 * s_per_min
     qi = 15.0e3
-    tol = 1e-4
+    tol = 1e-5
 
     # set plotting parameters
     plt.rc("font", size=9)
@@ -153,8 +153,8 @@ def main():
     # set initial conditions
     for nd in con_static.nodes:
         nd.temp = -5.0
-        nd.void_ratio = 1.60
-        nd.void_ratio_0 = 1.60
+        nd.void_ratio = 2.83
+        nd.void_ratio_0 = 2.83
 
     # assign material properties to elements
     for e in con_static.elements:
