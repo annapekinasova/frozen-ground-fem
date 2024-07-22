@@ -36,10 +36,11 @@ def main():
     s_per_min = 60.0
     H_layer = 0.5
     num_elements = 50
-    dt_sim_0 = 1.0e-4
+    dt_sim_0 = 1.0e-3
+    dt_sim_max = 1.0e-1
     t_max = 1000.0 * s_per_min
     qi = 15.0e3
-    tol = 1e-5
+    tol = 1e-4
 
     # set plotting parameters
     plt.rc("font", size=9)
@@ -137,6 +138,7 @@ def main():
         z_range=[0.0, H_layer],
         num_elements=num_elements,
         generate=True,
+        order=1,
     )
     con_static.implicit_error_tolerance = tol
 
@@ -185,7 +187,6 @@ def main():
         bnd_value_1=sig_p_ob,
     )
     con_static.add_boundary(void_ratio_bound)
-    print(e_bnd)
 
     # start simulation time
     tic = time.perf_counter()
@@ -193,6 +194,7 @@ def main():
     # initialize global matrices and vectors
     print(f"initialize system, qi = {qi} Pa")
     con_static.time_step = dt_sim_0
+    con_static.time_step_max = dt_sim_max
     con_static.initialize_global_system(t0=0.0)
     T_nod[:, 0] = np.array([nd.temp for nd in con_static.nodes])
     e_nod[:, 0] = np.array([nd.void_ratio for nd in con_static.nodes])
