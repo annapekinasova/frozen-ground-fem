@@ -483,6 +483,7 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             return Mesh1D.solve_to(self, tf)
         # initialize vectors and matrices
         # for adaptive step size correction
+        dtmax = self.time_step_max if self.time_step_max else np.finfo(np.floating).max
         num_int_pt_per_element = len(self.elements[0].int_pts)
         temp_vector_0 = np.zeros_like(self._temp_vector)
         temp_vector_1 = np.zeros_like(self._temp_vector)
@@ -528,7 +529,7 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             temp_vector_0[:] = self._temp_vector[:]
             temp_rate_0[:] = self._temp_rate_vector[:]
             void_ratio_vector_0[:] = self._void_ratio_vector[:]
-            deg_sat_water_0[:] = np.array([nd.deg_sat_water__0 for nd in self.nodes])
+            deg_sat_water_0[:] = np.array([nd.deg_sat_water for nd in self.nodes])
             for ke, e in enumerate(self.elements):
                 for jip, ip in enumerate(e.int_pts):
                     temp__0[ke, jip] = ip.temp
@@ -627,7 +628,7 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             )
             dt1_thrm = dt0 * (err_targ_thrm / err_curr_thrm) ** 0.2
             dt1_cnsl = dt0 * (err_targ_cnsl / err_curr_cnsl) ** 0.2
-            dt1 = np.min([dt1_thrm, dt1_cnsl])
+            dt1 = np.min([dt1_thrm, dt1_cnsl, dtmax])
             self.time_step = dt1
             dt_list.append(dt0)
             err_list.append(eps_a)

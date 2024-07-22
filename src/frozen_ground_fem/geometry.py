@@ -467,8 +467,8 @@ class Node1D(Point1D):
     @void_ratio.setter
     def void_ratio(self, value: float) -> None:
         value = float(value)
-        if value < 0.0:
-            raise ValueError(f"void_ratio {value} is not positive")
+        # if value < 0.0:
+        #     raise ValueError(f"void_ratio {value} is not positive")
         self._void_ratio = value
 
     @property
@@ -907,8 +907,8 @@ class IntegrationPoint1D(Point1D):
     @void_ratio.setter
     def void_ratio(self, value: float) -> None:
         value = float(value)
-        if value < 0.0:
-            raise ValueError(f"void_ratio {value} is not positive")
+        # if value < 0.0:
+        #     raise ValueError(f"void_ratio {value} is not positive")
         self._void_ratio = value
         self._porosity = value / (1.0 + value)
         self._vol_water_cont = self.porosity * self.deg_sat_water
@@ -1462,10 +1462,10 @@ class IntegrationPoint1D(Point1D):
     @void_ratio_0_ref_frozen.setter
     def void_ratio_0_ref_frozen(self, value: float) -> None:
         value = float(value)
-        if value < 0.0:
-            raise ValueError(
-                f"value {value} for void_ratio_0_ref_frozen" + " cannot be negative."
-            )
+        # if value < 0.0:
+        #     raise ValueError(
+        #         f"value {value} for void_ratio_0_ref_frozen" + " cannot be negative."
+        #     )
         self._void_ratio_0_ref_frozen = value
 
     @property
@@ -1563,10 +1563,10 @@ class IntegrationPoint1D(Point1D):
     @tot_stress_gradient.setter
     def tot_stress_gradient(self, value: float) -> None:
         value = float(value)
-        if value > 0.0:
-            raise ValueError(
-                f"value {value} for tot_stress_gradient cannot be positive."
-            )
+        # if value > 0.0:
+        #     raise ValueError(
+        #         f"value {value} for tot_stress_gradient cannot be positive."
+        #     )
         self._tot_stress_gradient = value
 
     @property
@@ -2058,6 +2058,7 @@ class Mesh1D:
     _elements: tuple[Any, ...]
     _boundaries: set[Any]
     _time_step: float = 0.0
+    _time_step_max: float = 0.0
     _inv_time_step: float = 0.0
     _implicit_factor: float = 0.5  # Crank-Nicolson
     _inv_implicit_factor: float = 0.5
@@ -2442,6 +2443,33 @@ class Mesh1D:
         so this property call just returns the value.
         """
         return self._inv_time_step
+
+    @property
+    def time_step_max(self) -> float:
+        """The maximum time step for the transient analysis.
+
+        Parameters
+        ----------
+        float
+
+        Returns
+        -------
+        float
+
+        Raises
+        ------
+        ValueError
+            If the value to assign is not convertible to float.
+            If the value to assign is negative.
+        """
+        return self._time_step_max
+
+    @time_step_max.setter
+    def time_step_max(self, value: float) -> None:
+        value = float(value)
+        if value <= 0.0:
+            raise ValueError(f"invalid time_step {value}, must be positive")
+        self._time_step_max = value
 
     @property
     def implicit_factor(self) -> float:
