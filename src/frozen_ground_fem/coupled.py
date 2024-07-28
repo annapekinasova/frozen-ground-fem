@@ -146,7 +146,7 @@ class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
                 ip.eff_stress = sig
                 ip.eff_stress_gradient = dsig_de
                 # update hydraulic conductivity and water flux
-                hyd_cond, dk_de = ip.material.hyd_cond(ep, 1.0, False)
+                hyd_cond, dk_de = ip.material.hyd_cond(ep, 1.0, True)
                 ip.hyd_cond = hyd_cond
                 ip.hyd_cond_gradient = dk_de
                 if not hyd_cond:
@@ -483,7 +483,6 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             return Mesh1D.solve_to(self, tf)
         # initialize vectors and matrices
         # for adaptive step size correction
-        dtmax = self.time_step_max if self.time_step_max else np.finfo(np.floating).max
         num_int_pt_per_element = len(self.elements[0].int_pts)
         temp_vector_0 = np.zeros_like(self._temp_vector)
         temp_vector_1 = np.zeros_like(self._temp_vector)
@@ -628,7 +627,7 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
             )
             dt1_thrm = dt0 * (err_targ_thrm / err_curr_thrm) ** 0.2
             dt1_cnsl = dt0 * (err_targ_cnsl / err_curr_cnsl) ** 0.2
-            dt1 = np.min([dt1_thrm, dt1_cnsl, dtmax])
+            dt1 = np.min([dt1_thrm, dt1_cnsl])
             self.time_step = dt1
             dt_list.append(dt0)
             err_list.append(eps_a)
