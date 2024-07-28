@@ -1511,7 +1511,7 @@ class ConsolidationAnalysis1D(Mesh1D):
                 uu = ip.tot_stress - ip.eff_stress
                 ue = uu - uh
                 ip.pore_pressure = uu
-                ip.exc_pore_pressure = ue
+                ip.exc_pore_pressure = ue if ip.temp >= 0.0 else 0.0
 
     def calculate_degree_consolidation(
         self,
