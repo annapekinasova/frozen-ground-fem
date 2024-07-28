@@ -1214,13 +1214,18 @@ class Material:
         eu0 = self.void_ratio_0_hyd_cond
         e_min = self.void_ratio_min
         e_tr = self.void_ratio_tr
+        e_sep = self.void_ratio_sep
         m = 1.0
         if thawed and e >= e_min and e <= e_tr:
             m = self.hyd_cond_mult
         k0 = m * self.hyd_cond_0
         C_ku = self.hyd_cond_index
-        k = k0 * 10 ** ((e - eu0) / C_ku)
-        dk_de = k * _LOG_10 / C_ku
+        if e > e_sep:
+            k = k0 * 10 ** ((e_sep - eu0) / C_ku)
+            dk_de = 0.0
+        else:
+            k = k0 * 10 ** ((e - eu0) / C_ku)
+            dk_de = k * _LOG_10 / C_ku
         return k, dk_de
 
     def water_flux(
@@ -1303,6 +1308,11 @@ class Material:
         sig_cu0 = self.eff_stress_0_comp
         e_cu0 = self.void_ratio_0_comp
         Ccu = self.comp_index_unfrozen
+        # check for separation
+        if e > self.void_ratio_sep:
+            sig_p = 1.0
+            dsig_de = -0.1 * sig_p * _LOG_10 / Ccu
+            return sig_p, dsig_de
         # check if current void ratio implies stress above preconsolidation
         sig_p_ncl = sig_cu0 * 10 ** ((e_cu0 - e) / Ccu)
         if sig_p_ncl >= ppc:
@@ -1340,6 +1350,10 @@ class Material:
         sig_cu0 = self.eff_stress_0_comp
         Ccu = self.comp_index_unfrozen
         Cru = self.rebound_index_unfrozen
+        # check for separation
+        # (if void ratio too large, set URL based on e_sep)
+        if e > e_sep:
+            e = e_sep
         # check for initialization of residual stress line index
         if not self.residual_index:
             e_min = self.void_ratio_min
