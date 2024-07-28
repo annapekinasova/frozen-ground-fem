@@ -37,7 +37,7 @@ def main():
     H_layer = 0.5
     num_elements = 50
     dt_sim_0 = 1.0e-3
-    dt_sim_max = 1.0e-1
+    # t_max = 10.0 * s_per_min
     t_max = 1000.0 * s_per_min
     qi = 15.0e3
     tol = 1e-4
@@ -66,11 +66,12 @@ def main():
         seg_pot_0=2.0e-9,
         hyd_cond_index=0.305,
         void_ratio_0_hyd_cond=2.6,
-        hyd_cond_mult=0.8,
-        hyd_cond_0=8.10e-6,
+        hyd_cond_mult=1.0,
+        hyd_cond_0=4.05e-4,
+        void_ratio_lim=0.3,
         void_ratio_min=0.3,
-        void_ratio_tr=0.0,
-        void_ratio_sep=2.6,
+        void_ratio_tr=1.6,
+        void_ratio_sep=1.6,
         void_ratio_0_comp=2.6,
         eff_stress_0_comp=2.8,
         comp_index_unfrozen=0.421,
@@ -119,6 +120,7 @@ def main():
                 0.0,
                 np.linspace(0.01, 0.1, 10)[:-1],
                 np.linspace(0.1, 1.0, 10)[:-1],
+                # np.linspace(1.0, 10.0, 91),
                 np.linspace(1.0, 5.0, 5)[:-1],
                 np.linspace(5.0, 100.0, 20)[:-1],
                 np.linspace(100.0, 300.0, 21)[:-1],
@@ -129,7 +131,7 @@ def main():
         * s_per_min
     )
     n_plot_targ = len(t_plot_targ)
-    dt_plot = np.max([50.0 * s_per_min, dt_sim_0])
+    dt_plot = np.max([np.max(np.diff(t_plot_targ)), dt_sim_0])
     t_plot_extra = t_max - t_plot_targ[-1]
     n_plot = n_plot_targ + int(np.floor(t_plot_extra / dt_plot) + 1)
 
@@ -194,7 +196,6 @@ def main():
     # initialize global matrices and vectors
     print(f"initialize system, qi = {qi} Pa")
     con_static.time_step = dt_sim_0
-    con_static.time_step_max = dt_sim_max
     con_static.initialize_global_system(t0=0.0)
     T_nod[:, 0] = np.array([nd.temp for nd in con_static.nodes])
     e_nod[:, 0] = np.array([nd.void_ratio for nd in con_static.nodes])
@@ -332,7 +333,7 @@ def main():
     plt.ylabel(r"Depth, $s$ [$cm$]")
     plt.xlabel(r"Time, $t$ [$min^{0.5}$]")
     plt.xlim([0.0, 20])
-    plt.ylim([5.0, 0.0])
+    plt.ylim([15.0, 0.0])
     plt.legend()
 
     plt.subplot(2, 2, 2)
@@ -340,34 +341,44 @@ def main():
         e_nod[:, 23],
         zdef_nod_cm[:, 23],
         "ob",
+        # label="1.4 min",
         label="5 min",
     )
     plt.plot(
         e_nod[:, 27],
         zdef_nod_cm[:, 27],
         "or",
+        # label="1.8 min",
         label="25 min",
     )
     plt.plot(
         e_nod[:, 41],
         zdef_nod_cm[:, 41],
         "xb",
+        # label="3.2 min",
         label="95 min",
     )
     plt.plot(
         e_nod[:, 68],
         zdef_nod_cm[:, 68],
         "xr",
+        # label="5.9 min",
         label="348 min",
     )
+    # plt.plot(
+    #     e_nod[:, 108],
+    #     zdef_nod_cm[:, 108],
+    #     "--k",
+    #     label="9.9 min",
+    # )
     plt.plot(
         e_nod[:, 76],
         zdef_nod_cm[:, 76],
         "--k",
         label="750 min",
     )
-    plt.xlim([1.0, 2.6])
-    plt.ylim([50.0, 0.0])
+    plt.xlim([1.0, 3.0])
+    plt.ylim([15.0, 0.0])
     plt.xlabel(r"Void ratio, $e$")
     plt.legend()
 
@@ -376,26 +387,36 @@ def main():
         ue_int[:, 23],
         zdef_int_cm[:, 23],
         "ob",
+        # label="1.4 min",
         label="5 min",
     )
     plt.plot(
         ue_int[:, 27],
         zdef_int_cm[:, 27],
         "or",
+        # label="1.8 min",
         label="25 min",
     )
     plt.plot(
         ue_int[:, 41],
         zdef_int_cm[:, 41],
         "xb",
+        # label="3.2 min",
         label="95 min",
     )
     plt.plot(
         ue_int[:, 68],
         zdef_int_cm[:, 68],
         "xr",
+        # label="5.9 min",
         label="348 min",
     )
+    # plt.plot(
+    #     ue_int[:, 108],
+    #     zdef_int_cm[:, 108],
+    #     "--k",
+    #     label="9.9 min",
+    # )
     plt.plot(
         ue_int[:, 76],
         zdef_int_cm[:, 76],
@@ -403,7 +424,7 @@ def main():
         label="750 min",
     )
     plt.xlim([0.0, 20.0])
-    plt.ylim([50.0, 0.0])
+    plt.ylim([15.0, 0.0])
     plt.xlabel(r"Excess pore pressure, $u_e$ [$kPa$]")
     plt.ylabel(r"Depth, $s$ [$cm$]")
     plt.legend()
@@ -413,26 +434,36 @@ def main():
         T_nod[:, 23],
         zdef_nod_cm[:, 23],
         "ob",
-        label="5 min",
+        label="1.4 min",
+        # label="5 min",
     )
     plt.plot(
         T_nod[:, 27],
         zdef_nod_cm[:, 27],
         "or",
+        # label="1.8 min",
         label="25 min",
     )
     plt.plot(
         T_nod[:, 41],
         zdef_nod_cm[:, 41],
         "xb",
+        # label="3.2 min",
         label="95 min",
     )
     plt.plot(
         T_nod[:, 68],
         zdef_nod_cm[:, 68],
         "xr",
+        # label="5.9 min",
         label="348 min",
     )
+    # plt.plot(
+    #     T_nod[:, 108],
+    #     zdef_nod_cm[:, 108],
+    #     "--k",
+    #     label="9.9 min",
+    # )
     plt.plot(
         T_nod[:, 76],
         zdef_nod_cm[:, 76],
@@ -440,7 +471,7 @@ def main():
         label="750 min",
     )
     plt.xlim([6.0, -6.0])
-    plt.ylim([50.0, 0.0])
+    plt.ylim([15.0, 0.0])
     plt.xlabel(r"Temperature, $T$ [$deg C$]")
     plt.legend()
 
