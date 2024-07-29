@@ -1668,24 +1668,57 @@ class Element1D:
         If order is not 1 or 3.
     """
 
-    _int_pt_coords_linear: ClassVar[tuple[float, float]] = (
-        0.211324865405187,
-        0.788675134594813,
-    )
-    _int_pt_weights_linear: ClassVar[tuple[float, float]] = (
+    # _int_pt_coords_linear: ClassVar[tuple[float, float]] = (
+    #     0.211324865405187,
+    #     0.788675134594813,
+    # )
+    # _int_pt_weights_linear: ClassVar[tuple[float, float]] = (
+    #     0.5,
+    #     0.5,
+    # )
+    # _int_pt_coords_linear_deformed: ClassVar[tuple[tuple[float, float]]] = (
+    #     (
+    #         0.211324865405187,
+    #         0.788675134594813,
+    #     ),
+    # )
+    # _int_pt_weights_linear_deformed: ClassVar[tuple[tuple[float, float]]] = (
+    #     (
+    #         0.5,
+    #         0.5,
+    #     ),
+    # )
+
+    _int_pt_coords_linear: ClassVar[tuple[float, ...]] = (
+        0.04691007703066802,
+        0.2307653449471585,
         0.5,
-        0.5,
+        0.7692346550528415,
+        0.9530899229693319,
     )
-    _int_pt_coords_linear_deformed: ClassVar[tuple[tuple[float, float]]] = (
+    _int_pt_weights_linear: ClassVar[tuple[float, ...]] = (
+        0.11846344252809454,
+        0.23931433524968324,
+        0.28444444444444444,
+        0.23931433524968324,
+        0.11846344252809454,
+    )
+    _int_pt_coords_linear_deformed: ClassVar[tuple[tuple[float, float], ...]] = (
         (
-            0.211324865405187,
-            0.788675134594813,
+            0.04691007703066802,
+            0.2307653449471585,
+            0.5,
+            0.7692346550528415,
+            0.9530899229693319,
         ),
     )
-    _int_pt_weights_linear_deformed: ClassVar[tuple[tuple[float, float]]] = (
+    _int_pt_weights_linear_deformed: ClassVar[tuple[tuple[float, float], ...]] = (
         (
-            0.5,
-            0.5,
+            0.11846344252809454,
+            0.23931433524968324,
+            0.28444444444444444,
+            0.23931433524968324,
+            0.11846344252809454,
         ),
     )
 
