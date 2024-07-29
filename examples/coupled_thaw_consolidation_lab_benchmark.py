@@ -35,12 +35,11 @@ def main():
     # define simulation parameters
     s_per_min = 60.0
     H_layer = 0.5
-    num_elements = 50
-    dt_sim_0 = 1.0e-3
-    # t_max = 10.0 * s_per_min
+    num_elements = 500
+    dt_sim_0 = 1.0e-5
     t_max = 1000.0 * s_per_min
     qi = 15.0e3
-    tol = 1e-4
+    tol = 1e-3
 
     # set plotting parameters
     plt.rc("font", size=9)
@@ -120,7 +119,6 @@ def main():
                 0.0,
                 np.linspace(0.01, 0.1, 10)[:-1],
                 np.linspace(0.1, 1.0, 10)[:-1],
-                # np.linspace(1.0, 10.0, 91),
                 np.linspace(1.0, 5.0, 5)[:-1],
                 np.linspace(5.0, 100.0, 20)[:-1],
                 np.linspace(100.0, 300.0, 21)[:-1],
@@ -131,7 +129,17 @@ def main():
         * s_per_min
     )
     n_plot_targ = len(t_plot_targ)
-    dt_plot = np.max([np.max(np.diff(t_plot_targ)), dt_sim_0])
+    dt_plot = np.max(
+        [
+            np.min(
+                [
+                    np.max(np.diff(t_plot_targ)),
+                    50.0 * s_per_min,
+                ]
+            ),
+            dt_sim_0,
+        ]
+    )
     t_plot_extra = t_max - t_plot_targ[-1]
     n_plot = n_plot_targ + int(np.floor(t_plot_extra / dt_plot) + 1)
 
@@ -224,7 +232,8 @@ def main():
             t_plot += dt_plot
         dt00, dt_s, err_s = con_static.solve_to(t_plot)
         toc = time.perf_counter()
-        run_time = toc - tic
+        run_time = (toc - tic) / s_per_min
+        rem_time = (t_max - con_static._t1) / con_static._t1 * run_time
         # get total settlement
         t_con.append(con_static._t1)
         s_con.append(con_static.calculate_total_settlement())
@@ -267,9 +276,9 @@ def main():
             + f"s = {s_con[-1]:0.3f} m, "
             + f"Z = {Z_con[-1]:0.3f} m, "
             + f"ue_mean = {np.mean(ue):0.4f} kPa, "
-            + f"eps =  {eps_a:0.4e}, "
             + f"dt = {dt00:0.4e} s, "
-            + f"run_time = {run_time:0.4f} s"
+            + f"run_time = {run_time:0.4f} min, "
+            + f"rem_time = {rem_time:0.4f} min"
         )
         # save temp, void ratio, eff stress, pore pressure, and deformed coord profiles
         T_nod[:, k_plot] = np.array([nd.temp for nd in con_static.nodes])
@@ -284,7 +293,7 @@ def main():
         )
 
     toc = time.perf_counter()
-    run_time = toc - tic
+    run_time = (toc - tic) / s_per_min
 
     # convert settlement to arrays
     t_con = np.array(t_con)
@@ -310,7 +319,7 @@ def main():
     t0 = t_con[k_50 - 1]
     t_50 = (np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0)) * (s_50 - s0) / (s1 - s0))) ** 2
 
-    print(f"Run time = {run_time: 0.4f} s")
+    print(f"Run time = {run_time: 0.4f} min")
     print(f"Total settlement = {s_tot} m = {s_tot * 1e2} cm")
     print(f"t_50 = {t_50} s = {t_50 / s_per_min} min")
 
@@ -434,8 +443,8 @@ def main():
         T_nod[:, 23],
         zdef_nod_cm[:, 23],
         "ob",
-        label="1.4 min",
-        # label="5 min",
+        # label="1.4 min",
+        label="5 min",
     )
     plt.plot(
         T_nod[:, 27],
