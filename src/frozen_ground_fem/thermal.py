@@ -122,7 +122,7 @@ class ThermalElement1D(Element1D):
         for ip in self.int_pts:
             lat_heat = Lw * rho_i * ip.vol_water_cont_temp_gradient
             N = self._shape_matrix(ip.local_coord)
-            C += ip.weight * (ip.vol_heat_cap + lat_heat) * (N.T @ N)
+            C += ip.weight * (2.0 * ip.vol_heat_cap + 4.0 * lat_heat) * (N.T @ N)
         C *= jac
         return C
 
