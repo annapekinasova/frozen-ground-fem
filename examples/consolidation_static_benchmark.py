@@ -44,8 +44,10 @@ def solve_consolidation_benchmark(
         hyd_cond_index=1.30,
         hyd_cond_0=2.00e-9,
         void_ratio_0_hyd_cond=4.30,
+        void_ratio_lim=0.30,
         void_ratio_min=0.30,
         void_ratio_tr=4.30,
+        void_ratio_sep=4.30,
         void_ratio_0_comp=2.70,
         comp_index_unfrozen=1.00,
         rebound_index_unfrozen=0.100,
@@ -103,12 +105,9 @@ def solve_consolidation_benchmark(
 
     # assign material properties to integration points
     for e in con_static.elements:
+        e.assign_material(m)
         for ip in e.int_pts:
-            ip.material = m
             ip.pre_consol_stress = ppc0
-        for iipp in e._int_pts_deformed:
-            for ip in iipp:
-                ip.material = m
 
     # initialize plotting arrays
     z_nod = np.array([nd.z for nd in con_static.nodes])
