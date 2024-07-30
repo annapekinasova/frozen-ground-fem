@@ -36,10 +36,11 @@ def main():
     s_per_min = 60.0
     H_layer = 0.5
     num_elements = 500
-    dt_sim_0 = 1.0e-5
+    dt_sim_0 = 1.0e-4
     t_max = 1000.0 * s_per_min
     qi = 15.0e3
-    tol = 1e-3
+    tol = 1e-4
+    fname = "examples/thaw_consol_lab"
 
     # set plotting parameters
     plt.rc("font", size=9)
@@ -224,6 +225,10 @@ def main():
     k_plot = 0
     t_plot = 0.0
     eps_a = 1.0
+    sim_time_0 = 0.0
+    sim_time = 0.0
+    run_time_0 = 0.0
+    run_time = 0.0
     while (eps_a > tol and k_plot < n_plot) or t_plot < t_plot_targ[-1]:
         k_plot += 1
         if k_plot < n_plot_targ:
@@ -232,8 +237,13 @@ def main():
             t_plot += dt_plot
         dt00, dt_s, err_s = con_static.solve_to(t_plot)
         toc = time.perf_counter()
+        sim_time_0 = sim_time
+        sim_time = con_static._t1
+        run_time_0 = run_time
         run_time = (toc - tic) / s_per_min
-        rem_time = (t_max - con_static._t1) / con_static._t1 * run_time
+        rem_time = (
+            (t_max - sim_time) / (sim_time - sim_time_0) * (run_time - run_time_0)
+        )
         # get total settlement
         t_con.append(con_static._t1)
         s_con.append(con_static.calculate_total_settlement())
@@ -306,7 +316,7 @@ def main():
     zdef_int_cm = zdef_int * 1e2
 
     # calculate time to 50 percent settlement
-    s_tot = np.max(s_con)
+    s_tot = s_con[-1]
     s_50 = 0.5 * s_tot
     k_50 = 0
     for k, s in enumerate(s_con):
@@ -320,7 +330,8 @@ def main():
     t_50 = (np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0)) * (s_50 - s0) / (s1 - s0))) ** 2
 
     print(f"Run time = {run_time: 0.4f} min")
-    print(f"Total settlement = {s_tot} m = {s_tot * 1e2} cm")
+    print(f"Total settlement = {s_con[-1]} m = {s_con_cm[-1]} cm")
+    print(f"Thaw depth = {Z_con[-1]} m = {Z_con_cm[-1]} cm")
     print(f"t_50 = {t_50} s = {t_50 / s_per_min} min")
 
     # settlement, thaw depth, exc pore press, and void ratio profiles
@@ -484,7 +495,15 @@ def main():
     plt.xlabel(r"Temperature, $T$ [$deg C$]")
     plt.legend()
 
-    plt.savefig("examples/thaw_consol_lab.svg")
+    np.savetxt(fname + "_t_s_Z.txt", np.vstack([t_con, s_con, Z_con]).T)
+    np.savetxt(fname + "_zdef_nod.txt", zdef_nod.T)
+    np.savetxt(fname + "_T_nod.txt", T_nod.T)
+    np.savetxt(fname + "_e_nod.txt", e_nod.T)
+    np.savetxt(fname + "_zdef_int.txt", zdef_int.T)
+    np.savetxt(fname + "_sigp_int.txt", sig_p_int.T)
+    np.savetxt(fname + "_ue_int.txt", ue_int.T)
+    plt.savefig(fname + ".svg")
+    plt.savefig(fname + ".png")
 
 
 if __name__ == "__main__":
