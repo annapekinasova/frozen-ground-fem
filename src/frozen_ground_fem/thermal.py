@@ -26,7 +26,6 @@ import numpy.typing as npt
 from . import (
     vol_heat_cap_water as Cw,
     dens_ice as rho_i,
-    spec_grav_ice as Gi,
     latent_heat_fusion_water as Lw,
     Node1D,
     IntegrationPoint1D,
@@ -36,8 +35,6 @@ from .geometry import (
     Boundary1D,
     Mesh1D,
 )
-
-_ONE_MINUS_Gi = 1.0 - Gi
 
 
 class ThermalElement1D(Element1D):
@@ -122,7 +119,7 @@ class ThermalElement1D(Element1D):
         for ip in self.int_pts:
             lat_heat = Lw * rho_i * ip.vol_water_cont_temp_gradient
             N = self._shape_matrix(ip.local_coord)
-            C += ip.weight * (2.0 * ip.vol_heat_cap + 4.0 * lat_heat) * (N.T @ N)
+            C += ip.weight * (ip.vol_heat_cap + lat_heat) * (N.T @ N)
         C *= jac
         return C
 
@@ -831,17 +828,80 @@ class ThermalAnalysis1D(Mesh1D):
         # increment temperature and iteration variables
         self._temp_vector[self._free_vec] += self._delta_temp_vector[self._free_vec]
 
-    def update_void_ratio_phase_change(self) -> None:
-        for nd in self.nodes:
-            dSw = nd.deg_sat_water - nd.deg_sat_water__0
-            de = -_ONE_MINUS_Gi * nd.void_ratio_0 * dSw
-            nd.void_ratio += de
-
     def update_iteration_variables(self) -> None:
         self._eps_a = float(
             np.linalg.norm(self._delta_temp_vector) / np.linalg.norm(self._temp_vector)
         )
         self._iter += 1
+
+    def initialize_system_state_variables(self) -> None:
+        # initialize vectors and matrices
+        # for adaptive step size correction
+        num_int_pt_per_element = len(self.elements[0].int_pts)
+        self._temp_vector_0_0 = np.zeros_like(self._temp_vector)
+        self._temp_vector_0_1 = np.zeros_like(self._temp_vector)
+        self._temp_vector_1 = np.zeros_like(self._temp_vector)
+        self._temp_error = np.zeros_like(self._temp_vector)
+        self._deg_sat_water_0_0 = np.zeros_like(self._temp_vector)
+        self._deg_sat_water_0_1 = np.zeros_like(self._temp_vector)
+        self._temp_scale = np.zeros_like(self._temp_vector)
+        self._vol_water_cont__0 = np.zeros(
+            (
+                self.num_elements,
+                num_int_pt_per_element,
+            )
+        )
+        self._temp__0 = np.zeros(
+            (
+                self.num_elements,
+                num_int_pt_per_element,
+            )
+        )
+
+    def save_system_state(self) -> None:
+        self._temp_vector_0_0[:] = self._temp_vector_0[:]
+        self._temp_vector_0_1[:] = self._temp_vector[:]
+        self._deg_sat_water_0_0[:] = np.array(
+            [nd.deg_sat_water__0 for nd in self.nodes]
+        )
+        self._deg_sat_water_0_1[:] = np.array([nd.deg_sat_water for nd in self.nodes])
+        for ke, e in enumerate(self.elements):
+            for jip, ip in enumerate(e.int_pts):
+                self._temp__0[ke, jip] = ip.temp__0
+                self._vol_water_cont__0[ke, jip] = ip.vol_water_cont__0
+
+    def load_system_state(self, t0: float, t1: float, dt: float) -> None:
+        self._t0 = t0
+        self._t1 = t1
+        self.time_step = dt
+        self._temp_vector_0[:] = self._temp_vector_0_0[:]
+        self._temp_vector[:] = self._temp_vector_0_1[:]
+        for nd, Sw0, Sw1 in zip(
+            self.nodes,
+            self._deg_sat_water_0_0,
+            self._deg_sat_water_0_1,
+        ):
+            nd.deg_sat_water__0 = Sw0
+            nd.deg_sat_water = Sw1
+        for e, T0e, thw0_e in zip(
+            self.elements,
+            self._temp__0,
+            self._vol_water_cont__0,
+        ):
+            for ip, T0, thw0 in zip(
+                e.int_pts,
+                T0e,
+                thw0_e,
+            ):
+                ip.temp__0 = T0
+                ip.vol_water_cont__0 = thw0
+        self.update_nodes()
+        self.update_integration_points_primary()
+        self.calculate_deformed_coords()
+        self.update_total_stress_distribution()
+        self.update_integration_points_secondary()
+        self.update_pore_pressure_distribution()
+        self.update_global_matrices_and_vectors()
 
     def solve_to(
         self,
@@ -895,31 +955,11 @@ class ThermalAnalysis1D(Mesh1D):
         tf = self._check_tf(tf)
         if not adapt_dt:
             return Mesh1D.solve_to(self, tf)
-        # initialize vectors and matrices
-        # for adaptive step size correction
-        num_int_pt_per_element = len(self.elements[0].int_pts)
-        temp_vector_0 = np.zeros_like(self._temp_vector)
-        temp_vector_1 = np.zeros_like(self._temp_vector)
-        temp_error = np.zeros_like(self._temp_vector)
-        temp_rate_0 = np.zeros_like(self._temp_vector)
-        deg_sat_water_0 = np.zeros_like(self._temp_vector)
-        void_ratio_vector_0 = np.zeros_like(self._temp_vector)
-        temp_scale = np.zeros_like(self._temp_vector)
-        vol_water_cont__0 = np.zeros(
-            (
-                self.num_elements,
-                num_int_pt_per_element,
-            )
-        )
-        temp__0 = np.zeros(
-            (
-                self.num_elements,
-                num_int_pt_per_element,
-            )
-        )
         dt_list = []
         err_list = []
         done = False
+        k_try = 0
+        k_try_max = 3
         while not done and self._t1 < tf:
             # check if time step passes tf
             dt00 = self.time_step
@@ -927,79 +967,61 @@ class ThermalAnalysis1D(Mesh1D):
                 self.time_step = tf - self._t1
                 done = True
             # save system state before time step
-            t0 = self._t1
+            t0 = self._t0
+            t1 = self._t1
             dt0 = self.time_step
-            temp_vector_0[:] = self._temp_vector[:]
-            temp_rate_0[:] = self._temp_rate_vector[:]
-            void_ratio_vector_0[:] = np.array([nd.void_ratio for nd in self.nodes])
-            deg_sat_water_0[:] = np.array([nd.deg_sat_water__0 for nd in self.nodes])
-            for ke, e in enumerate(self.elements):
-                for jip, ip in enumerate(e.int_pts):
-                    temp__0[ke, jip] = ip.temp
-                    vol_water_cont__0[ke, jip] = ip.vol_water_cont
-            # take single time step
-            self.initialize_time_step()
-            self.iterative_correction_step()
-            # save the predictor result
-            temp_vector_1[:] = self._temp_vector[:]
-            # reset the system
-            self._temp_vector[:] = temp_vector_0[:]
-            self._temp_rate_vector[:] = temp_rate_0[:]
-            for nd, en0, Sw0 in zip(self.nodes, void_ratio_vector_0, deg_sat_water_0):
-                nd.void_ratio = en0
-                nd.deg_sat_water__0 = Sw0
-            for e, T0e, thw0_e in zip(
-                self.elements,
-                temp__0,
-                vol_water_cont__0,
-            ):
-                for ip, T0, thw0 in zip(e.int_pts, T0e, thw0_e):
-                    ip.temp__0 = T0
-                    ip.vol_water_cont__0 = thw0
-            self.update_nodes()
-            self.update_integration_points_primary()
-            self.calculate_deformed_coords()
-            self.update_total_stress_distribution()
-            self.update_integration_points_secondary()
-            self.update_pore_pressure_distribution()
-            self.update_global_matrices_and_vectors()
-            self._t1 = t0
-            # take two half steps
-            self.time_step = 0.5 * dt0
-            self.initialize_time_step()
-            self.iterative_correction_step()
-            self.initialize_time_step()
-            self.iterative_correction_step()
-            # compute truncation error correction
-            temp_error[:] = (self._temp_vector[:] - temp_vector_1[:]) / 3.0
-            self._temp_vector[:] += temp_error[:]
-            self._temp_rate_vector[:] = self.over_dt * (
-                self._temp_vector[:] - self._temp_vector_0[:]
-            )
-            self.update_nodes()
-            self.update_integration_points_primary()
-            self.calculate_deformed_coords()
-            self.update_total_stress_distribution()
-            self.update_integration_points_secondary()
-            self.update_pore_pressure_distribution()
-            self.update_global_matrices_and_vectors()
-            # update the time step
-            temp_scale[:] = np.max(
-                np.vstack(
-                    [
-                        self._temp_vector[:],
-                        self._temp_rate_vector[:] * self.time_step,
-                    ]
-                ),
-                axis=0,
-            )
-            T_scale = float(np.linalg.norm(temp_scale))
-            err_targ = self.eps_s * T_scale
-            err_curr = float(np.linalg.norm(temp_error))
-            # update the time step
-            eps_a = err_curr / T_scale
-            dt1 = dt0 * (err_targ / err_curr) ** 0.2
-            self.time_step = dt1
-            dt_list.append(dt0)
-            err_list.append(eps_a)
+            self.save_system_state()
+            try:
+                # take single time step
+                self.initialize_time_step()
+                self.iterative_correction_step()
+                self._temp_vector_1[:] = self._temp_vector[:]
+                self.load_system_state(t0, t1, dt0)
+                # take two half steps
+                self.time_step = 0.5 * dt0
+                self.initialize_time_step()
+                self.iterative_correction_step()
+                self.initialize_time_step()
+                self.iterative_correction_step()
+                # compute truncation error correction
+                self._temp_error[:] = (
+                    self._temp_vector[:] - self._temp_vector_1[:]
+                ) / 3.0
+                self._temp_vector[:] += self._temp_error[:]
+                self.update_nodes()
+                self.update_integration_points_primary()
+                self.calculate_deformed_coords()
+                self.update_total_stress_distribution()
+                self.update_integration_points_secondary()
+                self.update_pore_pressure_distribution()
+                self.update_global_matrices_and_vectors()
+                # update the time step
+                self._temp_scale[:] = np.max(
+                    np.vstack(
+                        [
+                            self._temp_vector[:],
+                            self._temp_rate_vector[:] * self.time_step,
+                        ]
+                    ),
+                    axis=0,
+                )
+                T_scale = float(np.linalg.norm(self._temp_scale))
+                err_targ = self.eps_s * T_scale
+                err_curr = float(np.linalg.norm(self._temp_error))
+                # update the time step
+                eps_a = err_curr / T_scale
+                dt1 = dt0 * (err_targ / err_curr) ** 0.2
+                self.time_step = dt1
+                dt_list.append(dt0)
+                err_list.append(eps_a)
+                k_try = 0
+            except Exception as exc:
+                # check maximum attempts
+                k_try += 1
+                if k_try >= k_try_max:
+                    raise exc
+                # set time step smaller and try again
+                self.load_system_state(t0, t1, dt0)
+                self.time_step = 0.1 * self.time_step
+                done = False
         return dt00, np.array(dt_list), np.array(err_list)

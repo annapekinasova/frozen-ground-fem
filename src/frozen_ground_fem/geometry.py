@@ -2639,6 +2639,17 @@ class Mesh1D:
     def initialize_solution_variable_vectors(self) -> None:
         pass
 
+    def initialize_system_state_variables(self) -> None:
+        pass
+
+    def save_system_state(self) -> None:
+        pass
+
+    def load_system_state(self, t0: float, t1: float, dt: float) -> None:
+        self._t0 = t0
+        self._t1 = t1
+        self.time_step = dt
+
     def initialize_global_system(self, t0: float) -> None:
         """Sets up the global system before the first time step.
 
@@ -2664,6 +2675,7 @@ class Mesh1D:
         self._t0 = t0
         self._t1 = t0
         self.initialize_free_index_arrays()
+        self.initialize_system_state_variables()
         self.initialize_boundary_conditions()
         self.initialize_solution_variable_vectors()
         self.initialize_integration_points_primary()

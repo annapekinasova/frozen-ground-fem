@@ -16,6 +16,7 @@ import numpy.typing as npt
 
 from . import (
     unit_weight_water as gam_w,
+    spec_grav_ice as Gi,
     ThermalElement1D,
     ThermalBoundary1D,
     ThermalAnalysis1D,
@@ -27,6 +28,8 @@ from . import (
 from .geometry import (
     Mesh1D,
 )
+
+_ONE_MINUS_Gi = 1.0 - Gi
 
 
 class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
@@ -414,7 +417,10 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         ConsolidationAnalysis1D.calculate_solution_vector_correction(self)
 
     def update_void_ratio_phase_change(self) -> None:
-        ThermalAnalysis1D.update_void_ratio_phase_change(self)
+        for nd in self.nodes:
+            dSw = nd.deg_sat_water - nd.deg_sat_water__0
+            de = -_ONE_MINUS_Gi * nd.void_ratio_0 * dSw
+            nd.void_ratio += de
         for nd in self.nodes:
             self._void_ratio_vector[nd.index] = nd.void_ratio
 
@@ -428,6 +434,92 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         )
         self._eps_a = np.max([eps_a_thrm, eps_a_cnsl])
         self._iter += 1
+
+    def initialize_system_state_variables(self):
+        # initialize vectors and matrices
+        # for adaptive step size correction
+        num_int_pt_per_element = len(self.elements[0].int_pts)
+        self._temp_vector_0_0 = np.zeros_like(self._temp_vector)
+        self._temp_vector_0_1 = np.zeros_like(self._temp_vector)
+        self._temp_vector_1 = np.zeros_like(self._temp_vector)
+        self._temp_error = np.zeros_like(self._temp_vector)
+        self._deg_sat_water_0_0 = np.zeros_like(self._temp_vector)
+        self._deg_sat_water_0_1 = np.zeros_like(self._temp_vector)
+        self._temp_scale = np.zeros_like(self._temp_vector)
+        self._vol_water_cont__0 = np.zeros(
+            (
+                self.num_elements,
+                num_int_pt_per_element,
+            )
+        )
+        self._temp__0 = np.zeros(
+            (
+                self.num_elements,
+                num_int_pt_per_element,
+            )
+        )
+        self._void_ratio_vector_0_1 = np.zeros_like(self._void_ratio_vector)
+        self._void_ratio_vector_1 = np.zeros_like(self._void_ratio_vector)
+        self._void_ratio_error = np.zeros_like(self._void_ratio_vector)
+        self._void_ratio_rate = np.zeros_like(self._void_ratio_vector)
+        self._void_ratio_scale = np.zeros_like(self._void_ratio_vector)
+        self._pre_consol_stress__0 = np.zeros(
+            (
+                self.num_elements,
+                num_int_pt_per_element,
+            )
+        )
+
+    def save_system_state(self):
+        self._temp_vector_0_0[:] = self._temp_vector_0[:]
+        self._temp_vector_0_1[:] = self._temp_vector[:]
+        self._deg_sat_water_0_0[:] = np.array(
+            [nd.deg_sat_water__0 for nd in self.nodes]
+        )
+        self._deg_sat_water_0_1[:] = np.array([nd.deg_sat_water for nd in self.nodes])
+        self._void_ratio_vector_0_1[:] = self._void_ratio_vector[:]
+        for ke, e in enumerate(self.elements):
+            for jip, ip in enumerate(e.int_pts):
+                self._temp__0[ke, jip] = ip.temp__0
+                self._vol_water_cont__0[ke, jip] = ip.vol_water_cont__0
+                self._pre_consol_stress__0[ke, jip] = ip.pre_consol_stress
+
+    def load_system_state(self, t0: float, t1: float, dt: float):
+        self._t0 = t0
+        self._t1 = t1
+        self.time_step = dt
+        self._temp_vector_0[:] = self._temp_vector_0_0[:]
+        self._temp_vector[:] = self._temp_vector_0_1[:]
+        self._void_ratio_vector[:] = self._void_ratio_vector_0_1[:]
+        for nd, Sw0, Sw1 in zip(
+            self.nodes,
+            self._deg_sat_water_0_0,
+            self._deg_sat_water_0_1,
+        ):
+            nd.deg_sat_water__0 = Sw0
+            nd.deg_sat_water = Sw1
+        for e, T0e, thw0_e, ppc0_e in zip(
+            self.elements,
+            self._temp__0,
+            self._vol_water_cont__0,
+            self._pre_consol_stress__0,
+        ):
+            for ip, T0, thw0, ppc0 in zip(
+                e.int_pts,
+                T0e,
+                thw0_e,
+                ppc0_e,
+            ):
+                ip.temp__0 = T0
+                ip.vol_water_cont__0 = thw0
+                ip.pre_consol_stress = ppc0
+        self.update_nodes()
+        self.update_integration_points_primary()
+        self.calculate_deformed_coords()
+        self.update_total_stress_distribution()
+        self.update_integration_points_secondary()
+        self.update_pore_pressure_distribution()
+        self.update_global_matrices_and_vectors()
 
     def solve_to(
         self,
@@ -481,40 +573,6 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         tf = self._check_tf(tf)
         if not adapt_dt:
             return Mesh1D.solve_to(self, tf)
-        # initialize vectors and matrices
-        # for adaptive step size correction
-        num_int_pt_per_element = len(self.elements[0].int_pts)
-        temp_vector_0_0 = np.zeros_like(self._temp_vector)
-        temp_vector_0_1 = np.zeros_like(self._temp_vector)
-        temp_vector_1 = np.zeros_like(self._temp_vector)
-        temp_error = np.zeros_like(self._temp_vector)
-        # temp_rate_0 = np.zeros_like(self._temp_vector)
-        deg_sat_water_0_0 = np.zeros_like(self._temp_vector)
-        deg_sat_water_0_1 = np.zeros_like(self._temp_vector)
-        temp_scale = np.zeros_like(self._temp_vector)
-        vol_water_cont__0 = np.zeros(
-            (
-                self.num_elements,
-                num_int_pt_per_element,
-            )
-        )
-        temp__0 = np.zeros(
-            (
-                self.num_elements,
-                num_int_pt_per_element,
-            )
-        )
-        void_ratio_vector_0_1 = np.zeros_like(self._void_ratio_vector)
-        void_ratio_vector_1 = np.zeros_like(self._void_ratio_vector)
-        void_ratio_error = np.zeros_like(self._void_ratio_vector)
-        void_ratio_rate = np.zeros_like(self._void_ratio_vector)
-        void_ratio_scale = np.zeros_like(self._void_ratio_vector)
-        pre_consol_stress__0 = np.zeros(
-            (
-                self.num_elements,
-                num_int_pt_per_element,
-            )
-        )
         dt_list = []
         err_list = []
         done = False
@@ -527,59 +585,17 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
                 self.time_step = tf - self._t1
                 done = True
             # save system state before time step
-            t0 = self._t1
+            t0 = self._t0
+            t1 = self._t1
             dt0 = self.time_step
-            temp_vector_0_0[:] = self._temp_vector_0[:]
-            temp_vector_0_1[:] = self._temp_vector[:]
-            # temp_rate_0[:] = self._temp_rate_vector[:]
-            void_ratio_vector_0_1[:] = self._void_ratio_vector[:]
-            deg_sat_water_0_0[:] = np.array([nd.deg_sat_water__0 for nd in self.nodes])
-            deg_sat_water_0_1[:] = np.array([nd.deg_sat_water for nd in self.nodes])
-            for ke, e in enumerate(self.elements):
-                for jip, ip in enumerate(e.int_pts):
-                    temp__0[ke, jip] = ip.temp__0
-                    vol_water_cont__0[ke, jip] = ip.vol_water_cont__0
-                    pre_consol_stress__0[ke, jip] = ip.pre_consol_stress
+            self.save_system_state()
             try:
                 # take single time step
                 self.initialize_time_step()
                 self.iterative_correction_step()
-                # save the predictor result
-                temp_vector_1[:] = self._temp_vector[:]
-                void_ratio_vector_1[:] = self._void_ratio_vector[:]
-                # reset the system
-                self._t1 = t0
-                self._temp_vector_0[:] = temp_vector_0_0[:]
-                self._temp_vector[:] = temp_vector_0_1[:]
-                # self._temp_rate_vector[:] = temp_rate_0[:]
-                self._void_ratio_vector[:] = void_ratio_vector_0_1[:]
-                for nd, Sw0, Sw1 in zip(
-                    self.nodes, deg_sat_water_0_0, deg_sat_water_0_1
-                ):
-                    nd.deg_sat_water__0 = Sw0
-                    nd.deg_sat_water = Sw1
-                for e, T0e, thw0_e, ppc0_e in zip(
-                    self.elements,
-                    temp__0,
-                    vol_water_cont__0,
-                    pre_consol_stress__0,
-                ):
-                    for ip, T0, thw0, ppc0 in zip(
-                        e.int_pts,
-                        T0e,
-                        thw0_e,
-                        ppc0_e,
-                    ):
-                        ip.temp__0 = T0
-                        ip.vol_water_cont__0 = thw0
-                        ip.pre_consol_stress = ppc0
-                self.update_nodes()
-                self.update_integration_points_primary()
-                self.calculate_deformed_coords()
-                self.update_total_stress_distribution()
-                self.update_integration_points_secondary()
-                self.update_pore_pressure_distribution()
-                self.update_global_matrices_and_vectors()
+                self._temp_vector_1[:] = self._temp_vector[:]
+                self._void_ratio_vector_1[:] = self._void_ratio_vector[:]
+                self.load_system_state(t0, t1, dt0)
                 # take two half steps
                 self.time_step = 0.5 * dt0
                 self.initialize_time_step()
@@ -587,15 +603,14 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
                 self.initialize_time_step()
                 self.iterative_correction_step()
                 # compute truncation error correction
-                temp_error[:] = (self._temp_vector[:] - temp_vector_1[:]) / 3.0
-                self._temp_vector[:] += temp_error[:]
-                # self._temp_rate_vector[:] = self.over_dt * (
-                #     self._temp_vector[:] - self._temp_vector_0[:]
-                # )
-                void_ratio_error[:] = (
-                    self._void_ratio_vector[:] - void_ratio_vector_1[:]
+                self._temp_error[:] = (
+                    self._temp_vector[:] - self._temp_vector_1[:]
                 ) / 3.0
-                self._void_ratio_vector[:] += void_ratio_error[:]
+                self._temp_vector[:] += self._temp_error[:]
+                self._void_ratio_error[:] = (
+                    self._void_ratio_vector[:] - self._void_ratio_vector_1[:]
+                ) / 3.0
+                self._void_ratio_vector[:] += self._void_ratio_error[:]
                 self.update_nodes()
                 self.update_integration_points_primary()
                 self.calculate_deformed_coords()
@@ -604,7 +619,7 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
                 self.update_pore_pressure_distribution()
                 self.update_global_matrices_and_vectors()
                 # update the time step
-                temp_scale[:] = np.max(
+                self._temp_scale[:] = np.max(
                     np.vstack(
                         [
                             self._temp_vector[:],
@@ -613,24 +628,24 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
                     ),
                     axis=0,
                 )
-                T_scale = float(np.linalg.norm(temp_scale))
-                void_ratio_rate[:] = (
-                    self._void_ratio_vector[:] - void_ratio_vector_0_1[:]
+                T_scale = float(np.linalg.norm(self._temp_scale))
+                self._void_ratio_rate[:] = (
+                    self._void_ratio_vector[:] - self._void_ratio_vector_0_1[:]
                 )
-                void_ratio_scale[:] = np.max(
+                self._void_ratio_scale[:] = np.max(
                     np.vstack(
                         [
                             self._void_ratio_vector[:],
-                            void_ratio_rate,
+                            self._void_ratio_rate[:],
                         ]
                     ),
                     axis=0,
                 )
-                e_scale = float(np.linalg.norm(void_ratio_scale))
+                e_scale = float(np.linalg.norm(self._void_ratio_scale))
                 err_targ_thrm = self.eps_s * T_scale
-                err_curr_thrm = float(np.linalg.norm(temp_error))
+                err_curr_thrm = float(np.linalg.norm(self._temp_error))
                 err_targ_cnsl = self.eps_s * e_scale
-                err_curr_cnsl = float(np.linalg.norm(void_ratio_error))
+                err_curr_cnsl = float(np.linalg.norm(self._void_ratio_error))
                 # update the time step
                 eps_a = np.max(
                     [
@@ -651,45 +666,7 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
                 if k_try >= k_try_max:
                     raise exc
                 # set time step smaller and try again
-                dt1 = 0.1 * self.time_step
-                # print(f"caught exception {repr(exc)}")
-                # print(f"dt0 = {self.time_step:0.4e}, dt1 = {dt1:0.4e}")
-                # reset the system
-                self._t1 = t0
-                self.time_step = dt0
-                self._temp_vector_0[:] = temp_vector_0_0[:]
-                self._temp_vector[:] = temp_vector_0_1[:]
-                # self._temp_rate_vector[:] = temp_rate_0[:]
-                self._void_ratio_vector[:] = void_ratio_vector_0_1[:]
-                for nd, Sw0, Sw1 in zip(
-                    self.nodes, deg_sat_water_0_0, deg_sat_water_0_1
-                ):
-                    nd.deg_sat_water__0 = Sw0
-                    nd.deg_sat_water = Sw1
-                for e, T0e, thw0_e, ppc0_e in zip(
-                    self.elements,
-                    temp__0,
-                    vol_water_cont__0,
-                    pre_consol_stress__0,
-                ):
-                    for ip, T0, thw0, ppc0 in zip(
-                        e.int_pts,
-                        T0e,
-                        thw0_e,
-                        ppc0_e,
-                    ):
-                        ip.temp__0 = T0
-                        ip.vol_water_cont__0 = thw0
-                        ip.pre_consol_stress = ppc0
-                self.update_nodes()
-                self.update_integration_points_primary()
-                self.calculate_deformed_coords()
-                self.update_total_stress_distribution()
-                self.update_integration_points_secondary()
-                self.update_pore_pressure_distribution()
-                self.update_global_matrices_and_vectors()
-                self.time_step = dt1
+                self.load_system_state(t0, t1, dt0)
+                self.time_step = 0.1 * self.time_step
                 done = False
-            if k_try:
-                continue
         return dt00, np.array(dt_list), np.array(err_list)
