@@ -20,8 +20,8 @@ def main():
     ta = ThermalAnalysis1D()
     ta.z_min = 0.0
     ta.z_max = 10.0
-    ta.generate_mesh(num_elements=25, order=3)
-    # ta.implicit_error_tolerance = 1e-4
+    ta.generate_mesh(num_elements=50, order=1)
+    ta.implicit_error_tolerance = 1e-4
 
     # znod0 = np.linspace(0.0, 1.0, 101)
     # znod1 = np.linspace(1.0, 10.0, 181)[1:]
@@ -38,9 +38,12 @@ def main():
         spec_heat_cap_solids=cs,
     )
     void_ratio = 0.35 / (1.0 - 0.35)
+    for nd in ta.nodes:
+        nd.void_ratio = void_ratio
+        nd.void_ratio_0 = void_ratio
     for e in ta.elements:
+        e.assign_material(mtl)
         for ip in e.int_pts:
-            ip.material = mtl
             ip.void_ratio = void_ratio
             ip.void_ratio_0 = void_ratio
 
