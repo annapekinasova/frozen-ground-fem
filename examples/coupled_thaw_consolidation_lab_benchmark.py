@@ -35,12 +35,16 @@ def main():
     # define simulation parameters
     s_per_min = 60.0
     H_layer = 0.5
-    num_elements = 500
+    num_elements = 725
     dt_sim_0 = 1.0e-4
     t_max = 1000.0 * s_per_min
     qi = 15.0e3
     tol = 1e-4
-    fname = "examples/thaw_consol_lab"
+    fname = f"examples/thaw_consol_lab_{num_elements}"
+    # compute modified node locations, after Yu et al. (2020)
+    z_mesh_nod = np.hstack(
+        [np.linspace(0.0, 0.05, 501)[:-1], np.linspace(0.05, 0.5, 226)]
+    )
 
     # set plotting parameters
     plt.rc("font", size=9)
@@ -152,6 +156,9 @@ def main():
         order=1,
     )
     con_static.implicit_error_tolerance = tol
+    # modify node locations in the mesh
+    for nd, zn in zip(con_static.nodes, z_mesh_nod):
+        nd.z = zn
 
     # initialize plotting arrays
     z_nod = np.array([nd.z for nd in con_static.nodes])
