@@ -35,16 +35,16 @@ def main():
     # define simulation parameters
     s_per_min = 60.0
     H_layer = 0.5
-    num_elements = 725
+    num_elements = 250
     dt_sim_0 = 1.0e-4
     t_max = 1000.0 * s_per_min
     qi = 15.0e3
     tol = 1e-4
     fname = f"examples/thaw_consol_lab_{num_elements}"
-    # compute modified node locations, after Yu et al. (2020)
-    z_mesh_nod = np.hstack(
-        [np.linspace(0.0, 0.05, 501)[:-1], np.linspace(0.05, 0.5, 226)]
-    )
+    # # compute modified node locations, after Yu et al. (2020)
+    # z_mesh_nod = np.hstack(
+    #     [np.linspace(0.0, 0.05, 501)[:-1], np.linspace(0.05, 0.5, 226)]
+    # )
 
     # set plotting parameters
     plt.rc("font", size=9)
@@ -156,9 +156,9 @@ def main():
         order=1,
     )
     con_static.implicit_error_tolerance = tol
-    # modify node locations in the mesh
-    for nd, zn in zip(con_static.nodes, z_mesh_nod):
-        nd.z = zn
+    # # modify node locations in the mesh
+    # for nd, zn in zip(con_static.nodes, z_mesh_nod):
+    #     nd.z = zn
 
     # initialize plotting arrays
     z_nod = np.array([nd.z for nd in con_static.nodes])
@@ -502,13 +502,13 @@ def main():
     plt.xlabel(r"Temperature, $T$ [$deg C$]")
     plt.legend()
 
-    np.savetxt(fname + "_t_s_Z.txt", np.vstack([t_con, s_con, Z_con]).T)
-    np.savetxt(fname + "_zdef_nod.txt", zdef_nod.T)
-    np.savetxt(fname + "_T_nod.txt", T_nod.T)
-    np.savetxt(fname + "_e_nod.txt", e_nod.T)
-    np.savetxt(fname + "_zdef_int.txt", zdef_int.T)
-    np.savetxt(fname + "_sigp_int.txt", sig_p_int.T)
-    np.savetxt(fname + "_ue_int.txt", ue_int.T)
+    np.savetxt(fname + "_t_s_Z.out", np.vstack([t_con, s_con, Z_con]).T)
+    np.savetxt(fname + "_zdef_nod.out", zdef_nod.T)
+    np.savetxt(fname + "_T_nod.out", T_nod.T)
+    np.savetxt(fname + "_e_nod.out", e_nod.T)
+    np.savetxt(fname + "_zdef_int.out", zdef_int.T)
+    np.savetxt(fname + "_sigp_int.out", sig_p_int.T)
+    np.savetxt(fname + "_ue_int.out", ue_int.T)
     plt.savefig(fname + ".svg")
     plt.savefig(fname + ".png")
 
