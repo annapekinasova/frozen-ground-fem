@@ -35,7 +35,7 @@ def main():
     # define simulation parameters
     s_per_min = 60.0
     H_layer = 0.5
-    num_elements_top = 10
+    num_elements_top = 50
     num_elements = int(np.ceil(num_elements_top * 1.5))
     num_elements_bot = num_elements - num_elements_top
     dt_sim_0 = 1.0e-5
@@ -44,7 +44,11 @@ def main():
     tol = 1e-2
     tol_str = f"{tol:0.1e}"
     tol_str = "p".join(tol_str.split("."))
-    fname = f"examples/thaw_consol_lab_{num_elements_top}_{tol_str}"
+    fname = (
+        "/home/karcheba/Dropbox/Anna work_school/PhD/Research/Numerical/"
+        + "thaw consolidation lab/core_i9/"
+        + f"thaw_consol_lab_{num_elements_top}_{tol_str}"
+    )
     # compute modified node locations
     z_mesh_nod = np.hstack(
         [
