@@ -35,16 +35,23 @@ def main():
     # define simulation parameters
     s_per_min = 60.0
     H_layer = 0.5
-    num_elements = 250
-    dt_sim_0 = 1.0e-4
+    num_elements_top = 25
+    num_elements = int(np.ceil(num_elements_top * 1.5))
+    num_elements_bot = num_elements - num_elements_top
+    dt_sim_0 = 1.0e-5
     t_max = 1000.0 * s_per_min
     qi = 15.0e3
-    tol = 1e-4
-    fname = f"examples/thaw_consol_lab_{num_elements}"
-    # # compute modified node locations, after Yu et al. (2020)
-    # z_mesh_nod = np.hstack(
-    #     [np.linspace(0.0, 0.05, 501)[:-1], np.linspace(0.05, 0.5, 226)]
-    # )
+    tol = 1e-2
+    tol_str = f"{tol:0.1e}"
+    tol_str = "p".join(tol_str.split("."))
+    fname = f"examples/thaw_consol_lab_{num_elements_top}_{tol_str}"
+    # compute modified node locations
+    z_mesh_nod = np.hstack(
+        [
+            np.linspace(0.0, 0.1, num_elements_top + 1)[:-1],
+            np.linspace(0.1, 0.5, num_elements_bot + 1),
+        ]
+    )
 
     # set plotting parameters
     plt.rc("font", size=9)
@@ -112,6 +119,7 @@ def main():
     print(f"comp_index_frozen_a1 = {m.comp_index_frozen_a1}")
     print(f"comp_index_frozen_a2 = {m.comp_index_frozen_a2}")
     print(f"comp_index_frozen_a3 = {m.comp_index_frozen_a3}")
+    print(f"num_elements_top = {num_elements_top}")
     print(f"num_elements = {num_elements}")
     print(f"dt_sim_0 = {dt_sim_0} s = {dt_sim_0 / s_per_min} min")
     print(f"t_max = {t_max} s = {t_max / s_per_min} min")
@@ -156,9 +164,9 @@ def main():
         order=1,
     )
     con_static.implicit_error_tolerance = tol
-    # # modify node locations in the mesh
-    # for nd, zn in zip(con_static.nodes, z_mesh_nod):
-    #     nd.z = zn
+    # modify node locations in the mesh
+    for nd, zn in zip(con_static.nodes, z_mesh_nod):
+        nd.z = zn
 
     # initialize plotting arrays
     z_nod = np.array([nd.z for nd in con_static.nodes])
@@ -167,7 +175,10 @@ def main():
     T_nod = np.zeros_like(e_nod)
     zdef_nod = np.zeros_like(e_nod)
     sig_p_int = np.zeros((len(z_int), n_plot + 1))
+    sig_int = np.zeros_like(sig_p_int)
+    uu_int = np.zeros_like(sig_p_int)
     ue_int = np.zeros_like(sig_p_int)
+    uh_int = np.zeros_like(sig_p_int)
     zdef_int = np.zeros_like(sig_p_int)
 
     # set initial conditions
@@ -219,9 +230,16 @@ def main():
     sig_p_int[:, 0] = 1.0e-3 * np.array(
         [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
     )
+    sig_int[:, 0] = 1.0e-3 * np.array(
+        [ip.tot_stress for e in con_static.elements for ip in e.int_pts]
+    )
+    uu_int[:, 0] = 1.0e-3 * np.array(
+        [ip.pore_pressure for e in con_static.elements for ip in e.int_pts]
+    )
     ue_int[:, 0] = 1.0e-3 * np.array(
         [ip.exc_pore_pressure for e in con_static.elements for ip in e.int_pts]
     )
+    uh_int[:, 0] = uu_int[:, 0] - ue_int[:, 0]
     zdef_int[:, 0] = np.array(
         [ip.z_def for e in con_static.elements for ip in e.int_pts]
     )
@@ -229,6 +247,10 @@ def main():
     t_con = [0.0]
     s_con = [0.0]
     Z_con = [0.0]
+    dt_step = []
+    err_step = []
+    dt_seq = []
+    err_seq = []
     k_plot = 0
     t_plot = 0.0
     eps_a = 1.0
@@ -242,7 +264,7 @@ def main():
             t_plot = t_plot_targ[k_plot]
         else:
             t_plot += dt_plot
-        dt00, dt_s, err_s = con_static.solve_to(t_plot)
+        dt_s, err_s = con_static.solve_to(t_plot)[1:]
         toc = time.perf_counter()
         sim_time_0 = sim_time
         sim_time = con_static._t1
@@ -251,6 +273,11 @@ def main():
         rem_time = (
             (t_max - sim_time) / (sim_time - sim_time_0) * (run_time - run_time_0)
         )
+        # save time step and error information
+        dt_step.append(dt_s)
+        err_step.append(err_s)
+        dt_seq = np.hstack([dt_seq, dt_s])
+        err_seq = np.hstack([err_seq, err_s])
         # get total settlement
         t_con.append(con_static._t1)
         s_con.append(con_static.calculate_total_settlement())
@@ -278,36 +305,39 @@ def main():
         N = ee._shape_matrix(s)
         Zte = (N @ zde)[0]
         Z_con.append(Zte)
-        # get excess pore pressure profile
-        ue = (
-            np.array(
-                [ip.exc_pore_pressure for e in con_static.elements for ip in e.int_pts]
-            )
-            * 1.0e-3
-        )
+        # get pore pressure profiles
         eps_a_scon = np.abs((s_con[-1] - s_con[-2]) / s_con[-1]) if s_con[-1] else 0.0
         eps_a_Zcon = np.abs((Z_con[-1] - Z_con[-2]) / Z_con[-1]) if Z_con[-1] else 0.0
         eps_a = np.max([eps_a_scon, eps_a_Zcon])
         print(
-            f"t = {con_static._t1 / s_per_min:0.3f} min, "
-            + f"s = {s_con[-1]:0.3f} m, "
-            + f"Z = {Z_con[-1]:0.3f} m, "
-            + f"ue_mean = {np.mean(ue):0.4f} kPa, "
-            + f"dt = {dt00:0.4e} s, "
-            + f"run_time = {run_time:0.4f} min, "
-            + f"rem_time = {rem_time:0.4f} min"
+            f"t = {con_static._t1 / s_per_min:0.2f} min, "
+            + f"s = {s_con[-1] * 1e2:0.2f} cm, "
+            + f"Z = {Z_con[-1] * 1e2:0.2f} cm, "
+            + f"dt_min = {np.min(dt_s):0.2e} s, "
+            + f"dt_max = {np.max(dt_s):0.2e} s, "
+            + f"run_time = {run_time:0.2f} min, "
+            + f"rem_time = {rem_time:0.2f} min"
         )
         # save temp, void ratio, eff stress, pore pressure, and deformed coord profiles
+        zdef_nod[:, k_plot] = np.array([nd.z_def for nd in con_static.nodes])
         T_nod[:, k_plot] = np.array([nd.temp for nd in con_static.nodes])
         e_nod[:, k_plot] = np.array([nd.void_ratio for nd in con_static.nodes])
-        zdef_nod[:, k_plot] = np.array([nd.z_def for nd in con_static.nodes])
-        sig_p_int[:, k_plot] = 1.0e-3 * np.array(
-            [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
-        )
-        ue_int[:, k_plot] = ue[:]
         zdef_int[:, k_plot] = np.array(
             [ip.z_def for e in con_static.elements for ip in e.int_pts]
         )
+        sig_p_int[:, k_plot] = 1.0e-3 * np.array(
+            [ip.eff_stress for e in con_static.elements for ip in e.int_pts]
+        )
+        sig_int[:, k_plot] = 1.0e-3 * np.array(
+            [ip.tot_stress for e in con_static.elements for ip in e.int_pts]
+        )
+        uu_int[:, k_plot] = 1e-3 * np.array(
+            [ip.pore_pressure for e in con_static.elements for ip in e.int_pts]
+        )
+        ue_int[:, k_plot] = 1e-3 * np.array(
+            [ip.exc_pore_pressure for e in con_static.elements for ip in e.int_pts]
+        )
+        uh_int[:, k_plot] = uu_int[:, k_plot] - ue_int[:, k_plot]
 
     toc = time.perf_counter()
     run_time = (toc - tic) / s_per_min
@@ -359,8 +389,8 @@ def main():
     )
     plt.ylabel(r"Depth, $s$ [$cm$]")
     plt.xlabel(r"Time, $t$ [$min^{0.5}$]")
-    plt.xlim([0.0, 20])
-    plt.ylim([15.0, 0.0])
+    plt.xlim([0.0, 30])
+    plt.ylim([10.0, 0.0])
     plt.legend()
 
     plt.subplot(2, 2, 2)
@@ -405,7 +435,7 @@ def main():
         label="750 min",
     )
     plt.xlim([1.0, 3.0])
-    plt.ylim([15.0, 0.0])
+    plt.ylim([10.0, 0.0])
     plt.xlabel(r"Void ratio, $e$")
     plt.legend()
 
@@ -450,8 +480,8 @@ def main():
         "--k",
         label="750 min",
     )
-    plt.xlim([0.0, 20.0])
-    plt.ylim([15.0, 0.0])
+    plt.xlim([0.0, 16.0])
+    plt.ylim([10.0, 0.0])
     plt.xlabel(r"Excess pore pressure, $u_e$ [$kPa$]")
     plt.ylabel(r"Depth, $s$ [$cm$]")
     plt.legend()
@@ -498,17 +528,27 @@ def main():
         label="750 min",
     )
     plt.xlim([6.0, -6.0])
-    plt.ylim([15.0, 0.0])
+    plt.ylim([10.0, 0.0])
     plt.xlabel(r"Temperature, $T$ [$deg C$]")
     plt.legend()
 
+    with open(fname + "_dt_plot.out", mode="w") as f_dt_plot:
+        for tt, ddtt in zip(t_con[1:], dt_step):
+            dt_str = ""
+            for dddttt in ddtt:
+                dt_str += f" {dddttt:0.8e}"
+            f_dt_plot.write(f"{tt:0.8e} {dt_str}\n")
+    np.savetxt(fname + "_dt_err.out", np.vstack([dt_seq, err_seq]).T)
     np.savetxt(fname + "_t_s_Z.out", np.vstack([t_con, s_con, Z_con]).T)
     np.savetxt(fname + "_zdef_nod.out", zdef_nod.T)
     np.savetxt(fname + "_T_nod.out", T_nod.T)
     np.savetxt(fname + "_e_nod.out", e_nod.T)
     np.savetxt(fname + "_zdef_int.out", zdef_int.T)
     np.savetxt(fname + "_sigp_int.out", sig_p_int.T)
+    np.savetxt(fname + "_sig_int.out", sig_int.T)
     np.savetxt(fname + "_ue_int.out", ue_int.T)
+    np.savetxt(fname + "_uu_int.out", uu_int.T)
+    np.savetxt(fname + "_uh_int.out", uh_int.T)
     plt.savefig(fname + ".svg")
     plt.savefig(fname + ".png")
 
