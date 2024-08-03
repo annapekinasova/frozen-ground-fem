@@ -35,7 +35,7 @@ def main():
     # define simulation parameters
     s_per_min = 60.0
     H_layer = 0.5
-    num_elements_top = 25
+    num_elements_top = 10
     num_elements = int(np.ceil(num_elements_top * 1.5))
     num_elements_bot = num_elements - num_elements_top
     dt_sim_0 = 1.0e-5
@@ -254,10 +254,7 @@ def main():
     k_plot = 0
     t_plot = 0.0
     eps_a = 1.0
-    sim_time_0 = 0.0
-    sim_time = 0.0
-    run_time_0 = 0.0
-    run_time = 0.0
+    run_time = [0.0]
     while (eps_a > tol and k_plot < n_plot) or t_plot < t_plot_targ[-1]:
         k_plot += 1
         if k_plot < n_plot_targ:
@@ -266,12 +263,12 @@ def main():
             t_plot += dt_plot
         dt_s, err_s = con_static.solve_to(t_plot)[1:]
         toc = time.perf_counter()
-        sim_time_0 = sim_time
-        sim_time = con_static._t1
-        run_time_0 = run_time
-        run_time = (toc - tic) / s_per_min
+        t_con.append(con_static._t1)
+        run_time.append((toc - tic) / s_per_min)
         rem_time = (
-            (t_max - sim_time) / (sim_time - sim_time_0) * (run_time - run_time_0)
+            (t_max - t_con[-1])
+            / (t_con[-1] - t_con[-2])
+            * (run_time[-1] - run_time[-2])
         )
         # save time step and error information
         dt_step.append(dt_s)
@@ -279,7 +276,6 @@ def main():
         dt_seq = np.hstack([dt_seq, dt_s])
         err_seq = np.hstack([err_seq, err_s])
         # get total settlement
-        t_con.append(con_static._t1)
         s_con.append(con_static.calculate_total_settlement())
         # find thaw depth
         # first find the element containing T=0.0
@@ -310,12 +306,12 @@ def main():
         eps_a_Zcon = np.abs((Z_con[-1] - Z_con[-2]) / Z_con[-1]) if Z_con[-1] else 0.0
         eps_a = np.max([eps_a_scon, eps_a_Zcon])
         print(
-            f"t = {con_static._t1 / s_per_min:0.2f} min, "
+            f"t = {t_con[-1] / s_per_min:0.2f} min, "
             + f"s = {s_con[-1] * 1e2:0.2f} cm, "
             + f"Z = {Z_con[-1] * 1e2:0.2f} cm, "
             + f"dt_min = {np.min(dt_s):0.2e} s, "
             + f"dt_max = {np.max(dt_s):0.2e} s, "
-            + f"run_time = {run_time:0.2f} min, "
+            + f"run_time = {run_time[-1]:0.2f} min, "
             + f"rem_time = {rem_time:0.2f} min"
         )
         # save temp, void ratio, eff stress, pore pressure, and deformed coord profiles
@@ -339,10 +335,8 @@ def main():
         )
         uh_int[:, k_plot] = uu_int[:, k_plot] - ue_int[:, k_plot]
 
-    toc = time.perf_counter()
-    run_time = (toc - tic) / s_per_min
-
     # convert settlement to arrays
+    run_time = np.array(run_time)
     t_con = np.array(t_con)
     s_con = np.array(s_con)
     Z_con = np.array(Z_con)
@@ -366,7 +360,7 @@ def main():
     t0 = t_con[k_50 - 1]
     t_50 = (np.sqrt(t0) + ((np.sqrt(t1) - np.sqrt(t0)) * (s_50 - s0) / (s1 - s0))) ** 2
 
-    print(f"Run time = {run_time: 0.4f} min")
+    print(f"Run time = {run_time[-1]: 0.4f} min")
     print(f"Total settlement = {s_con[-1]} m = {s_con_cm[-1]} cm")
     print(f"Thaw depth = {Z_con[-1]} m = {Z_con_cm[-1]} cm")
     print(f"t_50 = {t_50} s = {t_50 / s_per_min} min")
@@ -540,6 +534,7 @@ def main():
             f_dt_plot.write(f"{tt:0.8e} {dt_str}\n")
     np.savetxt(fname + "_dt_err.out", np.vstack([dt_seq, err_seq]).T)
     np.savetxt(fname + "_t_s_Z.out", np.vstack([t_con, s_con, Z_con]).T)
+    np.savetxt(fname + "_t_rt.out", np.vstack([t_con, run_time]).T)
     np.savetxt(fname + "_zdef_nod.out", zdef_nod.T)
     np.savetxt(fname + "_T_nod.out", T_nod.T)
     np.savetxt(fname + "_e_nod.out", e_nod.T)
