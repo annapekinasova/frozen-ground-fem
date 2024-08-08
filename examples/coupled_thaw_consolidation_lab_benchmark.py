@@ -35,13 +35,13 @@ def main():
     # define simulation parameters
     s_per_min = 60.0
     H_layer = 0.5
-    num_elements_top = 50
+    num_elements_top = 200
     num_elements = int(np.ceil(num_elements_top * 1.5))
     num_elements_bot = num_elements - num_elements_top
     dt_sim_0 = 1.0e-5
     t_max = 1000.0 * s_per_min
     qi = 15.0e3
-    tol = 1e-2
+    tol = 1e-4
     tol_str = f"{tol:0.1e}"
     tol_str = "p".join(tol_str.split("."))
     fname = (
@@ -78,7 +78,8 @@ def main():
         water_flux_b1=0.08,
         water_flux_b2=4.0,
         water_flux_b3=1.0e-5,
-        seg_pot_0=2.0e-9,
+        # seg_pot_0=2.0e-9,
+        seg_pot_0=0.0e-9,
         hyd_cond_index=0.305,
         void_ratio_0_hyd_cond=2.6,
         hyd_cond_mult=1.0,
