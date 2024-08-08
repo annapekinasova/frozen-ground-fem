@@ -34,25 +34,31 @@ def main():
     # define simulation parameters
     s_per_min = 60.0
     H_layer = 0.5
+    T0 = 5.0
+    Tb = -1.0  # slow
+    # Tb = -5.0 # moderate
+    # Tb = -20.0 # rapid
     num_elements_top = 50
     num_elements = int(np.ceil(num_elements_top * 1.5))
     num_elements_bot = num_elements - num_elements_top
     dt_sim_0 = 1.0e-5
-    t_max = 1000.0 * s_per_min
+    t_max = 3000.0 * s_per_min
     qi = 15.0e3
     tol = 1e-3
     tol_str = f"{tol:0.1e}"
     tol_str = "p".join(tol_str.split("."))
     fname = (
         "/home/karcheba/Dropbox/Anna work_school/PhD/Research/Numerical/"
-        + "freezing front benchmark/core_i9_seg/"
+        + "freezing front benchmark/core_i9_seg_slow/"
+        # + "freezing front benchmark/core_i9_seg_moderate/"
+        # + "freezing front benchmark/core_i9_seg_rapid/"
         + f"freeze_front_lab_{num_elements_top}_{tol_str}"
     )
     # compute modified node locations
     z_mesh_nod = np.hstack(
         [
-            np.linspace(0.0, 0.1, num_elements_top + 1)[:-1],
-            np.linspace(0.1, 0.5, num_elements_bot + 1),
+            np.linspace(0.0, 0.15, num_elements_top + 1)[:-1],
+            np.linspace(0.15, 0.5, num_elements_bot + 1),
         ]
     )
 
@@ -179,7 +185,7 @@ def main():
     sig_p_ob = 1.50e4
     e_bnd = e_cu0 - Ccu * np.log10(sig_p_ob / sig_cu0)
     for nd in con_static.nodes:
-        nd.temp = +5.0
+        nd.temp = T0
         nd.void_ratio = e_bnd
         nd.void_ratio_0 = e_bnd
 
@@ -192,7 +198,7 @@ def main():
     temp_bound = ThermalBoundary1D(
         nodes=(con_static.nodes[0],),
         bnd_type=ThermalBoundary1D.BoundaryType.temp,
-        bnd_value=-5.0,
+        bnd_value=Tb,
     )
     con_static.add_boundary(temp_bound)
     hyd_bound = HydraulicBoundary1D(
@@ -378,10 +384,10 @@ def main():
         "xb",
         label="freeze depth",
     )
-    plt.ylabel(r"Depth, $s$ [$cm$]")
+    plt.ylabel(r"Depth, $z$ [$cm$]")
     plt.xlabel(r"Time, $t$ [$min^{0.5}$]")
-    plt.xlim([0.0, 35])
-    plt.ylim([10, -2.0])
+    plt.xlim([0.0, 55])
+    plt.ylim([15, -5.0])
     plt.legend()
 
     plt.subplot(2, 2, 2)
@@ -421,8 +427,20 @@ def main():
         ":r",
         label="1000 min",
     )
-    plt.xlim([0.5, 3.0])
-    plt.ylim([10.0, -2.0])
+    plt.plot(
+        e_nod[:, 101],
+        zdef_nod_cm[:, 101],
+        "--r",
+        label="2000 min",
+    )
+    plt.plot(
+        e_nod[:, 121],
+        zdef_nod_cm[:, 121],
+        "-r",
+        label="3000 min",
+    )
+    plt.xlim([0.5, 5.0])
+    plt.ylim([15.0, -5.0])
     plt.xlabel(r"Void ratio, $e$")
     plt.legend()
 
@@ -463,10 +481,22 @@ def main():
         ":r",
         label="1000 min",
     )
+    plt.plot(
+        ue_int[:, 101],
+        zdef_int_cm[:, 101],
+        "--r",
+        label="2000 min",
+    )
+    plt.plot(
+        ue_int[:, 121],
+        zdef_int_cm[:, 121],
+        "-r",
+        label="3000 min",
+    )
     plt.xlim([-30.0, 5.0])
-    plt.ylim([10.0, -2.0])
+    plt.ylim([15.0, -5.0])
     plt.xlabel(r"Excess pore pressure, $u_e$ [$kPa$]")
-    plt.ylabel(r"Depth, $s$ [$cm$]")
+    plt.ylabel(r"Depth, $z$ [$cm$]")
     plt.legend()
 
     plt.subplot(2, 2, 4)
@@ -506,8 +536,20 @@ def main():
         ":r",
         label="1000 min",
     )
-    plt.xlim([6.0, -6.0])
-    plt.ylim([10.0, -2.0])
+    plt.plot(
+        T_nod[:, 101],
+        zdef_nod_cm[:, 101],
+        "--r",
+        label="2000 min",
+    )
+    plt.plot(
+        T_nod[:, 121],
+        zdef_nod_cm[:, 121],
+        "-r",
+        label="3000 min",
+    )
+    plt.xlim([np.min([T0, Tb]) - 1.0, np.max([T0, Tb]) + 1.0])
+    plt.ylim([15.0, -5.0])
     plt.xlabel(r"Temperature, $T$ [$deg C$]")
     plt.legend()
 
