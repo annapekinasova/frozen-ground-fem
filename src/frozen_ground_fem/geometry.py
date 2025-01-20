@@ -2613,7 +2613,17 @@ class Mesh1D:
         self._max_iterations = value
 
     def initialize_boundary_conditions(self) -> None:
-        """Performs any necessary initialization of boundary conditions."""
+        """Performs any necessary initialization of boundary conditions.
+        Abstract method.
+
+        Notes
+        -----
+        This method is meant to be overridden
+        by a specific type of Mesh/Analysis class
+        to initialize the appropriate boundary conditions
+        based on the analysis requirements.
+        At this abstract level, it does nothing.
+        """
         pass
 
     def initialize_integration_points_primary(self) -> None:
@@ -2631,21 +2641,104 @@ class Mesh1D:
             e.initialize_integration_points_secondary()
 
     def initialize_global_matrices_and_vectors(self):
+        """Initialize global matrices and in terms of
+        memory allocation and initial values.
+        Abstract method.
+
+        Notes
+        -----
+        This method is meant to be overridden
+        by a specific type of Mesh/Analysis class
+        to initialize the appropriate matrices and vectors.
+        At this abstract level, it does nothing.
+        """
         pass
 
     def initialize_free_index_arrays(self) -> None:
+        """Initialize arrays for free index variables,
+        in terms of memory allocation and initial values.
+        Abstract method.
+
+        Notes
+        -----
+        This method is meant to be overridden
+        by a specific type of Mesh/Analysis class
+        to initialize arrays that store indices of free variables
+        (variables that are not constrained by boundary conditions).
+        At this abstract level, it does nothing.
+        """
         pass
 
     def initialize_solution_variable_vectors(self) -> None:
+        """Initialize solution variable vectors for the analysis,
+        in terms of memory allocation and initial values.
+        Abstract method.
+
+        Notes
+        -----
+        This method is meant to be overridden
+        by a specific type of Mesh/Analysis class
+        to initialize vectors that store the solution variables.
+        At this abstract level, it does nothing.
+        """
         pass
 
     def initialize_system_state_variables(self) -> None:
+        """Initialize system state variables for adaptive time stepping,
+        in terms of memory allocation and initial values.
+        These are any variables that are processed by
+        save_system_state() and load_system_state()
+        that can then be used to reinitialize other solution variables.
+        Abstract method.
+
+        Notes
+        -----
+        This method is meant to be overridden
+        by a specific type of Mesh/Analysis class
+        to initialize the variables that store the state of the system.
+        At this abstract level, it does nothing.
+        """
         pass
 
     def save_system_state(self) -> None:
+        """Save the current state of the system
+        so that it can be loaded later.
+        Used in adaptive time stepping algorithms.
+        Abstract method.
+
+        Notes
+        -----
+        This method is meant to be overridden
+        by a specific type of Mesh/Analysis class
+        to save the current state of the system variables.
+        At this abstract level, it does nothing.
+        """
         pass
 
     def load_system_state(self, t0: float, t1: float, dt: float) -> None:
+        """Load the system state for a given time range and time step.
+        This is a simple implementation, and normally treated as an
+        abstract method to be overridden.
+
+        Parameters
+        ----------
+        t0 : float
+          The initial time of the system state to load.
+        t1 : float
+         The final time of the system state to load.
+        dt : float
+         The time step to load.
+
+        Notes
+        -----
+        This convenience method sets the internal time tracking variables
+        based on the provided initial and final times, as well as the time step.
+        It is meant to be called when restoring a previously saved state
+        to continue the simulation from a specific point in time.
+        This method is meant to be overridden
+        by a specific type of Mesh/Analysis class
+        to load the previous state of the system variables.
+        """
         self._t0 = t0
         self._t1 = t1
         self.time_step = dt
@@ -2718,17 +2811,54 @@ class Mesh1D:
         self.update_global_matrices_and_vectors()
 
     def store_converged_matrices(self) -> None:
+        """Store the converged tangent matrices.
+        Abstract method.
+
+        Notes
+        -----
+        This method is meant to be overridden
+        by a specific type of Mesh/Analysis class
+        to store the tangent matrices that have converged
+        after an iterative correction process.
+        At this abstract level, it does nothing.
+        """
         pass
 
     def update_boundary_conditions(self, t: float) -> None:
+        """Update the boundary conditions for the current time step.
+        Abstract method.
+
+        Notes
+        -----
+        This method is meant to be overridden
+        by a specific type of Mesh/Analysis class
+        to update the boundary conditions based on the current time step.
+        At this abstract level, it does nothing.
+        """
         pass
 
     def update_nodes(self) -> None:
+        """Update the nodes for the current time step,
+        by transferring solution variable values from global vectors
+        to Node1D objects.
+        Abstract method.
+
+        Notes
+        -----
+        This method is meant to be overridden
+        by a specific type of Mesh/Analysis class
+        to update the nodal values
+        based on the current time step and solution state.
+        At this abstract level, it does nothing.
+        """
         pass
 
     def update_integration_points_primary(self) -> None:
         """Updates the primary variables at integration points
         across the mesh.
+        This is a default implementation,
+        but can be overridden if there are additional
+        details or modifications for a specific type of analysis.
         """
         for e in self.elements:
             e.update_integration_points_primary()
@@ -2736,17 +2866,60 @@ class Mesh1D:
     def update_integration_points_secondary(self) -> None:
         """Updates the secondary variables at integration points
         across the mesh.
+        This is a default implementation,
+        but can be overridden if there are additional
+        details or modifications for a specific type of analysis.
         """
         for e in self.elements:
             e.update_integration_points_secondary()
 
     def update_global_matrices_and_vectors(self) -> None:
+        """Update global vectors for the current time step,
+        by performing integrations of element vectors.
+        These are typically the forcing function or flux vectors
+        in the finite element analysis.
+        Update global matrices for the current time step,
+        for the initial stiffness method,
+        by performing integrations of element matrices.
+        Abstract method.
+
+        Notes
+        -----
+        This method is meant to be overridden
+        by a specific type of Mesh/Analysis class
+        to update the global vectors and matrices
+        based on the current time step and solution state.
+        At this abstract level, it does nothing.
+        """
         pass
 
     def calculate_solution_vector_correction(self) -> None:
+        """Calculate the correction for the solution vector,
+        based on the current residuals and global matrices.
+        Abstract method.
+
+        Notes
+        -----
+        This method is meant to be overridden
+        by a specific type of Mesh/Analysis class
+        to calculate the correction for the solution vector
+        based on the current residuals and global matrices.
+        At this abstract level, it does nothing.
+        """
         pass
 
     def update_void_ratio_phase_change(self) -> None:
+        """Update the void ratio due to phase change.
+        Abstract method.
+
+        Notes
+        -----
+        This method is meant to be overridden
+        by a specific type of Mesh/Analysis class
+        to update the void ratio at integration points
+        based on phase changes (e.g. freezing/thawing).
+        At this abstract level, it does nothing.
+        """
         pass
 
     def iterative_correction_step(self) -> None:
@@ -2779,13 +2952,51 @@ class Mesh1D:
         self.update_global_matrices_and_vectors()
 
     def update_iteration_variables(self) -> None:
+        """Update variables required for the next iteration.
+
+        Notes
+        -----
+        This is a simple implementation,
+        but should be treated as an abstract method.
+        This method increments the iteration counter and updates it
+        to next integer for the next iteration
+        in the iterative correction loop.
+        Meant to be called at the end of each iteration
+        within the iterative_correction_step method.
+        Overrides may also want to calculate approximate relative error
+        updating self._eps_a based on solution variable increments.
+        """
         self._iter += 1
 
     def _check_tf(self, tf: float) -> float:
+        """Validate the target final time for the simulation.
+
+        Parameters
+        ----------
+        tf : float
+         The target final time.
+
+        Returns
+        -------
+        float
+         The validated target final time.
+
+        Raises
+        ------
+        ValueError
+          If final time cannot be converted to float
+          or if final time is less or equal to current simulation time.
+
+        Notes
+        -----
+        This method ensures that the provided target final time tf is valid
+        and greater than the current simulation time.
+        It is meant to be called before starting the time integration process.
+        """
         tf = float(tf)
         if tf <= self._t1:
             raise ValueError(
-                f"Provided tf {tf} is <= current " f"simulation time {self._t1}."
+                f"Provided tf {tf} is <= current simulation time {self._t1}."
             )
         return tf
 
@@ -2847,13 +3058,64 @@ class Mesh1D:
         return dt00, np.array(dt_list), np.array(err_list)
 
     def calculate_total_settlement(self) -> float:
+        """Calculate the total settlement of the mesh.
+        Abstract method.
+
+        Notes
+        -----
+        This convenience method computes the total settlement
+        by integrating the displacements of the nodes in the mesh.
+        It is meant to be called at the end of the analysis
+        to provide a summary measure of the deformation.
+        Returns the total settlement as a float value.
+        At this level, it is an abstract method and just returns 0.0.
+        In analysis types where total settlement is relevant,
+        it should be overridden with the actual calculation.
+        """
         return 0.0
 
     def calculate_deformed_coords(self) -> npt.NDArray[np.floating]:
+        """Calculate the deformed coordinates of the nodes in the mesh.
+        Abstract method.
+
+        Notes
+        -----
+        This convenience method computes the deformed coordinates of the nodes
+        by applying the calculated displacements.
+        It is meant to be called after updating the nodal displacements
+        to obtain the current deformed shape of the mesh.
+        Returns an array of the deformed coordinates.
+        At this level, it is an abstract method and just returns
+        the original coordinates of the nodes.
+        In analysis types where settlement is relevant,
+        it should be overridden with the actual calculation.
+        """
         return np.array(nd.z for nd in self.nodes)
 
     def update_total_stress_distribution(self) -> None:
+        """Update the total stress distribution in the mesh.
+        Abstract method.
+
+        Notes
+        -----
+        This method is meant to be overridden
+        by a specific type of Mesh/Analysis class
+        to update the total stress at each node and integration point
+        based on the current state of the system.
+        At this abstract level, it does nothing.
+        """
         pass
 
     def update_pore_pressure_distribution(self) -> None:
+        """Update the pore pressure distribution in the mesh.
+        Abstract method.
+
+        Notes
+        -----
+        This method is meant to be overridden
+        by a specific type of Mesh/Analysis class
+        to update the pore pressure at each node and integration point
+        based on the current state of the system.
+        At this abstract level, it does nothing.
+        """
         pass
