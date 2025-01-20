@@ -281,6 +281,9 @@ class ThermalElement1D(Element1D):
                 )
 
     def update_deg_sat_water_nodes(self) -> None:
+        """Updates the degree of saturation of water at the nodes,
+        based on the current temperature and material parameters.
+        """
         m = self.int_pts[0].material
         for nd in self.nodes:
             nd.deg_sat_water = m.deg_sat_water(nd.temp)[0]
@@ -638,6 +641,7 @@ class ThermalAnalysis1D(Mesh1D):
         )
 
     def initialize_global_matrices_and_vectors(self):
+        """Initializes the global matrices and vectors for thermal analysis."""
         self._temp_vector_0 = np.zeros(self.num_nodes)
         self._temp_vector = np.zeros(self.num_nodes)
         self._heat_flux_vector_0 = np.zeros(self.num_nodes)
@@ -651,6 +655,15 @@ class ThermalAnalysis1D(Mesh1D):
         self._temp_rate_vector = np.zeros(self.num_nodes)
 
     def initialize_free_index_arrays(self) -> None:
+        """Initializes the arrays of free node indices for thermal analysis.
+
+        Notes
+        -----
+        This method creates a list of indices for nodes that will be updated
+        at each iteration, excluding those with primary (Dirichlet) boundary conditions.
+        It then converts this into open meshes (using numpy.ix_())
+        to be used for updating vectors and matrices.
+        """
         # create list of free node indices
         # that will be updated at each iteration
         # (i.e. are not fixed/Dirichlet boundary conditions)
@@ -663,12 +676,33 @@ class ThermalAnalysis1D(Mesh1D):
         self._free_arr = np.ix_(free_ind, free_ind)
 
     def initialize_solution_variable_vectors(self) -> None:
+        """Initializes the solution variable vectors for thermal analysis.
+
+        Notes
+        -----
+        This method initializes the global temperature vector,
+        the previous time step temperature vector,
+        and the temperature rate vector.
+        It assigns the initial temperature and temperature rate values from the nodes
+        to the corresponding positions in the global vectors.
+        """
         for nd in self.nodes:
             self._temp_vector[nd.index] = nd.temp
             self._temp_vector_0[nd.index] = nd.temp
             self._temp_rate_vector[nd.index] = nd.temp_rate
 
     def store_converged_matrices(self) -> None:
+        """Stores the converged solution vectors for thermal analysis.
+
+        Notes
+        -----
+        This method updates the previous time step temperature vector
+        and the previous time step residual heat flux vector
+        with the current values.
+        It also stores the degree of saturation of water for
+        each node and the temperature and volumetric water content
+        for each integration point in the elements.
+        """
         self._temp_vector_0[:] = self._temp_vector[:]
         self._heat_flux_vector_0[:] = self._heat_flux_vector[:]
         self._heat_flow_matrix_0[:, :] = self._heat_flow_matrix[:, :]
@@ -783,6 +817,7 @@ class ThermalAnalysis1D(Mesh1D):
             self._heat_storage_matrix[np.ix_(ind, ind)] += Ce
 
     def update_global_matrices_and_vectors(self) -> None:
+        """Updates the global vectors and matrices for thermal analysis."""
         self.update_heat_flux_vector()
         self.update_heat_flow_matrix()
         self.update_heat_storage_matrix()
@@ -829,12 +864,20 @@ class ThermalAnalysis1D(Mesh1D):
         self._temp_vector[self._free_vec] += self._delta_temp_vector[self._free_vec]
 
     def update_iteration_variables(self) -> None:
+        """Updates the iteration variables
+        (relative error and iteration counter)
+        for thermal analysis.
+        """
         self._eps_a = float(
             np.linalg.norm(self._delta_temp_vector) / np.linalg.norm(self._temp_vector)
         )
         self._iter += 1
 
     def initialize_system_state_variables(self) -> None:
+        """Initializes the system state variables
+        (vectors and matrices)
+        for adaptive time step correction.
+        """
         # initialize vectors and matrices
         # for adaptive step size correction
         num_int_pt_per_element = len(self.elements[0].int_pts)
@@ -859,6 +902,7 @@ class ThermalAnalysis1D(Mesh1D):
         )
 
     def save_system_state(self) -> None:
+        """Saves the current system state for thermal analysis."""
         self._temp_vector_0_0[:] = self._temp_vector_0[:]
         self._temp_vector_0_1[:] = self._temp_vector[:]
         self._deg_sat_water_0_0[:] = np.array(
@@ -871,6 +915,7 @@ class ThermalAnalysis1D(Mesh1D):
                 self._vol_water_cont__0[ke, jip] = ip.vol_water_cont__0
 
     def load_system_state(self, t0: float, t1: float, dt: float) -> None:
+        """Loads the saved system state for thermal analysis."""
         self._t0 = t0
         self._t1 = t1
         self.time_step = dt
