@@ -1037,6 +1037,7 @@ class ConsolidationAnalysis1D(Mesh1D):
         self._hyd_boundaries = tuple(hyd_boundaries)
 
     def initialize_global_matrices_and_vectors(self):
+        """Initializes global matrices and vectors for consolidation analysis."""
         self._void_ratio_vector_0 = np.zeros(self.num_nodes)
         self._void_ratio_vector = np.zeros(self.num_nodes)
         self._water_flux_vector_0 = np.zeros(self.num_nodes)
@@ -1049,6 +1050,15 @@ class ConsolidationAnalysis1D(Mesh1D):
         self._delta_void_ratio_vector = np.zeros(self.num_nodes)
 
     def initialize_free_index_arrays(self) -> None:
+        """Initializes the free index arrays for consolidation analysis.
+
+        Notes
+        -----
+        This method creates a list of indices for nodes that will be updated
+        at each iteration, excluding those with primary (Dirichlet) boundary conditions.
+        It then converts this into open meshes (using numpy.ix_())
+        to be used for updating vectors and matrices.
+        """
         # create list of free node indices
         # that will be updated at each iteration
         # (i.e. are not fixed/Dirichlet boundary conditions)
@@ -1061,11 +1071,22 @@ class ConsolidationAnalysis1D(Mesh1D):
         self._free_arr = np.ix_(free_ind, free_ind)
 
     def initialize_solution_variable_vectors(self) -> None:
+        """Initializes the solution variable vectors for consolidation analysis.
+
+        Notes
+        -----
+        This method sets up the initial state of the global void ratio vectors.
+        It loops through the nodes in the mesh and assigns the current void ratio
+        values to the void ratio vectors for each node.
+        This is essential for tracking changes in the void ratio
+        during the analysis.
+        """
         for nd in self.nodes:
             self._void_ratio_vector[nd.index] = nd.void_ratio
             self._void_ratio_vector_0[nd.index] = nd.void_ratio
 
     def store_converged_matrices(self) -> None:
+        """Stores the converged matrices for hydromechanical analysis."""
         self._void_ratio_vector_0[:] = self._void_ratio_vector[:]
         self._water_flux_vector_0[:] = self._water_flux_vector[:]
         self._stiffness_matrix_0[:, :] = self._stiffness_matrix[:, :]
@@ -1169,6 +1190,9 @@ class ConsolidationAnalysis1D(Mesh1D):
             self._mass_matrix[np.ix_(ind, ind)] += Me
 
     def update_global_matrices_and_vectors(self) -> None:
+        """Updates the global water flux vwctor, stiffness and
+        mass matrix."""
+
         self.update_water_flux_vector()
         self.update_stiffness_matrix()
         self.update_mass_matrix()
