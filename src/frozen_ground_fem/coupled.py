@@ -69,9 +69,10 @@ class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
     """
 
     def initialize_integration_points_primary(self) -> None:
-        """Initializes primary variables (temperature and void ratio)
+        """Initializes primary variables
         at the integration points for coupled thermal and
-        large strain consolidation physics.
+        large strain consolidation physics. Calls the parent methods
+        from ThermalElement1D and ConsolidationElement1D.
         """
         ThermalElement1D.initialize_integration_points_primary(self)
         ConsolidationElement1D.initialize_integration_points_primary(self)
@@ -113,6 +114,8 @@ class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
         """Updates primary variables (temperature and void ratio)
         at the integration points for coupled thermal and
         large strain consolidation physics.
+        Calls the parent methods from ThermalElement1D and
+        ConsolidationElement1D.
         """
         ThermalElement1D.update_integration_points_primary(self)
         ConsolidationElement1D.update_integration_points_primary(self)
