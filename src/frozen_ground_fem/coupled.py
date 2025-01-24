@@ -69,25 +69,21 @@ class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
     """
 
     def initialize_integration_points_primary(self) -> None:
-        """Initializes primary integration points for coupled thermal and
+        """Initializes primary variables (temperature and void ratio)
+        at the integration points for coupled thermal and
         large strain consolidation physics.
-
-        Notes
-        -----
-        This method initializes the primary integration points by calling
-        the corresponding methods in ThermalElement1D and
-        ConsolidationElement1D classes.
         """
         ThermalElement1D.initialize_integration_points_primary(self)
         ConsolidationElement1D.initialize_integration_points_primary(self)
 
     def initialize_integration_points_secondary(self) -> None:
-        """Initializes secondary integration points for coupled thermal and
-        large strain consolidation physics.
+        """Initializes secondary variables at the integration points
+        for coupled thermal and large strain consolidation physics.
 
         Notes
         -----
-        This method initializes the secondary integration points by updating
+        This method initializes the secondary variables at the integration points
+        by updating
         the void ratio, pre-consolidation stress, and other parameters based
         on the temperature. It also sets reference stresses and void ratios
         for frozen states and resets effective and pre-consolidation stresses
@@ -114,25 +110,21 @@ class CoupledElement1D(ThermalElement1D, ConsolidationElement1D):
         self.update_integration_points_secondary()
 
     def update_integration_points_primary(self) -> None:
-        """Updates primary integration points for coupled thermal and
+        """Updates primary variables (temperature and void ratio)
+        at the integration points for coupled thermal and
         large strain consolidation physics.
-
-        Notes
-        -----
-        This method updates the primary integration points by calling the
-        corresponding methods in ThermalElement1D and ConsolidationElement1D
-        classes.
         """
         ThermalElement1D.update_integration_points_primary(self)
         ConsolidationElement1D.update_integration_points_primary(self)
 
     def update_integration_points_secondary(self) -> None:
-        """Updates secondary integration points for coupled thermal and
-        large strain consolidation physics.
+        """Updates secondary variables at the integration points
+        for coupled thermal and large strain consolidation physics.
 
         Notes
         -----
-        This method updates the secondary integration points by computing
+        This method updates the secondary variables
+        at the integration points by computing
         the gradient matrix, updating local stress states, void ratios,
         pre-consolidation stresses, and other parameters based on the
         temperature and void ratio. It handles both frozen and unfrozen
@@ -289,12 +281,6 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         Returns
         ------
         tuple[:c:`CoupledElement1D`]
-
-        Notes
-        -----
-        Overrides
-        property method for more specific return value
-        type hint.
         """
         return self._elements
 
@@ -309,12 +295,6 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         Returns
         ------
         set[:c:`ThermalBoundary1D`, :c:`ConsolidationBoundary1D`]
-
-        Notes
-        -----
-        Overrides
-        property method for more specific return value
-        type hint.
         """
         return self._boundaries
 
@@ -378,12 +358,6 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
     def initialize_global_matrices_and_vectors(self):
         """Initializes global matrices and vectors for coupled thermal and
         large strain consolidation physics.
-
-        Notes
-        -----
-        This method initializes the global matrices and vectors by calling
-        the corresponding methods in ThermalAnalysis1D and
-        ConsolidationAnalysis1D classes.
         """
         ThermalAnalysis1D.initialize_global_matrices_and_vectors(self)
         ConsolidationAnalysis1D.initialize_global_matrices_and_vectors(self)
@@ -409,12 +383,6 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
     def initialize_solution_variable_vectors(self) -> None:
         """Initializes solution variable vectors for coupled thermal and
         large strain consolidation physics.
-
-        Notes
-        -----
-        This method initializes the solution variable vectors by calling
-        the corresponding methods in ThermalAnalysis1D and
-        ConsolidationAnalysis1D classes.
         """
         ThermalAnalysis1D.initialize_solution_variable_vectors(self)
         ConsolidationAnalysis1D.initialize_solution_variable_vectors(self)
@@ -422,12 +390,6 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
     def store_converged_matrices(self) -> None:
         """Stores converged solution vectors for coupled thermal and
         large strain consolidation physics.
-
-        Notes
-        -----
-        This method stores the converged solution vectors by calling the
-        corresponding methods in ThermalAnalysis1D and
-        ConsolidationAnalysis1D classes.
         """
         ThermalAnalysis1D.store_converged_matrices(self)
         ConsolidationAnalysis1D.store_converged_matrices(self)
@@ -467,12 +429,6 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
     def update_nodes(self) -> None:
         """Updates the temperature and void ratio values at the nodes
         in the mesh.
-
-        Notes
-        -----
-        This convenience method loops over nodes in the mesh
-        and assigns the temperature from the global temperature vector
-        and the void ratio from the global void ratio vector.
         """
         self._temp_rate_vector[:] = (
             self._temp_vector[:] - self._temp_vector_0[:]
@@ -485,12 +441,6 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
     def update_global_matrices_and_vectors(self) -> None:
         """Updates global initial matrices for coupled thermal and
         large strain consolidation physics.
-
-        Notes
-        -----
-        This method updates the global initial matrices by calling the
-        corresponding methods in ThermalAnalysis1D and
-        ConsolidationAnalysis1D classes.
         """
         ThermalAnalysis1D.update_global_matrices_and_vectors(self)
         ConsolidationAnalysis1D.update_global_matrices_and_vectors(self)
@@ -498,14 +448,10 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
     def calculate_solution_vector_correction(self) -> None:
         """Calculates the solution vector correction for coupled thermal and
         large strain consolidation physics.
-
-        Notes
-        -----
-        This method calculates the solution vector correction by switching
-        between the free vectors and arrays for thermal and consolidation
-        analyses, and calling the corresponding methods in ThermalAnalysis1D
-        and ConsolidationAnalysis1D classes.
         """
+        # need to set _free_vec and _free_arr
+        # because these are the variables used by
+        # the calculate_solution_vector_correction() methods
         self._free_vec = self._free_vec_thrm
         self._free_arr = self._free_arr_thrm
         ThermalAnalysis1D.calculate_solution_vector_correction(self)
@@ -534,12 +480,6 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
     def update_iteration_variables(self) -> None:
         """Updates iteration variables for coupled thermal and
         large strain consolidation physics.
-
-        Notes
-        -----
-        This method updates the iteration variables by calculating the
-        relative error norm for both thermal and consolidation analyses.
-        It updates the maximum relative error and increments the iteration counter.
         """
         eps_a_thrm = float(
             np.linalg.norm(self._delta_temp_vector) / np.linalg.norm(self._temp_vector)
@@ -554,13 +494,6 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
     def initialize_system_state_variables(self):
         """Initializes system state variables for coupled thermal and
         large strain consolidation physics.
-
-        Notes
-        -----
-        This method initializes various vectors and matrices required for
-        adaptive step size correction and system state management. It sets
-        up initial conditions for temperature, degree of saturation, void
-        ratio, volumetric water content, and pre-consolidation stress.
         """
         # initialize vectors and matrices
         # for adaptive step size correction
@@ -599,13 +532,6 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
     def save_system_state(self):
         """Saves the current system state variables for coupled thermal and
         large strain consolidation physics.
-
-        Notes
-        -----
-        This method saves the current state of the system including
-        temperature, degree of saturation, void ratio, volumetric water
-        content, and pre-consolidation stress for each node and integration
-        point in the mesh.
         """
         self._temp_vector_0_0[:] = self._temp_vector_0[:]
         self._temp_vector_0_1[:] = self._temp_vector[:]
@@ -627,9 +553,9 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
         Parameters
         ----------
         t0 : float
-            The initial time.
+            The initial time (at the beginning of the time step).
         t1 : float
-            The final time.
+            The final time (at the end of the time step).
         dt : float
             The time step.
 
