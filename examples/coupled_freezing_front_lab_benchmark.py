@@ -103,18 +103,20 @@ def main():
     )
 
     print(f"H_layer = {H_layer} m")
-    print(f"qi = {qi} Pa = {qi*1e-3} kPa")
+    print(f"qi = {qi} Pa = {qi * 1e-3} kPa")
     print(f"Gs = {m.spec_grav_solids}")
     print(f"lam_s = {m.thrm_cond_solids} W/m/K")
     print(f"cs = {m.spec_heat_cap_solids} J/kg/K")
     print(
         f"deg_sat_water_alpha = {m.deg_sat_water_alpha} Pa"
-        + f" = {m.deg_sat_water_alpha*1e-3} kPa"
+        + f" = {m.deg_sat_water_alpha * 1e-3} kPa"
     )
     print(f"deg_sat_water_beta = {m.deg_sat_water_beta}")
     print(f"water_flux_b1 = {m.water_flux_b1}")
     print(f"water_flux_b2 = {m.water_flux_b2} 1/K")
-    print(f"water_flux_b3 = {m.water_flux_b3} 1/Pa" + f" = {m.water_flux_b3*1e6} 1/MPa")
+    print(
+        f"water_flux_b3 = {m.water_flux_b3} 1/Pa" + f" = {m.water_flux_b3 * 1e6} 1/MPa"
+    )
     print(f"e_min = {m.void_ratio_min}")
     print(f"e_sep = {m.void_ratio_sep}")
     print(f"seg_pot_0 = {m.seg_pot_0} m^2/K/s")
@@ -124,7 +126,9 @@ def main():
     print(f"e0k = {m.void_ratio_0_hyd_cond}")
     print(f"Cc = {m.comp_index_unfrozen}")
     print(f"Cr = {m.rebound_index_unfrozen}")
-    print(f"sig_p_0 = {m.eff_stress_0_comp} Pa" + f" = {m.eff_stress_0_comp*1e-3} kPa")
+    print(
+        f"sig_p_0 = {m.eff_stress_0_comp} Pa" + f" = {m.eff_stress_0_comp * 1e-3} kPa"
+    )
     print(f"e0sig = {m.void_ratio_0_comp}")
     print(f"comp_index_frozen_a1 = {m.comp_index_frozen_a1}")
     print(f"comp_index_frozen_a2 = {m.comp_index_frozen_a2}")

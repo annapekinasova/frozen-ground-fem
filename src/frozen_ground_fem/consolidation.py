@@ -581,7 +581,7 @@ class ConsolidationBoundary1D(Boundary1D):
         -----
         This method updates the void_ratio at each of the nodes
         in the ConsolidationBoundary1D
-        only in the case that bnd_type == BoundaryType.temp.
+        only in the case that bnd_type == BoundaryType.void_ratio.
         Otherwise, it does nothing.
         """
         if self.bnd_type == ConsolidationBoundary1D.BoundaryType.void_ratio:
@@ -1190,7 +1190,7 @@ class ConsolidationAnalysis1D(Mesh1D):
             self._mass_matrix[np.ix_(ind, ind)] += Me
 
     def update_global_matrices_and_vectors(self) -> None:
-        """Updates the global water flux vwctor, stiffness and
+        """Updates the global water flux vector, stiffness and
         mass matrix."""
 
         self.update_water_flux_vector()
