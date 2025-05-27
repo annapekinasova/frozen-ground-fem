@@ -35,8 +35,8 @@ def main():
     s_per_min = 60.0
     H_layer = 0.5
     T0 = 5.0
-    Tb = -1.0  # slow
-    # Tb = -5.0 # moderate
+    # Tb = -1.0  # slow
+    Tb = -5.0  # moderate
     # Tb = -20.0 # rapid
     num_elements_top = 50
     num_elements = int(np.ceil(num_elements_top * 1.5))
@@ -47,13 +47,7 @@ def main():
     tol = 1e-3
     tol_str = f"{tol:0.1e}"
     tol_str = "p".join(tol_str.split("."))
-    fname = (
-        "/home/karcheba/Dropbox/Anna work_school/PhD/Research/Numerical/"
-        + "freezing front benchmark/core_i9_seg_slow/"
-        # + "freezing front benchmark/core_i9_seg_moderate/"
-        # + "freezing front benchmark/core_i9_seg_rapid/"
-        + f"freeze_front_lab_{num_elements_top}_{tol_str}"
-    )
+    fname = "examples/" + f"freeze_front_lab_{num_elements_top}_{tol_str}"
     # compute modified node locations
     z_mesh_nod = np.hstack(
         [
