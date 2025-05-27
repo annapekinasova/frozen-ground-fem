@@ -142,3 +142,6 @@ dmypy.json
 
 # output files
 *.out
+
+# Macbook backup files
+.DS_Store
