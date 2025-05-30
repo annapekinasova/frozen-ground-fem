@@ -1703,7 +1703,7 @@ class Element1D:
         0.23931433524968324,
         0.11846344252809454,
     )
-    _int_pt_coords_linear_deformed: ClassVar[tuple[tuple[float, float], ...]] = (
+    _int_pt_coords_linear_deformed: ClassVar[tuple[tuple[float, ...]]] = (
         (
             0.04691007703066802,
             0.2307653449471585,
@@ -1712,7 +1712,7 @@ class Element1D:
             0.9530899229693319,
         ),
     )
-    _int_pt_weights_linear_deformed: ClassVar[tuple[tuple[float, float], ...]] = (
+    _int_pt_weights_linear_deformed: ClassVar[tuple[tuple[float, ...]]] = (
         (
             0.11846344252809454,
             0.23931433524968324,

@@ -1484,10 +1484,10 @@ class ConsolidationAnalysis1D(Mesh1D):
             self.nodes[k].tot_stress = ss
         # update total stresses at the integration points
         for e in self.elements:
-            ss = np.array([nd.tot_stress for nd in e.nodes])
+            ssel = np.array([nd.tot_stress for nd in e.nodes])
             for ip in e.int_pts:
                 N = e._shape_matrix(ip.local_coord)
-                ip.tot_stress = (N @ ss)[0]
+                ip.tot_stress = (N @ ssel)[0]
 
     def update_pore_pressure_distribution(self) -> None:
         """Updates steady state and excess pore pressure distributions
