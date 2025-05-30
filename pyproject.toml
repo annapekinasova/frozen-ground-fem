@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frozen_ground_fem"
-version = "1.0.0"
+version = "1.0.1"
 authors = [{ name = "Anna Pekinasova", email = "anna.pekinasova@ucalgary.ca" }]
 description = "Multi-physics for frozen ground analysis"
 readme = "README.md"
