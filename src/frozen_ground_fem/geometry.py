@@ -1563,10 +1563,10 @@ class IntegrationPoint1D(Point1D):
     @tot_stress_gradient.setter
     def tot_stress_gradient(self, value: float) -> None:
         value = float(value)
-        if value > 0.0:
-            raise ValueError(
-                f"value {value} for tot_stress_gradient cannot be positive."
-            )
+        # if value > 0.0:
+        #     raise ValueError(
+        #         f"value {value} for tot_stress_gradient cannot be positive."
+        #     )
         self._tot_stress_gradient = value
 
     @property
