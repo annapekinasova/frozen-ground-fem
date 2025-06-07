@@ -18,11 +18,11 @@ def main():
     ta.z_min = 0.0
     ta.z_max = 100.0
     H_layer = ta.z_max - ta.z_min
-    ta.generate_mesh(num_elements=158, order=1)
+    ta.generate_mesh(num_elements=80, order=1)
     # ta.generate_mesh(num_elements=315, order=1)
 
     # compute modified node locations
-    num_el_list = [100, 40, 8, 5, 5]
+    num_el_list = [25, 20, 15, 10, 10]
     # num_el_list = [200, 80, 15, 10, 10]
     z_mesh_nod = np.hstack(
         [
@@ -41,7 +41,7 @@ def main():
     # define analysis parameters
     dt_sim_0 = 1.0e-5
     qi = 15.0e3
-    tol = 1e-2
+    tol = 1e-3
     tol_str = f"{tol:0.1e}"
     tol_str = "p".join(tol_str.split("."))
     fname = "examples/" + f"coupled_spinup_{ta.num_elements}_{tol_str}"
@@ -68,10 +68,8 @@ def main():
         void_ratio_0_hyd_cond=2.6,
         hyd_cond_mult=1.0,
         hyd_cond_0=4.05e-4,
-        # void_ratio_lim=0.1,
-        void_ratio_lim=0.05,
-        # void_ratio_min=0.1,
-        void_ratio_min=0.05,
+        void_ratio_lim=0.1,
+        void_ratio_min=0.1,
         void_ratio_tr=1.6,
         void_ratio_sep=1.6,
         void_ratio_0_comp=0.333333,
@@ -88,12 +86,12 @@ def main():
         e.assign_material(mtl)
 
     # calculate initial void ratio profile
-    e0 = calculate_static_profile(z_nod, mtl, qi)[0]
-    for zz, ee in zip(z_nod, e0):
-        print(f"{zz: 0.4f}  {ee: 0.4f}")
+    # e0 = calculate_static_profile(z_nod, mtl, qi)[0]
+    # for zz, ee in zip(z_nod, e0):
+    #     print(f"{zz: 0.4f}  {ee: 0.4f}")
 
     # set initial conditions
-    T0 = 5.0
+    T0 = -3.0
     e_cu0 = mtl.void_ratio_0_comp
     Ccu = mtl.comp_index_unfrozen
     sig_cu0 = mtl.eff_stress_0_comp
@@ -101,8 +99,10 @@ def main():
     e_bnd = e_cu0 - Ccu * np.log10(sig_p_ob / sig_cu0)
     for k, nd in enumerate(ta.nodes):
         nd.temp = T0
-        nd.void_ratio = e0[k]
-        nd.void_ratio_0 = e0[k]
+        nd.void_ratio = e_bnd
+        nd.void_ratio_0 = e_bnd
+        # nd.void_ratio = e0[k]
+        # nd.void_ratio_0 = e0[k]
 
     # define temperature boundary curve
     t_max = 195.0 * s_per_day
@@ -237,7 +237,7 @@ def main():
             + f"Tmean = {Tmean: 0.4f} deg C"
         )
 
-    plt.figure(figsize=(3.7, 3.7))
+    plt.figure(figsize=(8.0, 3.7))
     temp_min_curve = np.amin(temp_curve, axis=1)
     temp_max_curve = np.amax(temp_curve, axis=1)
     plt.plot(temp_curve[:, 0], z_vec, "--b", linewidth=1, label="temp dist, jan 1")
