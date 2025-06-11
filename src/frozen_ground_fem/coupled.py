@@ -707,8 +707,8 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
                 self._temp_scale[:] = np.max(
                     np.vstack(
                         [
-                            self._temp_vector[:],
-                            2.0 * self._temp_rate_vector[:] * self.time_step,
+                            np.abs(self._temp_vector[:]),
+                            2.0 * np.abs(self._temp_rate_vector[:]) * self.time_step,
                         ]
                     ),
                     axis=0,
@@ -721,7 +721,7 @@ class CoupledAnalysis1D(ThermalAnalysis1D, ConsolidationAnalysis1D):
                     np.vstack(
                         [
                             self._void_ratio_vector[:],
-                            self._void_ratio_rate[:],
+                            np.abs(self._void_ratio_rate[:]),
                         ]
                     ),
                     axis=0,
