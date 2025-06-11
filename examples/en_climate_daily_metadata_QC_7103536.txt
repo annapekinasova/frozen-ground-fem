@@ -1,0 +1,23 @@
+﻿Station Name		KUUJJUARAPIK A
+Province or Territory		QUEBEC
+Latitude		55.28
+Longitude		-77.75
+Elevation		12.20
+Climate Identifier	7103536
+WMO Identifier		
+TC Identifier		YGW
+
+Legend
+A	Accumulated
+C	Precipitation occurred, amount uncertain
+E	Estimated
+F	Accumulated and estimated
+L	Precipitation may or may not have occurred
+M	Missing
+N	Temperature missing but known to be > 0
+S	More than one occurrence
+T	Trace
+Y	Temperature missing but known to be < 0
+[empty]	Indicates an unobserved value
+^	The value displayed is based on incomplete data
+†	Data that is not subject to review by the National Climate Archives
