@@ -91,7 +91,7 @@ def main():
     #     print(f"{zz: 0.4f}  {ee: 0.4f}")
 
     # set initial conditions
-    T0 = -3.0
+    T0 = -0.5
     e_cu0 = mtl.void_ratio_0_comp
     Ccu = mtl.comp_index_unfrozen
     sig_cu0 = mtl.eff_stress_0_comp
@@ -159,7 +159,7 @@ def main():
 
     # initialize plot
     z_vec = np.array([nd.z for nd in ta.nodes])
-    plt.figure(figsize=(8.0, 3.7))
+    plt.figure(figsize=(4.0, 3.7))
 
     # initialize global matrices and vectors
     ta.time_step = dt_sim_0  # set initial time step small for adaptive
@@ -237,7 +237,7 @@ def main():
             + f"Tmean = {Tmean: 0.4f} deg C"
         )
 
-    plt.figure(figsize=(8.0, 3.7))
+    plt.figure(figsize=(3.7, 3.7))
     temp_min_curve = np.amin(temp_curve, axis=1)
     temp_max_curve = np.amax(temp_curve, axis=1)
     plt.plot(temp_curve[:, 0], z_vec, "--b", linewidth=1, label="temp dist, jan 1")
