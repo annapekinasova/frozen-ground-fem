@@ -13,45 +13,49 @@ from frozen_ground_fem import (
 
 
 def main():
-    # create analysis object
+    # setup and generate mesh
     ta = CoupledAnalysis1D()
     ta.z_min = 0.0
-    ta.z_max = 100.0
+    ta.z_max = 25.0
     H_layer = ta.z_max - ta.z_min
-    ta.generate_mesh(num_elements=91, order=1)
-
-    # compute modified node locations
-    num_el_list = [40, 16, 15, 10, 10]
-    nd_ind_list = [46, 56, 71, 81, 91]
-    nd_z_list = [5.0, 10.0, 25.0, 50.0, 100.0]
-    k_cycle_list = [0, 10, 50]
-    z_mesh_nod = np.hstack(
-        [
-            np.linspace(0.0, 2.0, num_el_list[0] + 1)[:-1],
-            np.linspace(2.0, 10.0, num_el_list[1] + 1)[:-1],
-            np.linspace(10.0, 25.0, num_el_list[2] + 1)[:-1],
-            np.linspace(25.0, 50.0, num_el_list[3] + 1)[:-1],
-            np.linspace(50.0, 100.0, num_el_list[4] + 1),
-        ]
-    )
-    # modify node locations in the mesh
-    for nd, zn in zip(ta.nodes, z_mesh_nod):
+    dTdZ_G = 0.03
+    k_cycle_list = [0, 10, 25, 50, 100]
+    msh_z_list = [0.0, 0.5, 1.0, 2.0, 5.0, 10.0, 25.0]
+    msh_dz_list = [0.01, 0.05, 0.1, 0.5, 1.0, 5.0]
+    nd_z_list = [1.0, 2.0, 5.0, 10.0, 15.0]
+    nd_z_line_types = ["-r", "--r", "-k", "--k", "-b"]
+    nd_z_line_width = [2.0, 2.0, 1.0, 1.0, 0.5]
+    num_el_list = []
+    z_msh_nod = []
+    for k, (z0, dz) in enumerate(zip(msh_z_list[:-1], msh_dz_list)):
+        z1 = msh_z_list[k + 1]
+        num_el_list.append(int((z1 - z0) // dz))
+        z_msh_nod = np.hstack(
+            [z_msh_nod, np.linspace(z0, z1, num_el_list[-1] + 1)[:-1]]
+        )
+    z_msh_nod = np.hstack([z_msh_nod, msh_z_list[-1]])
+    nd_ind_list = [int(np.nonzero(z_msh_nod >= z)[0][0]) for z in nd_z_list]
+    num_el = int(np.sum(num_el_list))
+    print(f"num_el={num_el}")
+    ta.generate_mesh(num_elements=num_el, order=1)
+    for nd, zn in zip(ta.nodes, z_msh_nod):
         nd.z = zn
 
     # define plotting time increments
     s_per_day = 8.64e4
-    s_per_wk = s_per_day * 7.0
     s_per_yr = s_per_day * 365.0
-    t_plot_targ = np.linspace(0.0, 50.0, 51) * s_per_yr
+    t_plot_targ = np.linspace(0.0, 100.0, 101) * s_per_yr
 
     # define analysis parameters
-    dt_sim_0 = 1e-5
-    adapt_dt = True
+    dt_sim_0 = 0.5 * s_per_day
+    adapt_dt = False
     qi = 15.0e3
-    tol = 1e-2
+    tol = 1e-3
     tol_str = f"{tol:0.1e}"
     tol_str = "p".join(tol_str.split("."))
-    fname = "examples/" + f"coupled_spinup_{ta.num_elements}_{tol_str}"
+    fname = (
+        "examples/" + f"coupled_spinup_smooth_const_warm_{ta.num_elements}_{tol_str}"
+    )
 
     # define material properties
     # and initialize integration points
@@ -99,28 +103,36 @@ def main():
     sig_p_ob = qi
     e_bnd = e_cu0 - Ccu * np.log10(sig_p_ob / sig_cu0)
     for k, nd in enumerate(ta.nodes):
-        nd.temp = T0
+        nd.temp = T0 - dTdZ_G * (ta.z_max - nd.z)
         nd.void_ratio = e_bnd
         nd.void_ratio_0 = e_bnd
         # nd.void_ratio = e0[k]
         # nd.void_ratio_0 = e0[k]
 
-    # define temperature boundary curve
-    T_data = np.loadtxt(
-        "examples/en_climate_daily_mean_QC_7103536_1994_P1D.csv", delimiter=","
-    )[:, 1]
-    t_data = np.arange(0, 365) * s_per_day
+    ## define temperature boundary curve
+    # T_data = np.loadtxt(
+    #     "examples/en_climate_daily_mean_QC_7103536_1994_P1D.csv", delimiter=","
+    # )[:, 1]
+    # t_data = np.arange(0, 365) * s_per_day
+    #
+    # def air_temp(t):
+    #     return np.interp(t, t_data, T_data, period=365.0 * s_per_day)
+
+    Tavg = -3.89
+    Tamp = 19.1
+    t_phs = 210 * s_per_day
 
     def air_temp(t):
-        return np.interp(t, t_data, T_data, period=365.0 * s_per_day)
+        return Tavg + Tamp * np.cos((2 * np.pi / s_per_yr) * (t - t_phs))
 
     # save a plot of the air temperature boundary
+    plt.rc("font", size=10)
     plt.figure(figsize=(6, 4))
     t = np.linspace(0, 2.5 * s_per_yr, 251)
     plt.plot(t / s_per_day, air_temp(t), "-k")
     plt.xlabel("time [days]")
     plt.ylabel("air temp [deg C]")
-    plt.savefig(fname + "_boundary.png")
+    plt.savefig(fname + "_boundary.svg")
 
     # create boundary conditions
     temp_boundary = ThermalBoundary1D(
@@ -134,7 +146,7 @@ def main():
         (ta.elements[-1].int_pts[-1],),
     )
     grad_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
-    grad_boundary.bnd_value = 0.03
+    grad_boundary.bnd_value = dTdZ_G
     hyd_bound = HydraulicBoundary1D(
         nodes=(ta.nodes[0],),
         bnd_value=H_layer,
@@ -158,12 +170,15 @@ def main():
 
     # initialize global matrices and vectors
     ta.time_step = dt_sim_0  # set initial time step small for adaptive
+    ta.implicit_error_tolerance = tol
     ta.initialize_global_system(t0=0.0)
 
     temp_curve = np.zeros(ta.num_nodes)
     void_curve = np.zeros(ta.num_nodes)
     temp_nd_out = np.zeros((len(nd_z_list), len(t_plot_targ)))
+    dT_nd_out = np.zeros((len(nd_z_list), len(t_plot_targ)))
     void_nd_out = np.zeros((len(nd_z_list), len(t_plot_targ)))
+    de_nd_out = np.zeros((len(nd_z_list), len(t_plot_targ)))
     temp_prof_out = np.zeros((ta.num_nodes, len(k_cycle_list)))
     void_prof_out = np.zeros((ta.num_nodes, len(k_cycle_list)))
     k_cycle = 0
@@ -191,7 +206,9 @@ def main():
         demax = np.max(np.abs(de))
         for nd_k, nd_ind in enumerate(nd_ind_list):
             temp_nd_out[nd_k, k] = temp_curve[nd_ind]
+            dT_nd_out[nd_k, k] = np.abs(dT[nd_ind])
             void_nd_out[nd_k, k] = void_curve[nd_ind]
+            de_nd_out[nd_k, k] = np.abs(de[nd_ind])
         if k in k_cycle_list:
             temp_prof_out[:, k_cycle] = temp_curve[:]
             void_prof_out[:, k_cycle] = void_curve[:]
@@ -205,30 +222,78 @@ def main():
         )
 
     # initialize plot
-    plt.rc("font", size=8)
     z_vec = np.array([nd.z for nd in ta.nodes])
 
     # generate temperature and void ratio distribution plots
-    plt.figure(figsize=(4.0, 3.7))
-    plt.subplot(1, 2, 1)
+    plt.figure(figsize=(8.0, 3.7))
+    plt.subplot(1, 3, 1)
     for ind_cycle, k_cycle in enumerate(k_cycle_list):
         plt.plot(temp_prof_out[:, ind_cycle], z_vec, "--k", linewidth=0.5)
+    plt.plot(temp_prof_out[:, -1], z_vec, "-k", linewidth=2.0)
     plt.ylim(ta.z_max, ta.z_min)
-    plt.legend()
     plt.xlabel("Temperature, T [deg C]")
     plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
-    plt.subplot(1, 2, 2)
+    plt.subplot(1, 3, 2)
     for ind_cycle, k_cycle in enumerate(k_cycle_list):
         plt.plot(void_prof_out[:, ind_cycle], z_vec, "--k", linewidth=0.5)
+    plt.plot(void_prof_out[:, -1], z_vec, "-k", linewidth=2.0)
     plt.ylim(ta.z_max, ta.z_min)
-    plt.legend()
     plt.xlabel("Void ratio, e [-]")
-    plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
-    plt.savefig(fname + "_cycle_profiles.png")
+    # plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
+    plt.savefig(fname + "_cycle_profiles.svg")
+
+    # convergence plots
+    fig = plt.figure(figsize=(16.0, 6.0))
+    plt.subplot(2, 3, 1)
+    for nd_k, temp_nd in enumerate(temp_nd_out):
+        plt.plot(
+            t_plot_targ / s_per_yr,
+            temp_nd,
+            nd_z_line_types[nd_k],
+            linewidth=nd_z_line_width[nd_k],
+            label=f"z={nd_z_list[nd_k]:0.1f}m",
+        )
+    plt.ylabel("Temperature, T [deg C]")
+    plt.ylim((-16.0, 2.0))
+    fig.legend(loc="upper right")
+    plt.subplot(2, 3, 2)
+    for nd_k, dT_nd in enumerate(dT_nd_out):
+        plt.plot(
+            t_plot_targ / s_per_yr,
+            dT_nd,
+            nd_z_line_types[nd_k],
+            linewidth=nd_z_line_width[nd_k],
+        )
+    plt.ylabel("Abs Inter Cycle dT [deg C]")
+    plt.ylim((0.0, 0.5))
+    plt.subplot(2, 3, 4)
+    for nd_k, void_nd in enumerate(void_nd_out):
+        plt.plot(
+            t_plot_targ / s_per_yr,
+            void_nd,
+            nd_z_line_types[nd_k],
+            linewidth=nd_z_line_width[nd_k],
+        )
+    plt.ylabel("Void Ratio, e [-]")
+    plt.xlabel("Number of cycles [yrs]")
+    plt.ylim((0.2, 1.0))
+    plt.subplot(2, 3, 5)
+    for nd_k, de_nd in enumerate(de_nd_out):
+        plt.plot(
+            t_plot_targ / s_per_yr,
+            de_nd,
+            nd_z_line_types[nd_k],
+            linewidth=nd_z_line_width[nd_k],
+        )
+    plt.ylabel("Abs Inter Cycle de [-]")
+    plt.xlabel("Number of cycles [yrs]")
+    plt.ylim((0.0, 0.05))
+    plt.savefig(fname + "_convergence.svg")
 
     # now run one annual cycle to obtain temperature envelopes
     print("running final cycle to obtain temp envelopes")
-    t_plot_targ = np.linspace(t_plot_targ[-1], t_plot_targ[-1] + 1.0, 53) * s_per_yr
+    tf = t_plot_targ[-1] / s_per_yr
+    t_plot_targ = np.linspace(tf, tf + 1.0, 53) * s_per_yr
     temp_curve = np.zeros((ta.num_nodes, 53))
     void_curve = np.zeros((ta.num_nodes, 53))
     for k, tf in enumerate(t_plot_targ):
@@ -244,14 +309,14 @@ def main():
         Tmean = np.mean(temp_curve[:, k])
         print(
             f"wk = {k}, "
-            + f"dt = {dt00 / s_per_wk:0.4e} wks, "
+            + f"dt = {dt00 / s_per_day:0.4e} days, "
             + f"Tmin = {Tmin: 0.4f} deg C, "
             + f"Tmax = {Tmax: 0.4f} deg C, "
             + f"Tmean = {Tmean: 0.4f} deg C"
         )
 
-    plt.figure(figsize=(4.0, 3.7))
-    plt.subplot(1, 2, 1)
+    fig = plt.figure(figsize=(8.0, 3.7))
+    plt.subplot(1, 3, 1)
     temp_min_curve = np.amin(temp_curve, axis=1)
     temp_max_curve = np.amax(temp_curve, axis=1)
     plt.plot(temp_curve[:, 0], z_vec, "--b", linewidth=1, label="jan 1")
@@ -261,10 +326,11 @@ def main():
     plt.plot(temp_min_curve, z_vec, "-b", linewidth=2, label="annual minimum")
     plt.plot(temp_max_curve, z_vec, "-r", linewidth=2, label="annual maximum")
     plt.ylim(ta.z_max, ta.z_min)
-    plt.legend()
+    # plt.legend()
+    fig.legend(loc="upper right")
     plt.xlabel("Temperature, T [deg C]")
     plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
-    plt.subplot(1, 2, 2)
+    plt.subplot(1, 3, 2)
     void_min_curve = np.amin(void_curve, axis=1)
     void_max_curve = np.amax(void_curve, axis=1)
     plt.plot(void_curve[:, 0], z_vec, "--b", linewidth=1, label="jan 1")
@@ -274,10 +340,10 @@ def main():
     plt.plot(void_min_curve, z_vec, "-b", linewidth=2, label="annual minimum")
     plt.plot(void_max_curve, z_vec, "-r", linewidth=2, label="annual maximum")
     plt.ylim(ta.z_max, ta.z_min)
-    plt.legend()
+    # plt.legend()
     plt.xlabel("Void ratio, e [-]")
-    plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
-    plt.savefig(fname + "_temp_void_trumpet_curves.png")
+    # plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
+    plt.savefig(fname + "_temp_void_trumpet_curves.svg")
 
 
 def calculate_static_profile(
