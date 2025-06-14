@@ -16,15 +16,15 @@ def main():
     # setup and generate mesh
     ta = CoupledAnalysis1D()
     ta.z_min = 0.0
-    ta.z_max = 25.0
+    ta.z_max = 50.0
     H_layer = ta.z_max - ta.z_min
     dTdZ_G = 0.03
-    k_cycle_list = [0, 10, 25, 50, 100]
-    msh_z_list = [0.0, 0.5, 1.0, 2.0, 5.0, 10.0, 25.0]
-    msh_dz_list = [0.01, 0.05, 0.1, 0.5, 1.0, 5.0]
-    nd_z_list = [1.0, 2.0, 5.0, 10.0, 15.0]
-    nd_z_line_types = ["-r", "--r", "-k", "--k", "-b"]
-    nd_z_line_width = [2.0, 2.0, 1.0, 1.0, 0.5]
+    k_cycle_list = [0, 10, 25, 50, 100, 200, 500]
+    msh_z_list = [0.0, 0.5, 1.0, 2.0, 5.0, 25.0, 50.0]
+    msh_dz_list = [0.05, 0.1, 0.25, 0.5, 1.0, 2.5]
+    nd_z_list = [5.0, 10.0, 25.0, 50.0]
+    nd_z_line_types = ["-r", "--r", "-k", "--k"]
+    nd_z_line_width = [2.0, 2.0, 1.0, 1.0]
     num_el_list = []
     z_msh_nod = []
     for k, (z0, dz) in enumerate(zip(msh_z_list[:-1], msh_dz_list)):
@@ -44,7 +44,7 @@ def main():
     # define plotting time increments
     s_per_day = 8.64e4
     s_per_yr = s_per_day * 365.0
-    t_plot_targ = np.linspace(0.0, 100.0, 101) * s_per_yr
+    t_plot_targ = np.linspace(0.0, 500.0, 501) * s_per_yr
 
     # define analysis parameters
     dt_sim_0 = 0.5 * s_per_day
@@ -319,24 +319,19 @@ def main():
     plt.subplot(1, 3, 1)
     temp_min_curve = np.amin(temp_curve, axis=1)
     temp_max_curve = np.amax(temp_curve, axis=1)
-    plt.plot(temp_curve[:, 0], z_vec, "--b", linewidth=1, label="jan 1")
-    plt.plot(temp_curve[:, 13], z_vec, ":b", linewidth=1, label="apr 1")
-    plt.plot(temp_curve[:, 26], z_vec, "--r", linewidth=1, label="jul 1")
-    plt.plot(temp_curve[:, 39], z_vec, ":r", linewidth=1, label="oct 1")
+    for k in range(53):
+        plt.plot(temp_curve[:, k], z_vec, "-r", linewidth=0.5)
     plt.plot(temp_min_curve, z_vec, "-b", linewidth=2, label="annual minimum")
     plt.plot(temp_max_curve, z_vec, "-r", linewidth=2, label="annual maximum")
     plt.ylim(ta.z_max, ta.z_min)
-    # plt.legend()
     fig.legend(loc="upper right")
     plt.xlabel("Temperature, T [deg C]")
     plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
     plt.subplot(1, 3, 2)
     void_min_curve = np.amin(void_curve, axis=1)
     void_max_curve = np.amax(void_curve, axis=1)
-    plt.plot(void_curve[:, 0], z_vec, "--b", linewidth=1, label="jan 1")
-    plt.plot(void_curve[:, 13], z_vec, ":b", linewidth=1, label="apr 1")
-    plt.plot(void_curve[:, 26], z_vec, "--r", linewidth=1, label="jul 1")
-    plt.plot(void_curve[:, 39], z_vec, ":r", linewidth=1, label="oct 1")
+    for k in range(53):
+        plt.plot(void_curve[:, k], z_vec, "-k", linewidth=0.5)
     plt.plot(void_min_curve, z_vec, "-b", linewidth=2, label="annual minimum")
     plt.plot(void_max_curve, z_vec, "-r", linewidth=2, label="annual maximum")
     plt.ylim(ta.z_max, ta.z_min)
