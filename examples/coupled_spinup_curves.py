@@ -19,9 +19,9 @@ def main():
     ta.z_max = 50.0
     H_layer = ta.z_max - ta.z_min
     dTdZ_G = 0.03
-    k_cycle_list = [0, 10, 25, 50, 100, 250, 500]
+    k_cycle_list = [0, 10, 25, 50, 100, 250]
     msh_z_list = [0.0, 0.5, 1.0, 2.0, 5.0, 25.0, 50.0]
-    msh_dz_list = [0.05, 0.1, 0.25, 0.5, 1.0, 1.0]
+    msh_dz_list = [0.05, 0.1, 0.25, 0.5, 1.0, 5.0]
     nd_z_list = [5.0, 10.0, 25.0, 50.0]
     nd_z_line_types = ["-r", "--r", "-k", "--k"]
     nd_z_line_width = [2.0, 2.0, 1.0, 1.0]
@@ -44,13 +44,13 @@ def main():
     # define plotting time increments
     s_per_day = 8.64e4
     s_per_yr = s_per_day * 365.0
-    t_plot_targ = np.linspace(0.0, 500.0, 501) * s_per_yr
+    t_plot_targ = np.linspace(0.0, 250.0, 251) * s_per_yr
 
     # define analysis parameters
-    dt_sim_0 = 0.25 * s_per_day
+    dt_sim_0 = 0.5 * s_per_day
     adapt_dt = False
-    qi = 15.0e3
-    tol = 1e-3
+    qi = 50.0e3
+    tol = 1e-4
     tol_str = f"{tol:0.1e}"
     tol_str = "p".join(tol_str.split("."))
     fname = (
