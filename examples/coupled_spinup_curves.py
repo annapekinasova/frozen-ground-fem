@@ -54,7 +54,7 @@ def main():
     tol_str = f"{tol:0.1e}"
     tol_str = "p".join(tol_str.split("."))
     fname = (
-        "examples/" + f"coupled_spinup_smooth_const_cold_{ta.num_elements}_{tol_str}"
+        "examples/" + f"coupled_spinup_smooth_const_warm_{ta.num_elements}_{tol_str}"
     )
 
     # define material properties
@@ -96,7 +96,7 @@ def main():
     #     print(f"{zz: 0.4f}  {ee: 0.4f}")
 
     # set initial conditions
-    T0 = -9.0
+    T0 = -1.0
     e_cu0 = mtl.void_ratio_0_comp
     Ccu = mtl.comp_index_unfrozen
     sig_cu0 = mtl.eff_stress_0_comp
@@ -118,8 +118,8 @@ def main():
     # def air_temp(t):
     #     return np.interp(t, t_data, T_data, period=365.0 * s_per_day)
 
-    Tavg = -13.76
-    Tamp = 22.6
+    Tavg = -3.89
+    Tamp = 19.1
     t_phs = 210 * s_per_day
 
     def air_temp(t):
@@ -133,6 +133,9 @@ def main():
     plt.xlabel("time [days]")
     plt.ylabel("air temp [deg C]")
     plt.savefig(fname + "_boundary.svg")
+    np.savetxt(
+        fname + "_boundary.out", np.hstack([t / s_per_day, air_temp(t)]), fmt="%.16e"
+    )
 
     # create boundary conditions
     temp_boundary = ThermalBoundary1D(
@@ -241,6 +244,18 @@ def main():
     plt.xlabel("Void ratio, e [-]")
     # plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
     plt.savefig(fname + "_cycle_profiles.svg")
+    np.savetxt(
+        fname + "cycle_profiles_temp.out",
+        np.hstack([z_vec, temp_prof_out]),
+        fmt="%.16e",
+        header="z_vec              temp",
+    )
+    np.savetxt(
+        fname + "cycle_profiles_void.out",
+        np.hstack([z_vec, void_prof_out]),
+        fmt="%.16e",
+        header="z_vec               void",
+    )
 
     # convergence plots
     fig = plt.figure(figsize=(16.0, 6.0))
@@ -289,6 +304,46 @@ def main():
     plt.xlabel("Number of cycles [yrs]")
     plt.ylim((0.0, 0.05))
     plt.savefig(fname + "_convergence.svg")
+    np.savetxt(
+        fname + "_convergence_temp.out",
+        np.hstack(
+            [
+                np.vstack([0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]),
+                np.vstack([t_plot_targ / s_per_yr, temp_nd_out]),
+            ]
+        ),
+        fmt="%.16e",
+    )
+    np.savetxt(
+        fname + "_convergence_dT.out",
+        np.hstack(
+            [
+                np.vstack([0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]),
+                np.vstack([t_plot_targ / s_per_yr, dT_nd_out]),
+            ]
+        ),
+        fmt="%.16e",
+    )
+    np.savetxt(
+        fname + "_convergence_void.out",
+        np.hstack(
+            [
+                np.vstack([0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]),
+                np.vstack([t_plot_targ / s_per_yr, void_nd_out]),
+            ]
+        ),
+        fmt="%.16e",
+    )
+    np.savetxt(
+        fname + "_convergence_de.out",
+        np.hstack(
+            [
+                np.vstack([0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]),
+                np.vstack([t_plot_targ / s_per_yr, de_nd_out]),
+            ]
+        ),
+        fmt="%.16e",
+    )
 
     # now run one annual cycle to obtain temperature envelopes
     print("running final cycle to obtain temp envelopes")
@@ -339,6 +394,30 @@ def main():
     plt.xlabel("Void ratio, e [-]")
     # plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
     plt.savefig(fname + "_temp_void_trumpet_curves.svg")
+    np.savetxt(
+        fname + "_temp_trumpet_curves.out",
+        np.hstack(
+            [
+                np.array(z_vec).reshape((temp_curve.shape[0], 1)),
+                temp_curve,
+                temp_min_curve.reshape((temp_curve.shape[0], 1)),
+                temp_max_curve.reshape((temp_curve.shape[0], 1)),
+            ]
+        ),
+        fmt="%.16e",
+    )
+    np.savetxt(
+        fname + "_void_trumpet_curves.out",
+        np.hstack(
+            [
+                np.array(z_vec).reshape((void_curve.shape[0], 1)),
+                void_curve,
+                void_min_curve.reshape((void_curve.shape[0], 1)),
+                void_max_curve.reshape((void_curve.shape[0], 1)),
+            ]
+        ),
+        fmt="%.16e",
+    )
 
 
 def calculate_static_profile(
