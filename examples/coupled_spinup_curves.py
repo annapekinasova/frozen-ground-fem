@@ -200,8 +200,8 @@ def main():
     de_nd_out = np.zeros((len(nd_z_list), len(t_plot_targ)))
     temp_prof_out = np.zeros((ta.num_nodes, len(k_cycle_list)))
     void_prof_out = np.zeros((ta.num_nodes, len(k_cycle_list)))
-    temp_curve_annual = np.zeros((ta.num_nodes, 53))
-    void_curve_annual = np.zeros((ta.num_nodes, 53))
+    temp_curve_annual = np.zeros((ta.num_nodes, 52))
+    void_curve_annual = np.zeros((ta.num_nodes, 52))
     temp_min_curve = np.amin(temp_curve_annual, axis=1)
     temp_max_curve = np.amax(temp_curve_annual, axis=1)
     void_min_curve = np.amin(void_curve_annual, axis=1)
@@ -411,6 +411,17 @@ def main():
                 if not k_ann:
                     temp_curve_annual[:, 0] = ta._temp_vector[:]
                     void_curve_annual[:, 0] = ta._void_ratio_vector[:]
+                    Tmin = np.min(temp_curve_annual[:, k_ann])
+                    Tmax = np.max(temp_curve_annual[:, k_ann])
+                    Tmean = np.mean(temp_curve_annual[:, k_ann])
+                    print(
+                        f"wk = {k_ann}, "
+                        + f"t = {ta._t1 / s_per_yr:0.4f} years, "
+                        + f"dt = {dt00 / s_per_day:0.4e} days, "
+                        + f"Tmin = {Tmin: 0.4f} deg C, "
+                        + f"Tmax = {Tmax: 0.4f} deg C, "
+                        + f"Tmean = {Tmean: 0.4f} deg C"
+                    )
                     continue
                 dt00 = ta.solve_to(tf_ann, adapt_dt=adapt_dt)[0]
                 temp_curve_annual[:, k_ann] = ta._temp_vector[:]
@@ -420,16 +431,16 @@ def main():
                 Tmean = np.mean(temp_curve_annual[:, k_ann])
                 print(
                     f"wk = {k_ann}, "
-                    + f"t = {ta._t1 / s_per_yr:0.4f} years,"
+                    + f"t = {ta._t1 / s_per_yr:0.4f} years, "
                     + f"dt = {dt00 / s_per_day:0.4e} days, "
                     + f"Tmin = {Tmin: 0.4f} deg C, "
                     + f"Tmax = {Tmax: 0.4f} deg C, "
                     + f"Tmean = {Tmean: 0.4f} deg C"
                 )
-            temp_min_curve = np.amin(temp_curve_annual[:, :-1], axis=1)
-            temp_max_curve = np.amax(temp_curve_annual[:, :-1], axis=1)
-            void_min_curve = np.amin(void_curve_annual[:, :-1], axis=1)
-            void_max_curve = np.amax(void_curve_annual[:, :-1], axis=1)
+            temp_min_curve = np.amin(temp_curve_annual, axis=1)
+            temp_max_curve = np.amax(temp_curve_annual, axis=1)
+            void_min_curve = np.amin(void_curve_annual, axis=1)
+            void_max_curve = np.amax(void_curve_annual, axis=1)
             print(fname + "temp_trumpet_curves.out")
             np.savetxt(
                 fname + "temp_trumpet_curves.out",
@@ -460,6 +471,9 @@ def main():
             if k != k_cycle_list[-1]:
                 print()
                 print("*** Continue spinup cycles ***")
+            else:
+                print()
+                print("*** Spinup cycles complete ***")
 
     # generate temperature and void ratio distribution plots
     print()
@@ -587,39 +601,12 @@ def main():
         fmt="%.16e",
     )
 
-    # now run one annual cycle to obtain temperature envelopes
-    print()
-    print("*** Run final cycle to obtain annual envelopes ***")
-    tf = t_plot_targ[-1] / s_per_yr
-    t_plot_targ = np.linspace(tf, tf + 1.0, 53) * s_per_yr
-    # temp_curve_annual = np.zeros((ta.num_nodes, 53))
-    # void_curve_annual = np.zeros((ta.num_nodes, 53))
-    for k, tf in enumerate(t_plot_targ):
-        if not k:
-            temp_curve_annual[:, 0] = ta._temp_vector[:]
-            void_curve_annual[:, 0] = ta._void_ratio_vector[:]
-            continue
-        dt00 = ta.solve_to(tf, adapt_dt=adapt_dt)[0]
-        temp_curve_annual[:, k] = ta._temp_vector[:]
-        void_curve_annual[:, k] = ta._void_ratio_vector[:]
-        Tmin = np.min(temp_curve_annual[:, k])
-        Tmax = np.max(temp_curve_annual[:, k])
-        Tmean = np.mean(temp_curve_annual[:, k])
-        print(
-            f"wk = {k}, "
-            + f"dt = {dt00 / s_per_day:0.4e} days, "
-            + f"Tmin = {Tmin: 0.4f} deg C, "
-            + f"Tmax = {Tmax: 0.4f} deg C, "
-            + f"Tmean = {Tmean: 0.4f} deg C"
-        )
-
-    print()
-    print("Generating annual envelope output:")
+    # annual envelope output
     fig = plt.figure(figsize=(8.0, 3.7))
     plt.subplot(1, 3, 1)
     temp_min_curve = np.amin(temp_curve_annual, axis=1)
     temp_max_curve = np.amax(temp_curve_annual, axis=1)
-    for k in range(53):
+    for k in range(52):
         plt.plot(temp_curve_annual[:, k], z_vec, "-r", linewidth=0.5)
     plt.plot(temp_min_curve, z_vec, "-b", linewidth=2, label="annual minimum")
     plt.plot(temp_max_curve, z_vec, "-r", linewidth=2, label="annual maximum")
@@ -630,7 +617,7 @@ def main():
     plt.subplot(1, 3, 2)
     void_min_curve = np.amin(void_curve_annual, axis=1)
     void_max_curve = np.amax(void_curve_annual, axis=1)
-    for k in range(53):
+    for k in range(52):
         plt.plot(void_curve_annual[:, k], z_vec, "-k", linewidth=0.5)
     plt.plot(void_min_curve, z_vec, "-b", linewidth=2, label="annual minimum")
     plt.plot(void_max_curve, z_vec, "-r", linewidth=2, label="annual maximum")
