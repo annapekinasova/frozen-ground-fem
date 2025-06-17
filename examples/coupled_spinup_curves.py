@@ -401,6 +401,62 @@ def main():
                 np.hstack([z_vec.reshape((len(z_vec), 1)), void_prof_out]),
                 fmt="%.16e",
             )
+
+            print()
+            print("Generating annual envelopes")
+            t_targ_env = (
+                np.linspace(tf / s_per_yr, tf / s_per_yr + 1.0, 53)[:-1] * s_per_yr
+            )
+            for k_ann, tf_ann in enumerate(t_targ_env):
+                if not k_ann:
+                    temp_curve_annual[:, 0] = ta._temp_vector[:]
+                    void_curve_annual[:, 0] = ta._void_ratio_vector[:]
+                    continue
+                dt00 = ta.solve_to(tf_ann, adapt_dt=adapt_dt)[0]
+                temp_curve_annual[:, k_ann] = ta._temp_vector[:]
+                void_curve_annual[:, k_ann] = ta._void_ratio_vector[:]
+                Tmin = np.min(temp_curve_annual[:, k_ann])
+                Tmax = np.max(temp_curve_annual[:, k_ann])
+                Tmean = np.mean(temp_curve_annual[:, k_ann])
+                print(
+                    f"wk = {k_ann}, "
+                    + f"t = {ta._t1 / s_per_yr:0.4f} years,"
+                    + f"dt = {dt00 / s_per_day:0.4e} days, "
+                    + f"Tmin = {Tmin: 0.4f} deg C, "
+                    + f"Tmax = {Tmax: 0.4f} deg C, "
+                    + f"Tmean = {Tmean: 0.4f} deg C"
+                )
+            temp_min_curve = np.amin(temp_curve_annual[:, :-1], axis=1)
+            temp_max_curve = np.amax(temp_curve_annual[:, :-1], axis=1)
+            void_min_curve = np.amin(void_curve_annual[:, :-1], axis=1)
+            void_max_curve = np.amax(void_curve_annual[:, :-1], axis=1)
+            print(fname + "temp_trumpet_curves.out")
+            np.savetxt(
+                fname + "temp_trumpet_curves.out",
+                np.hstack(
+                    [
+                        np.array(z_vec).reshape((temp_curve_annual.shape[0], 1)),
+                        temp_curve_annual,
+                        temp_min_curve.reshape((temp_curve_annual.shape[0], 1)),
+                        temp_max_curve.reshape((temp_curve_annual.shape[0], 1)),
+                    ]
+                ),
+                fmt="%.16e",
+            )
+            print(fname + "void_trumpet_curves.out")
+            np.savetxt(
+                fname + "void_trumpet_curves.out",
+                np.hstack(
+                    [
+                        np.array(z_vec).reshape((void_curve_annual.shape[0], 1)),
+                        void_curve_annual,
+                        void_min_curve.reshape((void_curve_annual.shape[0], 1)),
+                        void_max_curve.reshape((void_curve_annual.shape[0], 1)),
+                    ]
+                ),
+                fmt="%.16e",
+            )
+
             if k != k_cycle_list[-1]:
                 print()
                 print("*** Continue spinup cycles ***")
