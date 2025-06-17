@@ -134,7 +134,7 @@ def main():
     plt.ylabel("air temp [deg C]")
     plt.savefig(fname + "_boundary.svg")
     np.savetxt(
-        fname + "_boundary.out", np.hstack([t / s_per_day, air_temp(t)]), fmt="%.16e"
+        fname + "_boundary.out", np.vstack([t / s_per_day, air_temp(t)]).T, fmt="%.16e"
     )
 
     # create boundary conditions
