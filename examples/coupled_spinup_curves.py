@@ -6,7 +6,7 @@ from frozen_ground_fem import (
     unit_weight_water,
     Material,
     ThermalBoundary1D,
-    # HydraulicBoundary1D,
+    HydraulicBoundary1D,
     ConsolidationBoundary1D,
     CoupledAnalysis1D,
 )
@@ -19,12 +19,12 @@ def main():
     ta.z_min = 0.0
     ta.z_max = 50.0
     print(f"z_min={ta.z_min:0.4f}, z_max={ta.z_max:0.4f}")
-    # H_layer = ta.z_max - ta.z_min
+    H_layer = ta.z_max - ta.z_min
     dTdZ_G = 0.03
-    k_cycle_list = [0, 5, 10, 25, 50, 100, 150, 200, 250]
-    msh_z_list = [0.0, 0.5, 1.0, 2.0, 5.0, 25.0, 50.0]
-    msh_dz_list = [0.05, 0.1, 0.25, 0.5, 1.0, 2.5]
-    nd_z_list = [5.0, 10.0, 15.0, 20.0, 25.0, 50.0]
+    k_cycle_list = [0, 5, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250]
+    msh_z_list = [0.0, 2.0, 5.0, 10.0, 25.0, 50.0]
+    msh_dz_list = [0.05, 0.1, 0.5, 1.0, 2.5]
+    nd_z_list = [2.0, 5.0, 10.0, 15.0, 25.0, 50.0]
     nd_z_line_types = ["-r", "--r", "-b", "--b", "-k", "--k"]
     nd_z_line_width = [2.0, 2.0, 1.5, 1.5, 1.0, 1.0]
     num_el_list = []
@@ -74,12 +74,12 @@ def main():
         void_ratio_0_hyd_cond=2.6,
         hyd_cond_mult=1.0,
         hyd_cond_0=4.05e-4,
-        void_ratio_lim=0.1,
-        void_ratio_min=0.1,
+        void_ratio_lim=0.01,
+        void_ratio_min=0.01,
         void_ratio_tr=1.6,
         void_ratio_sep=1.6,
         void_ratio_0_comp=0.333333,
-        eff_stress_0_comp=1.5e4,
+        eff_stress_0_comp=15.0e3,
         comp_index_unfrozen=0.05,
         rebound_index_unfrozen=0.005,
         comp_index_frozen_a1=0.021,
@@ -151,33 +151,48 @@ def main():
     )
 
     # create boundary conditions
+    print()
+    print("Applying boundary conditions:")
     temp_boundary = ThermalBoundary1D(
         (ta.nodes[0],),
         (ta.elements[0].int_pts[0],),
     )
     temp_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp
     temp_boundary.bnd_function = air_temp
+    print(f"temp_boundary @ z = {temp_boundary.nodes[0].z}")
+    print(f"temp_boundary.bnd_type: {temp_boundary.bnd_type}")
+    print(f"temp_boundary.bnd_function: {temp_boundary.bnd_function}")
     grad_boundary = ThermalBoundary1D(
         (ta.nodes[-1],),
         (ta.elements[-1].int_pts[-1],),
     )
     grad_boundary.bnd_type = ThermalBoundary1D.BoundaryType.temp_grad
     grad_boundary.bnd_value = dTdZ_G
-    # hyd_bound = HydraulicBoundary1D(
-    #     nodes=(ta.nodes[0],),
-    #     bnd_value=H_layer,
-    # )
+    print(f"grad_boundary @ z = {grad_boundary.nodes[0].z}")
+    print(f"grad_boundary.bnd_type: {grad_boundary.bnd_type}")
+    print(f"grad_boundary.bnd_value: {grad_boundary.bnd_value}")
+    hyd_bound = HydraulicBoundary1D(
+        nodes=(ta.nodes[0],),
+        bnd_value=1.1 * H_layer,
+    )
+    print(f"hyd_bound @ z = {hyd_bound.nodes[0].z}")
+    print(f"hyd_bound.bnd_type: {hyd_bound.bnd_type}")
+    print(f"hyd_bound.bnd_value: {hyd_bound.bnd_value}")
     void_ratio_bound = ConsolidationBoundary1D(
         nodes=(ta.nodes[0],),
         bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
         bnd_value=e_bnd,
         bnd_value_1=sig_p_ob,
     )
+    print(f"void_ratio_bound @ z = {void_ratio_bound.nodes[0].z}")
+    print(f"void_ratio_bound.bnd_type: {void_ratio_bound.bnd_type}")
+    print(f"void_ratio_bound.bnd_value: {void_ratio_bound.bnd_value}")
+    print(f"void_ratio_bound.bnd_value_1: {void_ratio_bound.bnd_value_1}")
 
     # assign boundaries to the analysis
     ta.add_boundary(temp_boundary)
     ta.add_boundary(grad_boundary)
-    # ta.add_boundary(hyd_bound)
+    ta.add_boundary(hyd_bound)
     ta.add_boundary(void_ratio_bound)
 
     # initialize global matrices and vectors
