@@ -22,8 +22,8 @@ def main():
     H_layer = ta.z_max - ta.z_min
     dTdZ_G = 0.03
     k_cycle_list = [0, 5, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250]
-    msh_z_list = [0.0, 2.0, 5.0, 10.0, 25.0, 50.0]
-    msh_dz_list = [0.05, 0.1, 0.5, 1.0, 2.5]
+    msh_z_list = [0.0, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0]
+    msh_dz_list = [0.05, 0.1, 0.25, 0.5, 1.0, 2.5]
     nd_z_list = [2.0, 5.0, 10.0, 15.0, 25.0, 50.0]
     nd_z_line_types = ["-r", "--r", "-b", "--b", "-k", "--k"]
     nd_z_line_width = [2.0, 2.0, 1.5, 1.5, 1.0, 1.0]
@@ -38,8 +38,10 @@ def main():
     z_msh_nod = np.hstack([z_msh_nod, msh_z_list[-1]])
     nd_ind_list = [int(np.nonzero(z_msh_nod >= z)[0][0]) for z in nd_z_list]
     num_el = int(np.sum(num_el_list))
-    print(f"num_el={num_el}")
-    ta.generate_mesh(num_elements=num_el, order=1)
+    order = 1
+    ta.generate_mesh(num_elements=num_el, order=order)
+    print(f"num_el={ta.num_elements}")
+    print(f"order={order}")
     for nd, zn in zip(ta.nodes, z_msh_nod):
         nd.z = zn
 
@@ -339,6 +341,8 @@ def main():
             + f"eps = {np.max([eps_a_T, eps_a_e]):0.4e}, "
             + f"dTmax = {dTmax: 0.4f} deg C, "
             + f"demax = {demax: 0.4f}, "
+            + f"emax = {np.max(void_curve): 0.4f}, "
+            + f"emin = {np.min(void_curve): 0.4f}, "
             + f"dt = {dt00 / s_per_day:0.4e} days"
         )
         for nd_k, nd_ind in enumerate(nd_ind_list):
