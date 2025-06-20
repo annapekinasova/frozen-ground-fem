@@ -21,7 +21,10 @@ def main():
     print(f"z_min={ta.z_min:0.4f}, z_max={ta.z_max:0.4f}")
     H_layer = ta.z_max - ta.z_min
     dTdZ_G = 0.03
-    k_cycle_list = [0, 5, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250]
+    k_cycle_list = (
+        np.array([0, 5, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250], dtype=int)
+        * 4
+    )
     msh_z_list = [0.0, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0]
     msh_dz_list = [0.05, 0.1, 0.25, 0.5, 1.0, 2.5]
     nd_z_list = [2.0, 5.0, 10.0, 15.0, 25.0, 50.0]
@@ -48,11 +51,11 @@ def main():
     # define plotting time increments
     s_per_day = 8.64e4
     s_per_yr = s_per_day * 365.0
-    t_plot_targ = np.linspace(0.0, 250.0, 251) * s_per_yr
+    t_plot_targ = np.linspace(0.0, 250.0, 1001) * s_per_yr
 
     # define analysis parameters
-    dt_sim_0 = 0.5 * s_per_day
-    adapt_dt = False
+    dt_sim_0 = 0.05 * s_per_day
+    adapt_dt = True
     qi = 15.0e3
     tol = 1e-4
     tol_str = f"{tol:0.1e}"
@@ -209,8 +212,8 @@ def main():
 
     # initialize output variables
     z_vec = np.array([nd.z for nd in ta.nodes])
-    temp_curve = np.zeros(ta.num_nodes)
-    void_curve = np.zeros(ta.num_nodes)
+    temp_curve = np.zeros((ta.num_nodes, 4))
+    void_curve = np.zeros((ta.num_nodes, 4))
     temp_nd_out = np.zeros((len(nd_z_list), len(t_plot_targ)))
     dT_nd_out = np.zeros((len(nd_z_list), len(t_plot_targ)))
     void_nd_out = np.zeros((len(nd_z_list), len(t_plot_targ)))
@@ -317,42 +320,46 @@ def main():
     for k, tf in enumerate(t_plot_targ):
         # save initial state to output variables
         if not k:
-            temp_curve[:] = ta._temp_vector[:]
-            void_curve[:] = ta._void_ratio_vector[:]
-            temp_prof_out[:, k_cycle] = temp_curve[:]
-            void_prof_out[:, k_cycle] = void_curve[:]
+            temp_curve[:, 0] = ta._temp_vector[:]
+            void_curve[:, 0] = ta._void_ratio_vector[:]
+            temp_prof_out[:, k_cycle] = temp_curve[:, 0]
+            void_prof_out[:, k_cycle] = void_curve[:, 0]
             for nd_k, nd_ind in enumerate(nd_ind_list):
-                temp_nd_out[nd_k, k] = temp_curve[nd_ind]
-                void_nd_out[nd_k, k] = void_curve[nd_ind]
+                temp_nd_out[nd_k, k] = temp_curve[nd_ind, 0]
+                void_nd_out[nd_k, k] = void_curve[nd_ind, 0]
             k_cycle += 1
             continue
         # perform adaptive time stepping to next target time
         dt00 = ta.solve_to(tf, adapt_dt=adapt_dt)[0]
-        dT = ta._temp_vector[:] - temp_curve[:]
-        de = ta._void_ratio_vector[:] - void_curve[:]
-        temp_curve[:] = ta._temp_vector[:]
-        void_curve[:] = ta._void_ratio_vector[:]
-        eps_a_T = np.linalg.norm(dT) / np.linalg.norm(temp_curve)
-        eps_a_e = np.linalg.norm(de) / np.linalg.norm(void_curve)
+        if k < 4:
+            dT = temp_curve[:, k]
+            de = void_curve[:, k]
+        else:
+            dT = ta._temp_vector[:] - temp_curve[:, k % 4]
+            de = ta._void_ratio_vector[:] - void_curve[:, k % 4]
+        temp_curve[:, k % 4] = ta._temp_vector[:]
+        void_curve[:, k % 4] = ta._void_ratio_vector[:]
+        eps_a_T = np.linalg.norm(dT) / np.linalg.norm(temp_curve[:, k % 4])
+        eps_a_e = np.linalg.norm(de) / np.linalg.norm(void_curve[:, k % 4])
         dTmax = np.max(np.abs(dT))
         demax = np.max(np.abs(de))
         print(
-            f"t = {ta._t1 / s_per_yr: 0.1f} years, "
+            f"t = {ta._t1 / s_per_yr: 0.2f} years, "
             + f"eps = {np.max([eps_a_T, eps_a_e]):0.4e}, "
             + f"dTmax = {dTmax: 0.4f} deg C, "
             + f"demax = {demax: 0.4f}, "
-            + f"emax = {np.max(void_curve): 0.4f}, "
-            + f"emin = {np.min(void_curve): 0.4f}, "
+            + f"emax = {np.max(void_curve[:, k % 4]): 0.4f}, "
+            + f"emin = {np.min(void_curve[:, k % 4]): 0.4f}, "
             + f"dt = {dt00 / s_per_day:0.4e} days"
         )
         for nd_k, nd_ind in enumerate(nd_ind_list):
-            temp_nd_out[nd_k, k] = temp_curve[nd_ind]
+            temp_nd_out[nd_k, k] = temp_curve[nd_ind, k % 4]
             dT_nd_out[nd_k, k] = np.abs(dT[nd_ind])
-            void_nd_out[nd_k, k] = void_curve[nd_ind]
+            void_nd_out[nd_k, k] = void_curve[nd_ind, k % 4]
             de_nd_out[nd_k, k] = np.abs(de[nd_ind])
         if k in k_cycle_list:
-            temp_prof_out[:, k_cycle] = temp_curve[:]
-            void_prof_out[:, k_cycle] = void_curve[:]
+            temp_prof_out[:, k_cycle] = temp_curve[:, k % 4]
+            void_prof_out[:, k_cycle] = void_curve[:, k % 4]
             k_cycle += 1
             print()
             print("Generating partial output:")
