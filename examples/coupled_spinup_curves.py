@@ -310,7 +310,7 @@ def main():
                         + f"Tmin = {Tmin: 0.4f} deg C, "
                         + f"Tmax = {Tmax: 0.4f} deg C, "
                         + f"Tmean = {Tmean: 0.4f} deg C"
-                        + f"s_tot = {settle_annual[0] / 100.0: 0.4f} cm"
+                        + f"s_tot = {settle_annual[0] * 100.0: 0.4f} cm"
                     )
                     continue
                 dt00 = ta.solve_to(tf_ann, adapt_dt=adapt_dt)[0]
@@ -329,7 +329,7 @@ def main():
                     + f"Tmin = {Tmin: 0.4f} deg C, "
                     + f"Tmax = {Tmax: 0.4f} deg C, "
                     + f"Tmean = {Tmean: 0.4f} deg C"
-                    + f"s_tot = {settle_annual[k_ann] / 100.0: 0.4f} cm"
+                    + f"s_tot = {settle_annual[k_ann] * 100.0: 0.4f} cm"
                 )
 
             generate_output_annual(
