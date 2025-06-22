@@ -309,7 +309,7 @@ def main():
                         + f"dt = {dt00 / s_per_day:0.4e} days, "
                         + f"Tmin = {Tmin: 0.4f} deg C, "
                         + f"Tmax = {Tmax: 0.4f} deg C, "
-                        + f"Tmean = {Tmean: 0.4f} deg C"
+                        + f"Tmean = {Tmean: 0.4f} deg C, "
                         + f"s_tot = {settle_annual[0] * 100.0: 0.4f} cm"
                     )
                     continue
@@ -328,7 +328,7 @@ def main():
                     + f"dt = {dt00 / s_per_day:0.4e} days, "
                     + f"Tmin = {Tmin: 0.4f} deg C, "
                     + f"Tmax = {Tmax: 0.4f} deg C, "
-                    + f"Tmean = {Tmean: 0.4f} deg C"
+                    + f"Tmean = {Tmean: 0.4f} deg C, "
                     + f"s_tot = {settle_annual[k_ann] * 100.0: 0.4f} cm"
                 )
 
