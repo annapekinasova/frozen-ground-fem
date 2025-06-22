@@ -1,15 +1,17 @@
 import numpy as np
 import numpy.typing as npt
-import matplotlib.pyplot as plt
 
 from frozen_ground_fem import (
     unit_weight_water,
     Material,
     ThermalBoundary1D,
-    HydraulicBoundary1D,
+    # HydraulicBoundary1D,
     ConsolidationBoundary1D,
     CoupledAnalysis1D,
 )
+
+s_per_day = 8.64e4
+s_per_yr = s_per_day * 365.0
 
 
 def main():
@@ -19,17 +21,14 @@ def main():
     ta.z_min = 0.0
     ta.z_max = 50.0
     print(f"z_min={ta.z_min:0.4f}, z_max={ta.z_max:0.4f}")
-    H_layer = ta.z_max - ta.z_min
+    # H_layer = ta.z_max - ta.z_min
     dTdZ_G = 0.03
     k_cycle_list = (
         np.array([0, 5, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250], dtype=int)
-        * 4
+        * 8
     )
     msh_z_list = [0.0, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0]
     msh_dz_list = [0.05, 0.1, 0.25, 0.5, 1.0, 2.5]
-    nd_z_list = [2.0, 5.0, 10.0, 15.0, 25.0, 50.0]
-    nd_z_line_types = ["-r", "--r", "-b", "--b", "-k", "--k"]
-    nd_z_line_width = [2.0, 2.0, 1.5, 1.5, 1.0, 1.0]
     num_el_list = []
     z_msh_nod = []
     for k, (z0, dz) in enumerate(zip(msh_z_list[:-1], msh_dz_list)):
@@ -39,7 +38,6 @@ def main():
             [z_msh_nod, np.linspace(z0, z1, num_el_list[-1] + 1)[:-1]]
         )
     z_msh_nod = np.hstack([z_msh_nod, msh_z_list[-1]])
-    nd_ind_list = [int(np.nonzero(z_msh_nod >= z)[0][0]) for z in nd_z_list]
     num_el = int(np.sum(num_el_list))
     order = 1
     ta.generate_mesh(num_elements=num_el, order=order)
@@ -49,9 +47,7 @@ def main():
         nd.z = zn
 
     # define plotting time increments
-    s_per_day = 8.64e4
-    s_per_yr = s_per_day * 365.0
-    t_plot_targ = np.linspace(0.0, 250.0, 1001) * s_per_yr
+    t_plot_targ = np.linspace(0.0, 250.0, 8 * 250 + 1) * s_per_yr
 
     # define analysis parameters
     dt_sim_0 = 0.05 * s_per_day
@@ -120,15 +116,6 @@ def main():
         # nd.void_ratio = e0[k]
         # nd.void_ratio_0 = e0[k]
 
-    ## define temperature boundary curve
-    # T_data = np.loadtxt(
-    #     "examples/en_climate_daily_mean_QC_7103536_1994_P1D.csv", delimiter=","
-    # )[:, 1]
-    # t_data = np.arange(0, 365) * s_per_day
-    #
-    # def air_temp(t):
-    #     return np.interp(t, t_data, T_data, period=365.0 * s_per_day)
-
     print()
     print("Defining Tair boundary function:")
     Tavg = -3.89
@@ -141,15 +128,8 @@ def main():
 
     # save a plot of the air temperature boundary
     print()
-    print("Generating boundary plot:")
-    plt.rc("font", size=10)
-    plt.figure(figsize=(6, 4))
+    print("Generating air temperature boundary output:")
     t = np.linspace(0, 2.5 * s_per_yr, 251)
-    plt.plot(t / s_per_day, air_temp(t), "-k")
-    plt.xlabel("time [days]")
-    plt.ylabel("air temp [deg C]")
-    print(fname + "boundary.svg")
-    plt.savefig(fname + "boundary.svg")
     print(fname + "boundary.out")
     np.savetxt(
         fname + "boundary.out", np.vstack([t / s_per_day, air_temp(t)]).T, fmt="%.16e"
@@ -176,13 +156,13 @@ def main():
     print(f"grad_boundary @ z = {grad_boundary.nodes[0].z}")
     print(f"grad_boundary.bnd_type: {grad_boundary.bnd_type}")
     print(f"grad_boundary.bnd_value: {grad_boundary.bnd_value}")
-    hyd_bound = HydraulicBoundary1D(
-        nodes=(ta.nodes[0],),
-        bnd_value=1.1 * H_layer,
-    )
-    print(f"hyd_bound @ z = {hyd_bound.nodes[0].z}")
-    print(f"hyd_bound.bnd_type: {hyd_bound.bnd_type}")
-    print(f"hyd_bound.bnd_value: {hyd_bound.bnd_value}")
+    # hyd_bound = HydraulicBoundary1D(
+    #     nodes=(ta.nodes[0],),
+    #     bnd_value=1.1 * H_layer,
+    # )
+    # print(f"hyd_bound @ z = {hyd_bound.nodes[0].z}")
+    # print(f"hyd_bound.bnd_type: {hyd_bound.bnd_type}")
+    # print(f"hyd_bound.bnd_value: {hyd_bound.bnd_value}")
     void_ratio_bound = ConsolidationBoundary1D(
         nodes=(ta.nodes[0],),
         bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -197,8 +177,42 @@ def main():
     # assign boundaries to the analysis
     ta.add_boundary(temp_boundary)
     ta.add_boundary(grad_boundary)
-    ta.add_boundary(hyd_bound)
+    # ta.add_boundary(hyd_bound)
     ta.add_boundary(void_ratio_bound)
+
+    # initialize output variables
+    print()
+    print("Initializing output data:")
+    z_vec = np.array([nd.z for nd in ta.nodes])
+    void_curve = np.zeros((ta.num_nodes, 8))
+    temp_curve = np.zeros((ta.num_nodes, 8))
+    settle_out = np.zeros_like(t_plot_targ)
+    zdef_nd_out = np.zeros((ta.num_nodes, len(t_plot_targ)))
+    void_nd_out = np.zeros((ta.num_nodes, len(t_plot_targ)))
+    temp_nd_out = np.zeros((ta.num_nodes, len(t_plot_targ)))
+    settle_annual = np.zeros(52)
+    zdef_curve_annual = np.zeros((ta.num_nodes, 52))
+    void_curve_annual = np.zeros((ta.num_nodes, 52))
+    temp_curve_annual = np.zeros((ta.num_nodes, 52))
+
+    # initialize/test output files
+    generate_output_convergence(
+        fname,
+        z_vec,
+        t_plot_targ,
+        temp_nd_out,
+        void_nd_out,
+        zdef_nd_out,
+        settle_out,
+    )
+    generate_output_annual(
+        fname,
+        z_vec,
+        temp_curve_annual,
+        void_curve_annual,
+        zdef_curve_annual,
+        settle_annual,
+    )
 
     # initialize global matrices and vectors
     print()
@@ -210,109 +224,6 @@ def main():
     print(f"tol={ta.implicit_error_tolerance:0.4e}")
     ta.initialize_global_system(t0=0.0)
 
-    # initialize output variables
-    z_vec = np.array([nd.z for nd in ta.nodes])
-    temp_curve = np.zeros((ta.num_nodes, 4))
-    void_curve = np.zeros((ta.num_nodes, 4))
-    temp_nd_out = np.zeros((len(nd_z_list), len(t_plot_targ)))
-    dT_nd_out = np.zeros((len(nd_z_list), len(t_plot_targ)))
-    void_nd_out = np.zeros((len(nd_z_list), len(t_plot_targ)))
-    de_nd_out = np.zeros((len(nd_z_list), len(t_plot_targ)))
-    temp_prof_out = np.zeros((ta.num_nodes, len(k_cycle_list)))
-    void_prof_out = np.zeros((ta.num_nodes, len(k_cycle_list)))
-    temp_curve_annual = np.zeros((ta.num_nodes, 52))
-    void_curve_annual = np.zeros((ta.num_nodes, 52))
-    temp_min_curve = np.amin(temp_curve_annual, axis=1)
-    temp_max_curve = np.amax(temp_curve_annual, axis=1)
-    void_min_curve = np.amin(void_curve_annual, axis=1)
-    void_max_curve = np.amax(void_curve_annual, axis=1)
-
-    # initialize/test output files
-    print()
-    print("Test generating output files:")
-    print(fname + "cycle_profiles_temp.out")
-    np.savetxt(
-        fname + "cycle_profiles_temp.out",
-        np.hstack([z_vec.reshape((len(z_vec), 1)), temp_prof_out]),
-        fmt="%.16e",
-    )
-    print(fname + "cycle_profiles_void.out")
-    np.savetxt(
-        fname + "cycle_profiles_void.out",
-        np.hstack([z_vec.reshape((len(z_vec), 1)), void_prof_out]),
-        fmt="%.16e",
-    )
-    print(fname + "convergence_temp.out")
-    np.savetxt(
-        fname + "convergence_temp.out",
-        np.hstack(
-            [
-                np.vstack([0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]),
-                np.vstack([t_plot_targ / s_per_yr, temp_nd_out]),
-            ]
-        ),
-        fmt="%.16e",
-    )
-    print(fname + "convergence_dT.out")
-    np.savetxt(
-        fname + "convergence_dT.out",
-        np.hstack(
-            [
-                np.vstack([0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]),
-                np.vstack([t_plot_targ / s_per_yr, dT_nd_out]),
-            ]
-        ),
-        fmt="%.16e",
-    )
-    print(fname + "convergence_void.out")
-    np.savetxt(
-        fname + "convergence_void.out",
-        np.hstack(
-            [
-                np.vstack([0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]),
-                np.vstack([t_plot_targ / s_per_yr, void_nd_out]),
-            ]
-        ),
-        fmt="%.16e",
-    )
-    print(fname + "convergence_de.out")
-    np.savetxt(
-        fname + "convergence_de.out",
-        np.hstack(
-            [
-                np.vstack([0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]),
-                np.vstack([t_plot_targ / s_per_yr, de_nd_out]),
-            ]
-        ),
-        fmt="%.16e",
-    )
-    print(fname + "temp_trumpet_curves.out")
-    np.savetxt(
-        fname + "temp_trumpet_curves.out",
-        np.hstack(
-            [
-                np.array(z_vec).reshape((temp_curve_annual.shape[0], 1)),
-                temp_curve_annual,
-                temp_min_curve.reshape((temp_curve_annual.shape[0], 1)),
-                temp_max_curve.reshape((temp_curve_annual.shape[0], 1)),
-            ]
-        ),
-        fmt="%.16e",
-    )
-    print(fname + "void_trumpet_curves.out")
-    np.savetxt(
-        fname + "void_trumpet_curves.out",
-        np.hstack(
-            [
-                np.array(z_vec).reshape((void_curve_annual.shape[0], 1)),
-                void_curve_annual,
-                void_min_curve.reshape((void_curve_annual.shape[0], 1)),
-                void_max_curve.reshape((void_curve_annual.shape[0], 1)),
-            ]
-        ),
-        fmt="%.16e",
-    )
-
     # begin spinup cycles
     print()
     print("*** Begin spinup cycles ***")
@@ -322,114 +233,63 @@ def main():
         if not k:
             temp_curve[:, 0] = ta._temp_vector[:]
             void_curve[:, 0] = ta._void_ratio_vector[:]
-            temp_prof_out[:, k_cycle] = temp_curve[:, 0]
-            void_prof_out[:, k_cycle] = void_curve[:, 0]
-            for nd_k, nd_ind in enumerate(nd_ind_list):
-                temp_nd_out[nd_k, k] = temp_curve[nd_ind, 0]
-                void_nd_out[nd_k, k] = void_curve[nd_ind, 0]
+            temp_nd_out[:, 0] = temp_curve[:, 0]
+            void_nd_out[:, 0] = void_curve[:, 0]
+            settle_out[0] = ta.calculate_total_settlement()
+            for k_nd, nd in enumerate(ta.nodes):
+                zdef_nd_out[k_nd, 0] = nd.z_def
             k_cycle += 1
+            continue
+        # check target time is valid (necessary after generating annual envelopes)
+        if tf <= ta._t1:
             continue
         # perform adaptive time stepping to next target time
         dt00 = ta.solve_to(tf, adapt_dt=adapt_dt)[0]
-        if k < 4:
+        # save temp, void, zdef profiles and total settlement
+        if k < 8:
             dT = temp_curve[:, k]
             de = void_curve[:, k]
         else:
-            dT = ta._temp_vector[:] - temp_curve[:, k % 4]
-            de = ta._void_ratio_vector[:] - void_curve[:, k % 4]
-        temp_curve[:, k % 4] = ta._temp_vector[:]
-        void_curve[:, k % 4] = ta._void_ratio_vector[:]
-        eps_a_T = np.linalg.norm(dT) / np.linalg.norm(temp_curve[:, k % 4])
-        eps_a_e = np.linalg.norm(de) / np.linalg.norm(void_curve[:, k % 4])
+            dT = ta._temp_vector[:] - temp_curve[:, k % 8]
+            de = ta._void_ratio_vector[:] - void_curve[:, k % 8]
+        temp_curve[:, k % 8] = temp_nd_out[:, k] = ta._temp_vector[:]
+        void_curve[:, k % 8] = void_nd_out[:, k] = ta._void_ratio_vector[:]
+        settle_out[k] = ta.calculate_total_settlement()
+        for k_nd, nd in enumerate(ta.nodes):
+            zdef_nd_out[k_nd, k] = nd.z_def
+        # compute error variables
+        eps_a_T = np.linalg.norm(dT) / np.linalg.norm(temp_curve[:, k % 8])
+        eps_a_e = np.linalg.norm(de) / np.linalg.norm(void_curve[:, k % 8])
         dTmax = np.max(np.abs(dT))
         demax = np.max(np.abs(de))
         print(
-            f"t = {ta._t1 / s_per_yr: 0.2f} years, "
+            f"t = {ta._t1 / s_per_yr: 0.3f} years, "
             + f"eps = {np.max([eps_a_T, eps_a_e]):0.4e}, "
             + f"dTmax = {dTmax: 0.4f} deg C, "
             + f"demax = {demax: 0.4f}, "
-            + f"emax = {np.max(void_curve[:, k % 4]): 0.4f}, "
-            + f"emin = {np.min(void_curve[:, k % 4]): 0.4f}, "
+            + f"emax = {np.max(void_curve[:, k % 8]): 0.4f}, "
+            + f"emin = {np.min(void_curve[:, k % 8]): 0.4f}, "
             + f"dt = {dt00 / s_per_day:0.4e} days"
         )
-        for nd_k, nd_ind in enumerate(nd_ind_list):
-            temp_nd_out[nd_k, k] = temp_curve[nd_ind, k % 4]
-            dT_nd_out[nd_k, k] = np.abs(dT[nd_ind])
-            void_nd_out[nd_k, k] = void_curve[nd_ind, k % 4]
-            de_nd_out[nd_k, k] = np.abs(de[nd_ind])
-        if k in k_cycle_list:
-            temp_prof_out[:, k_cycle] = temp_curve[:, k % 4]
-            void_prof_out[:, k_cycle] = void_curve[:, k % 4]
-            k_cycle += 1
-            print()
-            print("Generating partial output:")
-            print(fname + "convergence_temp.out")
-            np.savetxt(
-                fname + "convergence_temp.out",
-                np.hstack(
-                    [
-                        np.vstack(
-                            [0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]
-                        ),
-                        np.vstack([t_plot_targ / s_per_yr, temp_nd_out]),
-                    ]
-                ),
-                fmt="%.16e",
-            )
-            print(fname + "convergence_dT.out")
-            np.savetxt(
-                fname + "convergence_dT.out",
-                np.hstack(
-                    [
-                        np.vstack(
-                            [0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]
-                        ),
-                        np.vstack([t_plot_targ / s_per_yr, dT_nd_out]),
-                    ]
-                ),
-                fmt="%.16e",
-            )
-            print(fname + "convergence_void.out")
-            np.savetxt(
-                fname + "convergence_void.out",
-                np.hstack(
-                    [
-                        np.vstack(
-                            [0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]
-                        ),
-                        np.vstack([t_plot_targ / s_per_yr, void_nd_out]),
-                    ]
-                ),
-                fmt="%.16e",
-            )
-            print(fname + "convergence_de.out")
-            np.savetxt(
-                fname + "convergence_de.out",
-                np.hstack(
-                    [
-                        np.vstack(
-                            [0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]
-                        ),
-                        np.vstack([t_plot_targ / s_per_yr, de_nd_out]),
-                    ]
-                ),
-                fmt="%.16e",
-            )
-            print(fname + "cycle_profiles_temp.out")
-            np.savetxt(
-                fname + "cycle_profiles_temp.out",
-                np.hstack([z_vec.reshape((len(z_vec), 1)), temp_prof_out]),
-                fmt="%.16e",
-            )
-            print(fname + "cycle_profiles_void.out")
-            np.savetxt(
-                fname + "cycle_profiles_void.out",
-                np.hstack([z_vec.reshape((len(z_vec), 1)), void_prof_out]),
-                fmt="%.16e",
-            )
 
+        # each complete annual cycle, generate output data
+        if not k % 8:
+            generate_output_convergence(
+                fname,
+                z_vec,
+                t_plot_targ,
+                temp_nd_out,
+                void_nd_out,
+                zdef_nd_out,
+                settle_out,
+            )
+            if k not in k_cycle_list:
+                print()
+
+        # at target cycles, generate annual envelopes at weekly intervals
+        if k in k_cycle_list:
             print()
-            print("Generating annual envelopes")
+            print("Generating annual envelopes:")
             t_targ_env = (
                 np.linspace(tf / s_per_yr, tf / s_per_yr + 1.0, 53)[:-1] * s_per_yr
             )
@@ -437,6 +297,9 @@ def main():
                 if not k_ann:
                     temp_curve_annual[:, 0] = ta._temp_vector[:]
                     void_curve_annual[:, 0] = ta._void_ratio_vector[:]
+                    settle_annual[0] = ta.calculate_total_settlement()
+                    for k_nd, nd in enumerate(ta.nodes):
+                        zdef_curve_annual[k_nd, 0] = nd.z_def
                     Tmin = np.min(temp_curve_annual[:, k_ann])
                     Tmax = np.max(temp_curve_annual[:, k_ann])
                     Tmean = np.mean(temp_curve_annual[:, k_ann])
@@ -447,11 +310,15 @@ def main():
                         + f"Tmin = {Tmin: 0.4f} deg C, "
                         + f"Tmax = {Tmax: 0.4f} deg C, "
                         + f"Tmean = {Tmean: 0.4f} deg C"
+                        + f"s_tot = {settle_annual[0] / 100.0: 0.4f} cm"
                     )
                     continue
                 dt00 = ta.solve_to(tf_ann, adapt_dt=adapt_dt)[0]
                 temp_curve_annual[:, k_ann] = ta._temp_vector[:]
                 void_curve_annual[:, k_ann] = ta._void_ratio_vector[:]
+                settle_annual[k_ann] = ta.calculate_total_settlement()
+                for k_nd, nd in enumerate(ta.nodes):
+                    zdef_curve_annual[k_nd, k_ann] = nd.z_def
                 Tmin = np.min(temp_curve_annual[:, k_ann])
                 Tmax = np.max(temp_curve_annual[:, k_ann])
                 Tmean = np.mean(temp_curve_annual[:, k_ann])
@@ -462,36 +329,16 @@ def main():
                     + f"Tmin = {Tmin: 0.4f} deg C, "
                     + f"Tmax = {Tmax: 0.4f} deg C, "
                     + f"Tmean = {Tmean: 0.4f} deg C"
+                    + f"s_tot = {settle_annual[k_ann] / 100.0: 0.4f} cm"
                 )
-            temp_min_curve = np.amin(temp_curve_annual, axis=1)
-            temp_max_curve = np.amax(temp_curve_annual, axis=1)
-            void_min_curve = np.amin(void_curve_annual, axis=1)
-            void_max_curve = np.amax(void_curve_annual, axis=1)
-            print(fname + "temp_trumpet_curves.out")
-            np.savetxt(
-                fname + "temp_trumpet_curves.out",
-                np.hstack(
-                    [
-                        np.array(z_vec).reshape((temp_curve_annual.shape[0], 1)),
-                        temp_curve_annual,
-                        temp_min_curve.reshape((temp_curve_annual.shape[0], 1)),
-                        temp_max_curve.reshape((temp_curve_annual.shape[0], 1)),
-                    ]
-                ),
-                fmt="%.16e",
-            )
-            print(fname + "void_trumpet_curves.out")
-            np.savetxt(
-                fname + "void_trumpet_curves.out",
-                np.hstack(
-                    [
-                        np.array(z_vec).reshape((void_curve_annual.shape[0], 1)),
-                        void_curve_annual,
-                        void_min_curve.reshape((void_curve_annual.shape[0], 1)),
-                        void_max_curve.reshape((void_curve_annual.shape[0], 1)),
-                    ]
-                ),
-                fmt="%.16e",
+
+            generate_output_annual(
+                fname,
+                z_vec,
+                temp_curve_annual,
+                void_curve_annual,
+                zdef_curve_annual,
+                settle_annual,
             )
 
             if k != k_cycle_list[-1]:
@@ -501,105 +348,90 @@ def main():
                 print()
                 print("*** Spinup cycles complete ***")
 
-    # generate temperature and void ratio distribution plots
     print()
-    print("Generating complete output:")
-    plt.figure(figsize=(8.0, 3.7))
-    plt.subplot(1, 3, 1)
-    for ind_cycle, k_cycle in enumerate(k_cycle_list):
-        plt.plot(temp_prof_out[:, ind_cycle], z_vec, "--k", linewidth=0.5)
-    plt.plot(temp_prof_out[:, -1], z_vec, "-k", linewidth=2.0)
-    plt.ylim(ta.z_max, ta.z_min)
-    plt.xlabel("Temperature, T [deg C]")
-    plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
-    plt.subplot(1, 3, 2)
-    for ind_cycle, k_cycle in enumerate(k_cycle_list):
-        plt.plot(void_prof_out[:, ind_cycle], z_vec, "--k", linewidth=0.5)
-    plt.plot(void_prof_out[:, -1], z_vec, "-k", linewidth=2.0)
-    plt.ylim(ta.z_max, ta.z_min)
-    plt.xlabel("Void ratio, e [-]")
-    # plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
-    print(fname + "cycle_profiles.svg")
-    plt.savefig(fname + "cycle_profiles.svg")
-    print(fname + "cycle_profiles_temp.out")
+    print("Finalizing output data files:")
+    generate_output_convergence(
+        fname,
+        z_vec,
+        t_plot_targ,
+        temp_nd_out,
+        void_nd_out,
+        zdef_nd_out,
+        settle_out,
+    )
+    generate_output_annual(
+        fname,
+        z_vec,
+        temp_curve_annual,
+        void_curve_annual,
+        zdef_curve_annual,
+        settle_annual,
+    )
+
+
+def generate_output_annual(
+    fname,
+    z_vec,
+    temp_curve_annual,
+    void_curve_annual,
+    zdef_curve_annual,
+    settle_annual,
+):
+    print()
+    print("Generating annual envelope data files:")
+    print(fname + "annual_curves_temp.out")
     np.savetxt(
-        fname + "cycle_profiles_temp.out",
-        np.hstack([z_vec.reshape((len(z_vec), 1)), temp_prof_out]),
+        fname + "annual_curves_temp.out",
+        np.hstack(
+            [
+                np.array(z_vec).reshape((temp_curve_annual.shape[0], 1)),
+                temp_curve_annual,
+            ]
+        ),
         fmt="%.16e",
     )
-    print(fname + "cycle_profiles_void.out")
+    print(fname + "annual_curves_void.out")
     np.savetxt(
-        fname + "cycle_profiles_void.out",
-        np.hstack([z_vec.reshape((len(z_vec), 1)), void_prof_out]),
+        fname + "annual_curves_void.out",
+        np.hstack(
+            [
+                np.array(z_vec).reshape((void_curve_annual.shape[0], 1)),
+                void_curve_annual,
+            ]
+        ),
+        fmt="%.16e",
+    )
+    print(fname + "annual_curves_settle_zdef.out")
+    np.savetxt(
+        fname + "annual_curves_settle_zdef.out",
+        np.hstack(
+            [
+                np.vstack([0.0, np.array(z_vec).reshape((len(z_vec), 1))]),
+                np.vstack([settle_annual, zdef_curve_annual]),
+            ]
+        ),
         fmt="%.16e",
     )
 
-    # convergence plots
-    fig = plt.figure(figsize=(16.0, 6.0))
-    plt.subplot(2, 3, 1)
-    for nd_k, temp_nd in enumerate(temp_nd_out):
-        plt.plot(
-            t_plot_targ / s_per_yr,
-            temp_nd,
-            nd_z_line_types[nd_k],
-            linewidth=nd_z_line_width[nd_k],
-            label=f"z={nd_z_list[nd_k]:0.1f}m",
-        )
-    plt.ylabel("Temperature, T [deg C]")
-    plt.ylim((-16.0, 2.0))
-    fig.legend(loc="upper right")
-    plt.subplot(2, 3, 2)
-    for nd_k, dT_nd in enumerate(dT_nd_out):
-        plt.plot(
-            t_plot_targ / s_per_yr,
-            dT_nd,
-            nd_z_line_types[nd_k],
-            linewidth=nd_z_line_width[nd_k],
-        )
-    plt.ylabel("Abs Inter Cycle dT [deg C]")
-    plt.ylim((0.0, 0.5))
-    plt.subplot(2, 3, 4)
-    for nd_k, void_nd in enumerate(void_nd_out):
-        plt.plot(
-            t_plot_targ / s_per_yr,
-            void_nd,
-            nd_z_line_types[nd_k],
-            linewidth=nd_z_line_width[nd_k],
-        )
-    plt.ylabel("Void Ratio, e [-]")
-    plt.xlabel("Number of cycles [yrs]")
-    plt.ylim((0.2, 1.0))
-    plt.subplot(2, 3, 5)
-    for nd_k, de_nd in enumerate(de_nd_out):
-        plt.plot(
-            t_plot_targ / s_per_yr,
-            de_nd,
-            nd_z_line_types[nd_k],
-            linewidth=nd_z_line_width[nd_k],
-        )
-    plt.ylabel("Abs Inter Cycle de [-]")
-    plt.xlabel("Number of cycles [yrs]")
-    plt.ylim((0.0, 0.05))
-    print(fname + "convergence.svg")
-    plt.savefig(fname + "convergence.svg")
+
+def generate_output_convergence(
+    fname,
+    z_vec,
+    t_plot_targ,
+    temp_nd_out,
+    void_nd_out,
+    zdef_nd_out,
+    settle_out,
+):
+    print()
+    print("Generating convergence output data files:")
     print(fname + "convergence_temp.out")
     np.savetxt(
         fname + "convergence_temp.out",
         np.hstack(
             [
-                np.vstack([0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]),
+                np.vstack([0.0, np.array(z_vec).reshape((len(z_vec), 1))]),
                 np.vstack([t_plot_targ / s_per_yr, temp_nd_out]),
-            ]
-        ),
-        fmt="%.16e",
-    )
-    print(fname + "convergence_dT.out")
-    np.savetxt(
-        fname + "convergence_dT.out",
-        np.hstack(
-            [
-                np.vstack([0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]),
-                np.vstack([t_plot_targ / s_per_yr, dT_nd_out]),
             ]
         ),
         fmt="%.16e",
@@ -609,72 +441,29 @@ def main():
         fname + "convergence_void.out",
         np.hstack(
             [
-                np.vstack([0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]),
+                np.vstack([0.0, np.array(z_vec).reshape((len(z_vec), 1))]),
                 np.vstack([t_plot_targ / s_per_yr, void_nd_out]),
             ]
         ),
         fmt="%.16e",
     )
-    print(fname + "convergence_de.out")
+    print(fname + "convergence_zdef.out")
     np.savetxt(
-        fname + "convergence_de.out",
+        fname + "convergence_zdef.out",
         np.hstack(
             [
-                np.vstack([0.0, np.array(nd_z_list).reshape((len(nd_z_list), 1))]),
-                np.vstack([t_plot_targ / s_per_yr, de_nd_out]),
+                np.vstack([0.0, np.array(z_vec).reshape((len(z_vec), 1))]),
+                np.vstack([t_plot_targ / s_per_yr, zdef_nd_out]),
             ]
         ),
         fmt="%.16e",
     )
-
-    # annual envelope output
-    fig = plt.figure(figsize=(8.0, 3.7))
-    plt.subplot(1, 3, 1)
-    temp_min_curve = np.amin(temp_curve_annual, axis=1)
-    temp_max_curve = np.amax(temp_curve_annual, axis=1)
-    for k in range(52):
-        plt.plot(temp_curve_annual[:, k], z_vec, "-r", linewidth=0.5)
-    plt.plot(temp_min_curve, z_vec, "-b", linewidth=2, label="annual minimum")
-    plt.plot(temp_max_curve, z_vec, "-r", linewidth=2, label="annual maximum")
-    plt.ylim(ta.z_max, ta.z_min)
-    fig.legend(loc="upper right")
-    plt.xlabel("Temperature, T [deg C]")
-    plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
-    plt.subplot(1, 3, 2)
-    void_min_curve = np.amin(void_curve_annual, axis=1)
-    void_max_curve = np.amax(void_curve_annual, axis=1)
-    for k in range(52):
-        plt.plot(void_curve_annual[:, k], z_vec, "-k", linewidth=0.5)
-    plt.plot(void_min_curve, z_vec, "-b", linewidth=2, label="annual minimum")
-    plt.plot(void_max_curve, z_vec, "-r", linewidth=2, label="annual maximum")
-    plt.ylim(ta.z_max, ta.z_min)
-    # plt.legend()
-    plt.xlabel("Void ratio, e [-]")
-    # plt.ylabel("Depth (Lagrangian coordinate), Z [m]")
-    print(fname + "temp_void_trumpet_curves.svg")
-    plt.savefig(fname + "temp_void_trumpet_curves.svg")
-    print(fname + "temp_trumpet_curves.out")
+    print(fname + "convergence_settle.out")
     np.savetxt(
-        fname + "temp_trumpet_curves.out",
+        fname + "convergence_settle.out",
         np.hstack(
             [
-                np.array(z_vec).reshape((temp_curve_annual.shape[0], 1)),
-                temp_curve_annual,
-                temp_min_curve.reshape((temp_curve_annual.shape[0], 1)),
-                temp_max_curve.reshape((temp_curve_annual.shape[0], 1)),
-            ]
-        ),
-        fmt="%.16e",
-    )
-    print(fname + "void_trumpet_curves.out")
-    np.savetxt(
-        fname + "void_trumpet_curves.out",
-        np.hstack(
-            [
-                np.array(z_vec).reshape((void_curve_annual.shape[0], 1)),
-                void_curve_annual,
-                void_min_curve.reshape((void_curve_annual.shape[0], 1)),
-                void_max_curve.reshape((void_curve_annual.shape[0], 1)),
+                np.vstack([t_plot_targ / s_per_yr, settle_out]),
             ]
         ),
         fmt="%.16e",
