@@ -1,4 +1,23 @@
-"""convergence plots for thaw consolidation lab benchmark"""
+"""convergence plots for thaw consolidation lab benchmark
+
+Notes
+-----
+
+This script generates plots only.
+
+It is meant to be run after completion of the script
+coupled_thaw_consolidation_lab_benchmark.py
+which generates the data to be plotted.
+
+If you run this before running that script,
+it will just generate empty plots.
+
+Make sure that the file names for
+plot_root
+mach_fold
+are correct for your system,
+otherwise you will get file does not exist errors.
+"""
 
 import os
 
