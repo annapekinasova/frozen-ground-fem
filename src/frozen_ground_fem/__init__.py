@@ -14,6 +14,7 @@ from .materials import (
 from .geometry import (
     Node1D,
     IntegrationPoint1D,
+    Element1D,
 )
 from .thermal import (
     ThermalBoundary1D,
