@@ -1,13 +1,3 @@
-import numpy as np
-import matplotlib.pyplot as plt
-# from scipy.interpolate import CubicSpline
-
-from frozen_ground_fem.materials import Material
-
-from frozen_ground_fem.thermal import (
-    ThermalAnalysis1D,
-    ThermalBoundary1D,
-)
 """
 Thermal Spin-up test example based on paper Ross et al.(2022)
 Arctic Science 8: 362–394 (2022) dx.doi.org/10.1139/as-2021-0013
@@ -16,6 +6,15 @@ with climate BC for cold (MAAT = −13 °C) and warm (MAAT = −4 °C) permafros
 for fully saturated case with depth of 200 m
 """
 
+import numpy as np
+import matplotlib.pyplot as plt
+
+from frozen_ground_fem.materials import Material
+
+from frozen_ground_fem.thermal import (
+    ThermalAnalysis1D,
+    ThermalBoundary1D,
+)
 
 def main():
     # create thermal analysis object
@@ -28,7 +27,7 @@ def main():
     ta.z_max = 10.0
     # ta.z_max = 100.0
     ta.generate_mesh(num_elements=5)
-    ta.implicit_error_tolerance = 1e-6
+    # ta.implicit_error_tolerance = 1e-6
 
     # define material properties for
     # cold permafrost
@@ -64,16 +63,6 @@ def main():
 
     def air_temp(t):
         return T_amp * np.cos(omega * (t - t_max)) + T_mean
-
-    # air_temp_data = np.loadtxt(
-    #     "examples/spin_up_air_temp_data_cold.csv",
-    #     delimiter=","
-    # )
-    # air_temp = CubicSpline(
-    #     air_temp_data[:, 0],
-    #     air_temp_data[:, 1],
-    #     bc_type="periodic",
-    # )
 
     # save a plot of the air temperature boundary
     plt.figure(figsize=(6, 4))

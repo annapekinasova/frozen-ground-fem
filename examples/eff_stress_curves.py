@@ -300,6 +300,7 @@ def main():
     m = Material(
         comp_index_unfrozen=0.421,
         rebound_index_unfrozen=0.08,
+        void_ratio_sep=3.00,
         void_ratio_0_comp=2.60,
         eff_stress_0_comp=2.80,
     )
@@ -341,7 +342,7 @@ def main():
     plt.ylabel("void ratio, e")
     plt.xlabel("eff stress, sig' [kPa]")
     plt.title("void ratio - effective stress curve")
-    plt.savefig("examples/eff_stress_curves_semilog.png")
+    plt.savefig("examples/eff_stress_curves_semilog.svg")
 
     plt.figure(figsize=(5, 4))
     plt.semilogx(-dsig_de_exp, e_exp, "--r", label="expected")
@@ -349,7 +350,7 @@ def main():
     plt.legend()
     plt.ylabel("void ratio, e")
     plt.xlabel("eff stress gradient, |dsig'/de| [kPa]")
-    plt.savefig("examples/eff_stress_curves_gradient.png")
+    plt.savefig("examples/eff_stress_curves_gradient.svg")
 
     plt.figure(figsize=(5, 4))
     plt.plot(sig_p_ncl, e_ncl, "-b", label="NCL")
@@ -361,7 +362,7 @@ def main():
     plt.ylabel("void ratio, e")
     plt.xlabel("eff stress, sig' [kPa]")
     plt.title("unloading curve 1")
-    plt.savefig("examples/eff_stress_curves_url1.png")
+    plt.savefig("examples/eff_stress_curves_url1.svg")
 
     plt.figure(figsize=(5, 4))
     plt.plot(sig_p_ncl, e_ncl, "-b", label="NCL")
@@ -373,7 +374,7 @@ def main():
     plt.ylabel("void ratio, e")
     plt.xlabel("eff stress, sig' [kPa]")
     plt.title("unloading curve 2")
-    plt.savefig("examples/eff_stress_curves_url2.png")
+    plt.savefig("examples/eff_stress_curves_url2.svg")
 
 
 if __name__ == "__main__":

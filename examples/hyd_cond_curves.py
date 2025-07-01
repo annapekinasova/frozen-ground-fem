@@ -176,6 +176,7 @@ def main():
         hyd_cond_index=0.305,
         void_ratio_min=0.3,
         void_ratio_tr=1.6,
+        void_ratio_sep=3.0,
     )
     k_unfrozen_act = np.zeros_like(e_plot)
     dkde_unfrozen_act = np.zeros_like(e_plot)
@@ -229,7 +230,7 @@ def main():
     plt.legend()
     plt.xlabel("hyd cond grad, dk/de [m/s]")
 
-    plt.savefig("examples/hyd_cond_curves.png")
+    plt.savefig("examples/hyd_cond_curves.svg")
 
 
 if __name__ == "__main__":

@@ -21,6 +21,7 @@ def main():
         void_ratio_0_hyd_cond=2.60,
         void_ratio_min=0.30,
         void_ratio_tr=2.60,
+        void_ratio_sep=2.60,
         void_ratio_0_comp=2.60,
         comp_index_unfrozen=0.421,
         rebound_index_unfrozen=0.08,
@@ -28,7 +29,7 @@ def main():
     )
 
     nd_lin = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(2))
-    el_lin = ConsolidationElement1D(Element1D(nd_lin, order=1))
+    el_lin = ConsolidationElement1D(nd_lin, order=1)
     for ip in el_lin.int_pts:
         ip.material = m
         ip.void_ratio_0 = 0.9
@@ -60,7 +61,7 @@ def main():
     print(f"actual:\n{el_lin.stiffness_matrix}")
 
     nd_cub = tuple(Node1D(k, 2.0 * k + 1.0) for k in range(4))
-    el_cub = ConsolidationElement1D(Element1D(nd_cub, order=3))
+    el_cub = ConsolidationElement1D(nd_cub, order=3)
     for ip in el_cub.int_pts:
         ip.material = m
         ip.void_ratio_0 = 0.9

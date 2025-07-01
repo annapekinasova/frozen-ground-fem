@@ -58,7 +58,7 @@ def main():
     plt.plot(t / s_per_day, air_temp(t), "-k")
     plt.xlabel("time [days]")
     plt.ylabel("air temp [deg C]")
-    plt.savefig("examples/thermal_trumpet_boundary.png")
+    plt.savefig("examples/thermal_trumpet_boundary.svg")
 
     # create thermal boundary conditions
     temp_boundary = ThermalBoundary1D(

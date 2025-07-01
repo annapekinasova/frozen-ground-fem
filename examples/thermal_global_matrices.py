@@ -53,7 +53,7 @@ def main():
     ta.add_boundary(grad_boundary)
 
     # update boundary conditions
-    ta.update_thermal_boundary_conditions(time=0.0)
+    ta.update_boundary_conditions(time=0.0)
     ta.update_heat_flux_vector()
 
     plt.figure(figsize=(7, 9))
@@ -78,7 +78,7 @@ def main():
     plt.colorbar()
     plt.title("Global Temperature Field")
 
-    plt.savefig("examples/thermal_global_matrices.png")
+    plt.savefig("examples/thermal_global_matrices.svg")
 
 
 if __name__ == "__main__":

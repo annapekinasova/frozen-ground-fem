@@ -21,12 +21,12 @@ def main():
     # define material properties
     # and initialize integration points
     mtl = Material(
-        thrm_cond_solids=7.0, spec_grav_solids=2.65, spec_heat_cap_solids=741
+        thrm_cond_solids=7.0, spec_grav_solids=2.65, spec_heat_cap_solids=741,
     )
     void_ratio = 0.3
     for e in ta.elements:
+        e.assign_material(mtl)
         for ip in e.int_pts:
-            ip.material = mtl
             ip.void_ratio = void_ratio
             ip.void_ratio_0 = void_ratio
 
@@ -91,7 +91,7 @@ def main():
     plt.legend()
     plt.xlabel("temperature, T [deg C]")
     plt.ylabel("depth, z [m]")
-    plt.savefig("examples/thermal_steady_state.png")
+    plt.savefig("examples/thermal_steady_state.svg")
 
 
 if __name__ == "__main__":

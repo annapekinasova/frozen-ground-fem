@@ -219,7 +219,7 @@ def main():
     plt.legend()
     plt.xlabel("Temperature, T [deg C]")
 
-    plt.savefig("examples/deg_sat_water_curves.png")
+    plt.savefig("examples/deg_sat_water_curves.svg")
 
 
 if __name__ == "__main__":

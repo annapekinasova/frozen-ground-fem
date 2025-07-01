@@ -31,7 +31,7 @@ def plot_mesh(mesh, fname):
             "--g",
         )
     # plot node labels
-    plt.plot(np.zeros_like(z_nodes), z_nodes, "ok", label="nodes", markersize=10)
+    plt.plot(np.zeros_like(z_nodes), z_nodes, "ok", label="nodes", markersize=12)
     for k, nd in enumerate(mesh.nodes):
         ax.annotate(
             f"{k}",
@@ -40,7 +40,7 @@ def plot_mesh(mesh, fname):
             xytext=(-3, -3),
             textcoords="offset points",
             color="white",
-            fontsize=8,
+            fontsize=7,
         )
     # plot element labels
     plt.plot(
@@ -101,9 +101,7 @@ def main():
     print(f"num_elements: {mesh.num_elements}")
     print(f"num_boundaries: {mesh.num_boundaries}")
     print()
-    plot_mesh(mesh, "examples/simple_mesh_10.png")
-    for ip in mesh.elements[0].int_pts:
-        print(ip.z)
+    plot_mesh(mesh, "examples/simple_mesh_10.svg")
 
     # you can also assign a grid_size parameter to the mesh
     # which will be used to calculate the number of nodes
@@ -122,7 +120,7 @@ def main():
     print(f"num_elements: {mesh.num_elements}")
     print(f"num_boundaries: {mesh.num_boundaries}")
     print()
-    plot_mesh(mesh, "examples/simple_mesh_grid_size.png")
+    plot_mesh(mesh, "examples/simple_mesh_grid_size.svg")
 
 
 if __name__ == "__main__":
