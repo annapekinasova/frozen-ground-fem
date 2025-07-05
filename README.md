@@ -4,7 +4,7 @@
 
 ## Overview
 
-**frozen-ground-fem** is a Python package for advanced, multiphysics simulation of frozen ground processes using the Finite Element Method (FEM). Designed for research and engineering applications in geotechnics and geosciences, it enables high-fidelity modelling of heat transfer, water migration, phase change, and large-strain consolidation phenomena in freezing and thawing soils. The code is a component of an active research project supporting thesis work in geotechnical and permafrost engineering, including detailed implementations for thermal, consolidation, and fully coupled thermo-hydro-mechanical (THM) processes in 1D soil columns. The package is robust, modular, and extensible, making it suitable for both academic research and practical engineering studies involving permafrost, seasonal frost, and related scenarios of ground freezing and thawing.
+**frozen-ground-fem** is a Python package for advanced, multiphysics simulation of frozen ground processes using 1D Finite Element Method (FEM) framework. Designed for research and engineering applications in geotechnics and geosciences, it enables high-fidelity modelling of heat transfer, water migration, phase change, and large-strain consolidation phenomena in freezing and thawing soils. The code is a component of an active research project supporting thesis work in geotechnical and permafrost engineering, including detailed implementations for thermal, consolidation, and fully coupled thermo-hydro-mechanical (THM) processes in 1D soil columns. The package is robust, modular, and extensible, making it suitable for both academic research and practical engineering studies involving permafrost, seasonal frost, and related scenarios of ground freezing and thawing.
 
 > **Note:** For the most stable release, see the `main` branch. Other branches (e.g. `dev`, `thesis`, `feature/...`) may include features under development.
 
@@ -109,7 +109,7 @@ Example scripts are provided in the [`examples/`](examples) directory. For insta
 python examples/coupled_thaw_consolidation_lab_benchmark.py
 ```
 
-Example scripts are extensively commented and refer to associated input files (CSV/BAT) for parameters and validation data. Note that since this is a research code, the examples may be in various states of functionality.
+Example scripts are extensively commented and refer to associated input files (CSV/BAT) for parameters and validation data. Note that since this is research code, the examples may be in various states of functionality.
 
 ### As a Python package
 
@@ -154,10 +154,10 @@ frozen-ground-fem/
 - [`thermal_freeze_thaw_benchmark.py`](examples/thermal_freeze_thaw_benchmark.py): Simulates freezing/thawing front in a soil column, benchmarks against analytical/laboratory results.
 - [`thermal_trumpet_curves.py`](examples/thermal_trumpet_curves.py): Simulates multi-year cyclic seasonal temperature boundary condition to initialize a stable ground temperature profile over one full year.
 - [`consolidation_static_benchmark.py`](examples/consolidation_static_benchmark.py): Validates large strain consolidation solver with standard benchmarks.
-- [`coupled_freezing_front_lab_benchmark.py`](examples/coupled_freezing_front_lab_benchmark.py): Laboratory-based benchmark for coupled thermal-hydraulic modeling of a freezing front.
+- [`coupled_freezing_front_lab_benchmark.py`](examples/coupled_freezing_front_lab_benchmark.py): Laboratory-based benchmark for coupled thermal-hydraulic modelling of a freezing front.
 - [`coupled_thaw_consolidation_lab_benchmark.py`](examples/coupled_thaw_consolidation_lab_benchmark.py): Validation of the coupled model with thawing/consolidation laboratory data.
 
-> **Note:** Only a portion of example scripts are listed here. [View the complete examples directory](https://github.com/annapekinasova/frozen-ground-fem/examples) for more.
+> **Note:** Only a portion of the example scripts are listed here. [View the complete examples directory](https://github.com/annapekinasova/frozen-ground-fem/examples) for more.
 
 Each example script is self-contained and includes detailed comments, references to input files (such as `.csv` for parameters or validation data), and instructions for reproducing published results.
 
@@ -174,12 +174,12 @@ Contains important constants, information on assumed units, and the `Material` c
 - `Material`: Contains parameters of various constitutive models and methods for updating material properties during a simulation.
 
 **Notable Features:**
-- Modular: can be extended to modify the details of constitutive models using in thermal, consolidation, and thermo-hydro-mechanical modelling.
+- Modular: can be extended to modify the details of constitutive models used in thermal, consolidation, and thermo-hydro-mechanical modelling.
 
 ### `geometry.py`
 
 **Purpose:**  
-Contains base classes for finite element geometry including nodes, integration points, elements, and mesh generation. Many classes in this module are abstract base classes that are extended by other modules with specific physics.
+Contains base classes for finite element geometry, including nodes, integration points, elements, and mesh generation. Many classes in this module are abstract base classes that are extended by other modules with specific physics.
 
 **Key Classes:**
 - `Node1D`: Basic geometric object in the finite element method, which is primarily responsible for storing primary variable values during a simulation.
@@ -190,7 +190,7 @@ Contains base classes for finite element geometry including nodes, integration p
 
 **Notable Features:**
 - Provides abstract base classes for extending different types of physics while reusing common geometric information.
-- Classes use Python `@property` decorator extensively, to distinguish between private attributes and public getters and setters controlling information hiding and validation.
+- Classes use Python `@property` decorator extensively, to distinguish between private attributes and public getters and setters, controlling information hiding and validation.
 
 ### `thermal.py`
 
@@ -213,19 +213,19 @@ Implements the finite element method for 1D transient conductive-advective heat 
 Implements 1D large strain consolidation of soils, accounting for evolving void ratio, permeability, and effective stress.
 
 **Key Classes:**
-- `ConsolidationElement1D`: Computes element stiffness and mass matrices for large strain consolidation. Integrates non-linear soil mechanical behavior and hydraulic conductivity.
+- `ConsolidationElement1D`: Computes element stiffness and mass matrices for large strain consolidation. Integrates non-linear soil mechanical behaviour and hydraulic conductivity.
 - `ConsolidationBoundary1D`: Handles boundary conditions for void ratio and water flux, including time-dependent values.
 - `ConsolidationAnalysis1D`: Sets up consolidation problems, manages the mesh, global matrix assembly, time stepping, iterative correction, and computes settlement/deformation.
 
 **Notable Features:**
 - Large strain (nonlinear) consolidation formulation.
 - Full tracking of void ratio, effective stress, pore pressure, total stress, and hydraulic properties at all integration points.
-- Supports laboratory and field scale simulations.
+- Supports laboratory and field-scale simulations.
 
 ### `coupled.py`
 
 **Purpose:**  
-Implements fully coupled 1D thermo-hydro-mechanical (THM) elements by inheriting features from classes in both the `thermal.py` and `consolidation.py` modules, while adding extended functionality relevant to coupled modelling.
+Implements coupled 1D thermo-hydro-mechanical (THM) elements by inheriting features from classes in both the `thermal.py` and `consolidation.py` modules, while adding extended functionality relevant to coupled modelling.
 
 **Key Classes:**
 - `CoupledElement1D`: Hybrid class enabling simultaneous solution of heat transfer, water migration, and large-strain deformation. Leverages both parent implementations for element-level assembly.
@@ -250,6 +250,59 @@ tox
 ```
 
 Tests cover key modules and regression checks for physical correctness against benchmarks. Note that as this is a research code, commits with not all tests passing are common. Collaborators are welcome to submit issues with unit tests, and fixing non-passing unit tests is a good way for new collaborators to contribute.
+
+---
+## Why a 1D Formulation?
+
+### Justification
+
+- **Computational Efficiency:**  
+  1D models are computationally light, enabling rapid simulations and parameter studies on standard hardware. This is especially crucial for long-term permafrost and climate-driven scenarios, where many runs may be needed.
+
+- **Fundamental Process Understanding:**  
+  Many key processes—such as vertical freeze/thaw propagation, water migration, and consolidation—are dominated by vertical gradients. 1D modelling provides valuable insight into these mechanisms and is the natural starting point for model development.
+
+- **Alignment with Data Availability:**  
+  Field and laboratory investigations often yield vertical profile data (e.g., borehole temperature logs, soil columns), making 1D models ideal for validation, calibration, and sensitivity analysis.
+
+- **Rapid Prototyping:**  
+  1D FEM is an excellent platform for prototyping new physics, testing novel constitutive relations, and benchmarking against analytical solutions before scaling up to higher dimensions.
+
+### Limitations
+
+- **Idealization:**  
+  The 1D formulation is restricted to idealized problems (e.g., vertical soil columns, boreholes) where lateral processes are negligible.
+
+- **Lateral Effects:**  
+  Many real-world scenarios—such as embankments, slopes, or infrastructure foundations—exhibit strong 2D/3D effects (lateral heat/fluid flow, edge effects) that cannot be captured in 1D.
+
+---
+
+## Vision for 2D/3D Extensions
+
+While 1D serves as an efficient and robust foundation, we recognize the need for higher-dimensional models in engineering and climate applications:
+
+- **Modular and Extensible Design:**  
+  The codebase is structured to facilitate future extension to 2D and 3D, with reusable solvers, material models, and boundary condition handlers.
+
+- **Algorithmic Pathway:**  
+  Finite element assembly, time-stepping, and constitutive algorithms are dimension-agnostic and can be generalized to higher-dimensional domains.
+
+- **Community-Driven Development:**  
+  Input and collaboration from the scientific and engineering community are welcome to guide feature development, benchmarks, and code optimization.
+
+- **Future Roadmap:**  
+  - **Short Term:** Expand 1D physics, improve user interface, and enhance I/O.
+  - **Medium Term:** Prototype 2D models (e.g., embankment cross-sections, lateral heat flow).
+  - **Long Term:** Develop robust 2D/3D capabilities for infrastructure and complex terrain, leveraging high-performance computing and parallelization as needed.
+
+---
+
+## Get Involved
+
+- **Use Cases:** Have a scenario in mind that would benefit from 2D/3D? [Open an issue](https://github.com/annapekinasova/frozen-ground-fem/issues) or join the discussion!
+- **Contributions:** Contributions are welcome, from documentation and testing to new features or code optimization.
+- **Contact:** For questions, feature requests, or collaboration opportunities, please reach out via GitHub issues or pull requests.
 
 ---
 
