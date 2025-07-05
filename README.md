@@ -328,6 +328,13 @@ This project is licensed under the [MIT License](LICENSE).
 
 - Andersland, O.B. and Ladanyi, B. 2004. "Frozen Ground Engineering, 2nd. ed.", Wiley.
 - Bear, J. 1988. "Dynamics of Fluids in Porous Media", Dover Publications.
+- Dumais S, Konrad J-M. One-dimensional large-strain thaw consolidation using nonlinear effective stress–void ratio–hydraulic conductivity relationships. Can Geotech J 2018;55(3):414–26. https://doi.org/10.1139/cgj-2017-0221.
+- Fox, P. J. and Berles, J. D. (1997). CS2: A piecewise-linear model for large strain consolidation. International Journal for Numerical and Analytical Methods in Geomechanics, 21(7), 453–475, https://doi.org/10.1002/(SICI)1096-9853(199707)21:7%3C453::AID-NAG887%3E3.0.CO;2-B.
+- Fox, P. J. and Pu, H. (2015). Benchmark problems for large strain consolidation. Journal of Geotechnical and Geoenvironmental Engineering, 144(3), https://doi.org/10.1061/(ASCE)GT.1943-5606.0001826.
+- Pekinasova A, Hayley JL, Karchewski B. Preliminary results of thermo-hydro-mechanical modelling of large-strain deformation of ground in Canadian cold regions. Proc 76th Can Geotech Conf; 2023. Saskatoon, SK, Canada.
+- Pekinasova A, Hayley JL, Karchewski B. Benchmark validation of a new numerical tool for settlement prediction of freezing and thawing ground in cold regions. Proc 77th Can Geotech Conf; 2024. Montréal, QC, Canada.
+- Yu F, Guo P, Lai Y, Stolle D. Frost heave and thaw consolidation modelling. Part 1: A water flux function for frost heaving. Can Geotech J 2020;57(10):1581–94. https://doi.org/10.1139/cgj-2019-0218.
+- Yu F, Guo P, Lai Y, Stolle D. Frost heave and thaw consolidation modelling. Part 2: One-dimensional thermohydromechanical (THM) framework. Can Geotech J 2020;57(10):1595–610. https://doi.org/10.1139/cgj-2019-0306.
 - Zienkiewicz, O.C., Taylor, R.L., and Zhu, J.Z. 2013. "The Finite Element Method: Its Basis and Fundamentals", Elsevier.
 - [Thesis documentation and related publications will be added here.]
 
