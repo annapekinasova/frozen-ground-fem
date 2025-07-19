@@ -5,7 +5,6 @@ from frozen_ground_fem import (
     unit_weight_water,
     Material,
     ThermalBoundary1D,
-    # HydraulicBoundary1D,
     ConsolidationBoundary1D,
     CoupledAnalysis1D,
 )
@@ -21,14 +20,13 @@ def main():
     ta.z_min = 0.0
     ta.z_max = 50.0
     print(f"z_min={ta.z_min:0.4f}, z_max={ta.z_max:0.4f}")
-    # H_layer = ta.z_max - ta.z_min
     dTdZ_G = 0.03
     k_cycle_list = (
         np.array([0, 5, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250], dtype=int)
         * 8
     )
-    msh_z_list = [0.0, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0]
-    msh_dz_list = [0.05, 0.1, 0.25, 0.5, 1.0, 2.5]
+    msh_z_list = [0.0, 2.0, 5.0, 10.0, 25.0, 50.0]
+    msh_dz_list = [0.25, 0.5, 1.0, 2.5, 5.0]
     num_el_list = []
     z_msh_nod = []
     for k, (z0, dz) in enumerate(zip(msh_z_list[:-1], msh_dz_list)):
@@ -56,7 +54,7 @@ def main():
     tol = 1e-4
     tol_str = f"{tol:0.1e}"
     tol_str = "p".join(tol_str.split("."))
-    fname = "examples/" + f"coupled_spinup_sat_warm_{ta.num_elements}_{tol_str}_"
+    fname = "examples/" + f"coupled_spinup_sat_cold_{ta.num_elements}_{tol_str}_"
     print(fname)
 
     # define material properties
@@ -100,7 +98,7 @@ def main():
     # set initial conditions
     print()
     print("Setting initial conditions:")
-    T0 = -1.0
+    T0 = -9.0
     print(f"T0={T0:0.4f}")
     e_cu0 = mtl.void_ratio_0_comp
     Ccu = mtl.comp_index_unfrozen
@@ -118,8 +116,8 @@ def main():
 
     print()
     print("Defining Tair boundary function:")
-    Tavg = -3.89
-    Tamp = 19.1
+    Tavg = -13.76
+    Tamp = 22.6
     t_phs = 210 * s_per_day
     print(f"Tavg={Tavg:0.4f}, Tamp={Tamp:0.4f}, t_phs={t_phs / s_per_day:0.4f}")
 
@@ -156,13 +154,6 @@ def main():
     print(f"grad_boundary @ z = {grad_boundary.nodes[0].z}")
     print(f"grad_boundary.bnd_type: {grad_boundary.bnd_type}")
     print(f"grad_boundary.bnd_value: {grad_boundary.bnd_value}")
-    # hyd_bound = HydraulicBoundary1D(
-    #     nodes=(ta.nodes[0],),
-    #     bnd_value=1.1 * H_layer,
-    # )
-    # print(f"hyd_bound @ z = {hyd_bound.nodes[0].z}")
-    # print(f"hyd_bound.bnd_type: {hyd_bound.bnd_type}")
-    # print(f"hyd_bound.bnd_value: {hyd_bound.bnd_value}")
     void_ratio_bound = ConsolidationBoundary1D(
         nodes=(ta.nodes[0],),
         bnd_type=ConsolidationBoundary1D.BoundaryType.void_ratio,
@@ -177,7 +168,6 @@ def main():
     # assign boundaries to the analysis
     ta.add_boundary(temp_boundary)
     ta.add_boundary(grad_boundary)
-    # ta.add_boundary(hyd_bound)
     ta.add_boundary(void_ratio_bound)
 
     # initialize output variables
