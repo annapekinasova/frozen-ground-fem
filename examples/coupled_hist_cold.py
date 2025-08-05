@@ -44,7 +44,7 @@ def main():
     t_plot_targ = np.linspace(0.0, 1304.0, 1305) * s_per_wk
 
     # define analysis parameters
-    dt_sim_0 = 0.1 * s_per_day
+    dt_sim_0 = 0.05 * s_per_day
     adapt_dt = False
     qi = 15.0e3
     tol = 1e-4
