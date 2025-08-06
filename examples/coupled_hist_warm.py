@@ -41,11 +41,11 @@ def main():
         nd.z = zn
 
     # define plotting time increments
-    t_plot_targ = np.linspace(0.0, 1304.0, 1305) * s_per_wk
+    t_plot_targ = np.linspace(0.0, 1304.0, 653) * s_per_wk
 
     # define analysis parameters
     dt_sim_0 = 0.05 * s_per_day
-    adapt_dt = False
+    adapt_dt = True
     qi = 15.0e3
     tol = 1e-4
     tol_str = f"{tol:0.1e}"
@@ -118,7 +118,7 @@ def main():
     air_temp_spline = RegularGridInterpolator(
         (temp_air_bnd[:, 0],),
         temp_air_bnd[:, 1],
-        method="nearest",
+        method="linear",
     )
     t_min = np.min(temp_air_bnd[:, 0])
     t_max = np.max(temp_air_bnd[:, 0])
