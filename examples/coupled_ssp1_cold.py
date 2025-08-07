@@ -94,8 +94,10 @@ def main():
     for k, nd in enumerate(ta.nodes):
         nd.temp = temp_void_0[k, 1]
         nd.void_ratio = temp_void_0[k, 2]
-        nd.void_ratio_0 = temp_void_0[k, 2]
-        print(f"{nd.index: 3d} {nd.z: 10.4f} {nd.temp: 10.4f} {nd.void_ratio: 10.4f}")
+        nd.void_ratio_0 = temp_void_0[k, 3]
+        print(
+            f"{nd.index: 3d} {nd.z: 10.4f} {nd.temp: 10.4f} {nd.void_ratio: 10.4f} {nd.void_ratio_0: 10.4f}"
+        )
 
     # # show plot of initial conditions
     # print()
