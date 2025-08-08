@@ -47,11 +47,10 @@ def main():
     dt_sim_0 = 0.05 * s_per_day
     adapt_dt = True
     qi = 15.0e3
-    # tol = 1e-4
-    tol = 1e-3
+    tol = 1e-4
     tol_str = f"{tol:0.1e}"
     tol_str = "p".join(tol_str.split("."))
-    fname = "examples/" + f"coupled_ssp5_sat_cold_{ta.num_elements}_{tol_str}_"
+    fname = "examples/" + f"coupled_ssp2_sat_cold_{ta.num_elements}_{tol_str}_"
     print(fname)
 
     # define material properties
