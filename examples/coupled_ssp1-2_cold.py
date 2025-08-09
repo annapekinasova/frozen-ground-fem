@@ -41,7 +41,7 @@ def main():
         nd.z = zn
 
     # define plotting time increments
-    t_plot_targ = np.linspace(0.0, 1356.0, 679) * s_per_wk
+    t_plot_targ = np.linspace(0.0, 260.0, 131) * s_per_wk
 
     # define analysis parameters
     dt_sim_0 = 0.05 * s_per_day
@@ -50,7 +50,7 @@ def main():
     tol = 1e-4
     tol_str = f"{tol:0.1e}"
     tol_str = "p".join(tol_str.split("."))
-    fname = "examples/" + f"coupled_ssp1_sat_cold_{ta.num_elements}_{tol_str}_"
+    fname = "examples/" + f"coupled_ssp1-2_sat_cold_{ta.num_elements}_{tol_str}_"
     # tol = 1e-3
     print(fname)
 
