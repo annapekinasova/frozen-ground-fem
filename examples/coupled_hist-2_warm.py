@@ -50,7 +50,7 @@ def main():
     tol = 1e-4
     tol_str = f"{tol:0.1e}"
     tol_str = "p".join(tol_str.split("."))
-    fname = "examples/" + f"coupled_hist-1_sat_warm_{ta.num_elements}_{tol_str}_"
+    fname = "examples/" + f"coupled_hist-2_sat_warm_{ta.num_elements}_{tol_str}_"
     tol = 1e-3
     print(fname)
 
