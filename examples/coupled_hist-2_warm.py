@@ -41,7 +41,7 @@ def main():
         nd.z = zn
 
     # define plotting time increments
-    t_plot_targ = np.linspace(0.0, 834.0, 418) * s_per_wk
+    t_plot_targ = np.linspace(0.0, 886.0, 444) * s_per_wk
 
     # define analysis parameters
     dt_sim_0 = 0.05 * s_per_day
@@ -51,7 +51,7 @@ def main():
     tol_str = f"{tol:0.1e}"
     tol_str = "p".join(tol_str.split("."))
     fname = "examples/" + f"coupled_hist-2_sat_warm_{ta.num_elements}_{tol_str}_"
-    tol = 1e-3
+    # tol = 1e-3
     print(fname)
 
     # define material properties
