@@ -21,8 +21,8 @@ def main():
     ta.z_max = 50.0
     print(f"z_min={ta.z_min:0.4f}, z_max={ta.z_max:0.4f}")
     dTdZ_G = 0.03
-    msh_z_list = [0.0, 2.0, 5.0, 10.0, 25.0, 50.0]
-    msh_dz_list = [0.25, 0.5, 1.0, 2.5, 5.0]
+    msh_z_list = [0.0, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0]
+    msh_dz_list = [0.05, 0.1, 0.25, 0.5, 1.0, 2.5]
     num_el_list = []
     z_msh_nod = []
     for k, (z0, dz) in enumerate(zip(msh_z_list[:-1], msh_dz_list)):
@@ -41,17 +41,17 @@ def main():
         nd.z = zn
 
     # define plotting time increments
-    t_plot_targ = np.linspace(0.0, 1356.0, 679) * s_per_wk
+    t_plot_targ = np.linspace(0.0, 1250.0, 626) * s_per_wk
 
     # define analysis parameters
     dt_sim_0 = 0.05 * s_per_day
     adapt_dt = True
     qi = 15.0e3
     tol = 1e-4
-    # tol = 1e-3
     tol_str = f"{tol:0.1e}"
     tol_str = "p".join(tol_str.split("."))
-    fname = "examples/" + f"coupled_ssp5_sat_cold_{ta.num_elements}_{tol_str}_"
+    fname = "examples/" + f"coupled_ssp3-1_sat_warm_{ta.num_elements}_{tol_str}_"
+    # tol = 1e-3
     print(fname)
 
     # define material properties
@@ -215,9 +215,8 @@ def main():
     print(f"tol={ta.implicit_error_tolerance:0.4e}")
     ta.initialize_global_system(t0=0.0)
 
-    # begin spinup cycles
     print()
-    print("*** Begin historical cycles ***")
+    print("*** Begin climate forecast cycles ***")
     for k, tf in enumerate(t_plot_targ):
         # save initial state to output variables
         if not k:
