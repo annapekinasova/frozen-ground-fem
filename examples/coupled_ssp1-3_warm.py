@@ -41,7 +41,7 @@ def main():
         nd.z = zn
 
     # define plotting time increments
-    t_plot_targ = np.linspace(0.0, 886.0, 444) * s_per_wk
+    t_plot_targ = np.linspace(0.0, 888.0, 445) * s_per_wk
 
     # define analysis parameters
     dt_sim_0 = 0.05 * s_per_day
