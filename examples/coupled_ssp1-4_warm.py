@@ -51,7 +51,7 @@ def main():
     tol_str = f"{tol:0.1e}"
     tol_str = "p".join(tol_str.split("."))
     fname = "examples/" + f"coupled_ssp1-4_sat_warm_{ta.num_elements}_{tol_str}_"
-    tol = 1e-3
+    tol = 1e-4
     print(fname)
 
     # define material properties
