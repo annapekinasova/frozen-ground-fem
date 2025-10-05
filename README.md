@@ -5,6 +5,7 @@
 ## Overview
 
 **frozen-ground-fem** is a Python package for advanced, multiphysics simulation of frozen ground processes using 1D Finite Element Method (FEM) framework. Designed for research and engineering applications in geotechnics and geosciences, it enables high-fidelity modelling of heat transfer, water migration, phase change, and large-strain consolidation phenomena in freezing and thawing soils. The code is a component of an active research project supporting thesis work in geotechnical and permafrost engineering, including detailed implementations for thermal, consolidation, and fully coupled thermo-hydro-mechanical (THM) processes in 1D soil columns. The package is robust, modular, and extensible, making it suitable for both academic research and practical engineering studies involving permafrost, seasonal frost, and related scenarios of ground freezing and thawing.
+For more information, please read: https://www.sciencedirect.com/science/article/pii/S235271102500247X
 
 > **Note:** For the most stable release, see the `main` branch. Other branches (e.g. `dev`, `thesis`, `feature/...`) may include features under development.
 
