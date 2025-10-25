@@ -334,6 +334,8 @@ This project is licensed under the [MIT License](LICENSE).
 - Fox, P. J. and Pu, H. (2015). Benchmark problems for large strain consolidation. Journal of Geotechnical and Geoenvironmental Engineering, 144(3), https://doi.org/10.1061/(ASCE)GT.1943-5606.0001826.
 - Pekinasova A, Hayley JL, Karchewski B. Preliminary results of thermo-hydro-mechanical modelling of large-strain deformation of ground in Canadian cold regions. Proc 76th Can Geotech Conf; 2023. Saskatoon, SK, Canada.
 - Pekinasova A, Hayley JL, Karchewski B. Benchmark validation of a new numerical tool for settlement prediction of freezing and thawing ground in cold regions. Proc 77th Can Geotech Conf; 2024. Montréal, QC, Canada.
+- Pekinasova A, Hayley JL, Karchewski B. Frozen-ground-fem: A practical and open Python 3 package for thermo-hydro-mechanical coupled modelling of soils in cold regions, SoftwareX, Volume 31, 2025, https://doi.org/10.1016/j.softx.2025.102280.
+- Pekinasova A, Hayley JL, Karchewski B. Initialization of coupled thermo-hydro-mechanical models of permafrost terrain using the frozen-ground-fem package, Cold Regions Science and Technology, 2025, https://doi.org/10.1016/j.coldregions.2025.104732.
 - Yu F, Guo P, Lai Y, Stolle D. Frost heave and thaw consolidation modelling. Part 1: A water flux function for frost heaving. Can Geotech J 2020;57(10):1581–94. https://doi.org/10.1139/cgj-2019-0218.
 - Yu F, Guo P, Lai Y, Stolle D. Frost heave and thaw consolidation modelling. Part 2: One-dimensional thermohydromechanical (THM) framework. Can Geotech J 2020;57(10):1595–610. https://doi.org/10.1139/cgj-2019-0306.
 - Zienkiewicz, O.C., Taylor, R.L., and Zhu, J.Z. 2013. "The Finite Element Method: Its Basis and Fundamentals", Elsevier.
