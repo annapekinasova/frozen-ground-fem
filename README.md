@@ -5,6 +5,7 @@
 ## Overview
 
 **frozen-ground-fem** is a Python package for advanced, multiphysics simulation of frozen ground processes using 1D Finite Element Method (FEM) framework. Designed for research and engineering applications in geotechnics and geosciences, it enables high-fidelity modelling of heat transfer, water migration, phase change, and large-strain consolidation phenomena in freezing and thawing soils. The code is a component of an active research project supporting thesis work in geotechnical and permafrost engineering, including detailed implementations for thermal, consolidation, and fully coupled thermo-hydro-mechanical (THM) processes in 1D soil columns. The package is robust, modular, and extensible, making it suitable for both academic research and practical engineering studies involving permafrost, seasonal frost, and related scenarios of ground freezing and thawing.
+For more information, please read: https://www.sciencedirect.com/science/article/pii/S235271102500247X
 
 > **Note:** For the most stable release, see the `main` branch. Other branches (e.g. `dev`, `thesis`, `feature/...`) may include features under development.
 
@@ -333,6 +334,8 @@ This project is licensed under the [MIT License](LICENSE).
 - Fox, P. J. and Pu, H. (2015). Benchmark problems for large strain consolidation. Journal of Geotechnical and Geoenvironmental Engineering, 144(3), https://doi.org/10.1061/(ASCE)GT.1943-5606.0001826.
 - Pekinasova A, Hayley JL, Karchewski B. Preliminary results of thermo-hydro-mechanical modelling of large-strain deformation of ground in Canadian cold regions. Proc 76th Can Geotech Conf; 2023. Saskatoon, SK, Canada.
 - Pekinasova A, Hayley JL, Karchewski B. Benchmark validation of a new numerical tool for settlement prediction of freezing and thawing ground in cold regions. Proc 77th Can Geotech Conf; 2024. Montréal, QC, Canada.
+- Pekinasova A, Hayley JL, Karchewski B. Frozen-ground-fem: A practical and open Python 3 package for thermo-hydro-mechanical coupled modelling of soils in cold regions, SoftwareX, Volume 31, 2025, https://doi.org/10.1016/j.softx.2025.102280.
+- Pekinasova A, Hayley JL, Karchewski B. Initialization of coupled thermo-hydro-mechanical models of permafrost terrain using the frozen-ground-fem package, Cold Regions Science and Technology, 2025, https://doi.org/10.1016/j.coldregions.2025.104732.
 - Yu F, Guo P, Lai Y, Stolle D. Frost heave and thaw consolidation modelling. Part 1: A water flux function for frost heaving. Can Geotech J 2020;57(10):1581–94. https://doi.org/10.1139/cgj-2019-0218.
 - Yu F, Guo P, Lai Y, Stolle D. Frost heave and thaw consolidation modelling. Part 2: One-dimensional thermohydromechanical (THM) framework. Can Geotech J 2020;57(10):1595–610. https://doi.org/10.1139/cgj-2019-0306.
 - Zienkiewicz, O.C., Taylor, R.L., and Zhu, J.Z. 2013. "The Finite Element Method: Its Basis and Fundamentals", Elsevier.
